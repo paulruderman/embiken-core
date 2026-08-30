@@ -1,0 +1,30 @@
+{
+    "agents": [
+        "cursor",
+        "claude_code"
+    ],
+    "cloud": true,
+    "guidelines": true,
+    "mcp": true,
+    "nightwatch": false,
+    "sail": false,
+    "skills": [
+        "infer-conventions",
+        "laravel-best-practices",
+        "testing-best-practices",
+        "wayfinder-development",
+        "inertia-vue-development",
+        "tailwindcss-development",
+        "code-review",
+        "codebase-design",
+        "deploying-laravel-cloud",
+        "grill-me",
+        "grill-with-docs",
+        "grilling",
+        "implement",
+        "improve-codebase-architecture",
+        "prototype",
+        "research",
+        "teach"
+    ]
+}

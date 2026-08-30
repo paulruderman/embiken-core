@@ -12,13 +12,13 @@ Tenant tables live in database/migrations/tenant. Schema must build on every Lar
 Tenant schema lives in database/migrations/tenant and is applied when a Tenant is created. Do not add migrations or hooks that drop tenant databases on tenant delete.
 
 ## Core tenant tables for reservations and money
-Tenant schema includes reservations (starts_at, ends_at, stage, owed, paid), bike_reservation (product_id, nullable bike_id, Assigned/Out/In, optional check timestamps), bikes (situation state and bike_situation_reservation_id), and transactions belonging to reservations. owed and paid are caches, not a second ledger.
+Tenant schema includes reservations (starts_at, ends_at, stage, owed, paid), bike_reservation (product_id, nullable bike_id, Assigned/Out/In, optional check timestamps), bikes (situation state and bike_situation_reservation_id), customers (required name, email, phone), and transactions belonging to reservations. owed and paid are caches, not a second ledger.
 
 ## Catalog and package tables, no products or allocations
 Tenant schema includes bike_categories, bike_models, bike_model_variants, bikes (in_service, self_bookable), and rental_packages. reservations.rental_package_id is nullable. bike_reservation.product_id FKs to bike_model_variants. Do not create products or allocations tables.
 
-## Buffer on bike_models; blocking service window
-bike_models include turnaround buffer minutes. Tenant schema includes blocking service on a bike with optional starts_at/ends_at; Availability overlaps that window. Do not add a second occupancy table for maintenance schedules.
+## Buffer on locations and bike_models; blocking service window
+locations include a minimum turnaround buffer minutes (default 10) and a bike-assignment policy (terminal, book_may_pin, pickup_only). bike_models include optional padding minutes; effective buffer is max(location minimum, model padding). Tenant schema includes blocking service on a bike with optional starts_at/ends_at; Availability overlaps that window. Do not add a second occupancy table for maintenance schedules. Do not store buffer on bikes or reservations.
 
 ## rental_package_id nullable for Terminal hand quotes
 reservations.rental_package_id is nullable. Book always writes it. Terminal hand quotes may leave it null. Do not make the column required at the database if Terminal omits it.

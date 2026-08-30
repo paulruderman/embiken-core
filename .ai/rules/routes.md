@@ -16,3 +16,6 @@ New tenants get a subdomain; custom domains are added later as Domain rows. Apex
 
 ## One staff surface: /terminal
 Staff plus device is Terminal at /terminal. Do not add /station, /pad, /term, or a kiosk path. CFD pairs to a terminal device via paired_terminal_device_id.
+
+## Register Action classes as routes and commands
+Register tenant, page, and JSON Action routes to Action::class (invokable). Use Actions::registerRoutes and Actions::registerCommands. Wayfinder imports from the Action class. Do not wrap Actions in Http\Controllers. Do not add a public /api/v1 partner prefix in v1.

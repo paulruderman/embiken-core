@@ -15,4 +15,7 @@ Platform users are central. Staff and customers are tenant models. Devices are n
 Do not count occupancy in controllers; go through Availability via an Action. Never query tenant models on the central connection.
 
 ## Guards, device pairing, guest Book
-Separate guards: platform User, Staff, Customer. Sanctum token on Device, not on Staff. Station and pad require staff session plus device token. Pairing: one-time Filament code redeemed for a token; do not copy long-lived tokens. Book is guest until reserve; create Customer at reserve; MyRental uses a signed or magic link.
+Separate guards: platform User, Staff, Customer. Sanctum token on Device, not on Staff. Station and pad require staff session plus device token. Pairing: one-time Filament code redeemed for a token; do not copy long-lived tokens. Book is guest until reserve; MyRental uses a signed or magic link.
+
+## Customer on confirm, not only on successful pay
+Attach a Customer when the person is known (online pay or staff confirm), including staff Reserved after a failed Connect charge. Do not wait for a successful PaymentIntent to create the Customer.

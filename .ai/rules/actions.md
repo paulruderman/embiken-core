@@ -6,7 +6,7 @@ paths:
 # Actions
 
 ## Invokable domain Actions for writes
-Every mutating use case is an Action under app/Actions/{Domain}/, named *Action. Use App\Actions\Action and AsAction. Invoke as a callable, never ->handle(). Method-inject the Action. handle() takes typed arguments, not Request. Authorize and validate in HTTP. Wrap multi-model writes in DB::transaction() inside handle(). Do not ShouldQueue the Action.
+Every mutating use case is an Action under app/Actions/{Domain}/, named *Action. Use App\Actions\Action and AsAction. Invoke as a callable, never ->handle(). Method-inject when one Action needs another. handle() takes typed arguments, not Request. Wrap multi-model writes in DB::transaction() inside handle(). Do not ShouldQueue the Action.
 
 ## No broadcast in Actions
 Do not ShouldBroadcast or fire broadcast events from handle(). Do not dispatch the same lifecycle event as $dispatchesEvents or BroadcastsEvents.
@@ -60,4 +60,10 @@ Record Terminal payments as cash or other transactions with no PaymentIntent. Do
 Create the Book PaymentIntent with amount from the reservation quote, not from Stripe Price objects. Set application_fee_amount to 3% of that charge (integer cents, decide rounding in implementation). Do not take 3% of cash or other.
 
 ## Use lorisleiva/laravel-actions for AsAction
-When implementing Actions, add lorisleiva/laravel-actions. App\Actions\Action uses AsAction. Invoke as a callable. Do not write a parallel AsAction. Do not add the package until that implementation work starts.
+When implementing Actions, add lorisleiva/laravel-actions. App\Actions\Action uses AsAction. Invoke as a callable. Do not write a parallel AsAction. Do not add the package until that implementation work starts. Each Action ships asController and asCommand; see the asController rule below.
+
+## asController API and asCommand on every Action
+Every Action uses AsAction. handle() is the domain body: typed arguments, never Request or Command. At minimum ship asController (API; jsonResponse for JSON) and asCommand ($commandSignature plus asCommand). Authorize and validate on the Action (authorize(), rules()), not Form Requests. asController, asCommand, htmlResponse, and jsonResponse only map IO into handle(). Register the Action class as the route. Tenant asCommand initializes tenancy before handle(). Do not add a parallel Http\Controller or Console\Command for the same use case. Do not put Inertia or HTTP responses in handle().
+
+## asCommand args, Prompts, --tenant
+asCommand signatures expose handle() arguments as optional Artisan arguments or options. If a needed value is missing, prompt with Laravel\Prompts (text, select, search), not Command::ask or Symfony Question. Under --no-interaction / -n, do not prompt; fail if required input is missing. Tenant Actions include {--tenant=} (tenant id or domain); resolve and initialize tenancy before handle(); prompt for tenant when omitted unless -n. Central-only Actions omit --tenant. Do not put Prompts in handle().

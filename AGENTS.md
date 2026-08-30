@@ -1,4 +1,33 @@
 <laravel-boost-guidelines>
+=== .ai/embiken rules ===
+
+# Embiken
+
+SaaS for independent bike shops. Tenancy is stancl/tenancy: **database-per-tenant**, identified by **domain or subdomain**. A **Tenant** is one shop operator. A **Location** is a store in the tenant database, never a stancl tenant. v1 is one Location per tenant; do not add a location picker or path.
+
+Mutating use cases are invokable Actions. **Availability** is the only occupancy seam. Shop Filament is configuration, not a register.
+
+New tenants get a subdomain immediately; a custom domain is an extra Domain row later. The central apex is Platform Filament only. Ops may open tenant surfaces at `/t/{tenant}/…` on the apex (platform auth, or local); those URLs are not customer links and Wayfinder must not emit them for the SPA.
+
+## Surfaces
+
+One Vue SPA except for the Filament parts. Wayfinder for every frontend route. `GET /` redirects to `/book`.
+
+| Surface | Path | Who | Role |
+| --- | --- | --- | --- |
+| Book | `/book` | public / customer | Browse, hold, reserve, pay deposit |
+| MyRental | `/myrental` | customer | That reservation before and during the rental |
+| Station | `/station` | staff + bound device | Counter register: walk-in, assign/swap, checkout, check-in, pickup/return, damage, extend |
+| CFD | `/cfd` | device | Counter customer display. No staff controls |
+| Pad | `/pad` | staff + bound device | Floor tablet; same Actions as station |
+| Screen | `/screen` | device | Shop availability board. Echo after first paint. No controls |
+| Shop Filament | `/manage` | managers | Catalog, fleet, hours, devices, pricing, staff. Never checkout |
+| Platform Filament | central host | platform | Tenants, domains, billing later. Not shop data |
+
+Pages live under `resources/js/pages/{Book,MyRental,Station,Cfd,Pad,Screen}/`.
+
+Auth: platform users (central DB, `User`). **Staff** and **Customer** are separate tenant authenticatable models with separate guards. Staff roles: **Manager** (`/manage` + station/pad) vs **Counter** (station/pad only). Devices are not users: a Device bound to Location + surface, Sanctum token, paired with a one-time code in shop Filament. Device-only in daily operation: **cfd**, **screen**. Staff plus device: **station**, **pad**. Book is guest until reserve; then a Customer exists; MyRental is a signed or magic link. There is no kiosk surface; pickup/return is station and pad.
+
 === foundation rules ===
 
 # Laravel Boost Guidelines
@@ -135,23 +164,9 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - If you're creating a generic PHP class, use `php artisan make:class`.
 - Pass `--no-interaction` to all Artisan commands to ensure they work without user input. You should also pass the correct `--options` to ensure correct behavior.
 
-### Model Creation
-
-- When creating new models, create useful factories and seeders for them too. Ask the user if they need any other things, using `php artisan make:model --help` to check the available options.
-
-## APIs & Eloquent Resources
-
-- For APIs, default to using Eloquent API Resources and API versioning unless existing API routes do not, then you should follow existing application convention.
-
 ## URL Generation
 
 - When generating links to other pages, prefer named routes and the `route()` function.
-
-## Testing
-
-- When creating models for tests, use the factories for the models. Check if the factory has custom states that can be used before manually setting up the model.
-- Faker: Use methods such as `$this->faker->word()` or `fake()->randomDigit()`. Follow existing conventions whether to use `$this->faker` or `fake()`.
-- When creating tests, make use of `php artisan make:test [options] {name}` to create a feature test, and pass `--unit` to create a unit test. Most tests should be feature tests.
 
 ## Vite Error
 
@@ -169,22 +184,6 @@ Use Wayfinder to generate TypeScript functions for Laravel routes. Import from `
 
 - If you have modified any PHP files, you must run `vendor/bin/pint --dirty --format agent` before finalizing changes to ensure your code matches the project's expected style.
 - Do not run `vendor/bin/pint --test --format agent`, simply run `vendor/bin/pint --format agent` to fix any formatting issues.
-
-=== pest/core rules ===
-
-# Pest
-
-- This project uses Pest. Create tests with `php artisan make:test --pest {name}`.
-- Do not include the test suite directory in `{name}`. Use `SomeFeatureTest`, not `Feature/SomeFeatureTest`.
-- Read the `testing-best-practices` skill for guidance on coverage, naming, structure, dependency isolation, and review.
-- Do not delete tests or test files without approval. They are part of the application.
-
-## Running Tests
-
-- Run the narrowest set of tests that covers the change. Pass a file path or `--filter=testName` to `php artisan test --compact`.
-- Rerun a test after each change to it.
-- Run `vendor/bin/pest` to call the test runner directly. It accepts the same file path and `--filter=testName` arguments.
-- After the feature tests pass, ask the user to run the complete suite with `php artisan test --compact`.
 
 === inertia-vue/core rules ===
 

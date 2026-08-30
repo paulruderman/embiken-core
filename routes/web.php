@@ -2,4 +2,5 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::inertia('/', 'Welcome')->name('home');
+Route::redirect('/', '/book')->name('home');
+Route::inertia('/book', 'Book/Index')->name('book');

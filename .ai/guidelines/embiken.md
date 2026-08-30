@@ -2,7 +2,7 @@
 
 SaaS for independent bike rental shops. Tenancy is stancl/tenancy: **database-per-tenant**, identified by **domain or subdomain**. A **Tenant** is one shop operator. A **Location** is a store in the tenant database, never a stancl tenant. v1 is one Location per tenant; do not add a location picker or path.
 
-Mutating use cases are invokable Actions. **Availability** is the only occupancy seam. Shop Filament is configuration, not a customer register.
+Mutating use cases are invokable Actions. **Availability** is the only occupancy seam (intervals on `bike_reservation` rows, under row locks; no occupancy ledger). A **Reservation** has many **bike_reservation** rows: product required, `bike_id` nullable until assigned. Reservation `stage` is a cache: staff write Provisional, Reserved, or Cancelled; never drive bike state from `stage`. Provisional is a short cart lock (about 10–15 minutes) then Cancelled if not Reserved or picked up. Shop Filament is configuration, not a customer register.
 
 New tenants get a subdomain immediately; a custom domain is an extra Domain row later. The central apex is Platform Filament only. Ops may open tenant surfaces at `/t/{tenant}/…` on the apex (platform auth, or local); those URLs are not customer links and Wayfinder must not emit them for the SPA.
 
@@ -12,7 +12,7 @@ One Vue SPA except for the Filament parts. Wayfinder for every frontend route. `
 
 | Surface | Path | Who | Role |
 | --- | --- | --- | --- |
-| Book | `/book` | public / customer | Browse, hold, reserve, pay deposit |
+| Book | `/book` | public / customer | Browse, provisional, reserve, pay deposit |
 | MyRental | `/myrental` | customer | That reservation before and during the rental |
 | Station | `/station` | staff + bound device | Counter register: walk-in, assign/swap, checkout, check-in, pickup/return, damage, extend |
 | CFD | `/cfd` | device | Counter customer display. No staff controls |

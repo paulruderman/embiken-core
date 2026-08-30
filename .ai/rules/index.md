@@ -17,3 +17,4 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Observers/** | .ai/rules/observers.md |
 | resources/js/pages/** | .ai/rules/pages.md |
 | routes/** | .ai/rules/routes.md |
+| tests/** | .ai/rules/tests.md |

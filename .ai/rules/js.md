@@ -22,3 +22,6 @@ First paint is Inertia. Mutating calls use Wayfinder on the Action with useHttp 
 
 ## Terminal listens on the location channel
 Shop-operable Terminal subscribes to the location channel only. CFD channel subscribe (and live customer/waiver patches) wait for the Device slice.
+
+## Pinia and tickets hold all lines
+Day store and CFD ticket payloads include every bike_reservation on a reservation. Components must not collapse a reservation to one bike or one remaining count.

@@ -25,8 +25,8 @@ A Manager Staff row that is not a person. The only Staff a User may impersonate.
 _Avoid_: ghost, synthetic operator, impersonation user, ops Staff
 
 **Customer**:
-A renter. Not User or Staff.
-_Avoid_: guest (the Book browse state), client, account
+The one renter on a Reservation. Extra people in the party are extra Lines, not extra Customers.
+_Avoid_: guest (the Book browse state), client, account, rider (as a record)
 
 ## Shop
 
@@ -56,6 +56,16 @@ _Avoid_: deprovision, drop tenant (dropping the DB is forbidden)
 The one User-to-Staff crossing: the User is that tenant’s Platform Manager on the tenant host.
 _Avoid_: ops `/t/`, HasTenants, “open shop” as a User session
 
+## Reservation
+
+**Reservation**:
+One rental ticket: one Customer, one interval, one optional RentalPackage, and one or more Lines.
+_Avoid_: Booking, order, cart (Provisional is a stage), a one-bike header
+
+**Line**:
+One `bike_reservation` row: one variant (class or assigned Bike) on that Reservation. Quantity is N rows.
+_Avoid_: rider, qty, item, a product_id on the Reservation header
+
 ## Occupancy
 
 **Availability**:
@@ -63,5 +73,5 @@ Whether bikes can be held for a proposed interval. The occupancy seam.
 _Avoid_: Allocation, inventory, ledger, available-scope
 
 **Occupancy**:
-A hold on a bike for a Reservation interval (`[starts_at, ends_at]` inclusive) plus the turnaround buffer after `ends_at`.
+A hold on a Line for a Reservation interval (`[starts_at, ends_at]` inclusive) plus the turnaround buffer after `ends_at`.
 _Avoid_: ledger, allocation pool

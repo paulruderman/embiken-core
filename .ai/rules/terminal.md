@@ -13,3 +13,6 @@ Layout and hit targets must work with one finger while the other hand holds a ta
 
 ## Terminal allows Platform Manager impersonation
 Terminal is a Staff session: password Staff, or User impersonation as the Platform Manager. While the Tenant is Suspended, only impersonation may open Terminal. Filament still never pickup/return/checkout; impersonated Platform Manager on Terminal may.
+
+## Terminal ticket and floor are multi-line
+A Terminal ticket is every bike_reservation on the Reservation. Floor, pickup, return, assign, and swap target a line, not the header. Do not design walk-in or focus as a single-bike POS. Partial pickup/return is the default party flow.

@@ -1,154 +1,234 @@
-# Terminal POS prototype — design intent by variant
+# Terminal POS prototype — twenty screen maps
 
-Throwaway screen maps at `/prototype/terminal?variant=A` … `J`. Staff session, one-finger POS. Not Availability, not Filament, not production chrome.
+Throwaway UI: `/prototype/terminal?variant=A` … `T`. Staff session, one-finger POS. Not Availability, not Filament.
 
-The question for every variant is the same: **what is always on screen vs what is a drill-in.** The winning map can steal pieces; it does not have to be one letter.
+The question is always: **what is always on screen vs what is a drill-in.** Mix is allowed. Shop-operable v1 still wants **one** Terminal home; this set is for choosing and stealing.
+
+A ticket is every `bike_reservation` on the Reservation. Floor / pickup / return / assign / swap target a **line**. The fixture includes a two-line party (Nguyen) and an unassigned second line on Maya.
 
 ---
 
 ## A — Floor board
 
-**Always on:** every bike, grouped by situation (out / staged / prepping / back / home), plus Walk-in.  
-**Drill-in:** ticket as a bottom sheet; assign as an overlay. The board never leaves.
+**Description:** Every bike as a situation tile (out / staged / prepping / back / home). Walk-in on the chrome. Ticket is a bottom sheet; assign is an overlay. The board never leaves.
 
-**Intent:** Occupancy is the job. Staff think in bids (“where is B1?”). Pickup and return are seeing a tile change color.
+**Motivation:** Desk staff already think in bids. Pickup and return are “where is that bike.” Occupancy is the job.
 
-**Spirit:** Kitchen expo board. Dense, dark, physical assets.
-
-**Use when:** a small-to-medium fleet, counter staff who already know the bikes, and the pain is “who is out / who is home,” not “who is at 2pm.” Weak if the day is a pile of overlapping intervals and you cannot see collisions.
+**Spirit:** Kitchen expo. Dark, dense, physical assets.
 
 ---
 
 ## B — Ticket queue
 
-**Always on:** today’s reservations as a stack of chits.  
-**Drill-in:** full screens (ticket, floor, extend, cancel). The board is a destination, not a home.
+**Description:** Today’s reservations as a stack of chits. Full-screen drill-ins for ticket, floor, extend, cancel.
 
-**Intent:** The unit of work is a customer, not a bike. Restaurant ticket rail.
+**Motivation:** The unit of work is a customer, not a bike. Named walk-ins and “Maya’s ticket.”
 
-**Spirit:** Toast / Square tickets. Paper, large type, Back.
-
-**Use when:** walk-in and named bookings dominate, staff call people not bids, and you accept extra taps to see the floor. Weak for “is this hour sellable” — you cannot see overlap.
+**Spirit:** Toast / Square ticket rail. Paper, Back, large type.
 
 ---
 
 ## C — Verb deck
 
-**Always on:** function keys, ticket list, bike column. No page stack.  
-**Drill-in:** none. Context and a pane change.
+**Description:** Function keys always on; ticket list and bikes are columns. No page stack.
 
-**Intent:** Trained speed. The interface is the verbs (Pickup, Return, Cash). Occupancy is a sidebar.
+**Motivation:** Trained speed. Verbs (Pickup, Return, Cash) are the interface; occupancy is a sidebar.
 
 **Spirit:** Aloha / Micros. Green keys, black well, memorized.
-
-**Use when:** the same three people work the counter all summer and will learn the deck. Weak for a substitute Counter on a Saturday who needs the floor to explain itself.
 
 ---
 
 ## D — Day timeline
 
-**Always on:** the shop day as a time ribbon; tickets are bars.  
-**Drill-in:** bottom drawer.
+**Description:** The shop day as a time ribbon; tickets are bars. Bottom drawer for the tap.
 
-**Intent:** Time is the scarce resource. Overlap, gaps, and “can we extend” are visible as geometry.
+**Motivation:** Time is the scarce resource. Overlap, holes, and “can we extend” are geometry.
 
-**Spirit:** A paper booking diary laid on its side. Cyan bars on a dark day.
-
-**Use when:** you need to see collisions and idle holes without opening tickets. Walk-in is “is there a hole,” not “is there a bike.” Weak as the only home if staff still ask “where is B1?” — bids are tiny on the bar. **Keep this idea** even if another variant wins the chrome.
+**Spirit:** A paper booking diary on its side. Cyan bars.
 
 ---
 
 ## E — Split panes
 
-**Always on:** bikes left and ticket right. Neither leaves.  
-**Drill-in:** none. Home bikes on the left assign into the open ticket.
+**Description:** Bikes always left, ticket always right. Home bike on the left assigns. No overlay.
 
-**Intent:** Stop choosing between floor and ticket. Two-handed metaphor, one-finger use: tap left then tap a verb on the right.
+**Motivation:** Stop choosing between floor and ticket. Landscape counter glass.
 
-**Spirit:** Parts counter. Neutral, split, no drama.
-
-**Use when:** tablets in landscape, or a wide counter monitor. Weak in portrait: the ticket pane starves. Weak for a packed day of overlap — left is situation, not time.
+**Spirit:** Parts counter. Neutral split, no drama.
 
 ---
 
 ## F — Due well
 
-**Always on:** urgency buckets (late / out / next / back) plus Walk-in.  
-**Drill-in:** Floor is a tab.
+**Description:** Urgency buckets (late / out / next / back). Floor is a tab.
 
-**Intent:** The next physical act. Not the catalog, not the calendar.
+**Motivation:** The next physical act, especially afternoon returns and put-away.
 
-**Spirit:** Airport boards / “now serving.” Yellow on black, shouty.
-
-**Use when:** late returns and put-away are the afternoon failure mode. Weak in the morning when the question is still “what does 11:00 look like?”
+**Spirit:** Airport “now serving.” Yellow on black.
 
 ---
 
-## G — Bike lanes (Gantt)
+## G — Bike lanes
 
-**Always on:** time on X, **each bid a row**, reservations as bars on that bike.  
-**Drill-in:** drawer, same as D.
+**Description:** Time on X, **each bid a row**, reservations as bars on that bike.
 
-**Intent:** D’s timeline fused with A’s occupancy. This is the hotel rack: you see that B1 is busy 10–16 and C2 is a gap. Swap and extend become “does this bar fit.”
+**Motivation:** D’s diary fused with occupancy. See that B1 is busy 10–16 and C2 is a hole. Swap/extend become “does this bar fit.”
 
-**Spirit:** Resource schedule. Indigo lanes, one row per asset.
-
-**Use when:** you liked D but still need to know *which* bike is occupied, not only that *someone* is. This is the strongest “we will need something like the timeline” candidate for a shop that assigns real bikes (not an anonymous pool). Weak if the fleet is huge (too many rows) unless you filter by model.
+**Spirit:** Hotel rack / resource Gantt. Indigo lanes.
 
 ---
 
 ## H — Now playhead
 
-**Always on:** three columns — Behind / Live / Later — with NOW as a fat spine. Hours are not equal.  
-**Drill-in:** drawer.
+**Description:** Three columns — Behind / Live / Later — with NOW as a fat spine. Hours are not equal.
 
-**Intent:** D’s timeline, but the present is magnified. Overdue returns scream on the left; the next start is on the right.
+**Motivation:** The counter lives in the current hour. A full-day Gantt is noise during the rush.
 
-**Spirit:** Mixing-desk / live news. Red NOW, not a spreadsheet.
-
-**Use when:** the counter lives in the current hour (pickup/return waves) and a full-day Gantt is noise. Weak for planning 16:00 at 10:00 — Later is a list, not geometry.
+**Spirit:** Mixing desk / live news. Red NOW.
 
 ---
 
 ## I — Clock face
 
-**Always on:** twelve hour marks on a ring; the well is “who starts in this hour.”  
-**Drill-in:** drawer.
+**Description:** Twelve hour marks on a ring; the well is who **starts** in that hour.
 
-**Intent:** Time as a watch, not a grid. Staff tap “2” the way they glance at a wall clock.
+**Motivation:** Staff already glance at a wall clock. Tap “2” like a watch.
 
-**Spirit:** Analog. Warm stone and amber. Slightly playful on purpose — to test whether a non-table timeline still reads.
-
-**Use when:** the day is a handful of starts, and you want a memorable home for a tablet held in one hand (thumb on the ring). Weak for overlap duration (a 10–16 bar is not on the ring) and weak for accessibility if the ring is too precious. Steal the *hour filter*, not necessarily the circle.
+**Spirit:** Analog, slightly playful. Warm stone and amber.
 
 ---
 
 ## J — Dual dock
 
-**Always on:** two bays, OUT and IN. No calendar.  
-**Drill-in:** drawer.
+**Description:** Two bays, OUT and IN. No calendar. Outbound = not yet gone; inbound = rented_out or back.
 
-**Intent:** The shop as doors. Outbound = not yet gone (prepping/staged/home on a ticket). Inbound = rented_out or back. Pickup is an OUT tap; return is an IN tap.
+**Motivation:** The shop as doors. Pickup is an OUT tap; return is an IN tap.
 
 **Spirit:** Loading dock / ferry. Two big mouths.
 
-**Use when:** the building has a literal out door and in door, or staff already talk that way. Weak for “can we take a 2pm” — time is only a number on the card.
+---
+
+## K — Scrubber freeze-frame
+
+**Description:** A row of hour keys. The floor shows who is busy **at that instant**, not “now.” Tap a lit tile to open that ticket.
+
+**Motivation:** D shows duration; A shows now. K is time-travel occupancy — “what does 3pm look like” without reading bars.
+
+**Spirit:** VCR / DAW scrubber. Fuchsia freeze-frame.
 
 ---
 
-## How to mix (especially timeline)
+## L — Week ribbon
 
-If the diary (D) felt right:
+**Description:** Seven day rows. Today is fat with hour bars; other days are quiet stubs.
 
-- **D + G:** keep the ribbon, add bid rows (G *is* that mix).
-- **D + H:** full-day geometry for planning, NOW columns for the rush.
-- **D + A:** timeline home, situation tiles as a strip or overlay — “where” without abandoning “when.”
-- **D + J:** timeline for the office iPad; docks for the door tablet. Same Actions, two homes, later if we split devices (out of this family’s Device slice).
+**Motivation:** Multi-day holds and “Saturday is slammed” live above a single afternoon. Book is the customer calendar; Terminal still needs a week glance so staff don’t walk into a wall.
 
-Do not ship two competing homes in shop-operable v1 without a reason. One Terminal tree; Screen is a later board and must not show PII or money.
+**Spirit:** Wall planner. Emerald week.
+
+---
+
+## M — Hour filmstrip
+
+**Description:** Horizontal reel. Each hour is a column of bid chips (busy gold / free mute). Thumb along the day.
+
+**Motivation:** Gantt rows don’t fit a phone-width tablet. Filmstrip is G’s idea (bike × hour) turned 90° for one-finger scroll.
+
+**Spirit:** Contact sheet / cinema. Yellow frames on black.
+
+---
+
+## N — Waterfall
+
+**Description:** Tickets sorted by start. Indent is the first free overlap *lane*: a finished ticket frees its column so the next one wraps back left. Not a chain through ended reservations, and not inline wrapping.
+
+**Motivation:** “Are we double-booked on class” should be visible as a staircase, not inferred from bars.
+
+**Spirit:** Engineering Gantt / cascade. Orange, indent as meaning.
+
+---
+
+## O — Orbits
+
+**Description:** Three rings — morning / midday / afternoon — with first-name beads. Start-hour as orbit, not a grid.
+
+**Motivation:** Coarse time (“afternoon pile”) without 11 columns. A middle ground between clock and list.
+
+**Spirit:** Orrery / gravity well. Sky beads on rings.
+
+---
+
+## P — Model staves
+
+**Description:** Each BikeModel is a musical staff of time. Bars are parties on that class, not a specific bid.
+
+**Motivation:** Book quotes remaining by variant/class. Staff need “Turbos at 2pm” as a line of music, then drill into lines.
+
+**Spirit:** Sheet music. Rose staves.
+
+---
+
+## Q — Load histogram
+
+**Description:** Each hour is a tower of how many bikes are busy. Tap a tower, then a bid in that hour.
+
+**Motivation:** Capacity, not identity. “2pm is full” before “who is Maya.” Complements quoteOccupancy remaining.
+
+**Spirit:** Mixer meters / EQ. Violet bars.
+
+---
+
+## R — Pigeonholes
+
+**Description:** One cubby per start hour; tickets stuffed in like mail. Duration is not drawn.
+
+**Motivation:** Starts are appointments. Staff say “the 10 o’clock,” not “the six-hour bar.”
+
+**Spirit:** Hotel mail rack. Amber cubbies.
+
+---
+
+## S — Portraits
+
+**Description:** One ticket fills the glass as a giant card. Prev/next. Lines listed. No board, no ribbon.
+
+**Motivation:** Sometimes there is exactly one party at the counter. Everything else is a tap away.
+
+**Spirit:** Tarot / boarding pass. White card, black theater.
+
+---
+
+## T — Radio tape
+
+**Description:** A scrolling transcript of shop events; verbs are telegraphic (OUT, IN, EXT). Tickets are a chip row.
+
+**Motivation:** Reality is a sequence of acts, not a map. Training, disputes, “what just happened,” and a future Screen-adjacent log without PII on Screen.
+
+**Spirit:** Syslog / shortwave. Lime on black, monospace.
+
+---
+
+## Timeline family (steal from these first if D felt right)
+
+| Letter | Time is… |
+|---|---|
+| D | duration bars for parties |
+| G | duration bars per bid |
+| H | now vs behind vs later |
+| I | start hour on a watch |
+| K | freeze-frame occupancy |
+| L | week of days |
+| M | bike × hour film |
+| N | overlap depth |
+| O | coarse start rings |
+| P | class occupancy staves |
+| Q | busy-count per hour |
+| R | start-hour cubbies |
+
+Non-time homes: A floor, B queue, C verbs, E split, F due, J docks, S portraits, T tape.
 
 ---
 
 ## Out of scope in every variant
 
-CFD, Screen, Device pairing, Connect checkout, damage fees, Filament chrome, Availability math (extend here only bumps a stub `ends` / `owed`).
+CFD, Screen, Device pairing, Connect checkout, damage fees, Filament chrome. Extend here only stubs `ends` / `owed`.

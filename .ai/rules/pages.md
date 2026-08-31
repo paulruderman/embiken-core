@@ -52,3 +52,6 @@ When the Tenant is Suspended, Book is off (copy: “Online booking is unavailabl
 
 ## Book four screens and empty-state copy
 Book is four screens: Interval, Offer (package picker only if more than one Book-visible; remaining 0 cannot be chosen; bid picker only if book_may_pin), Checkout (contact, waiver, allocate then pay), Confirmed (receipt + signed URL still shown). Distinct copy: not-configured “This shop isn’t taking online bookings yet.” Suspended “Online booking is unavailable.” Express-off: only $0/none packages, else “Online checkout isn’t available yet.” Allocate fail → offer + flash. Pay fail → stay checkout, bump expires_at. Expiry → offer, same interval. Book another starts a new interval without CancelAction. Padlock mid-cart shows that empty state; tick expires the Provisional.
+
+## Reservation UI is N lines, never one bike
+Book, MyRental, Terminal, CFD, and Screen treat a Reservation as a party: one Customer, one interval, N unit lines (no qty). Offer/checkout/ticket/floor/receipt must list every line. Pickup, return, assign, and swap are per line; subset of lines is normal. Do not put a single bike_id or remaining count on the reservation as if it were one bike. Extra people are extra lines, not extra Customers or a Rider model.

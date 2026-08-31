@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Ten variants of the Terminal POS screen map, switchable via ?variant=,
+ * Twenty variants of the Terminal POS screen map, switchable via ?variant=,
  * on throwaway /prototype/terminal.
  * Question: what is always on screen vs a drill-in.
  */
@@ -18,6 +18,16 @@ import VariantGLanes from './VariantGLanes.vue';
 import VariantHNow from './VariantHNow.vue';
 import VariantIClock from './VariantIClock.vue';
 import VariantJDocks from './VariantJDocks.vue';
+import VariantKScrubber from './VariantKScrubber.vue';
+import VariantLWeek from './VariantLWeek.vue';
+import VariantMFilmstrip from './VariantMFilmstrip.vue';
+import VariantNWaterfall from './VariantNWaterfall.vue';
+import VariantOOrbits from './VariantOOrbits.vue';
+import VariantPStaves from './VariantPStaves.vue';
+import VariantQLoad from './VariantQLoad.vue';
+import VariantRPigeon from './VariantRPigeon.vue';
+import VariantSPortraits from './VariantSPortraits.vue';
+import VariantTTape from './VariantTTape.vue';
 
 const variants = [
     { key: 'A', name: 'Floor board' },
@@ -30,6 +40,16 @@ const variants = [
     { key: 'H', name: 'Now playhead' },
     { key: 'I', name: 'Clock face' },
     { key: 'J', name: 'Dual dock' },
+    { key: 'K', name: 'Scrubber' },
+    { key: 'L', name: 'Week ribbon' },
+    { key: 'M', name: 'Filmstrip' },
+    { key: 'N', name: 'Waterfall' },
+    { key: 'O', name: 'Orbits' },
+    { key: 'P', name: 'Model staves' },
+    { key: 'Q', name: 'Load' },
+    { key: 'R', name: 'Pigeonholes' },
+    { key: 'S', name: 'Portraits' },
+    { key: 'T', name: 'Radio tape' },
 ];
 
 const page = usePage();
@@ -61,7 +81,17 @@ function select(key: string): void {
         <VariantGLanes v-else-if="current === 'G'" />
         <VariantHNow v-else-if="current === 'H'" />
         <VariantIClock v-else-if="current === 'I'" />
-        <VariantJDocks v-else />
+        <VariantJDocks v-else-if="current === 'J'" />
+        <VariantKScrubber v-else-if="current === 'K'" />
+        <VariantLWeek v-else-if="current === 'L'" />
+        <VariantMFilmstrip v-else-if="current === 'M'" />
+        <VariantNWaterfall v-else-if="current === 'N'" />
+        <VariantOOrbits v-else-if="current === 'O'" />
+        <VariantPStaves v-else-if="current === 'P'" />
+        <VariantQLoad v-else-if="current === 'Q'" />
+        <VariantRPigeon v-else-if="current === 'R'" />
+        <VariantSPortraits v-else-if="current === 'S'" />
+        <VariantTTape v-else />
         <PrototypeSwitcher :variants="variants" :current="current" @select="select" />
     </div>
 </template>

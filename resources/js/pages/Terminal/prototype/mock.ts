@@ -50,9 +50,9 @@ export function createShop(): Shop {
             { id: 2, bid: 'A2', model: 'Trek FX', variant: 'L', situation: 'home', in_service: true },
             { id: 3, bid: 'B1', model: 'Turbo', variant: 'M', situation: 'rented_out', in_service: true },
             { id: 4, bid: 'B2', model: 'Turbo', variant: 'L', situation: 'staged', in_service: true },
-            { id: 5, bid: 'C1', model: 'Escape', variant: 'S', situation: 'home', in_service: true },
+            { id: 5, bid: 'C1', model: 'Escape', variant: 'S', situation: 'staged', in_service: true },
             { id: 6, bid: 'C2', model: 'Escape', variant: 'M', situation: 'prepping', in_service: true },
-            { id: 7, bid: 'D1', model: 'Kids', variant: '24', situation: 'home', in_service: true },
+            { id: 7, bid: 'D1', model: 'Kids', variant: '24', situation: 'staged', in_service: true },
             { id: 8, bid: 'D2', model: 'Kids', variant: '20', situation: 'back', in_service: true },
             { id: 9, bid: 'E1', model: 'Cargo', variant: '1', situation: 'rented_out', in_service: true },
             { id: 10, bid: 'E2', model: 'Cargo', variant: '1', situation: 'home', in_service: false },
@@ -68,7 +68,10 @@ export function createShop(): Shop {
                 paid: 4000,
                 waiver: true,
                 myrental: 'myrental/maya-token',
-                lines: [{ id: 1, product: 'Turbo M', bike_id: 3 }],
+                lines: [
+                    { id: 1, product: 'Turbo M', bike_id: 3 },
+                    { id: 12, product: 'Turbo L', bike_id: null },
+                ],
             },
             {
                 id: 102,
@@ -117,6 +120,21 @@ export function createShop(): Shop {
                 waiver: true,
                 myrental: 'myrental/leo-token',
                 lines: [{ id: 5, product: 'Cargo 1', bike_id: 9 }],
+            },
+            {
+                id: 106,
+                customer: 'Nguyen party',
+                stage: 'Confirmed',
+                starts: '13:00',
+                ends: '17:00',
+                owed: 7200,
+                paid: 0,
+                waiver: false,
+                myrental: 'myrental/nguyen-token',
+                lines: [
+                    { id: 6, product: 'Escape S', bike_id: 5 },
+                    { id: 7, product: 'Kids 24', bike_id: 7 },
+                ],
             },
         ],
     };
@@ -215,6 +233,18 @@ export function hourOf(stamp: string): number {
     const match = /^(\d{1,2}):/.exec(stamp);
 
     return match ? Number(match[1]) : 8;
+}
+
+export function overlapsHour(reservation: Reservation, hour: number): boolean {
+    return hourOf(reservation.starts) <= hour && hourOf(reservation.ends) > hour;
+}
+
+export function busyAt(shop: Shop, bikeId: number, hour: number): Reservation | undefined {
+    return openReservations(shop).find(
+        (reservation) =>
+            overlapsHour(reservation, hour) &&
+            reservation.lines.some((line) => line.bike_id === bikeId),
+    );
 }
 
 export function bumpEnd(ends: string): string {

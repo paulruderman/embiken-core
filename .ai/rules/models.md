@@ -82,3 +82,6 @@ Do not add a Device model in shop-operable schema. When the Device slice lands, 
 
 ## User vs Staff vs Platform Manager; Suspend; no DB drop
 User is central, one admin class, disable not delete. Staff is tenant. Tenant create: invitible Manager plus Platform Manager (Manager role, not a person, no password). Suspend is a Tenant state; delete removes central Tenant and Domain rows only while suspended and must not drop the tenant database. No restore.
+
+## Party is N bike_reservation rows, not qty
+A Reservation has many lines. Quantity is extra rows, never a qty column. Do not add a Rider model or extra Customers for people in the party. Do not put product_id or bike_id on the Reservation header as the occupancy unit.

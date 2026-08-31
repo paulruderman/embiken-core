@@ -16,5 +16,5 @@ The prototype does not implement Availability. It must make the **screen count a
 
 ## Assets
 
-- Throwaway UI: `/prototype/terminal?variant=A` … `J`
-- Design intent (all ten): [terminal-pos-screen-maps.md](../prototype/terminal-pos-screen-maps.md)
+- Throwaway UI: `/prototype/terminal?variant=A` … `T`
+- Design intent (all twenty): [terminal-pos-screen-maps.md](../prototype/terminal-pos-screen-maps.md)

@@ -5,11 +5,17 @@ Before planning or editing, find the row whose globs match the file's path and r
 | Applies to | Rule file |
 | --- | --- |
 | app/Actions/** | .ai/rules/actions.md |
+| docs/adr/** | .ai/rules/adr.md |
+| docs/agents/** | .ai/rules/agents.md |
 | app/Http/**, routes/** | .ai/rules/boost/http-routes.md |
 | app/Models/** | .ai/rules/boost/models.md |
 | tests/** | .ai/rules/boost/tests.md |
+| app/Console/** | .ai/rules/console.md |
+| app/Http/Controllers/** | .ai/rules/controllers.md |
 | app/Events/** | .ai/rules/events.md |
 | app/Filament/** | .ai/rules/filament.md |
+| CONTEXT.md | .ai/rules/general.md |
+| .ai/guidelines/** | .ai/rules/guidelines.md |
 | app/Http/** | .ai/rules/http.md |
 | resources/js/** | .ai/rules/js.md |
 | database/migrations/** | .ai/rules/migrations.md |
@@ -17,4 +23,6 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Observers/** | .ai/rules/observers.md |
 | resources/js/pages/** | .ai/rules/pages.md |
 | routes/** | .ai/rules/routes.md |
+| app/Services/** | .ai/rules/services.md |
+| resources/js/pages/Terminal/** | .ai/rules/terminal.md |
 | tests/** | .ai/rules/tests.md |

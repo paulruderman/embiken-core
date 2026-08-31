@@ -6,7 +6,7 @@ paths:
 # Events
 
 ## Broadcast on tenant-prefixed location channels
-Broadcast occupancy and reservation changes on private channel tenant.{tenantId}.location.{locationId} after commit. Authorize staff and terminal and screen devices on that channel. CFD tickets go to tenant.{tenantId}.cfd.{cfdDeviceId}; authorize that CFD device and the paired Terminal device. Do not use public unprefixed channels. Do not put CFD tickets on the location channel.
+Broadcast occupancy and reservation changes on private channel tenant.{tenantId}.location.{locationId} after commit. Authorize **staff** on that channel. Terminal and screen devices join in the later Device slice. CFD tickets go to tenant.{tenantId}.cfd.{cfdDeviceId} when CFD exists; authorize that CFD device and the paired Terminal device. Do not use public unprefixed channels. Do not put CFD tickets on the location channel. Occupancy does not depend on Device.
 
 ## Reverb and dedicated occupancy broadcasts
 Target Reverb and Echo. ShouldBroadcastNow for shop-floor occupancy; always ShouldBroadcastAfterCommit. broadcastAs() a short Echo name. broadcastWith() DTOs — ids, statuses, day's bikes and reservations or a counter ticket — never Eloquent graphs. Model CRUD uses BroadcastsEvents; occupancy/day snapshots, counter tickets, and SwapAsset use dedicated ShouldBroadcast classes.
@@ -19,3 +19,6 @@ CFD ticket DTOs include customer name/email/phone and waiver checkbox. Authorize
 
 ## Bike DTOs include bid
 Location-channel bike DTOs include bid. Screen may render bid. Still never customer PII or money on Screen.
+
+## Location channel authorizes staff
+Authorize tenant.{tenantId}.location.{locationId} for staff. Terminal and screen device tokens join that channel in the later Device slice. Occupancy broadcasts do not depend on Device.

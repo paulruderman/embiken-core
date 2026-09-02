@@ -1,12 +1,13 @@
 <script setup lang="ts">
 /**
  * PROTOTYPE Variant C — Verb deck. Function keys always on. No page stack.
- * Context (ticket or none) fills the center; bike picker is a right pane.
+ * Context (ticket or none) fills the center; bikes are inspect-only on the right.
  */
 import { computed, reactive, ref } from 'vue';
+import PrototypePartyLines from './PrototypePartyLines.vue';
 import {
     acceptWaiver,
-    assignBike,
+    bikeCaption,
     bikeFor,
     cancelReservation,
     createShop,
@@ -17,7 +18,6 @@ import {
     pickup,
     startWalkIn,
     takeCash,
-    type Bike,
     type Reservation,
 } from './mock';
 
@@ -25,7 +25,6 @@ type Verb =
     | 'walkin'
     | 'pickup'
     | 'return'
-    | 'assign'
     | 'extend'
     | 'cash'
     | 'waiver'
@@ -118,16 +117,6 @@ function run(next: Verb): void {
     }
 }
 
-function pickBike(bike: Bike): void {
-    if (!selected.value || bike.situation !== 'home' || !bike.in_service) {
-        return;
-    }
-
-    assignBike(shop, selected.value, bike.id);
-    flash(`Assigned ${bike.bid}`);
-    verb.value = 'none';
-}
-
 function doExtend(requote: boolean): void {
     if (selectedId.value === null) {
         return;
@@ -147,7 +136,6 @@ const verbs: { id: Verb; label: string }[] = [
     { id: 'walkin', label: 'Walk-in' },
     { id: 'pickup', label: 'Pickup' },
     { id: 'return', label: 'Return' },
-    { id: 'assign', label: 'Assign' },
     { id: 'extend', label: 'Extend' },
     { id: 'cash', label: 'Cash' },
     { id: 'waiver', label: 'Waiver' },
@@ -227,15 +215,7 @@ const verbs: { id: Verb; label: string }[] = [
                         </p>
                         <p>{{ selected.stage }}</p>
                         <p>Waiver {{ selected.waiver ? 'yes' : 'NO' }}</p>
-                        <div class="flex flex-wrap gap-2">
-                            <span
-                                v-for="line in selected.lines"
-                                :key="line.id"
-                                class="border border-lime-700 px-3 py-2"
-                            >
-                                {{ line.product }} {{ bikeFor(shop, line.bike_id)?.bid }}
-                            </span>
-                        </div>
+                        <PrototypePartyLines :shop="shop" :reservation="selected" />
 
                         <div v-if="verb === 'extend'" class="flex gap-2 pt-4">
                             <button
@@ -263,11 +243,10 @@ const verbs: { id: Verb; label: string }[] = [
                         :key="bike.id"
                         type="button"
                         class="mb-1 flex h-14 w-full items-center justify-between rounded border border-lime-900 px-2"
-                        :class="verb === 'assign' && bike.situation === 'home' ? 'border-lime-300' : ''"
-                        @click="verb === 'assign' ? pickBike(bike) : flash(`${bike.bid} ${bike.situation}`)"
+                        @click="flash(`${bike.bid} ${bikeCaption(shop, bike)}`)"
                     >
                         <span class="text-xl font-bold">{{ bike.bid }}</span>
-                        <span class="text-xs">{{ bike.situation }}</span>
+                        <span class="truncate text-xs">{{ bikeCaption(shop, bike) }}</span>
                     </button>
                 </aside>
             </div>

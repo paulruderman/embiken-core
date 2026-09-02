@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Twenty variants of the Terminal POS screen map, switchable via ?variant=,
+ * Twenty Terminal POS screen maps, switchable via ?variant=,
  * on throwaway /prototype/terminal.
  * Question: what is always on screen vs a drill-in.
  */
@@ -16,18 +16,18 @@ import VariantESplit from './VariantESplit.vue';
 import VariantFDue from './VariantFDue.vue';
 import VariantGLanes from './VariantGLanes.vue';
 import VariantHNow from './VariantHNow.vue';
-import VariantIClock from './VariantIClock.vue';
+import VariantIExceptions from './VariantIExceptions.vue';
 import VariantJDocks from './VariantJDocks.vue';
-import VariantKScrubber from './VariantKScrubber.vue';
+import VariantKCovers from './VariantKCovers.vue';
 import VariantLWeek from './VariantLWeek.vue';
-import VariantMFilmstrip from './VariantMFilmstrip.vue';
-import VariantNWaterfall from './VariantNWaterfall.vue';
-import VariantOOrbits from './VariantOOrbits.vue';
+import VariantMRoles from './VariantMRoles.vue';
+import VariantNFence from './VariantNFence.vue';
+import VariantOMoney from './VariantOMoney.vue';
 import VariantPStaves from './VariantPStaves.vue';
-import VariantQLoad from './VariantQLoad.vue';
-import VariantRPigeon from './VariantRPigeon.vue';
+import VariantQDoor from './VariantQDoor.vue';
+import VariantRHopper from './VariantRHopper.vue';
 import VariantSPortraits from './VariantSPortraits.vue';
-import VariantTTape from './VariantTTape.vue';
+import VariantTShuttle from './VariantTShuttle.vue';
 
 const variants = [
     { key: 'A', name: 'Floor board' },
@@ -38,18 +38,18 @@ const variants = [
     { key: 'F', name: 'Due well' },
     { key: 'G', name: 'Bike lanes' },
     { key: 'H', name: 'Now playhead' },
-    { key: 'I', name: 'Clock face' },
+    { key: 'I', name: 'Exceptions' },
     { key: 'J', name: 'Dual dock' },
-    { key: 'K', name: 'Scrubber' },
+    { key: 'K', name: 'Covers' },
     { key: 'L', name: 'Week ribbon' },
-    { key: 'M', name: 'Filmstrip' },
-    { key: 'N', name: 'Waterfall' },
-    { key: 'O', name: 'Orbits' },
+    { key: 'M', name: 'Roles' },
+    { key: 'N', name: 'Fence rail' },
+    { key: 'O', name: 'Money rail' },
     { key: 'P', name: 'Model staves' },
-    { key: 'Q', name: 'Load' },
-    { key: 'R', name: 'Pigeonholes' },
+    { key: 'Q', name: 'Dutch door' },
+    { key: 'R', name: 'Hopper' },
     { key: 'S', name: 'Portraits' },
-    { key: 'T', name: 'Radio tape' },
+    { key: 'T', name: 'Shuttle truck' },
 ];
 
 const page = usePage();
@@ -80,18 +80,18 @@ function select(key: string): void {
         <VariantFDue v-else-if="current === 'F'" />
         <VariantGLanes v-else-if="current === 'G'" />
         <VariantHNow v-else-if="current === 'H'" />
-        <VariantIClock v-else-if="current === 'I'" />
+        <VariantIExceptions v-else-if="current === 'I'" />
         <VariantJDocks v-else-if="current === 'J'" />
-        <VariantKScrubber v-else-if="current === 'K'" />
+        <VariantKCovers v-else-if="current === 'K'" />
         <VariantLWeek v-else-if="current === 'L'" />
-        <VariantMFilmstrip v-else-if="current === 'M'" />
-        <VariantNWaterfall v-else-if="current === 'N'" />
-        <VariantOOrbits v-else-if="current === 'O'" />
+        <VariantMRoles v-else-if="current === 'M'" />
+        <VariantNFence v-else-if="current === 'N'" />
+        <VariantOMoney v-else-if="current === 'O'" />
         <VariantPStaves v-else-if="current === 'P'" />
-        <VariantQLoad v-else-if="current === 'Q'" />
-        <VariantRPigeon v-else-if="current === 'R'" />
+        <VariantQDoor v-else-if="current === 'Q'" />
+        <VariantRHopper v-else-if="current === 'R'" />
         <VariantSPortraits v-else-if="current === 'S'" />
-        <VariantTTape v-else />
+        <VariantTShuttle v-else-if="current === 'T'" />
         <PrototypeSwitcher :variants="variants" :current="current" @select="select" />
     </div>
 </template>

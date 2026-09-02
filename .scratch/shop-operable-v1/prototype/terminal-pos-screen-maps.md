@@ -2,7 +2,9 @@
 
 Throwaway UI: `/prototype/terminal?variant=A` … `T`. Staff session, one-finger POS. Not Availability, not Filament.
 
-The question is always: **what is always on screen vs what is a drill-in.** Mix is allowed. Shop-operable v1 still wants **one** Terminal home; this set is for choosing and stealing.
+The question is always: **what is always on screen vs what is a drill-in.** Mix is allowed. Shop-operable v1 still wants **one** Terminal home; this set is for choosing and stealing. A ticket lists every line with situation and occupying Reservation; a bike situation names which Reservation.
+
+Clock face, scrubber, filmstrip, waterfall, orbits, load histogram, pigeonholes, size rack, prep line, and radio tape were dropped. I/K/M/N/O/Q/R/T are later maps in those slots.
 
 A ticket is every `bike_reservation` on the Reservation. Floor / pickup / return / assign / swap target a **line**. The fixture includes a two-line party (Nguyen) and an unassigned second line on Maya.
 
@@ -10,7 +12,7 @@ A ticket is every `bike_reservation` on the Reservation. Floor / pickup / return
 
 ## A — Floor board
 
-**Description:** Every bike as a situation tile (out / staged / prepping / back / home). Walk-in on the chrome. Ticket is a bottom sheet; assign is an overlay. The board never leaves.
+**Description:** Every bike as a situation tile (out / staged / prepping / back / home). Walk-in on the chrome. Ticket is a bottom sheet; Assign/Swap hang on each line. The board never leaves.
 
 **Motivation:** Desk staff already think in bids. Pickup and return are “where is that bike.” Occupancy is the job.
 
@@ -20,7 +22,7 @@ A ticket is every `bike_reservation` on the Reservation. Floor / pickup / return
 
 ## B — Ticket queue
 
-**Description:** Today’s reservations as a stack of chits. Full-screen drill-ins for ticket, floor, extend, cancel.
+**Description:** Today’s reservations as a stack of chits. Full-screen drill-ins for ticket, extend, cancel. Assign/Swap on the ticket lines.
 
 **Motivation:** The unit of work is a customer, not a bike. Named walk-ins and “Maya’s ticket.”
 
@@ -50,7 +52,7 @@ A ticket is every `bike_reservation` on the Reservation. Floor / pickup / return
 
 ## E — Split panes
 
-**Description:** Bikes always left, ticket always right. Home bike on the left assigns. No overlay.
+**Description:** Bikes always left, ticket always right. Left tap focuses the occupying ticket. Assign/Swap hang on each line. No overlay.
 
 **Motivation:** Stop choosing between floor and ticket. Landscape counter glass.
 
@@ -88,13 +90,13 @@ A ticket is every `bike_reservation` on the Reservation. Floor / pickup / return
 
 ---
 
-## I — Clock face
+## I — Exceptions
 
-**Description:** Twelve hour marks on a ring; the well is who **starts** in that hour.
+**Description:** Home is only broken tickets: money due, no waiver, unassigned line, wrong-bike, late Out. A clean shop is an empty well.
 
-**Motivation:** Staff already glance at a wall clock. Tap “2” like a watch.
+**Motivation:** Trained staff do not need the whole day painted. They need what will bite them. Opposite of A’s full floor.
 
-**Spirit:** Analog, slightly playful. Warm stone and amber.
+**Spirit:** Incident board / red strip.
 
 ---
 
@@ -108,13 +110,13 @@ A ticket is every `bike_reservation` on the Reservation. Floor / pickup / return
 
 ---
 
-## K — Scrubber freeze-frame
+## K — Covers
 
-**Description:** A row of hour keys. The floor shows who is busy **at that instant**, not “now.” Tap a lit tile to open that ticket.
+**Description:** Each reservation is a dining table; each line is a place setting (bid or empty plate). The room is parties, not a bike wall.
 
-**Motivation:** D shows duration; A shows now. K is time-travel occupancy — “what does 3pm look like” without reading bars.
+**Motivation:** A Reservation is a party of bikes. Empty chairs are unassigned lines. Complements S (one table) by showing the whole dining room.
 
-**Spirit:** VCR / DAW scrubber. Fuchsia freeze-frame.
+**Spirit:** Restaurant floor chart. Warm amber tables.
 
 ---
 
@@ -128,33 +130,33 @@ A ticket is every `bike_reservation` on the Reservation. Floor / pickup / return
 
 ---
 
-## M — Hour filmstrip
+## M — Roles
 
-**Description:** Horizontal reel. Each hour is a column of bid chips (busy gold / free mute). Thumb along the day.
+**Description:** Two columns: COUNTER (pay, waiver, assign, provisional) vs FLOOR (prepping, staged, out, back). A ticket may sit in both.
 
-**Motivation:** Gantt rows don’t fit a phone-width tablet. Filmstrip is G’s idea (bike × hour) turned 90° for one-finger scroll.
+**Motivation:** Two bodies in the shop. The screen is whose job, not where the bike sits (A) or which door (J).
 
-**Spirit:** Contact sheet / cinema. Yellow frames on black.
-
----
-
-## N — Waterfall
-
-**Description:** Tickets sorted by start. Indent is the first free overlap *lane*: a finished ticket frees its column so the next one wraps back left. Not a chain through ended reservations, and not inline wrapping.
-
-**Motivation:** “Are we double-booked on class” should be visible as a staircase, not inferred from bars.
-
-**Spirit:** Engineering Gantt / cascade. Orange, indent as meaning.
+**Spirit:** Front-of-house / back-of-house pass.
 
 ---
 
-## O — Orbits
+## N — Fence rail
 
-**Description:** Three rings — morning / midday / afternoon — with first-name beads. Start-hour as orbit, not a grid.
+**Description:** Saturday morning: bikes already chained along the chain-link in rollout order (left = next off the lot). Shed bikes sit below. Tap a fence bike for the occupying ticket.
 
-**Motivation:** Coarse time (“afternoon pile”) without 11 columns. A middle ground between clock and list.
+**Motivation:** Many shops stage against a fence or wall in leave-the-lot order, not by size and not as a kitchen expo. The map is physical sequence on the pavement.
 
-**Spirit:** Orrery / gravity well. Sky beads on rings.
+**Spirit:** Chain-link Saturday. Zinc posts.
+
+---
+
+## O — Money rail
+
+**Description:** Three drawers: unpaid / deposit / settled. Time and floor are drill-ins.
+
+**Motivation:** Terminal is also the cash drawer. Remainder after Book deposit is a first-class home, not a badge on a ticket.
+
+**Spirit:** Cashier tape. Emerald tills.
 
 ---
 
@@ -168,23 +170,23 @@ A ticket is every `bike_reservation` on the Reservation. Floor / pickup / return
 
 ---
 
-## Q — Load histogram
+## Q — Dutch door
 
-**Description:** Each hour is a tower of how many bikes are busy. Tap a tower, then a bid in that hour.
+**Description:** Bakery half-door. Only **staged** parties fill the window; the rest of the shop is muted behind the door. Pickup is handing through.
 
-**Motivation:** Capacity, not identity. “2pm is full” before “who is Maya.” Complements quoteOccupancy remaining.
+**Motivation:** Morning rush is a will-call window, not a floor board. Staff at the Dutch door only need names that are ready to pass over.
 
-**Spirit:** Mixer meters / EQ. Violet bars.
+**Spirit:** Bakery will-call. Yellow window, dark shop.
 
 ---
 
-## R — Pigeonholes
+## R — Hopper
 
-**Description:** One cubby per start hour; tickets stuffed in like mail. Duration is not drawn.
+**Description:** Giant `back` tiles for put-away; everyone else is a mute strip.
 
-**Motivation:** Starts are appointments. Staff say “the 10 o’clock,” not “the six-hour bar.”
+**Motivation:** Late afternoon is not a booking diary. It is a pile of bikes that must go `home`. Complements J’s IN bay by making put-away the only large target.
 
-**Spirit:** Hotel mail rack. Amber cubbies.
+**Spirit:** Laundry hopper / returns bin. Orange stones.
 
 ---
 
@@ -198,34 +200,27 @@ A ticket is every `bike_reservation` on the Reservation. Floor / pickup / return
 
 ---
 
-## T — Radio tape
+## T — Shuttle truck
 
-**Description:** A scrolling transcript of shop events; verbs are telegraphic (OUT, IN, EXT). Tickets are a chip row.
+**Description:** Trail-shuttle shop. The glass is one truck bed: that party’s bikes strapped as a load. Prev/next is the next reservation on the rack.
 
-**Motivation:** Reality is a sequence of acts, not a map. Training, disputes, “what just happened,” and a future Screen-adjacent log without PII on Screen.
+**Motivation:** Some shops think in van loads, not in a wall of bids. The party is cargo. Complements S (portrait) with a physical rack.
 
-**Spirit:** Syslog / shortwave. Lime on black, monospace.
+**Spirit:** Trailhead shuttle. Sky truck, orange frames.
 
 ---
 
-## Timeline family (steal from these first if D felt right)
+## Families (steal across letters)
 
-| Letter | Time is… |
+| Home is… | Letters |
 |---|---|
-| D | duration bars for parties |
-| G | duration bars per bid |
-| H | now vs behind vs later |
-| I | start hour on a watch |
-| K | freeze-frame occupancy |
-| L | week of days |
-| M | bike × hour film |
-| N | overlap depth |
-| O | coarse start rings |
-| P | class occupancy staves |
-| Q | busy-count per hour |
-| R | start-hour cubbies |
-
-Non-time homes: A floor, B queue, C verbs, E split, F due, J docks, S portraits, T tape.
+| Physical bikes | A floor, G lanes, N fence, R hopper |
+| Customer / party | B queue, K covers, S portraits |
+| Verbs / jobs | C verbs, M roles |
+| Time | D diary, H now, L week, P class staves |
+| Doors / sequence | J docks, Q Dutch door, T shuttle |
+| Money / exceptions | I exceptions, O drawer |
+| Urgency mix | F due |
 
 ---
 

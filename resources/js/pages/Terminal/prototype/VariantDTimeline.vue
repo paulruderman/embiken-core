@@ -4,9 +4,9 @@
  * Always on: when. Bike floor is not the home. Drawer for the tap.
  */
 import { computed, reactive, ref } from 'vue';
+import PrototypePartyLines from './PrototypePartyLines.vue';
 import {
     acceptWaiver,
-    assignBike,
     bikeFor,
     cancelReservation,
     createShop,
@@ -18,14 +18,13 @@ import {
     pickup,
     startWalkIn,
     takeCash,
-    type Bike,
     type Reservation,
 } from './mock';
 
 const hours = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
 const shop = reactive(createShop());
 const focusId = ref<number | null>(null);
-const pane = ref<'ticket' | 'assign' | 'extend'>('ticket');
+const pane = ref<'ticket' | 'extend'>('ticket');
 const toast = ref('');
 
 const focus = computed(() =>
@@ -79,15 +78,6 @@ function doExtend(requote: boolean): void {
     flash(`Now ${reservation.starts}–${reservation.ends}, owed ${money(reservation.owed)}`);
 }
 
-function pickBike(bike: Bike): void {
-    if (!focus.value) {
-        return;
-    }
-
-    assignBike(shop, focus.value, bike.id);
-    pane.value = 'ticket';
-    flash(`Assigned ${bike.bid}`);
-}
 
 function doCancel(reservation: Reservation): void {
     const out = reservation.lines.some(
@@ -167,6 +157,7 @@ function doCancel(reservation: Reservation): void {
                     <div class="text-xl text-amber-300">
                         owed {{ money(focus.owed) }} / paid {{ money(focus.paid) }}
                     </div>
+                    <PrototypePartyLines class="mt-2" :shop="shop" :reservation="focus" />
                 </div>
                 <button type="button" class="h-14 w-14 rounded-2xl bg-slate-800" @click="focusId = null">
                     ✕
@@ -185,21 +176,7 @@ function doCancel(reservation: Reservation): void {
                     Requote
                 </button>
             </div>
-            <div v-else-if="pane === 'assign'" class="grid grid-cols-4 gap-2">
-                <button
-                    v-for="bike in shop.bikes.filter((item) => item.situation === 'home' && item.in_service)"
-                    :key="bike.id"
-                    type="button"
-                    class="h-16 rounded-2xl bg-slate-700 text-xl font-bold"
-                    @click="pickBike(bike)"
-                >
-                    {{ bike.bid }}
-                </button>
-            </div>
             <div v-else class="grid grid-cols-4 gap-2">
-                <button type="button" class="h-16 rounded-2xl bg-slate-800" @click="pane = 'assign'">
-                    Assign
-                </button>
                 <button type="button" class="h-16 rounded-2xl bg-sky-700" @click="pickup(shop, focus)">
                     Pickup
                 </button>

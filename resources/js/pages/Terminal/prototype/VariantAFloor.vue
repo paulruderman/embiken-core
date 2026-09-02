@@ -4,9 +4,10 @@
  * Screen count: 1 home + overlays. Board never leaves.
  */
 import { computed, reactive, ref } from 'vue';
+import PrototypePartyLines from './PrototypePartyLines.vue';
 import {
     acceptWaiver,
-    assignBike,
+    bikeCaption,
     bikeFor,
     extendReservation,
     cancelReservation,
@@ -24,7 +25,6 @@ import {
 
 const shop = reactive(createShop());
 const focusId = ref<number | null>(null);
-const picker = ref(false);
 const extending = ref(false);
 const toast = ref('');
 const copied = ref(false);
@@ -34,10 +34,6 @@ const focus = computed(() =>
 );
 
 const stack = computed(() => {
-    if (picker.value) {
-        return 'floor › ticket › assign';
-    }
-
     if (extending.value) {
         return 'floor › ticket › extend';
     }
@@ -76,7 +72,6 @@ function openBike(bike: Bike): void {
 
     if (reservation) {
         focusId.value = reservation.id;
-        picker.value = false;
         extending.value = false;
         return;
     }
@@ -124,16 +119,6 @@ function doCancel(reservation: Reservation): void {
     cancelReservation(shop, reservation);
     focusId.value = null;
     flash('Cancelled. Occupancy released.');
-}
-
-function pickBike(bike: Bike): void {
-    if (!focus.value || !bike.in_service || bike.situation !== 'home') {
-        return;
-    }
-
-    assignBike(shop, focus.value, bike.id);
-    picker.value = false;
-    flash(`Assigned ${bike.bid}`);
 }
 
 function doExtend(requote: boolean): void {
@@ -192,6 +177,7 @@ function copyLink(reservation: Reservation): void {
                     >
                         <span class="text-2xl font-bold">{{ bike.bid }}</span>
                         <span class="text-xs opacity-80">{{ bike.model }}</span>
+                        <span class="text-xs opacity-80">{{ bikeCaption(shop, bike) }}</span>
                     </button>
                 </div>
             </section>
@@ -217,16 +203,7 @@ function copyLink(reservation: Reservation): void {
                 </button>
             </div>
 
-            <div class="mb-3 flex flex-wrap gap-2 text-sm">
-                <span
-                    v-for="line in focus.lines"
-                    :key="line.id"
-                    class="rounded-full bg-zinc-800 px-3 py-2"
-                >
-                    {{ line.product }}
-                    {{ bikeFor(shop, line.bike_id)?.bid ?? 'unassigned' }}
-                </span>
-            </div>
+            <PrototypePartyLines class="mb-3" :shop="shop" :reservation="focus" />
 
             <div v-if="extending" class="grid grid-cols-1 gap-2">
                 <p class="text-lg">Push ends one hour. Requote also adds $20.</p>
@@ -247,9 +224,6 @@ function copyLink(reservation: Reservation): void {
             </div>
 
             <div v-else class="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                <button type="button" class="h-16 rounded-2xl bg-zinc-800 text-lg" @click="picker = true">
-                    Assign
-                </button>
                 <button type="button" class="h-16 rounded-2xl bg-sky-600 text-lg" @click="doPickup(focus)">
                     Pickup
                 </button>
@@ -275,28 +249,6 @@ function copyLink(reservation: Reservation): void {
                 <button type="button" class="h-16 rounded-2xl bg-rose-900 text-lg" @click="doCancel(focus)">
                     Cancel
                 </button>
-            </div>
-        </div>
-
-        <div v-if="picker && focus" class="fixed inset-0 z-30 bg-black/70 p-4 pt-16">
-            <div class="rounded-3xl bg-zinc-900 p-4">
-                <div class="mb-3 flex items-center justify-between">
-                    <h2 class="text-xl font-semibold">Assign — home bikes</h2>
-                    <button type="button" class="h-14 w-14 rounded-2xl bg-zinc-800" @click="picker = false">
-                        ✕
-                    </button>
-                </div>
-                <div class="grid grid-cols-3 gap-2">
-                    <button
-                        v-for="bike in shop.bikes.filter((item) => item.situation === 'home' && item.in_service)"
-                        :key="bike.id"
-                        type="button"
-                        class="h-20 rounded-2xl bg-zinc-700 text-2xl font-bold"
-                        @click="pickBike(bike)"
-                    >
-                        {{ bike.bid }}
-                    </button>
-                </div>
             </div>
         </div>
     </div>

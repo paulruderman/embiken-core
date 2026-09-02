@@ -4,9 +4,9 @@
  * Timeline as a diary week, not a single afternoon.
  */
 import { computed, reactive, ref } from 'vue';
+import PrototypePartyLines from './PrototypePartyLines.vue';
 import {
     acceptWaiver,
-    assignBike,
     bikeFor,
     cancelReservation,
     createShop,
@@ -18,7 +18,6 @@ import {
     pickup,
     startWalkIn,
     takeCash,
-    type Bike,
     type Reservation,
 } from './mock';
 
@@ -27,7 +26,7 @@ const today = 'Wed';
 const hours = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
 const shop = reactive(createShop());
 const focusId = ref<number | null>(null);
-const pane = ref<'ticket' | 'assign' | 'extend'>('ticket');
+const pane = ref<'ticket' | 'extend'>('ticket');
 const toast = ref('');
 
 const focus = computed(() =>
@@ -70,12 +69,6 @@ function doExtend(requote: boolean): void {
     }
 }
 
-function pickBike(bike: Bike): void {
-    if (focus.value) {
-        assignBike(shop, focus.value, bike.id);
-        pane.value = 'ticket';
-    }
-}
 
 function doCancel(reservation: Reservation): void {
     if (reservation.lines.some((line) => bikeFor(shop, line.bike_id)?.situation === 'rented_out')) {
@@ -145,28 +138,12 @@ function doCancel(reservation: Reservation): void {
             <div class="text-2xl font-bold">{{ focus.customer }}</div>
             <div class="text-3xl">{{ focus.starts }}–{{ focus.ends }}</div>
             <div class="mb-2 text-xl text-amber-300">owed {{ money(focus.owed) }} / paid {{ money(focus.paid) }}</div>
-            <div class="mb-2 flex flex-wrap gap-1">
-                <span v-for="line in focus.lines" :key="line.id" class="rounded-full bg-emerald-900 px-3 py-1">
-                    {{ line.product }} {{ bikeFor(shop, line.bike_id)?.bid ?? '—' }}
-                </span>
-            </div>
+            <PrototypePartyLines class="mb-2" :shop="shop" :reservation="focus" />
             <div v-if="pane === 'extend'" class="grid grid-cols-2 gap-2">
                 <button type="button" class="h-14 rounded-xl bg-emerald-800" @click="doExtend(false)">Keep owed</button>
                 <button type="button" class="h-14 rounded-xl bg-amber-400 text-emerald-950" @click="doExtend(true)">Requote</button>
             </div>
-            <div v-else-if="pane === 'assign'" class="flex flex-wrap gap-2">
-                <button
-                    v-for="bike in shop.bikes.filter((item) => item.situation === 'home' && item.in_service)"
-                    :key="bike.id"
-                    type="button"
-                    class="h-14 w-14 rounded-xl bg-emerald-800 font-bold"
-                    @click="pickBike(bike)"
-                >
-                    {{ bike.bid }}
-                </button>
-            </div>
             <div v-else class="grid grid-cols-4 gap-2">
-                <button type="button" class="h-14 rounded-xl bg-emerald-800" @click="pane = 'assign'">Assign</button>
                 <button type="button" class="h-14 rounded-xl bg-sky-700" @click="pickup(shop, focus)">Pickup</button>
                 <button type="button" class="h-14 rounded-xl bg-orange-500 text-emerald-950" @click="markReturned(shop, focus, 'back')">Return</button>
                 <button type="button" class="h-14 rounded-xl bg-emerald-800" @click="pane = 'extend'">Extend</button>

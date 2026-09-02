@@ -1,12 +1,12 @@
 <script setup lang="ts">
 /**
- * PROTOTYPE Variant B — Ticket queue is home. Full-screen stack (queue → ticket → floor).
- * Board is a drill-in, not always on. More screens, reservation-first.
+ * PROTOTYPE Variant B — Ticket queue is home. Full-screen stack (queue → ticket).
+ * Floor is not a screen; Assign/Swap are on the ticket lines.
  */
 import { computed, reactive, ref } from 'vue';
+import PrototypePartyLines from './PrototypePartyLines.vue';
 import {
     acceptWaiver,
-    assignBike,
     bikeFor,
     cancelReservation,
     createShop,
@@ -17,11 +17,10 @@ import {
     pickup,
     startWalkIn,
     takeCash,
-    type Bike,
     type Reservation,
 } from './mock';
 
-type Screen = 'queue' | 'ticket' | 'floor' | 'extend' | 'cancel';
+type Screen = 'queue' | 'ticket' | 'extend' | 'cancel';
 
 const shop = reactive(createShop());
 const screen = ref<Screen>('queue');
@@ -112,15 +111,6 @@ function confirmCancel(reservation: Reservation): void {
     focusId.value = null;
 }
 
-function pickBike(bike: Bike): void {
-    if (!focus.value) {
-        return;
-    }
-
-    assignBike(shop, focus.value, bike.id);
-    screen.value = 'ticket';
-    flash(`Assigned ${bike.bid}`);
-}
 
 function dueBadge(reservation: Reservation): string {
     if (reservation.owed !== reservation.paid) {
@@ -195,14 +185,9 @@ function dueBadge(reservation: Reservation): string {
             <p class="text-3xl font-semibold text-red-700">
                 owed {{ money(focus.owed) }} / paid {{ money(focus.paid) }}
             </p>
-            <p class="text-lg">
-                {{ focus.stage }} ·
-                {{ focus.lines.map((line) => bikeFor(shop, line.bike_id)?.bid ?? 'unassigned').join(', ') }}
-            </p>
+            <p class="text-lg">{{ focus.stage }}</p>
+            <PrototypePartyLines :shop="shop" :reservation="focus" />
             <div class="mt-auto grid grid-cols-2 gap-3">
-                <button type="button" class="h-24 rounded-2xl bg-stone-800 text-2xl text-white" @click="screen = 'floor'">
-                    Assign / swap
-                </button>
                 <button type="button" class="h-24 rounded-2xl bg-sky-700 text-2xl text-white" @click="doPickup(focus)">
                     Pickup
                 </button>
@@ -223,28 +208,6 @@ function dueBadge(reservation: Reservation): string {
                 </button>
                 <button type="button" class="h-24 rounded-2xl bg-red-800 text-2xl text-white" @click="screen = 'cancel'">
                     Cancel
-                </button>
-            </div>
-        </main>
-
-        <main v-else-if="screen === 'floor'" class="flex-1 p-4">
-            <p class="mb-3 text-lg">Home bikes — tap to assign</p>
-            <div class="grid grid-cols-3 gap-3">
-                <button
-                    v-for="bike in shop.bikes"
-                    :key="bike.id"
-                    type="button"
-                    class="h-24 rounded-2xl text-2xl font-bold"
-                    :class="
-                        bike.situation === 'home' && bike.in_service
-                            ? 'bg-stone-800 text-white'
-                            : 'bg-stone-400 text-stone-600'
-                    "
-                    :disabled="!(bike.situation === 'home' && bike.in_service)"
-                    @click="pickBike(bike)"
-                >
-                    {{ bike.bid }}
-                    <span class="block text-xs font-normal">{{ bike.situation }}</span>
                 </button>
             </div>
         </main>

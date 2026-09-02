@@ -160,6 +160,96 @@ export function situationLabel(situation: Situation): string {
     return situation.replace('_', ' ');
 }
 
+export function bikeProduct(bike: Bike): string {
+    return `${bike.model} ${bike.variant}`;
+}
+
+export function bikeCaption(shop: Shop, bike: Bike): string {
+    const occupying = reservationForBike(shop, bike.id);
+    const situation = situationLabel(bike.situation);
+
+    if (occupying) {
+        return `${situation} · ${occupying.customer}`;
+    }
+
+    if (bike.situation === 'home') {
+        return situation;
+    }
+
+    return `${situation} · no ticket`;
+}
+
+export type PartyLine = {
+    line: Line;
+    bike: Bike | undefined;
+    occupying: Reservation | undefined;
+    onThisTicket: boolean;
+};
+
+export function partyLines(shop: Shop, reservation: Reservation): PartyLine[] {
+    return reservation.lines.map((line) => {
+        const bike = bikeFor(shop, line.bike_id);
+        const occupying = line.bike_id ? reservationForBike(shop, line.bike_id) : undefined;
+
+        return {
+            line,
+            bike,
+            occupying,
+            onThisTicket: occupying?.id === reservation.id,
+        };
+    });
+}
+
+export function moneyLane(reservation: Reservation): 'unpaid' | 'partial' | 'settled' {
+    if (reservation.paid <= 0) {
+        return 'unpaid';
+    }
+
+    if (reservation.paid < reservation.owed) {
+        return 'partial';
+    }
+
+    return 'settled';
+}
+
+export function sizeKey(line: Line): string {
+    const parts = line.product.split(' ');
+
+    return parts[parts.length - 1] ?? '—';
+}
+
+export function exceptionFlags(shop: Shop, reservation: Reservation): string[] {
+    const flags: string[] = [];
+
+    if (reservation.owed !== reservation.paid) {
+        flags.push('money');
+    }
+
+    if (!reservation.waiver) {
+        flags.push('waiver');
+    }
+
+    if (reservation.lines.some((line) => line.bike_id === null)) {
+        flags.push('unassigned');
+    }
+
+    if (partyLines(shop, reservation).some((row) => row.bike && !row.onThisTicket)) {
+        flags.push('wrong bike');
+    }
+
+    const lateOut = reservation.lines.some((line) => {
+        const bike = bikeFor(shop, line.bike_id);
+
+        return bike?.situation === 'rented_out' && hourOf(reservation.ends) <= 12;
+    });
+
+    if (lateOut) {
+        flags.push('late');
+    }
+
+    return flags;
+}
+
 export function setSituation(shop: Shop, bikeId: number, situation: Situation): void {
     const bike = bikeFor(shop, bikeId);
 
@@ -210,19 +300,62 @@ export function cancelReservation(shop: Shop, reservation: Reservation): void {
     }
 }
 
-export function assignBike(shop: Shop, reservation: Reservation, bikeId: number): void {
-    const line = reservation.lines[0];
+export function assignBike(shop: Shop, reservation: Reservation, bikeId: number, lineId?: number): void {
+    const line =
+        reservation.lines.find((item) => item.id === lineId) ??
+        reservation.lines.find((item) => item.bike_id === null) ??
+        reservation.lines[0];
 
     if (!line) {
         return;
     }
 
-    if (line.bike_id) {
+    if (line.bike_id && line.bike_id !== bikeId) {
         setSituation(shop, line.bike_id, 'home');
     }
 
     line.bike_id = bikeId;
     setSituation(shop, bikeId, 'prepping');
+}
+
+export function swapAsset(shop: Shop, reservation: Reservation, lineId: number, bikeId: number): void {
+    assignBike(shop, reservation, bikeId, lineId);
+}
+
+function rankForLine(line: Line, bike: Bike): number {
+    const label = `${bike.model} ${bike.variant}`;
+
+    if (line.product === label) {
+        return 0;
+    }
+
+    if (line.product.startsWith(bike.model)) {
+        return 1;
+    }
+
+    return 2;
+}
+
+export function candidateBikes(shop: Shop, reservation: Reservation, line: Line, mode: 'assign' | 'swap'): Bike[] {
+    const taken = new Set(
+        reservation.lines
+            .filter((item) => item.id !== line.id && item.bike_id !== null)
+            .map((item) => item.bike_id as number),
+    );
+
+    return shop.bikes
+        .filter((bike) => {
+            if (!bike.in_service || taken.has(bike.id)) {
+                return false;
+            }
+
+            if (mode === 'assign') {
+                return bike.situation === 'home';
+            }
+
+            return bike.id !== line.bike_id;
+        })
+        .sort((left, right) => rankForLine(line, left) - rankForLine(line, right) || left.bid.localeCompare(right.bid));
 }
 
 export function hourOf(stamp: string): number {

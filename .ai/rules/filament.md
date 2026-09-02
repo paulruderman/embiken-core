@@ -58,3 +58,6 @@ Shop Filament v1 does not include a Devices resource or pairing codes. CFD paire
 
 ## Platform Users, Suspend, delete, Platform Manager
 Platform Filament: User resource (invite set-password, disable not delete, one admin class; first User is Artisan/seeder). Tenant: Domain rows after create, Express status and retry Account Link, Suspend/unsuspend (padlocks Book, Terminal, /manage for Staff), Tenant delete only while suspended without dropping the DB (no restore). Tenant create also inserts a Platform Manager Staff row (locked label Platform; shop cannot edit/disable/delete). Impersonation starts from Platform Filament, lands on the tenant host as that Platform Manager, Exit back to the apex. Do not HasTenants. Do not impersonate a real Manager. Shop Filament still never checkout/pickup/return.
+
+## Filament Reservation editor is per-line occupancy
+Manager Reservation editor lists every line with bid, situation, and occupying Reservation. Flag a bike whose occupying Reservation is not the record being edited. Do not show a party as one bike.

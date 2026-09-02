@@ -4,9 +4,10 @@
  * No overlay, no full-screen stack. Both panes stay. Empty right until a tap.
  */
 import { computed, reactive, ref } from 'vue';
+import PrototypePartyLines from './PrototypePartyLines.vue';
 import {
     acceptWaiver,
-    assignBike,
+    bikeCaption,
     bikeFor,
     cancelReservation,
     createShop,
@@ -37,11 +38,6 @@ function flash(message: string): void {
 }
 
 function openBike(bike: Bike): void {
-    if (focus.value && bike.situation === 'home' && bike.in_service) {
-        pickBike(bike);
-        return;
-    }
-
     const reservation = reservationForBike(shop, bike.id);
 
     if (reservation) {
@@ -72,15 +68,6 @@ function doExtend(requote: boolean): void {
 
     mode.value = 'actions';
     flash(`Now ${reservation.starts}–${reservation.ends}, owed ${money(reservation.owed)}`);
-}
-
-function pickBike(bike: Bike): void {
-    if (!focus.value || bike.situation !== 'home' || !bike.in_service) {
-        return;
-    }
-
-    assignBike(shop, focus.value, bike.id);
-    flash(`Assigned ${bike.bid}`);
 }
 
 function doCancel(reservation: Reservation): void {
@@ -129,7 +116,7 @@ function tileClass(bike: Bike): string {
                     @click="openBike(bike)"
                 >
                     <span class="text-2xl font-bold">{{ bike.bid }}</span>
-                    <span class="text-xs">{{ bike.situation }}</span>
+                    <span class="text-xs">{{ bikeCaption(shop, bike) }}</span>
                 </button>
             </div>
         </section>
@@ -155,15 +142,8 @@ function tileClass(bike: Bike): string {
                 <p class="text-2xl font-semibold text-red-700">
                     owed {{ money(focus.owed) }} / paid {{ money(focus.paid) }}
                 </p>
-                <p class="mb-4 text-neutral-500">
-                    {{ focus.stage }} ·
-                    {{
-                        focus.lines
-                            .map((line) => bikeFor(shop, line.bike_id)?.bid ?? 'unassigned')
-                            .join(', ')
-                    }}
-                </p>
-
+                <p class="mb-2 text-neutral-500">{{ focus.stage }}</p>
+                <PrototypePartyLines class="mb-4" :shop="shop" :reservation="focus" />
                 <div v-if="mode === 'extend'" class="mt-auto grid grid-cols-2 gap-3">
                     <button
                         type="button"
@@ -181,13 +161,6 @@ function tileClass(bike: Bike): string {
                     </button>
                 </div>
                 <div v-else class="mt-auto grid grid-cols-2 gap-3">
-                    <button
-                        type="button"
-                        class="h-16 rounded-2xl bg-neutral-800 text-lg text-white"
-                        @click="flash('Tap a home bike on the left')"
-                    >
-                        Assign (left)
-                    </button>
                     <button
                         type="button"
                         class="h-16 rounded-2xl bg-sky-700 text-lg text-white"

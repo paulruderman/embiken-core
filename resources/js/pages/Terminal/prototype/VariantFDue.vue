@@ -4,9 +4,10 @@
  * Floor is a drill-in tab. Walk-in is a full-height first row.
  */
 import { computed, reactive, ref } from 'vue';
+import PrototypePartyLines from './PrototypePartyLines.vue';
 import {
     acceptWaiver,
-    assignBike,
+    bikeCaption,
     bikeFor,
     cancelReservation,
     createShop,
@@ -15,9 +16,9 @@ import {
     money,
     openReservations,
     pickup,
+    reservationForBike,
     startWalkIn,
     takeCash,
-    type Bike,
     type Reservation,
 } from './mock';
 
@@ -100,16 +101,6 @@ function doExtend(requote: boolean): void {
     flash(`Now ${reservation.starts}–${reservation.ends}, owed ${money(reservation.owed)}`);
 }
 
-function pickBike(bike: Bike): void {
-    if (!focus.value || bike.situation !== 'home' || !bike.in_service) {
-        return;
-    }
-
-    assignBike(shop, focus.value, bike.id);
-    home.value = 'due';
-    flash(`Assigned ${bike.bid}`);
-}
-
 function doCancel(reservation: Reservation): void {
     const outLine = reservation.lines.some(
         (line) => bikeFor(shop, line.bike_id)?.situation === 'rented_out',
@@ -148,17 +139,16 @@ function doCancel(reservation: Reservation): void {
         </header>
         <div class="px-3 text-sm text-amber-200">{{ toast }}</div>
 
-        <main v-if="home === 'floor'" class="grid grid-cols-3 gap-2 p-3">
-            <p class="col-span-3 text-sm text-yellow-600">Home bikes assign to the open ticket.</p>
+        <main v-if="home === 'floor'" class="grid grid-cols-3 gap-2 overflow-auto p-3">
             <button
                 v-for="bike in shop.bikes"
                 :key="bike.id"
                 type="button"
-                class="h-20 rounded-2xl border border-yellow-800 text-2xl font-bold"
-                @click="pickBike(bike)"
+                class="h-20 rounded-2xl border border-yellow-800 p-2 text-left text-2xl font-bold"
+                @click="reservationForBike(shop, bike.id) ? openTicket(reservationForBike(shop, bike.id)!) : flash(bikeCaption(shop, bike))"
             >
                 {{ bike.bid }}
-                <span class="block text-xs font-normal">{{ bike.situation }}</span>
+                <span class="block text-xs font-normal">{{ bikeCaption(shop, bike) }}</span>
             </button>
         </main>
 
@@ -211,6 +201,7 @@ function doCancel(reservation: Reservation): void {
                 <div class="text-2xl font-bold text-yellow-100">{{ focus.customer }}</div>
                 <div class="text-3xl font-bold">{{ focus.starts }}–{{ focus.ends }}</div>
                 <div class="mb-3 text-xl">owed {{ money(focus.owed) }} / paid {{ money(focus.paid) }}</div>
+                <PrototypePartyLines class="mb-3" :shop="shop" :reservation="focus" />
                 <div v-if="pane === 'extend'" class="grid grid-cols-2 gap-2">
                     <button type="button" class="h-16 border-2 border-yellow-300 text-lg" @click="doExtend(false)">
                         Keep owed
@@ -224,9 +215,6 @@ function doCancel(reservation: Reservation): void {
                     </button>
                 </div>
                 <div v-else class="grid grid-cols-4 gap-2">
-                    <button type="button" class="h-14 border border-yellow-800" @click="home = 'floor'">
-                        Assign
-                    </button>
                     <button type="button" class="h-14 border border-yellow-800" @click="pickup(shop, focus)">
                         Pickup
                     </button>

@@ -55,3 +55,6 @@ Book is four screens: Interval, Offer (package picker only if more than one Book
 
 ## Reservation UI is N lines, never one bike
 Book, MyRental, Terminal, CFD, and Screen treat a Reservation as a party: one Customer, one interval, N unit lines (no qty). Offer/checkout/ticket/floor/receipt must list every line. Pickup, return, assign, and swap are per line; subset of lines is normal. Do not put a single bike_id or remaining count on the reservation as if it were one bike. Extra people are extra lines, not extra Customers or a Rider model.
+
+## Reservation views list every line with situation
+A Reservation view lists every bike_reservation line: product, bid or unassigned, Bike situation, occupying Reservation. Scroll when the party does not fit. Do not collapse to a bid string or qty. If a bike is shown on a ticket, flag when its occupying Reservation is not that ticket.

@@ -4,9 +4,10 @@
  * Timeline they liked, fused with occupancy. Hotel rack / resource schedule.
  */
 import { computed, reactive, ref } from 'vue';
+import PrototypePartyLines from './PrototypePartyLines.vue';
 import {
     acceptWaiver,
-    assignBike,
+    bikeCaption,
     bikeFor,
     cancelReservation,
     createShop,
@@ -25,7 +26,7 @@ import {
 const hours = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
 const shop = reactive(createShop());
 const focusId = ref<number | null>(null);
-const pane = ref<'ticket' | 'assign' | 'extend'>('ticket');
+const pane = ref<'ticket' | 'extend'>('ticket');
 const toast = ref('');
 
 const focus = computed(() =>
@@ -84,14 +85,6 @@ function doExtend(requote: boolean): void {
     flash(`Now ${reservation.starts}–${reservation.ends}, owed ${money(reservation.owed)}`);
 }
 
-function pickBike(bike: Bike): void {
-    if (!focus.value) {
-        return;
-    }
-
-    assignBike(shop, focus.value, bike.id);
-    pane.value = 'ticket';
-}
 
 function doCancel(reservation: Reservation): void {
     if (reservation.lines.some((line) => bikeFor(shop, line.bike_id)?.situation === 'rented_out')) {
@@ -129,10 +122,13 @@ function doCancel(reservation: Reservation): void {
             <div v-for="bike in shop.bikes" :key="bike.id" class="mb-1 flex items-stretch gap-1">
                 <button
                     type="button"
-                    class="h-12 w-14 shrink-0 rounded-lg bg-indigo-900 text-lg font-bold"
+                    class="flex h-14 w-16 shrink-0 flex-col items-center justify-center rounded-lg bg-indigo-900 text-sm font-bold"
                     @click="tapLane(bike)"
                 >
-                    {{ bike.bid }}
+                    <span>{{ bike.bid }}</span>
+                    <span class="w-full truncate px-0.5 text-[9px] font-normal opacity-80">{{
+                        bikeCaption(shop, bike)
+                    }}</span>
                 </button>
                 <div
                     class="relative grid h-12 flex-1 rounded-lg bg-indigo-900/60"
@@ -159,6 +155,7 @@ function doCancel(reservation: Reservation): void {
             <div class="mb-3 text-xl text-amber-300">
                 owed {{ money(focus.owed) }} / paid {{ money(focus.paid) }}
             </div>
+            <PrototypePartyLines class="mb-3" :shop="shop" :reservation="focus" />
             <div v-if="pane === 'extend'" class="grid grid-cols-2 gap-2">
                 <button type="button" class="h-16 rounded-2xl bg-indigo-800" @click="doExtend(false)">
                     Keep owed
@@ -167,19 +164,7 @@ function doCancel(reservation: Reservation): void {
                     Requote
                 </button>
             </div>
-            <div v-else-if="pane === 'assign'" class="flex flex-wrap gap-2">
-                <button
-                    v-for="bike in shop.bikes.filter((item) => item.situation === 'home' && item.in_service)"
-                    :key="bike.id"
-                    type="button"
-                    class="h-14 w-14 rounded-xl bg-indigo-800 text-lg font-bold"
-                    @click="pickBike(bike)"
-                >
-                    {{ bike.bid }}
-                </button>
-            </div>
             <div v-else class="grid grid-cols-4 gap-2">
-                <button type="button" class="h-14 rounded-xl bg-indigo-800" @click="pane = 'assign'">Assign</button>
                 <button type="button" class="h-14 rounded-xl bg-sky-700" @click="pickup(shop, focus)">Pickup</button>
                 <button type="button" class="h-14 rounded-xl bg-orange-500 text-indigo-950" @click="markReturned(shop, focus, 'back')">
                     Return

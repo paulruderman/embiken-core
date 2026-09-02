@@ -16,3 +16,12 @@ Terminal is a Staff session: password Staff, or User impersonation as the Platfo
 
 ## Terminal ticket and floor are multi-line
 A Terminal ticket is every bike_reservation on the Reservation. Floor, pickup, return, assign, and swap target a line, not the header. Do not design walk-in or focus as a single-bike POS. Partial pickup/return is the default party flow.
+
+## Bike situation names its Reservation
+Non-home Bike situation always names the occupying Reservation (customer). Floor, lanes, and due lists are not situation-only. Same mismatch flag when the bike on a ticket belongs to a different Reservation.
+
+## Assign and Swap hang on the line row
+Assign and Swap are per bike_reservation line and live on that row in the ticket line list. Do not add a header Assign or a second list of slots. Candidates open under the row that started the pick. Pickup and Return may stay header-level until a later map.
+
+## Assign candidates show model and variant
+Assign and Swap candidate chips always show bid plus BikeModel and BikeModelVariant (size/class), not bid and situation alone. Do not truncate the catalog line off the chip.

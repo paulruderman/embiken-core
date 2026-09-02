@@ -85,3 +85,9 @@ User is central, one admin class, disable not delete. Staff is tenant. Tenant cr
 
 ## Party is N bike_reservation rows, not qty
 A Reservation has many lines. Quantity is extra rows, never a qty column. Do not add a Rider model or extra Customers for people in the party. Do not put product_id or bike_id on the Reservation header as the occupancy unit.
+
+## Service tickets occupy separately from in_service
+A bike is unavailable when in_service is false or when a service request has blocks_usage and ServiceStage::occupiesWhenBlocking() (not resolved or cancelled). Staff may set in_service at any time. Opening or resolving a ticket must not write in_service. ServiceStage::Blocked is work-cannot-proceed, not occupancy. Optional starts_at/ends_at on the ticket is the occupancy window (null = while the ticket occupies). Staff FKs, never User. No checklists or maintenance_schedules in shop-operable.
+
+## Optional rider nickname and height on the line
+bike_reservation may store optional rider_name (Terminal nickname for large parties) and rider_height_cm. These are not a Rider model or a Customer. Variant stores min/max ideal and extended rider height in cm. Screen must not render rider_name.

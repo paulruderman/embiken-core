@@ -63,8 +63,8 @@ One rental ticket: one Customer, one interval, one optional RentalPackage, and o
 _Avoid_: Booking, order, cart (Provisional is a stage), a one-bike header
 
 **Line**:
-One `bike_reservation` row: one variant (class or assigned Bike) on that Reservation. Quantity is N rows.
-_Avoid_: rider, qty, item, a product_id on the Reservation header
+One `bike_reservation` row: one variant (class or assigned Bike) on that Reservation. Quantity is N rows. Optional Terminal nickname (`rider_name`) and `rider_height_cm` describe the person on that line, not a Customer.
+_Avoid_: Rider model, qty, item, a product_id on the Reservation header
 
 ## Occupancy
 
@@ -75,3 +75,12 @@ _Avoid_: Allocation, inventory, ledger, available-scope
 **Occupancy**:
 A hold on a Line for a Reservation interval (`[starts_at, ends_at]` inclusive) plus the turnaround buffer after `ends_at`.
 _Avoid_: ledger, allocation pool
+
+**Service request**:
+A shop ticket on one Bike. A non-resolved, non-cancelled ticket with `blocks_usage` occupies that bike. Parking the bike (`in_service` false) is a separate Staff flag.
+_Avoid_: Down situation, service block row, maintenance schedule (not in this family)
+
+**ServiceStage**:
+The work state of a service request: open, in progress, blocked, resolved, or cancelled. Blocked means work cannot proceed, not that the bike is occupied.
+_Avoid_: Workflow, mixing stage with `blocks_usage`
+

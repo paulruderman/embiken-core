@@ -61,3 +61,9 @@ Platform Filament: User resource (invite set-password, disable not delete, one a
 
 ## Filament Reservation editor is per-line occupancy
 Manager Reservation editor lists every line with bid, situation, and occupying Reservation. Flag a bike whose occupying Reservation is not the record being edited. Do not show a party as one bike.
+
+## Two Filament panels by host and path
+Platform panel id is platform at /platform on central domains (web User). Shop panel id is shop at /manage on the tenant host (staff guard, Manager only via canAccessPanel). Do not use HasTenants. Initialize shop tenancy with stancl domain middleware, not Filament tenancy.
+
+## Shop Filament Location and Reservation write rules
+Shop Location resource cannot create or delete (v1 is one Location). Reservation create/delete are off; interval, stage, owed, lines, cancel, and refund are Filament buttons that invoke domain Actions. Pickup, return, put-away, Connect, and cash stay off Filament.

@@ -2,8 +2,16 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::redirect('/', '/book')->name('home');
-Route::inertia('/book', 'Book/Index')->name('book');
+$centralDomains = config('tenancy.central_domains');
 
-// PROTOTYPE: Terminal POS screen map — throwaway, not production.
+Route::domain($centralDomains[0] ?? 'localhost')->group(function (): void {
+    Route::redirect('/', '/platform')->name('platform.home');
+});
+
+foreach (array_slice($centralDomains, 1) as $domain) {
+    Route::domain($domain)->group(function (): void {
+        Route::redirect('/', '/platform');
+    });
+}
+
 Route::inertia('/prototype/terminal', 'Terminal/prototype/Index')->name('prototype.terminal');

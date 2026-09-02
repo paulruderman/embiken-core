@@ -11,6 +11,7 @@ use App\Models\Reservation;
 use App\Models\Staff;
 use App\Models\Tenant;
 use App\Models\User;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
@@ -19,9 +20,13 @@ function seedFakeTenantAndCleanup(string $domain): Tenant
     return app(SeedFakeTenantAction::class)($domain);
 }
 
-function deleteTenantSqlite(Tenant $tenant): void
+function deleteTenantSqlite(?Tenant $tenant): void
 {
     tenancy()->end();
+
+    if ($tenant === null) {
+        return;
+    }
 
     $path = database_path($tenant->database()->getName());
 
@@ -29,6 +34,24 @@ function deleteTenantSqlite(Tenant $tenant): void
         unlink($path);
     }
 }
+
+test('the fake tenant seeder is registered as an artisan command', function () {
+    expect(Artisan::all())->toHaveKey('db:seed-fake-tenant');
+});
+
+test('the fake tenant artisan command exits successfully', function () {
+    $this->artisan('db:seed-fake-tenant', ['--domain' => 'harbor-exit.test'])
+        ->expectsOutputToContain('Fake tenant')
+        ->assertSuccessful();
+
+    $tenant = Tenant::query()
+        ->whereHas('domains', fn ($query) => $query->where('domain', 'harbor-exit.test'))
+        ->first();
+
+    expect($tenant)->not->toBeNull();
+
+    deleteTenantSqlite($tenant);
+});
 
 test('seeding a fake tenant creates a shop the platform user and staff can use', function () {
     $tenant = seedFakeTenantAndCleanup('harbor-demo.test');

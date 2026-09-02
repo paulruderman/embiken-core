@@ -11,6 +11,10 @@ abstract class Action
 {
     use AsAction;
 
+    public const SUCCESS = Command::SUCCESS;
+
+    public const FAILURE = Command::FAILURE;
+
     protected function resolveTenant(string $tenant): Tenant
     {
         return Tenant::query()

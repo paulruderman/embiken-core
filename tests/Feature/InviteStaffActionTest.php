@@ -21,7 +21,8 @@ test('inviting staff stores a password reset token on the tenant database', func
 
     try {
         $tenant->run(function (): void {
-            expect(Schema::hasTable('password_reset_tokens'))->toBeTrue();
+            expect(Schema::hasTable('password_reset_tokens'))->toBeTrue()
+                ->and(Schema::hasTable('sessions'))->toBeTrue();
 
             $location = Location::factory()->create();
 

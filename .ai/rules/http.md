@@ -43,3 +43,9 @@ User impersonation redirects to the tenant host as the Platform Manager (Staff s
 
 ## If Express cannot charge, only $0/none Book packages
 If Express cannot charge, hide Book pay and offer only packages whose confirm threshold is $0/none. If none of those exist, Book shows online checkout isn’t available — not not-configured, not Suspended. Do not let the customer build a cart they cannot confirm.
+
+## Tenant hosts initialize tenancy on the web stack
+Livewire update/upload routes only use the web group, not shop Filament panel middleware. Append InitializeTenancyByDomainIfTenantHost to web and prepend it in middleware priority so tenant hosts (demo.localhost) switch to the shop DB before StartSession and staff login. Skip when the host is in tenancy.central_domains so Platform Filament on the apex stays central. Do not put PreventAccessFromCentralDomains on those Livewire routes.
+
+## Terminal prototype skips Inertia SSR
+Keep /prototype/terminal in HandleInertiaRequests $withoutSsr. That page hydrates Pinia and subscribes to Echo; SSR of useEcho opens Pusher during setup and the client remounts in a /broadcasting/auth loop. Book and other guest pages may still SSR.

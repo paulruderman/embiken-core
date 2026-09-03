@@ -3,24 +3,19 @@
  * PROTOTYPE Variant S — Portrait cards. One ticket fills the glass; prev/next, not a board.
  * Not a timeline. Customer as a playing card.
  */
-import { computed, reactive, ref } from 'vue';
+import { computed, ref } from 'vue';
+import { useTerminalDesk } from '@/composables/useTerminalDesk';
 import PrototypePartyLines from './PrototypePartyLines.vue';
 import {
-    acceptWaiver,
+    useShopFloor,
     bikeFor,
-    cancelReservation,
-    createShop,
-    extendReservation,
-    markReturned,
     money,
     openReservations,
-    pickup,
-    startWalkIn,
-    takeCash,
     type Reservation,
 } from './mock';
 
-const shop = reactive(createShop());
+const shop = useShopFloor();
+const desk = useTerminalDesk();
 const index = ref(0);
 const pane = ref<'ticket' | 'extend'>('ticket');
 const toast = ref('');
@@ -38,8 +33,13 @@ function next(): void {
 }
 
 function walkIn(): void {
-    startWalkIn(shop);
-    index.value = 0;
+    desk.startWalkIn((id) => {
+        const idx = tickets.value.findIndex((ticket) => ticket.id === id);
+
+        if (idx >= 0) {
+            index.value = idx;
+        }
+    });
 }
 
 function doExtend(requote: boolean): void {
@@ -47,7 +47,13 @@ function doExtend(requote: boolean): void {
         return;
     }
 
-    const reservation = extendReservation(shop, focus.value.id, requote);
+    const reservation = focus.value;
+
+    if (!reservation) {
+        return;
+    }
+
+    desk.extendReservation(reservation, requote);
 
     if (reservation) {
         pane.value = 'ticket';
@@ -62,7 +68,7 @@ function doCancel(reservation: Reservation): void {
         return;
     }
 
-    cancelReservation(shop, reservation);
+    desk.cancelReservation(reservation);
     index.value = 0;
 }
 </script>
@@ -94,11 +100,11 @@ function doCancel(reservation: Reservation): void {
                 <button type="button" class="h-16 rounded-2xl bg-amber-400 text-neutral-950" @click="doExtend(true)">Requote</button>
             </div>
             <div v-else class="grid grid-cols-4 gap-2">
-                <button type="button" class="h-16 rounded-2xl bg-sky-700" @click="pickup(shop, focus)">Pickup</button>
-                <button type="button" class="h-16 rounded-2xl bg-orange-500 text-neutral-950" @click="markReturned(shop, focus, 'back')">Return</button>
+                <button type="button" class="h-16 rounded-2xl bg-sky-700" @click="desk.pickup(focus)">Pickup</button>
+                <button type="button" class="h-16 rounded-2xl bg-orange-500 text-neutral-950" @click="desk.markReturned(focus)">Return</button>
                 <button type="button" class="h-16 rounded-2xl bg-neutral-800" @click="pane = 'extend'">Extend</button>
-                <button type="button" class="h-16 rounded-2xl bg-emerald-700" @click="takeCash(shop, focus)">Cash</button>
-                <button type="button" class="h-16 rounded-2xl bg-neutral-800" @click="acceptWaiver(focus)">Waiver</button>
+                <button type="button" class="h-16 rounded-2xl bg-emerald-700" @click="desk.takeCash(focus)">Cash</button>
+                <button type="button" class="h-16 rounded-2xl bg-neutral-800" @click="desk.acceptWaiver(focus)">Waiver</button>
                 <button type="button" class="h-16 rounded-2xl bg-neutral-800" @click="toast = focus.myrental">URL</button>
                 <button type="button" class="h-16 rounded-2xl bg-rose-900" @click="doCancel(focus)">Cancel</button>
             </div>

@@ -3,14 +3,13 @@
  * PROTOTYPE — party lines with Assign/Swap on the row. Slot is the row, not a second list.
  */
 import { ref } from 'vue';
+import { useTerminalDesk } from '@/composables/useTerminalDesk';
 import {
-    assignBike,
     bikeCaption,
     bikeProduct,
     candidateBikes,
     partyLines,
     situationLabel,
-    swapAsset,
     type Line,
     type Reservation,
     type Shop,
@@ -21,6 +20,7 @@ const props = defineProps<{
     reservation: Reservation;
 }>();
 
+const desk = useTerminalDesk();
 const picking = ref<{ line: Line; mode: 'assign' | 'swap' } | null>(null);
 
 function begin(line: Line, mode: 'assign' | 'swap'): void {
@@ -35,9 +35,9 @@ function choose(bikeId: number): void {
     }
 
     if (current.mode === 'assign') {
-        assignBike(props.shop, props.reservation, bikeId, current.line.id);
+        desk.assignBike(current.line, bikeId);
     } else {
-        swapAsset(props.shop, props.reservation, current.line.id, bikeId);
+        desk.swapAsset(current.line, bikeId);
     }
 
     picking.value = null;

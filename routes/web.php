@@ -13,5 +13,3 @@ foreach (array_slice($centralDomains, 1) as $domain) {
         Route::redirect('/', '/platform');
     });
 }
-
-Route::inertia('/prototype/terminal', 'Terminal/prototype/Index')->name('prototype.terminal');

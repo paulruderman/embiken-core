@@ -3,28 +3,23 @@
  * PROTOTYPE Variant F — Due well. Home is urgency (late / out / next / back), not the floor.
  * Floor is a drill-in tab. Walk-in is a full-height first row.
  */
-import { computed, reactive, ref } from 'vue';
+import { computed, ref } from 'vue';
+import { useTerminalDesk } from '@/composables/useTerminalDesk';
 import PrototypePartyLines from './PrototypePartyLines.vue';
 import {
-    acceptWaiver,
+    useShopFloor,
     bikeCaption,
     bikeFor,
-    cancelReservation,
-    createShop,
-    extendReservation,
-    markReturned,
     money,
     openReservations,
-    pickup,
     reservationForBike,
-    startWalkIn,
-    takeCash,
     type Reservation,
 } from './mock';
 
 type Home = 'due' | 'floor';
 
-const shop = reactive(createShop());
+const shop = useShopFloor();
+const desk = useTerminalDesk();
 const home = ref<Home>('due');
 const focusId = ref<number | null>(null);
 const pane = ref<'ticket' | 'extend'>('ticket');
@@ -83,7 +78,12 @@ function openTicket(reservation: Reservation): void {
 }
 
 function walkIn(): void {
-    openTicket(startWalkIn(shop));
+    desk.startWalkIn((id) => {
+        const created = shop.reservations.find((item) => item.id === id);
+        if (created) {
+            openTicket(created);
+        }
+    });
 }
 
 function doExtend(requote: boolean): void {
@@ -91,7 +91,13 @@ function doExtend(requote: boolean): void {
         return;
     }
 
-    const reservation = extendReservation(shop, focusId.value, requote);
+    const reservation = focus.value;
+
+    if (!reservation) {
+        return;
+    }
+
+    desk.extendReservation(reservation, requote);
 
     if (!reservation) {
         return;
@@ -111,7 +117,7 @@ function doCancel(reservation: Reservation): void {
         return;
     }
 
-    cancelReservation(shop, reservation);
+    desk.cancelReservation(reservation);
     focusId.value = null;
 }
 </script>
@@ -215,23 +221,23 @@ function doCancel(reservation: Reservation): void {
                     </button>
                 </div>
                 <div v-else class="grid grid-cols-4 gap-2">
-                    <button type="button" class="h-14 border border-yellow-800" @click="pickup(shop, focus)">
+                    <button type="button" class="h-14 border border-yellow-800" @click="desk.pickup(focus)">
                         Pickup
                     </button>
                     <button
                         type="button"
                         class="h-14 border border-yellow-800"
-                        @click="markReturned(shop, focus, 'back')"
+                        @click="desk.markReturned(focus)"
                     >
                         Return
                     </button>
                     <button type="button" class="h-14 border border-yellow-800" @click="pane = 'extend'">
                         Extend
                     </button>
-                    <button type="button" class="h-14 border border-yellow-800" @click="takeCash(shop, focus)">
+                    <button type="button" class="h-14 border border-yellow-800" @click="desk.takeCash(focus)">
                         Cash
                     </button>
-                    <button type="button" class="h-14 border border-yellow-800" @click="acceptWaiver(focus)">
+                    <button type="button" class="h-14 border border-yellow-800" @click="desk.acceptWaiver(focus)">
                         Waiver
                     </button>
                     <button type="button" class="h-14 border border-yellow-800" @click="flash(focus.myrental)">

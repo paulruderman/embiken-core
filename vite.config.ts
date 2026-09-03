@@ -32,6 +32,16 @@ export default defineConfig({
         }),
     ]),
     server: {
+        host: 'localhost',
+        origin: 'http://localhost:5173',
+        cors: {
+            origin: [
+                /^https?:\/\/(?:(?:[^:]+\.)?localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/,
+            ],
+        },
+        hmr: {
+            host: 'localhost',
+        },
         watch: {
             ignored: [
                 '**/.agents/**',
@@ -39,6 +49,11 @@ export default defineConfig({
                 '**/.cursor/**',
                 '**/.junie/**',
                 '**/vendor/**',
+                '**/storage/**',
+                '**/*.log',
+                '**/*.sqlite',
+                '**/*.sqlite-*',
+                '**/database/tenant*',
             ],
         },
     },

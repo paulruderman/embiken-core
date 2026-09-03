@@ -25,3 +25,6 @@ Authorize tenant.{tenantId}.location.{locationId} for staff. Terminal and screen
 
 ## Occupancy uses ShouldDispatchAfterCommit
 Shop-floor occupancy events implement ShouldBroadcastNow and Illuminate\Contracts\Events\ShouldDispatchAfterCommit. Laravel 13 has no ShouldBroadcastAfterCommit — do not use that name. ShouldBroadcastNow uses the sync queue; ShouldDispatchAfterCommit waits for the DB transaction to commit (discarded on rollback).
+
+## Location occupancy broadcast DTOs
+Location-channel occupancy uses dedicated ShouldBroadcastNow + ShouldDispatchAfterCommit events (LocationBikePatched, LocationReservationPatched), not Action handle(). broadcastAs is BikeCreated/Updated/Deleted and ReservationCreated/Updated/Deleted. broadcastWith is the Location* Resource DTO (deleted payload is {id} only). Channel is tenant.{tenantId}.location.{locationId}. Listen with leading-dot names. Line CRUD rebroadcasts the parent reservation DTO (all lines).

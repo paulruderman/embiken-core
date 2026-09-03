@@ -14,6 +14,7 @@ use App\Models\Location;
 use App\Models\Reservation;
 use App\Models\ServiceRequest;
 use Carbon\CarbonInterface;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class Availability
@@ -71,6 +72,99 @@ class Availability
 
             $this->bumpExpiresAt($reservation);
         });
+    }
+
+    /**
+     * @return Collection<int, Bike>
+     */
+    public function swapCandidates(BikeReservation $line, ReservationChannel $channel): Collection
+    {
+        $line->loadMissing(['reservation.rentalPackage', 'product.bikeModel', 'bike', 'reservation.bikeReservations']);
+        $reservation = $line->reservation;
+        $taken = $reservation->bikeReservations
+            ->where('id', '!=', $line->id)
+            ->pluck('bike_id')
+            ->filter()
+            ->all();
+
+        $packageVariantIds = null;
+
+        if ($reservation->rental_package_id !== null) {
+            $packageVariantIds = $reservation->rentalPackage?->variants()->pluck('bike_model_variants.id');
+        }
+
+        return Bike::query()
+            ->with(['variant.bikeModel'])
+            ->where('in_service', true)
+            ->when($line->bike_id, fn ($query) => $query->whereKeyNot($line->bike_id))
+            ->when($taken !== [], fn ($query) => $query->whereKeyNot($taken))
+            ->when($packageVariantIds !== null, fn ($query) => $query->whereIn('bike_model_variant_id', $packageVariantIds))
+            ->get()
+            ->reject(fn (Bike $bike): bool => $this->bikeHasBlockingService($bike))
+            ->sort(function (Bike $left, Bike $right) use ($line): int {
+                return $this->swapRank($line, $left) <=> $this->swapRank($line, $right)
+                    ?: strcmp($left->bid, $right->bid);
+            })
+            ->values();
+    }
+
+    public function swapAsset(BikeReservation $line, Bike $bike, ReservationChannel $channel): BikeReservation
+    {
+        return DB::transaction(function () use ($line, $bike, $channel): BikeReservation {
+            $line->refresh()->load(['reservation.rentalPackage', 'bike', 'product']);
+            $reservation = $line->reservation;
+            $from = $line->bike;
+            $product = $bike->variant()->with('bikeModel')->firstOrFail();
+
+            $this->assertPackageMembership($reservation, $product);
+            $this->assertBikeAssignable($bike, $product, $channel);
+            $this->assertIntervalFree(
+                $reservation,
+                $reservation->starts_at,
+                $reservation->ends_at,
+                $channel,
+                $product,
+                $bike,
+                $line,
+            );
+
+            if ($from !== null && $from->id !== $bike->id && $from->bike_situation_reservation_id === $reservation->id) {
+                $from->bike_situation_state = BikeSituation::Home;
+                $from->bike_situation_reservation_id = null;
+                $from->save();
+            }
+
+            $line->product()->associate($product);
+            $line->bike()->associate($bike);
+            $line->save();
+
+            if ($line->status === BikeReservationStatus::Out) {
+                $bike->bike_situation_state = BikeSituation::RentedOut;
+                $bike->bike_situation_reservation_id = $reservation->id;
+                $bike->save();
+            } elseif ($line->status === BikeReservationStatus::Assigned) {
+                $bike->bike_situation_state = BikeSituation::Prepping;
+                $bike->bike_situation_reservation_id = $reservation->id;
+                $bike->save();
+            }
+
+            $this->bumpExpiresAt($reservation);
+
+            return $line->refresh();
+        });
+    }
+
+    private function swapRank(BikeReservation $line, Bike $bike): int
+    {
+        if ($bike->bike_model_variant_id === $line->product_id) {
+            return 0;
+        }
+
+        if ($bike->variant?->bike_model_id === $line->product?->bike_model_id) {
+            return 1;
+        }
+
+        return 2;
     }
 
     public function assertIntervalFree(

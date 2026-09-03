@@ -3,23 +3,19 @@
  * PROTOTYPE Variant Q — Dutch door. Morning rush at the half-door:
  * only staged parties show in the window; you pass the bike through.
  */
-import { computed, reactive, ref } from 'vue';
+import { computed, ref } from 'vue';
+import { useTerminalDesk } from '@/composables/useTerminalDesk';
 import PrototypePartyLines from './PrototypePartyLines.vue';
 import {
-    acceptWaiver,
+    useShopFloor,
     bikeFor,
-    cancelReservation,
-    createShop,
-    markReturned,
     money,
     openReservations,
-    pickup,
-    startWalkIn,
-    takeCash,
     type Reservation,
 } from './mock';
 
-const shop = reactive(createShop());
+const shop = useShopFloor();
+const desk = useTerminalDesk();
 const focusId = ref<number | null>(null);
 const pane = ref<'ticket' | 'extend'>('ticket');
 const toast = ref('');
@@ -45,7 +41,12 @@ function openTicket(reservation: Reservation): void {
 }
 
 function walkIn(): void {
-    openTicket(startWalkIn(shop));
+    desk.startWalkIn((id) => {
+        const created = shop.reservations.find((item) => item.id === id);
+        if (created) {
+            openTicket(created);
+        }
+    });
 }
 
 function doExtend(requote: boolean): void {
@@ -59,12 +60,12 @@ function doCancel(reservation: Reservation): void {
         return;
     }
 
-    cancelReservation(shop, reservation);
+    desk.cancelReservation(reservation);
     focusId.value = null;
 }
 
 function handOut(reservation: Reservation): void {
-    pickup(shop, reservation);
+    desk.pickup(reservation);
     flash(`Through the door — ${reservation.customer}`);
 }
 </script>
@@ -122,11 +123,11 @@ function handOut(reservation: Reservation): void {
                 <button type="button" class="h-14 rounded-xl bg-amber-400" @click="doExtend(true)">Requote</button>
             </div>
             <div v-else class="grid grid-cols-4 gap-2">
-                <button type="button" class="h-14 rounded-xl bg-sky-700 text-white" @click="pickup(shop, focus)">Pickup</button>
-                <button type="button" class="h-14 rounded-xl bg-orange-500" @click="markReturned(shop, focus, 'back')">Return</button>
+                <button type="button" class="h-14 rounded-xl bg-sky-700 text-white" @click="desk.pickup(focus)">Pickup</button>
+                <button type="button" class="h-14 rounded-xl bg-orange-500" @click="desk.markReturned(focus)">Return</button>
                 <button type="button" class="h-14 rounded-xl bg-stone-800 text-white" @click="pane = 'extend'">Extend</button>
-                <button type="button" class="h-14 rounded-xl bg-emerald-800 text-white" @click="takeCash(shop, focus)">Cash</button>
-                <button type="button" class="h-14 rounded-xl bg-stone-800 text-white" @click="acceptWaiver(focus)">Waiver</button>
+                <button type="button" class="h-14 rounded-xl bg-emerald-800 text-white" @click="desk.takeCash(focus)">Cash</button>
+                <button type="button" class="h-14 rounded-xl bg-stone-800 text-white" @click="desk.acceptWaiver(focus)">Waiver</button>
                 <button type="button" class="h-14 rounded-xl bg-stone-800 text-white" @click="flash(focus.myrental)">URL</button>
                 <button type="button" class="h-14 rounded-xl bg-rose-900 text-white" @click="doCancel(focus)">Cancel</button>
             </div>

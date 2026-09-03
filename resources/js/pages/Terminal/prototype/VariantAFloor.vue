@@ -3,27 +3,22 @@
  * PROTOTYPE Variant A — Floor board always on. Ticket is a bottom sheet.
  * Screen count: 1 home + overlays. Board never leaves.
  */
-import { computed, reactive, ref } from 'vue';
+import { computed, ref } from 'vue';
+import { useTerminalDesk } from '@/composables/useTerminalDesk';
 import PrototypePartyLines from './PrototypePartyLines.vue';
 import {
-    acceptWaiver,
+    useShopFloor,
     bikeCaption,
     bikeFor,
-    extendReservation,
-    cancelReservation,
-    createShop,
-    markReturned,
     money,
-    pickup,
     reservationForBike,
     situationLabel,
-    startWalkIn,
-    takeCash,
     type Bike,
     type Reservation,
 } from './mock';
 
-const shop = reactive(createShop());
+const shop = useShopFloor();
+const desk = useTerminalDesk();
 const focusId = ref<number | null>(null);
 const extending = ref(false);
 const toast = ref('');
@@ -84,23 +79,24 @@ function flash(message: string): void {
 }
 
 function walkIn(): void {
-    const reservation = startWalkIn(shop);
-    focusId.value = reservation.id;
-    flash('Walk-in ticket. Collect contact + waiver.');
+    desk.startWalkIn((id) => {
+        focusId.value = id;
+        flash('Walk-in ticket. Collect contact + waiver.');
+    });
 }
 
 function doPickup(reservation: Reservation): void {
-    pickup(shop, reservation);
+    desk.pickup(reservation);
     flash('Picked up → rented_out');
 }
 
 function doReturn(reservation: Reservation, to: 'home' | 'back'): void {
-    markReturned(shop, reservation, to);
+    desk.markReturned(reservation);
     flash(to === 'back' ? 'Returned to back' : 'Returned home');
 }
 
 function doCash(reservation: Reservation): void {
-    takeCash(shop, reservation);
+    desk.takeCash(reservation);
     flash('Cash recorded. owed = paid');
 }
 
@@ -116,7 +112,7 @@ function doCancel(reservation: Reservation): void {
         return;
     }
 
-    cancelReservation(shop, reservation);
+    desk.cancelReservation(reservation);
     focusId.value = null;
     flash('Cancelled. Occupancy released.');
 }
@@ -126,11 +122,13 @@ function doExtend(requote: boolean): void {
         return;
     }
 
-    const reservation = extendReservation(shop, focusId.value, requote);
+    const reservation = focus.value;
 
     if (!reservation) {
         return;
     }
+
+    desk.extendReservation(reservation, requote);
 
     extending.value = false;
     flash(
@@ -240,7 +238,7 @@ function copyLink(reservation: Reservation): void {
                 <button type="button" class="h-16 rounded-2xl bg-emerald-700 text-lg" @click="doCash(focus)">
                     Cash / other
                 </button>
-                <button type="button" class="h-16 rounded-2xl bg-zinc-800 text-lg" @click="acceptWaiver(focus)">
+                <button type="button" class="h-16 rounded-2xl bg-zinc-800 text-lg" @click="desk.acceptWaiver(focus)">
                     {{ focus.waiver ? 'Waiver ✓' : 'Waiver' }}
                 </button>
                 <button type="button" class="h-16 rounded-2xl bg-zinc-800 text-lg" @click="copyLink(focus)">

@@ -6,7 +6,8 @@
  */
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
-import { terminal } from '@/routes/prototype';
+import TerminalLayout from '@/layouts/TerminalLayout.vue';
+import ShowTerminalPrototypeAction from '@/actions/App/Actions/Terminal/ShowTerminalPrototypeAction';
 import PrototypeSwitcher from '@/components/PrototypeSwitcher.vue';
 import VariantAFloor from './VariantAFloor.vue';
 import VariantBQueue from './VariantBQueue.vue';
@@ -28,6 +29,8 @@ import VariantQDoor from './VariantQDoor.vue';
 import VariantRHopper from './VariantRHopper.vue';
 import VariantSPortraits from './VariantSPortraits.vue';
 import VariantTShuttle from './VariantTShuttle.vue';
+
+defineOptions({ layout: TerminalLayout });
 
 const variants = [
     { key: 'A', name: 'Floor board' },
@@ -62,7 +65,7 @@ const current = computed(() => {
 
 function select(key: string): void {
     router.get(
-        terminal.url({ query: { variant: key } }),
+        ShowTerminalPrototypeAction.url({ query: { variant: key } }),
         {},
         { replace: true, preserveState: true, preserveScroll: true },
     );

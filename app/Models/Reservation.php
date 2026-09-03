@@ -2,10 +2,15 @@
 
 namespace App\Models;
 
+use App\Enums\BikeReservationStatus;
 use App\Enums\ReservationChannel;
 use App\Enums\ReservationStage;
+use App\Enums\TransactionKind;
+use App\Enums\TransactionStatus;
+use App\Observers\ReservationObserver;
 use Database\Factories\ReservationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -47,6 +52,7 @@ use Illuminate\Support\Carbon;
     'damage_notes',
     'myrental_token',
 ])]
+#[ObservedBy(ReservationObserver::class)]
 class Reservation extends Model
 {
     /** @use HasFactory<ReservationFactory> */
@@ -107,5 +113,45 @@ class Reservation extends Model
     public function transactions(): HasMany
     {
         return $this->hasMany(Transaction::class);
+    }
+
+    public function recomputePaid(): void
+    {
+        $captured = $this->transactions()
+            ->where('status', TransactionStatus::Captured)
+            ->get();
+
+        $this->paid = (int) $captured->sum(function (Transaction $transaction): int {
+            return $transaction->kind === TransactionKind::Refund
+                ? -$transaction->amount_cents
+                : $transaction->amount_cents;
+        });
+
+        $this->save();
+    }
+
+    public function recomputeStageCache(): void
+    {
+        if (in_array($this->stage, [ReservationStage::Cancelled, ReservationStage::NoShow], true)) {
+            return;
+        }
+
+        $this->loadMissing('bikeReservations');
+
+        $statuses = $this->bikeReservations->pluck('status');
+
+        if ($statuses->contains(BikeReservationStatus::Out)) {
+            $this->stage = ReservationStage::Out;
+            $this->save();
+
+            return;
+        }
+
+        if ($statuses->isNotEmpty() && $statuses->every(fn ($status): bool => $status === BikeReservationStatus::In)) {
+            $this->stage = $this->ends_at->isPast()
+                ? ReservationStage::Completed
+                : ReservationStage::Returned;
+            $this->save();
+        }
     }
 }

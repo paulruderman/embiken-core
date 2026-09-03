@@ -7,13 +7,17 @@ use App\Actions\Reservations\ReleaseLineAction;
 use App\Actions\Reservations\SetReservationOwedAction;
 use App\Actions\Reservations\SetReservationStageAction;
 use App\Enums\BikeReservationStatus;
+use App\Enums\BikeSituation;
+use App\Enums\ReservationChannel;
 use App\Enums\ReservationStage;
 use App\Enums\TransactionKind;
 use App\Exceptions\OccupancyUnavailable;
 use App\Exceptions\OutBikesNeedConfirmation;
 use App\Models\Bike;
 use App\Models\BikeReservation;
+use App\Models\RentalPackage;
 use App\Models\Reservation;
+use App\Services\Availability;
 use Tests\Concerns\MigratesTenantSchema;
 
 uses(MigratesTenantSchema::class);
@@ -93,5 +97,30 @@ test('an out line cannot be released', function () {
     $line->save();
 
     expect(fn () => app(ReleaseLineAction::class)($line))
+        ->toThrow(OccupancyUnavailable::class);
+});
+
+test('swapAsset moves the line to another in-service bike', function () {
+    $from = Bike::factory()->create();
+    $to = Bike::factory()->recycle($from->location)->recycle($from->variant)->create();
+    $reservation = Reservation::factory()->confirmed()->terminal()->recycle($from->location)->create();
+    $line = app(AllocateLineAction::class)($reservation, $from->variant, $from);
+
+    $swapped = app(Availability::class)->swapAsset($line, $to, ReservationChannel::Terminal);
+
+    expect($swapped->bike_id)->toBe($to->id)
+        ->and($from->fresh()->bike_situation_state)->toBe(BikeSituation::Home)
+        ->and($to->fresh()->bike_situation_state)->toBe(BikeSituation::Prepping);
+});
+
+test('swapAsset refuses a variant that is not on the package', function () {
+    $from = Bike::factory()->create();
+    $other = Bike::factory()->recycle($from->location)->create();
+    $package = RentalPackage::factory()->recycle($from->location)->create();
+    $package->variants()->attach($from->bike_model_variant_id, ['rate_cents' => 1000]);
+    $reservation = Reservation::factory()->confirmed()->recycle($from->location)->recycle($package)->create();
+    $line = app(AllocateLineAction::class)($reservation, $from->variant, $from);
+
+    expect(fn () => app(Availability::class)->swapAsset($line, $other, ReservationChannel::Terminal))
         ->toThrow(OccupancyUnavailable::class);
 });

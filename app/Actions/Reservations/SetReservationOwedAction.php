@@ -3,13 +3,17 @@
 namespace App\Actions\Reservations;
 
 use App\Actions\Action;
+use App\Actions\Concerns\AuthorizesStaff;
+use App\Http\Resources\DayPatchResource;
 use App\Models\Reservation;
 use Illuminate\Console\Command;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Router;
 
 class SetReservationOwedAction extends Action
 {
+    use AuthorizesStaff;
+
     public string $commandSignature = 'reservations:set-owed {reservation?} {owed?} {--tenant=}';
 
     public function handle(Reservation $reservation, int $owed): Reservation
@@ -20,13 +24,22 @@ class SetReservationOwedAction extends Action
         return $reservation;
     }
 
-    public function asController(Request $request, Reservation $reservation): JsonResponse
+    public function asController(Request $request, Reservation $reservation): DayPatchResource
     {
         $data = $request->validate([
             'owed' => ['required', 'integer', 'min:0'],
         ]);
 
-        return response()->json($this->handle($reservation, (int) $data['owed']));
+        $reservation = $this->handle($reservation, (int) $data['owed']);
+
+        return new DayPatchResource([
+            'reservation' => $reservation->refresh()->load(['customer', 'bikeReservations.product.bikeModel']),
+        ]);
+    }
+
+    public static function routes(Router $router): void
+    {
+        $router->post('/reservations/{reservation}/owed', static::class)->name('reservations.set-owed');
     }
 
     public function asCommand(Command $command): int

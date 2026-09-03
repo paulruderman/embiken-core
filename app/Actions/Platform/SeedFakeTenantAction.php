@@ -4,6 +4,8 @@ namespace App\Actions\Platform;
 
 use App\Actions\Action;
 use App\Actions\Reservations\AllocateLineAction;
+use App\Enums\BikeReservationStatus;
+use App\Enums\BikeSituation;
 use App\Enums\ConfirmThreshold;
 use App\Enums\PackageMeter;
 use App\Enums\ReservationChannel;
@@ -13,11 +15,13 @@ use App\Models\Bike;
 use App\Models\BikeCategory;
 use App\Models\BikeModel;
 use App\Models\BikeModelVariant;
+use App\Models\BikeReservation;
 use App\Models\Customer;
 use App\Models\Domain;
 use App\Models\Location;
 use App\Models\LocationHour;
 use App\Models\RentalPackage;
+use App\Models\Reservation;
 use App\Models\Staff;
 use App\Models\Tenant;
 use App\Models\User;
@@ -155,9 +159,14 @@ class SeedFakeTenantAction extends Action
         $variants = $this->seedCatalog($location);
         $packages = $this->seedPackages($location, $variants);
         $customers = Customer::factory()->count(12)->create();
-        $bikes = Bike::query()->orderBy('id')->get();
+        $bikes = Bike::query()->with('variant')->orderBy('id')->get();
 
+        $this->seedTodayFloor($location, $timezone, $packages, $customers, $bikes);
         $this->seedUpcomingReservations($location, $timezone, $packages, $customers, $bikes);
+
+        $parked = $bikes->last();
+        $parked->in_service = false;
+        $parked->save();
     }
 
     /**
@@ -265,6 +274,55 @@ class SeedFakeTenantAction extends Action
      * @param  Collection<int, Customer>  $customers
      * @param  Collection<int, Bike>  $bikes
      */
+    private function seedTodayFloor(
+        Location $location,
+        string $timezone,
+        array $packages,
+        $customers,
+        $bikes,
+    ): void {
+        $situations = [
+            BikeSituation::Prepping,
+            BikeSituation::Staged,
+            BikeSituation::RentedOut,
+            BikeSituation::Back,
+        ];
+
+        foreach ($situations as $index => $situation) {
+            $bike = $bikes[$index];
+            $reservation = $this->createSeededReservation(
+                $location,
+                $timezone,
+                $packages[$index % count($packages)],
+                $customers[$index % $customers->count()],
+                0,
+                10,
+                14,
+                ReservationStage::Confirmed,
+            );
+            $line = ($this->allocateLine)($reservation, $bike->variant, $bike);
+            $this->applyFloorSituation($line, $bike->fresh(), $reservation, $situation);
+        }
+
+        $unassignedBike = $bikes[4];
+        $unassigned = $this->createSeededReservation(
+            $location,
+            $timezone,
+            $packages[0],
+            $customers[4 % $customers->count()],
+            0,
+            11,
+            13,
+            ReservationStage::Confirmed,
+        );
+        ($this->allocateLine)($unassigned, $unassignedBike->variant);
+    }
+
+    /**
+     * @param  list<RentalPackage>  $packages
+     * @param  Collection<int, Customer>  $customers
+     * @param  Collection<int, Bike>  $bikes
+     */
     private function seedUpcomingReservations(
         Location $location,
         string $timezone,
@@ -325,13 +383,43 @@ class SeedFakeTenantAction extends Action
         int $endHour,
         ReservationStage $stage,
     ): void {
-        $startsAt = Carbon::now($timezone)->addDays($dayOffset)->setTime($startHour, 0, 0);
-        $endsAt = Carbon::now($timezone)->addDays($dayOffset)->setTime($endHour, 0, 0);
         $partySize = 1 + ($cursor % 3);
         $package = $packages[$cursor % count($packages)];
         $customer = $customers[$cursor % $customers->count()];
 
-        $reservation = $location->reservations()->create([
+        $reservation = $this->createSeededReservation(
+            $location,
+            $timezone,
+            $package,
+            $customer,
+            $dayOffset,
+            $startHour,
+            $endHour,
+            $stage,
+        );
+
+        for ($n = 0; $n < $partySize; $n++) {
+            $bike = $bikes[($cursor + $n) % $bikes->count()];
+            ($this->allocateLine)($reservation, $bike->variant, $bike);
+        }
+
+        $cursor += $partySize;
+    }
+
+    private function createSeededReservation(
+        Location $location,
+        string $timezone,
+        RentalPackage $package,
+        Customer $customer,
+        int $dayOffset,
+        int $startHour,
+        int $endHour,
+        ReservationStage $stage,
+    ): Reservation {
+        $startsAt = Carbon::now($timezone)->addDays($dayOffset)->setTime($startHour, 0, 0);
+        $endsAt = Carbon::now($timezone)->addDays($dayOffset)->setTime($endHour, 0, 0);
+
+        return $location->reservations()->create([
             'customer_id' => $customer->id,
             'rental_package_id' => $package->id,
             'channel' => ReservationChannel::Terminal,
@@ -345,12 +433,32 @@ class SeedFakeTenantAction extends Action
                 : null,
             'myrental_token' => Str::random(40),
         ]);
+    }
 
-        for ($n = 0; $n < $partySize; $n++) {
-            $bike = $bikes[($cursor + $n) % $bikes->count()];
-            ($this->allocateLine)($reservation, $bike->variant, $bike);
+    private function applyFloorSituation(
+        BikeReservation $line,
+        Bike $bike,
+        Reservation $reservation,
+        BikeSituation $situation,
+    ): void {
+        if ($situation === BikeSituation::RentedOut) {
+            $line->status = BikeReservationStatus::Out;
+            $line->checked_out_at = now();
+            $line->save();
+            $reservation->recomputeStageCache();
         }
 
-        $cursor += $partySize;
+        if ($situation === BikeSituation::Back) {
+            $line->status = BikeReservationStatus::In;
+            $line->checked_in_at = now();
+            $line->save();
+            $reservation->recomputeStageCache();
+        }
+
+        $bike->bike_situation_state = $situation;
+        $bike->bike_situation_reservation_id = $situation === BikeSituation::Home
+            ? null
+            : $reservation->id;
+        $bike->save();
     }
 }

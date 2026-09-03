@@ -15,7 +15,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Http/Controllers/** | .ai/rules/controllers.md |
 | app/Events/** | .ai/rules/events.md |
 | app/Filament/** | .ai/rules/filament.md |
-| CONTEXT.md | .ai/rules/general.md |
+| CONTEXT.md, vite.config.ts | .ai/rules/general.md |
 | .ai/guidelines/** | .ai/rules/guidelines.md |
 | app/Http/** | .ai/rules/http.md |
 | resources/js/** | .ai/rules/js.md |
@@ -24,6 +24,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Observers/** | .ai/rules/observers.md |
 | resources/js/pages/** | .ai/rules/pages.md |
 | app/Providers/TenancyServiceProvider.php | .ai/rules/providers.md |
+| app/Http/Resources/** | .ai/rules/resources.md |
 | routes/** | .ai/rules/routes.md |
 | app/Services/** | .ai/rules/services.md |
 | database/migrations/tenant/** | .ai/rules/tenant.md |

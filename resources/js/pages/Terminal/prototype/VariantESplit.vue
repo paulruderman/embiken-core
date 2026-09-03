@@ -3,27 +3,22 @@
  * PROTOTYPE Variant E — Split: bikes always left, ticket always right.
  * No overlay, no full-screen stack. Both panes stay. Empty right until a tap.
  */
-import { computed, reactive, ref } from 'vue';
+import { computed, ref } from 'vue';
+import { useTerminalDesk } from '@/composables/useTerminalDesk';
 import PrototypePartyLines from './PrototypePartyLines.vue';
 import {
-    acceptWaiver,
+    useShopFloor,
     bikeCaption,
     bikeFor,
-    cancelReservation,
-    createShop,
-    extendReservation,
-    markReturned,
     money,
-    pickup,
     reservationForBike,
-    startWalkIn,
-    takeCash,
     type Bike,
     type Reservation,
 } from './mock';
 
-const shop = reactive(createShop());
-const focusId = ref<number | null>(101);
+const shop = useShopFloor();
+const desk = useTerminalDesk();
+const focusId = ref<number | null>(null);
 const mode = ref<'actions' | 'extend'>('actions');
 const toast = ref('');
 
@@ -50,9 +45,10 @@ function openBike(bike: Bike): void {
 }
 
 function walkIn(): void {
-    const reservation = startWalkIn(shop);
-    focusId.value = reservation.id;
-    mode.value = 'actions';
+    desk.startWalkIn((id) => {
+        focusId.value = id;
+        mode.value = 'actions';
+    });
 }
 
 function doExtend(requote: boolean): void {
@@ -60,11 +56,13 @@ function doExtend(requote: boolean): void {
         return;
     }
 
-    const reservation = extendReservation(shop, focusId.value, requote);
+    const reservation = focus.value;
 
     if (!reservation) {
         return;
     }
+
+    desk.extendReservation(reservation, requote);
 
     mode.value = 'actions';
     flash(`Now ${reservation.starts}–${reservation.ends}, owed ${money(reservation.owed)}`);
@@ -80,7 +78,7 @@ function doCancel(reservation: Reservation): void {
         return;
     }
 
-    cancelReservation(shop, reservation);
+    desk.cancelReservation(reservation);
     focusId.value = null;
 }
 
@@ -164,14 +162,14 @@ function tileClass(bike: Bike): string {
                     <button
                         type="button"
                         class="h-16 rounded-2xl bg-sky-700 text-lg text-white"
-                        @click="pickup(shop, focus)"
+                        @click="desk.pickup(focus)"
                     >
                         Pickup
                     </button>
                     <button
                         type="button"
                         class="h-16 rounded-2xl bg-orange-400 text-lg"
-                        @click="markReturned(shop, focus, 'back')"
+                        @click="desk.markReturned(focus)"
                     >
                         Return
                     </button>
@@ -185,14 +183,14 @@ function tileClass(bike: Bike): string {
                     <button
                         type="button"
                         class="h-16 rounded-2xl bg-emerald-700 text-lg text-white"
-                        @click="takeCash(shop, focus)"
+                        @click="desk.takeCash(focus)"
                     >
                         Cash
                     </button>
                     <button
                         type="button"
                         class="h-16 rounded-2xl bg-neutral-800 text-lg text-white"
-                        @click="acceptWaiver(focus)"
+                        @click="desk.acceptWaiver(focus)"
                     >
                         Waiver
                     </button>

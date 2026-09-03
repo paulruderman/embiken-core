@@ -3,7 +3,9 @@
 namespace App\Models;
 
 use App\Enums\BikeReservationStatus;
+use App\Observers\BikeReservationObserver;
 use Database\Factories\BikeReservationFactory;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\Pivot;
@@ -22,6 +24,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
+#[ObservedBy(BikeReservationObserver::class)]
 class BikeReservation extends Pivot
 {
     /** @use HasFactory<BikeReservationFactory> */

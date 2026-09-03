@@ -17,6 +17,13 @@ class HandleInertiaRequests extends Middleware
     protected $rootView = 'app';
 
     /**
+     * @var array<int, string>
+     */
+    protected $withoutSsr = [
+        'prototype/terminal',
+    ];
+
+    /**
      * Determines the current asset version.
      *
      * @see https://inertiajs.com/asset-versioning

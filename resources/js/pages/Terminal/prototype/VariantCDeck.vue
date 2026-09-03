@@ -3,21 +3,15 @@
  * PROTOTYPE Variant C — Verb deck. Function keys always on. No page stack.
  * Context (ticket or none) fills the center; bikes are inspect-only on the right.
  */
-import { computed, reactive, ref } from 'vue';
+import { computed, ref } from 'vue';
+import { useTerminalDesk } from '@/composables/useTerminalDesk';
 import PrototypePartyLines from './PrototypePartyLines.vue';
 import {
-    acceptWaiver,
+    useShopFloor,
     bikeCaption,
     bikeFor,
-    cancelReservation,
-    createShop,
-    extendReservation,
-    markReturned,
     money,
     openReservations,
-    pickup,
-    startWalkIn,
-    takeCash,
     type Reservation,
 } from './mock';
 
@@ -32,8 +26,9 @@ type Verb =
     | 'cancel'
     | 'none';
 
-const shop = reactive(createShop());
-const selectedId = ref<number | null>(101);
+const shop = useShopFloor();
+const desk = useTerminalDesk();
+const selectedId = ref<number | null>(null);
 const verb = ref<Verb>('none');
 const toast = ref('Select a ticket, then a verb.');
 
@@ -57,9 +52,10 @@ function run(next: Verb): void {
     const reservation = selected.value;
 
     if (next === 'walkin') {
-        const created = startWalkIn(shop);
-        selectedId.value = created.id;
-        flash('Walk-in started. Waiver + cash still open.');
+        desk.startWalkIn((id) => {
+            selectedId.value = id;
+            flash('Walk-in started. Waiver + cash still open.');
+        });
         return;
     }
 
@@ -69,25 +65,25 @@ function run(next: Verb): void {
     }
 
     if (next === 'pickup') {
-        pickup(shop, reservation);
+        desk.pickup(reservation);
         flash('Pickup → rented_out');
         return;
     }
 
     if (next === 'return') {
-        markReturned(shop, reservation, 'back');
+        desk.markReturned(reservation);
         flash('Return → back');
         return;
     }
 
     if (next === 'cash') {
-        takeCash(shop, reservation);
+        desk.takeCash(reservation);
         flash('Cash / other recorded');
         return;
     }
 
     if (next === 'waiver') {
-        acceptWaiver(reservation);
+        desk.acceptWaiver(reservation);
         flash('Waiver stamped');
         return;
     }
@@ -111,7 +107,7 @@ function run(next: Verb): void {
             return;
         }
 
-        cancelReservation(shop, reservation);
+        desk.cancelReservation(reservation);
         selectedId.value = null;
         flash('Cancelled');
     }
@@ -122,11 +118,13 @@ function doExtend(requote: boolean): void {
         return;
     }
 
-    const reservation = extendReservation(shop, selectedId.value, requote);
+    const reservation = selected.value;
 
     if (!reservation) {
         return;
     }
+
+    desk.extendReservation(reservation, requote);
 
     verb.value = 'none';
     flash(`Now ${reservation.starts}–${reservation.ends}, owed ${money(reservation.owed)}`);

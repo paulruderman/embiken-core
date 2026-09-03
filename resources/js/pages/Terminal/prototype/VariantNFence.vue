@@ -3,26 +3,22 @@
  * PROTOTYPE Variant N — Fence rail. Saturday morning: bikes already chained
  * along the chain-link in the order they will roll out of the lot.
  */
-import { computed, reactive, ref } from 'vue';
+import { computed, ref } from 'vue';
+import { useTerminalDesk } from '@/composables/useTerminalDesk';
 import PrototypePartyLines from './PrototypePartyLines.vue';
 import {
-    acceptWaiver,
+    useShopFloor,
     bikeCaption,
     bikeFor,
-    cancelReservation,
-    createShop,
     hourOf,
-    markReturned,
     money,
-    pickup,
     reservationForBike,
-    startWalkIn,
-    takeCash,
     type Bike,
     type Reservation,
 } from './mock';
 
-const shop = reactive(createShop());
+const shop = useShopFloor();
+const desk = useTerminalDesk();
 const focusId = ref<number | null>(null);
 const pane = ref<'ticket' | 'extend'>('ticket');
 const toast = ref('');
@@ -61,7 +57,9 @@ function openBike(bike: Bike): void {
 }
 
 function walkIn(): void {
-    focusId.value = startWalkIn(shop).id;
+    desk.startWalkIn((id) => {
+        focusId.value = id;
+    });
 }
 
 function doExtend(requote: boolean): void {
@@ -75,7 +73,7 @@ function doCancel(reservation: Reservation): void {
         return;
     }
 
-    cancelReservation(shop, reservation);
+    desk.cancelReservation(reservation);
     focusId.value = null;
 }
 </script>
@@ -128,11 +126,11 @@ function doCancel(reservation: Reservation): void {
                 <button type="button" class="h-14 rounded-xl bg-amber-400 text-zinc-950" @click="doExtend(true)">Requote</button>
             </div>
             <div v-else class="grid grid-cols-4 gap-2">
-                <button type="button" class="h-14 rounded-xl bg-sky-700" @click="pickup(shop, focus)">Pickup</button>
-                <button type="button" class="h-14 rounded-xl bg-orange-500 text-zinc-950" @click="markReturned(shop, focus, 'back')">Return</button>
+                <button type="button" class="h-14 rounded-xl bg-sky-700" @click="desk.pickup(focus)">Pickup</button>
+                <button type="button" class="h-14 rounded-xl bg-orange-500 text-zinc-950" @click="desk.markReturned(focus)">Return</button>
                 <button type="button" class="h-14 rounded-xl bg-zinc-700" @click="pane = 'extend'">Extend</button>
-                <button type="button" class="h-14 rounded-xl bg-emerald-800" @click="takeCash(shop, focus)">Cash</button>
-                <button type="button" class="h-14 rounded-xl bg-zinc-700" @click="acceptWaiver(focus)">Waiver</button>
+                <button type="button" class="h-14 rounded-xl bg-emerald-800" @click="desk.takeCash(focus)">Cash</button>
+                <button type="button" class="h-14 rounded-xl bg-zinc-700" @click="desk.acceptWaiver(focus)">Waiver</button>
                 <button type="button" class="h-14 rounded-xl bg-zinc-700" @click="flash(focus.myrental)">URL</button>
                 <button type="button" class="h-14 rounded-xl bg-rose-900" @click="doCancel(focus)">Cancel</button>
             </div>

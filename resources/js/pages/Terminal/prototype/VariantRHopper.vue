@@ -2,26 +2,21 @@
 /**
  * PROTOTYPE Variant R — Put-away hopper. Afternoon is back bikes, not the booking diary.
  */
-import { computed, reactive, ref } from 'vue';
+import { computed, ref } from 'vue';
+import { useTerminalDesk } from '@/composables/useTerminalDesk';
 import PrototypePartyLines from './PrototypePartyLines.vue';
 import {
-    acceptWaiver,
+    useShopFloor,
     bikeCaption,
     bikeFor,
-    cancelReservation,
-    createShop,
-    extendReservation,
-    markReturned,
     money,
-    pickup,
     reservationForBike,
-    startWalkIn,
-    takeCash,
     type Bike,
     type Reservation,
 } from './mock';
 
-const shop = reactive(createShop());
+const shop = useShopFloor();
+const desk = useTerminalDesk();
 const focusId = ref<number | null>(null);
 const pane = ref<'ticket' | 'extend'>('ticket');
 const toast = ref('');
@@ -50,7 +45,9 @@ function openBike(bike: Bike): void {
 }
 
 function walkIn(): void {
-    focusId.value = startWalkIn(shop).id;
+    desk.startWalkIn((id) => {
+        focusId.value = id;
+    });
     pane.value = 'ticket';
 }
 
@@ -59,7 +56,13 @@ function doExtend(requote: boolean): void {
         return;
     }
 
-    const reservation = extendReservation(shop, focusId.value, requote);
+    const reservation = focus.value;
+
+    if (!reservation) {
+        return;
+    }
+
+    desk.extendReservation(reservation, requote);
 
     if (reservation) {
         pane.value = 'ticket';
@@ -74,7 +77,7 @@ function doCancel(reservation: Reservation): void {
         return;
     }
 
-    cancelReservation(shop, reservation);
+    desk.cancelReservation(reservation);
     focusId.value = null;
 }
 </script>
@@ -96,7 +99,7 @@ function doCancel(reservation: Reservation): void {
                     :key="bike.id"
                     type="button"
                     class="min-h-28 rounded-3xl bg-orange-600 p-4 text-left text-stone-950"
-                    @click="openBike(bike)"
+                    @click="desk.putAway(bike.id)"
                 >
                     <div class="text-4xl font-black">{{ bike.bid }}</div>
                     <div class="text-sm">{{ bikeCaption(shop, bike) }}</div>
@@ -127,11 +130,11 @@ function doCancel(reservation: Reservation): void {
                 <button type="button" class="h-14 rounded-xl bg-amber-400 text-stone-950" @click="doExtend(true)">Requote</button>
             </div>
             <div v-else class="grid grid-cols-4 gap-2">
-                <button type="button" class="h-14 rounded-xl bg-sky-700" @click="pickup(shop, focus)">Pickup</button>
-                <button type="button" class="h-14 rounded-xl bg-orange-500 text-stone-950" @click="markReturned(shop, focus, 'back')">Return</button>
+                <button type="button" class="h-14 rounded-xl bg-sky-700" @click="desk.pickup(focus)">Pickup</button>
+                <button type="button" class="h-14 rounded-xl bg-orange-500 text-stone-950" @click="desk.markReturned(focus)">Return</button>
                 <button type="button" class="h-14 rounded-xl bg-stone-800" @click="pane = 'extend'">Extend</button>
-                <button type="button" class="h-14 rounded-xl bg-emerald-800" @click="takeCash(shop, focus)">Cash</button>
-                <button type="button" class="h-14 rounded-xl bg-stone-800" @click="acceptWaiver(focus)">Waiver</button>
+                <button type="button" class="h-14 rounded-xl bg-emerald-800" @click="desk.takeCash(focus)">Cash</button>
+                <button type="button" class="h-14 rounded-xl bg-stone-800" @click="desk.acceptWaiver(focus)">Waiver</button>
                 <button type="button" class="h-14 rounded-xl bg-stone-800" @click="flash(focus.myrental)">URL</button>
                 <button type="button" class="h-14 rounded-xl bg-rose-900" @click="doCancel(focus)">Cancel</button>
             </div>

@@ -3,18 +3,24 @@
 namespace App\Actions\Reservations;
 
 use App\Actions\Action;
+use App\Actions\Concerns\AuthorizesStaff;
 use App\Enums\ReservationChannel;
+use App\Exceptions\OccupancyUnavailable;
+use App\Http\Resources\DayPatchResource;
 use App\Models\Bike;
 use App\Models\BikeModelVariant;
 use App\Models\BikeReservation;
 use App\Models\Reservation;
 use App\Services\Availability;
 use Illuminate\Console\Command;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Router;
+use Illuminate\Validation\ValidationException;
 
 class AllocateLineAction extends Action
 {
+    use AuthorizesStaff;
+
     public string $commandSignature = 'reservations:allocate-line {reservation?} {product?} {--tenant=} {--bike=} {--rider-name=} {--rider-height=}';
 
     public function handle(
@@ -34,7 +40,7 @@ class AllocateLineAction extends Action
         );
     }
 
-    public function asController(Request $request, Reservation $reservation): JsonResponse
+    public function asController(Request $request, Reservation $reservation): DayPatchResource
     {
         $data = $request->validate([
             'product_id' => ['required', 'integer', 'exists:bike_model_variants,id'],
@@ -43,13 +49,29 @@ class AllocateLineAction extends Action
             'rider_height_cm' => ['nullable', 'integer', 'min:0'],
         ]);
 
-        return response()->json($this->handle(
-            $reservation,
-            BikeModelVariant::query()->findOrFail($data['product_id']),
-            isset($data['bike_id']) ? Bike::query()->findOrFail($data['bike_id']) : null,
-            $data['rider_name'] ?? null,
-            isset($data['rider_height_cm']) ? (int) $data['rider_height_cm'] : null,
-        ), 201);
+        try {
+            $line = $this->handle(
+                $reservation,
+                BikeModelVariant::query()->findOrFail($data['product_id']),
+                isset($data['bike_id']) ? Bike::query()->findOrFail($data['bike_id']) : null,
+                $data['rider_name'] ?? null,
+                isset($data['rider_height_cm']) ? (int) $data['rider_height_cm'] : null,
+            );
+        } catch (OccupancyUnavailable $exception) {
+            throw ValidationException::withMessages(['product_id' => $exception->reason]);
+        }
+
+        $reservation->refresh()->load(['customer', 'bikeReservations.product.bikeModel']);
+
+        return new DayPatchResource([
+            'reservation' => $reservation,
+            'bikes' => array_filter([$line->bike]),
+        ]);
+    }
+
+    public static function routes(Router $router): void
+    {
+        $router->post('/reservations/{reservation}/lines', static::class)->name('reservations.allocate-line');
     }
 
     public function asCommand(Command $command): int

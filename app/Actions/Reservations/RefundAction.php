@@ -3,18 +3,22 @@
 namespace App\Actions\Reservations;
 
 use App\Actions\Action;
+use App\Actions\Concerns\AuthorizesStaff;
 use App\Enums\TransactionKind;
 use App\Enums\TransactionStatus;
+use App\Http\Resources\DayPatchResource;
 use App\Models\Reservation;
 use App\Models\Transaction;
 use Illuminate\Console\Command;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 class RefundAction extends Action
 {
+    use AuthorizesStaff;
+
     public string $commandSignature = 'reservations:refund {reservation?} {amount?} {--tenant=} {--note=}';
 
     public function handle(Reservation $reservation, int $amountCents, ?string $note = null): Transaction
@@ -24,6 +28,8 @@ class RefundAction extends Action
         }
 
         return DB::transaction(function () use ($reservation, $amountCents, $note): Transaction {
+            $reservation->loadMissing('location');
+
             $transaction = $reservation->transactions()->create([
                 'kind' => TransactionKind::Refund,
                 'status' => TransactionStatus::Captured,
@@ -33,20 +39,29 @@ class RefundAction extends Action
                 'captured_at' => now(),
             ]);
 
-            $this->recomputePaid($reservation);
+            $reservation->recomputePaid();
 
             return $transaction;
         });
     }
 
-    public function asController(Request $request, Reservation $reservation): JsonResponse
+    public function asController(Request $request, Reservation $reservation): DayPatchResource
     {
         $data = $request->validate([
             'amount_cents' => ['required', 'integer', 'min:1'],
             'note' => ['nullable', 'string'],
         ]);
 
-        return response()->json($this->handle($reservation, (int) $data['amount_cents'], $data['note'] ?? null), 201);
+        $this->handle($reservation, (int) $data['amount_cents'], $data['note'] ?? null);
+
+        return new DayPatchResource([
+            'reservation' => $reservation->refresh()->load(['customer', 'bikeReservations.product.bikeModel']),
+        ]);
+    }
+
+    public static function routes(Router $router): void
+    {
+        $router->post('/reservations/{reservation}/refund', static::class)->name('reservations.refund');
     }
 
     public function asCommand(Command $command): int
@@ -60,21 +75,5 @@ class RefundAction extends Action
         $command->info("Refund {$transaction->id}");
 
         return self::SUCCESS;
-    }
-
-    private function recomputePaid(Reservation $reservation): void
-    {
-        $captured = $reservation->transactions()
-            ->where('status', TransactionStatus::Captured)
-            ->get();
-
-        $paid = $captured->sum(function (Transaction $transaction): int {
-            return $transaction->kind === TransactionKind::Refund
-                ? -$transaction->amount_cents
-                : $transaction->amount_cents;
-        });
-
-        $reservation->paid = $paid;
-        $reservation->save();
     }
 }

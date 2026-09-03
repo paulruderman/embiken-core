@@ -25,3 +25,19 @@ Shop-operable Terminal subscribes to the location channel only. CFD channel subs
 
 ## Pinia and tickets hold all lines
 Day store and CFD ticket payloads include every bike_reservation on a reservation. Components must not collapse a reservation to one bike or one remaining count.
+
+## Location-channel day-store DTO
+Location-channel DTOs (Inertia props, Echo broadcastWith, Action jsonResponse) are never Eloquent graphs.
+
+Bike: id, bid, in_service, self_bookable, bike_situation_state, bike_situation_reservation_id, model (BikeModel name), variant (size), photo_url (bike then variant then model).
+
+Line: id, product_id, product_label, bike_id, status (assigned/out/in), rider_name, rider_height_cm.
+
+Reservation: id, stage (snake enum), starts_at, ends_at (ISO-8601), owed, paid, customer {id,name}, waiver_accepted_at, myrental_token, lines (every line).
+
+Channel context on the Terminal page only: tenant_id, location_id, timezone, currency, return_situation.
+
+Hydrate all bikes, plus reservations whose [starts_at, ends_at] intersects today in the location timezone, plus any reservation occupying a non-home bike. Echo patches by id; do not refetch the fleet.
+
+## Terminal Echo is client-only
+Do not call useEcho during SSR. useEcho instantiates Pusher in setup (not onMounted), which has no window on the server and remounts /prototype/terminal in a /broadcasting/auth loop. Subscribe from a child that mounts onMounted. Exclude prototype/terminal from Inertia SSR (HandleInertiaRequests $withoutSsr). Create Pinia inside withApp so SSR requests do not share a hydrated day store. configureEcho only when not import.meta.env.SSR.

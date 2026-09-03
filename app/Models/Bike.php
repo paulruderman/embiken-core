@@ -3,8 +3,10 @@
 namespace App\Models;
 
 use App\Enums\BikeSituation;
+use App\Observers\BikeObserver;
 use Database\Factories\BikeFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -36,6 +38,7 @@ use Illuminate\Support\Carbon;
     'photo',
     'damage_notes',
 ])]
+#[ObservedBy(BikeObserver::class)]
 class Bike extends Model
 {
     /** @use HasFactory<BikeFactory> */

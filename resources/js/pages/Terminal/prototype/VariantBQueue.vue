@@ -3,26 +3,21 @@
  * PROTOTYPE Variant B — Ticket queue is home. Full-screen stack (queue → ticket).
  * Floor is not a screen; Assign/Swap are on the ticket lines.
  */
-import { computed, reactive, ref } from 'vue';
+import { computed, ref } from 'vue';
+import { useTerminalDesk } from '@/composables/useTerminalDesk';
 import PrototypePartyLines from './PrototypePartyLines.vue';
 import {
-    acceptWaiver,
+    useShopFloor,
     bikeFor,
-    cancelReservation,
-    createShop,
-    extendReservation,
-    markReturned,
     money,
     openReservations,
-    pickup,
-    startWalkIn,
-    takeCash,
     type Reservation,
 } from './mock';
 
 type Screen = 'queue' | 'ticket' | 'extend' | 'cancel';
 
-const shop = reactive(createShop());
+const shop = useShopFloor();
+const desk = useTerminalDesk();
 const screen = ref<Screen>('queue');
 const focusId = ref<number | null>(null);
 const toast = ref('');
@@ -63,21 +58,26 @@ function flash(message: string): void {
 }
 
 function walkIn(): void {
-    openTicket(startWalkIn(shop));
+    desk.startWalkIn((id) => {
+        const created = shop.reservations.find((item) => item.id === id);
+        if (created) {
+            openTicket(created);
+        }
+    });
 }
 
 function doPickup(reservation: Reservation): void {
-    pickup(shop, reservation);
+    desk.pickup(reservation);
     flash('Picked up');
 }
 
 function doReturn(reservation: Reservation): void {
-    markReturned(shop, reservation, 'back');
+    desk.markReturned(reservation);
     flash('Returned → back. Put-away later.');
 }
 
 function doCash(reservation: Reservation): void {
-    takeCash(shop, reservation);
+    desk.takeCash(reservation);
     flash('Cash recorded');
 }
 
@@ -86,7 +86,13 @@ function doExtend(requote: boolean): void {
         return;
     }
 
-    const reservation = extendReservation(shop, focusId.value, requote);
+    const reservation = focus.value;
+
+    if (!reservation) {
+        return;
+    }
+
+    desk.extendReservation(reservation, requote);
 
     if (!reservation) {
         return;
@@ -106,7 +112,7 @@ function confirmCancel(reservation: Reservation): void {
         return;
     }
 
-    cancelReservation(shop, reservation);
+    desk.cancelReservation(reservation);
     screen.value = 'queue';
     focusId.value = null;
 }
@@ -200,7 +206,7 @@ function dueBadge(reservation: Reservation): string {
                 <button type="button" class="h-24 rounded-2xl bg-emerald-700 text-2xl text-white" @click="doCash(focus)">
                     Cash / other
                 </button>
-                <button type="button" class="h-24 rounded-2xl bg-stone-800 text-2xl text-white" @click="acceptWaiver(focus)">
+                <button type="button" class="h-24 rounded-2xl bg-stone-800 text-2xl text-white" @click="desk.acceptWaiver(focus)">
                     {{ focus.waiver ? 'Waiver ✓' : 'Waiver' }}
                 </button>
                 <button type="button" class="h-24 rounded-2xl bg-stone-800 text-2xl text-white" @click="flash(focus.myrental)">

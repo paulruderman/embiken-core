@@ -41,3 +41,6 @@ Hydrate all bikes, plus reservations whose [starts_at, ends_at] intersects today
 
 ## Terminal Echo is client-only
 Do not call useEcho during SSR. useEcho instantiates Pusher in setup (not onMounted), which has no window on the server and remounts /prototype/terminal in a /broadcasting/auth loop. Subscribe from a child that mounts onMounted. Exclude prototype/terminal from Inertia SSR (HandleInertiaRequests $withoutSsr). Create Pinia inside withApp so SSR requests do not share a hydrated day store. configureEcho only when not import.meta.env.SSR.
+
+## Shared enum meta for SPA badges
+Inertia shares enums.* lookup tables. Use getEnumLabel / getStatusBadgeClasses from @/lib/enums and value consts from @/types/domain for comparisons. Do not hardcode production situation/stage labels or colors in Vue.

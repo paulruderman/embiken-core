@@ -13,6 +13,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | config/** | .ai/rules/config.md |
 | app/Console/** | .ai/rules/console.md |
 | app/Http/Controllers/** | .ai/rules/controllers.md |
+| app/Enums/** | .ai/rules/enums.md |
 | app/Events/** | .ai/rules/events.md |
 | app/Filament/** | .ai/rules/filament.md |
 | CONTEXT.md, vite.config.ts | .ai/rules/general.md |

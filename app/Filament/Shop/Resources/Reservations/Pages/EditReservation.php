@@ -36,11 +36,13 @@ class EditReservation extends EditRecord
             Action::make('setStage')
                 ->schema([
                     Select::make('stage')
-                        ->options([
-                            ReservationStage::Provisional->value => 'Provisional',
-                            ReservationStage::Confirmed->value => 'Confirmed',
-                            ReservationStage::Cancelled->value => 'Cancelled',
-                        ])
+                        ->options(collect([
+                            ReservationStage::Provisional,
+                            ReservationStage::Confirmed,
+                            ReservationStage::Cancelled,
+                        ])->mapWithKeys(fn (ReservationStage $stage): array => [
+                            $stage->value => $stage->getLabel(),
+                        ])->all())
                         ->required(),
                     Toggle::make('confirm_out_bikes_in_shop')
                         ->visible(fn (): bool => $reservation->bikeReservations->contains(

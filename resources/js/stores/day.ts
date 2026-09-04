@@ -1,11 +1,17 @@
 import { defineStore } from 'pinia';
+import type {
+    BikeReservationStatus,
+    BikeSituation,
+    ReservationStage,
+    ReturnSituation,
+} from '@/types/domain';
 
 export type DayBike = {
     id: number;
     bid: string;
     in_service: boolean;
     self_bookable: boolean;
-    bike_situation_state: 'home' | 'prepping' | 'staged' | 'rented_out' | 'back';
+    bike_situation_state: BikeSituation;
     bike_situation_reservation_id: number | null;
     model: string;
     variant: string;
@@ -17,14 +23,14 @@ export type DayLine = {
     product_id: number;
     product_label: string;
     bike_id: number | null;
-    status: 'assigned' | 'out' | 'in';
+    status: BikeReservationStatus;
     rider_name: string | null;
     rider_height_cm: number | null;
 };
 
 export type DayReservation = {
     id: number;
-    stage: string;
+    stage: ReservationStage | string;
     starts_at: string;
     ends_at: string;
     owed: number;
@@ -40,7 +46,7 @@ export type DaySnapshot = {
     location_id: number;
     timezone: string;
     currency: string;
-    return_situation: string;
+    return_situation: ReturnSituation | string;
     bikes: DayBike[];
     reservations: DayReservation[];
 };

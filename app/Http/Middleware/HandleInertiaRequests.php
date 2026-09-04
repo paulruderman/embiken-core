@@ -2,6 +2,19 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\BikeAssignmentPolicy;
+use App\Enums\BikeReservationStatus;
+use App\Enums\BikeSituation;
+use App\Enums\ConfirmThreshold;
+use App\Enums\PackageMeter;
+use App\Enums\ReservationChannel;
+use App\Enums\ReservationStage;
+use App\Enums\ReturnSituation;
+use App\Enums\ServiceStage;
+use App\Enums\StaffRole;
+use App\Enums\TransactionKind;
+use App\Enums\TransactionStatus;
+use App\Enums\Weekday;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -47,6 +60,21 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'auth' => [
                 'user' => $request->user(),
+            ],
+            'enums' => [
+                'reservationStage' => ReservationStage::getFrontendLookupTable(),
+                'bikeSituation' => BikeSituation::getFrontendLookupTable(),
+                'bikeReservationStatus' => BikeReservationStatus::getFrontendLookupTable(),
+                'packageMeter' => PackageMeter::getFrontendLookupTable(),
+                'confirmThreshold' => ConfirmThreshold::getFrontendLookupTable(),
+                'bikeAssignmentPolicy' => BikeAssignmentPolicy::getFrontendLookupTable(),
+                'returnSituation' => ReturnSituation::getFrontendLookupTable(),
+                'reservationChannel' => ReservationChannel::getFrontendLookupTable(),
+                'staffRole' => StaffRole::getFrontendLookupTable(),
+                'transactionKind' => TransactionKind::getFrontendLookupTable(),
+                'transactionStatus' => TransactionStatus::getFrontendLookupTable(),
+                'serviceStage' => ServiceStage::getFrontendLookupTable(),
+                'weekday' => Weekday::getFrontendLookupTable(),
             ],
         ];
     }

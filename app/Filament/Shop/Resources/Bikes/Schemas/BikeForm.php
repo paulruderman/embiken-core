@@ -2,6 +2,7 @@
 
 namespace App\Filament\Shop\Resources\Bikes\Schemas;
 
+use App\Enums\BikeSituation;
 use App\Models\Bike;
 use App\Models\BikeModelVariant;
 use App\Models\Location;
@@ -43,7 +44,7 @@ class BikeForm
                     ->default(true),
                 Placeholder::make('bike_situation_state')
                     ->label('Situation')
-                    ->content(fn (?Bike $record): string => $record?->bike_situation_state?->value ?? 'home'),
+                    ->content(fn (?Bike $record): string => ($record?->bike_situation_state ?? BikeSituation::Home)->getLabel()),
                 FileUpload::make('photo')
                     ->image()
                     ->directory('bikes'),

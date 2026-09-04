@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\ModuleRegistry;
 use Database\Factories\TenantFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Carbon;
@@ -17,6 +18,7 @@ use Stancl\Tenancy\Database\Models\Tenant as BaseTenant;
  * @property string|null $stripe_connect_account_id
  * @property bool $charges_enabled
  * @property bool $transfers_active
+ * @property list<string>|null $modules
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -37,6 +39,7 @@ class Tenant extends BaseTenant implements TenantWithDatabase
             'stripe_connect_account_id',
             'charges_enabled',
             'transfers_active',
+            'modules',
         ];
     }
 
@@ -49,7 +52,22 @@ class Tenant extends BaseTenant implements TenantWithDatabase
             'suspended_at' => 'datetime',
             'charges_enabled' => 'boolean',
             'transfers_active' => 'boolean',
+            'modules' => 'array',
         ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function moduleIds(): array
+    {
+        $modules = $this->modules;
+
+        if (! is_array($modules) || $modules === []) {
+            return ModuleRegistry::defaultTenantModuleIds();
+        }
+
+        return array_values(array_filter($modules, fn (mixed $id): bool => is_string($id)));
     }
 
     public function isSuspended(): bool

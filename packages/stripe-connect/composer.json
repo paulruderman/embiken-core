@@ -1,0 +1,22 @@
+{
+    "name": "embiken/stripe-connect",
+    "description": "Stripe Connect Express for Embiken",
+    "type": "library",
+    "license": "proprietary",
+    "require": {
+        "php": "^8.3",
+        "embiken/bike-rentals": "@dev"
+    },
+    "autoload": {
+        "psr-4": {
+            "Embiken\\StripeConnect\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Embiken\\StripeConnect\\StripeConnectServiceProvider"
+            ]
+        }
+    }
+}

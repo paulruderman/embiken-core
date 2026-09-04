@@ -1,0 +1,21 @@
+{
+    "name": "embiken/platform-landing-page",
+    "description": "Platform landing page for Embiken",
+    "type": "library",
+    "license": "proprietary",
+    "require": {
+        "php": "^8.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "Embiken\\PlatformLandingPage\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Embiken\\PlatformLandingPage\\PlatformLandingPageServiceProvider"
+            ]
+        }
+    }
+}

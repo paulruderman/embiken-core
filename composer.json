@@ -7,6 +7,13 @@
     "license": "MIT",
     "require": {
         "php": "^8.3",
+        "embiken/bike-fleet": "@dev",
+        "embiken/bike-rental-self-booking": "@dev",
+        "embiken/bike-rentals": "@dev",
+        "embiken/brm": "@dev",
+        "embiken/platform-landing-page": "@dev",
+        "embiken/stripe-connect": "@dev",
+        "embiken/weather": "@dev",
         "filament/filament": "^5.0",
         "inertiajs/inertia-laravel": "^3.0",
         "laravel/framework": "^13.17",
@@ -30,6 +37,15 @@
         "pestphp/pest": "^5.1",
         "pestphp/pest-plugin-laravel": "^5.0"
     },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "packages/*",
+            "options": {
+                "symlink": true
+            }
+        }
+    ],
     "autoload": {
         "psr-4": {
             "App\\": "app/",
@@ -79,6 +95,7 @@
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi",
+            "@php artisan embiken:modules-manifest --ansi",
             "@php artisan filament:upgrade"
         ],
         "post-update-cmd": [

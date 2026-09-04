@@ -23,6 +23,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | database/migrations/** | .ai/rules/migrations.md |
 | app/Models/** | .ai/rules/models.md |
 | app/Observers/** | .ai/rules/observers.md |
+| packages/** | .ai/rules/packages.md |
 | resources/js/pages/** | .ai/rules/pages.md |
 | app/Providers/TenancyServiceProvider.php | .ai/rules/providers.md |
 | app/Http/Resources/** | .ai/rules/resources.md |

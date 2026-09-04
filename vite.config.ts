@@ -4,9 +4,21 @@ import tailwindcss from '@tailwindcss/vite';
 import vue from '@vitejs/plugin-vue';
 import laravel from 'laravel-vite-plugin';
 import { bunny } from 'laravel-vite-plugin/fonts';
+import { fileURLToPath, URL } from 'node:url';
 import { defineConfig, lazyPlugins } from 'vite-plus';
+import modulesManifest from './resources/js/generated/modules-manifest.json';
+
+const moduleAliases = Object.fromEntries(
+    Object.entries(modulesManifest.aliases).map(([alias, relative]) => [
+        alias,
+        fileURLToPath(new URL(relative, import.meta.url)),
+    ]),
+);
 
 export default defineConfig({
+    resolve: {
+        alias: moduleAliases,
+    },
     plugins: lazyPlugins(() => [
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.ts'],

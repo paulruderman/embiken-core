@@ -4,6 +4,7 @@ namespace App\Actions\Platform;
 
 use App\Actions\Action;
 use App\Models\Tenant;
+use App\Support\ModuleRegistry;
 use Illuminate\Console\Command;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -27,6 +28,7 @@ class CreateTenantAction extends Action
             'name' => $name,
             'charges_enabled' => false,
             'transfers_active' => false,
+            'modules' => ModuleRegistry::defaultTenantModuleIds(),
         ]);
 
         $tenant->domains()->create(['domain' => $domain]);

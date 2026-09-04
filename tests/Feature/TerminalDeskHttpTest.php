@@ -1,16 +1,16 @@
 <?php
 
-use App\Actions\Reservations\AllocateLineAction;
-use App\Enums\BikeReservationStatus;
-use App\Enums\BikeSituation;
-use App\Models\Bike;
-use App\Models\BikeReservation;
-use App\Models\Customer;
 use App\Models\Location;
-use App\Models\RentalPackage;
-use App\Models\Reservation;
 use App\Models\Staff;
 use App\Models\Tenant;
+use Embiken\BikeFleet\Enums\BikeSituation;
+use Embiken\BikeFleet\Models\Bike;
+use Embiken\BikeRentals\Actions\AllocateLineAction;
+use Embiken\BikeRentals\Enums\BikeReservationStatus;
+use Embiken\BikeRentals\Models\BikeReservation;
+use Embiken\BikeRentals\Models\Customer;
+use Embiken\BikeRentals\Models\RentalPackage;
+use Embiken\BikeRentals\Models\Reservation;
 use Illuminate\Broadcasting\BroadcastManager;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Ssr\HttpGateway;

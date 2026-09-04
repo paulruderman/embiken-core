@@ -1,16 +1,16 @@
 <?php
 
 use App\Actions\Platform\SeedFakeTenantAction;
-use App\Enums\ReservationStage;
-use App\Models\Bike;
-use App\Models\BikeReservation;
 use App\Models\Domain;
 use App\Models\LocationHour;
-use App\Models\RentalPackage;
-use App\Models\Reservation;
 use App\Models\Staff;
 use App\Models\Tenant;
 use App\Models\User;
+use Embiken\BikeFleet\Models\Bike;
+use Embiken\BikeRentals\Enums\ReservationStage;
+use Embiken\BikeRentals\Models\BikeReservation;
+use Embiken\BikeRentals\Models\RentalPackage;
+use Embiken\BikeRentals\Models\Reservation;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;

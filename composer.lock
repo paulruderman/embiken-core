@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f724782003028799be0da127434c924b",
+    "content-hash": "96247af5586b8576a6e9a8208d2b2965",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -1118,6 +1118,242 @@
                 }
             ],
             "time": "2025-03-06T22:45:56+00:00"
+        },
+        {
+            "name": "embiken/bike-fleet",
+            "version": "dev-main",
+            "dist": {
+                "type": "path",
+                "url": "packages/bike-fleet",
+                "reference": "1d9940a3b3415cb24e1f61e9ce0cdf4a31135925"
+            },
+            "require": {
+                "php": "^8.3"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Embiken\\BikeFleet\\BikeFleetServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Embiken\\BikeFleet\\": "src/",
+                    "Embiken\\BikeFleet\\Database\\Factories\\": "database/factories/"
+                }
+            },
+            "license": [
+                "proprietary"
+            ],
+            "description": "Bike catalog and fleet for Embiken",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
+            "name": "embiken/bike-rental-self-booking",
+            "version": "dev-main",
+            "dist": {
+                "type": "path",
+                "url": "packages/bike-rental-self-booking",
+                "reference": "103bbe558c117856f7243d5369046863aa0c8c35"
+            },
+            "require": {
+                "embiken/bike-rentals": "@dev",
+                "php": "^8.3"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Embiken\\BikeRentalSelfBooking\\BikeRentalSelfBookingServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Embiken\\BikeRentalSelfBooking\\": "src/"
+                }
+            },
+            "license": [
+                "proprietary"
+            ],
+            "description": "Online Book for Embiken",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
+            "name": "embiken/bike-rentals",
+            "version": "dev-main",
+            "dist": {
+                "type": "path",
+                "url": "packages/bike-rentals",
+                "reference": "c60a447d3d446e63924fb42c53b4a69d609a5707"
+            },
+            "require": {
+                "embiken/bike-fleet": "@dev",
+                "php": "^8.3"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Embiken\\BikeRentals\\BikeRentalsServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Embiken\\BikeRentals\\": "src/",
+                    "Embiken\\BikeRentals\\Database\\Factories\\": "database/factories/"
+                }
+            },
+            "license": [
+                "proprietary"
+            ],
+            "description": "Reservations, packages, and desk Actions for Embiken",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
+            "name": "embiken/brm",
+            "version": "dev-main",
+            "dist": {
+                "type": "path",
+                "url": "packages/brm",
+                "reference": "b832c7a9440746f0bce2b3a4fd46a4ffacd19a56"
+            },
+            "require": {
+                "php": "^8.3"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Embiken\\Brm\\BrmServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Embiken\\Brm\\": "src/"
+                }
+            },
+            "license": [
+                "proprietary"
+            ],
+            "description": "BRM importer for Embiken",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
+            "name": "embiken/platform-landing-page",
+            "version": "dev-main",
+            "dist": {
+                "type": "path",
+                "url": "packages/platform-landing-page",
+                "reference": "6c4019f814f9cd728e5ea12461db8ce7fd295b72"
+            },
+            "require": {
+                "php": "^8.3"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Embiken\\PlatformLandingPage\\PlatformLandingPageServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Embiken\\PlatformLandingPage\\": "src/"
+                }
+            },
+            "license": [
+                "proprietary"
+            ],
+            "description": "Platform landing page for Embiken",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
+            "name": "embiken/stripe-connect",
+            "version": "dev-main",
+            "dist": {
+                "type": "path",
+                "url": "packages/stripe-connect",
+                "reference": "f4ef07dc65c11c1133fda0dd13b7678a89695156"
+            },
+            "require": {
+                "embiken/bike-rentals": "@dev",
+                "php": "^8.3"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Embiken\\StripeConnect\\StripeConnectServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Embiken\\StripeConnect\\": "src/"
+                }
+            },
+            "license": [
+                "proprietary"
+            ],
+            "description": "Stripe Connect Express for Embiken",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
+            "name": "embiken/weather",
+            "version": "dev-main",
+            "dist": {
+                "type": "path",
+                "url": "packages/weather",
+                "reference": "5119603e811d704b5b7197dfcbffcbfcd5a58581"
+            },
+            "require": {
+                "php": "^8.3"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Embiken\\Weather\\WeatherServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Embiken\\Weather\\": "src/"
+                }
+            },
+            "license": [
+                "proprietary"
+            ],
+            "description": "Weather for Embiken",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
         },
         {
             "name": "evenement/evenement",
@@ -2258,16 +2494,16 @@
         },
         {
             "name": "inertiajs/inertia-laravel",
-            "version": "v3.3.1",
+            "version": "v3.3.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/inertiajs/inertia-laravel.git",
-                "reference": "7bfd75e352938b703180574b943d81963555a0aa"
+                "reference": "174f5040314edeb1a2371ce18aef4736c25375f6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/inertiajs/inertia-laravel/zipball/7bfd75e352938b703180574b943d81963555a0aa",
-                "reference": "7bfd75e352938b703180574b943d81963555a0aa",
+                "url": "https://api.github.com/repos/inertiajs/inertia-laravel/zipball/174f5040314edeb1a2371ce18aef4736c25375f6",
+                "reference": "174f5040314edeb1a2371ce18aef4736c25375f6",
                 "shasum": ""
             },
             "require": {
@@ -2324,9 +2560,9 @@
             ],
             "support": {
                 "issues": "https://github.com/inertiajs/inertia-laravel/issues",
-                "source": "https://github.com/inertiajs/inertia-laravel/tree/v3.3.1"
+                "source": "https://github.com/inertiajs/inertia-laravel/tree/v3.3.2"
             },
-            "time": "2026-08-04T21:58:51+00:00"
+            "time": "2026-09-02T07:31:03+00:00"
         },
         {
             "name": "kirschbaum-development/eloquent-power-joins",
@@ -4806,16 +5042,16 @@
         },
         {
             "name": "phpstan/phpdoc-parser",
-            "version": "2.3.3",
+            "version": "2.3.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpstan/phpdoc-parser.git",
-                "reference": "fb19eedd2bb67ff8cf7a5502ad329e701d6398a3"
+                "reference": "148cefffaf0233e4c08cc13db8a195a56dd6dfe9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpdoc-parser/zipball/fb19eedd2bb67ff8cf7a5502ad329e701d6398a3",
-                "reference": "fb19eedd2bb67ff8cf7a5502ad329e701d6398a3",
+                "url": "https://api.github.com/repos/phpstan/phpdoc-parser/zipball/148cefffaf0233e4c08cc13db8a195a56dd6dfe9",
+                "reference": "148cefffaf0233e4c08cc13db8a195a56dd6dfe9",
                 "shasum": ""
             },
             "require": {
@@ -4847,9 +5083,9 @@
             "description": "PHPDoc parser with support for nullable, intersection and generic types",
             "support": {
                 "issues": "https://github.com/phpstan/phpdoc-parser/issues",
-                "source": "https://github.com/phpstan/phpdoc-parser/tree/2.3.3"
+                "source": "https://github.com/phpstan/phpdoc-parser/tree/2.3.5"
             },
-            "time": "2026-07-08T07:01:06+00:00"
+            "time": "2026-08-31T16:05:28+00:00"
         },
         {
             "name": "pragmarx/google2fa",
@@ -10245,20 +10481,19 @@
         },
         {
             "name": "larastan/larastan",
-            "version": "v3.10.0",
+            "version": "v3.11.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/larastan/larastan.git",
-                "reference": "2970f83398154178a739609c244577267c7ee8eb"
+                "reference": "9baa74074f17cc70feaef31616a06ea0faeebba5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/larastan/larastan/zipball/2970f83398154178a739609c244577267c7ee8eb",
-                "reference": "2970f83398154178a739609c244577267c7ee8eb",
+                "url": "https://api.github.com/repos/larastan/larastan/zipball/9baa74074f17cc70feaef31616a06ea0faeebba5",
+                "reference": "9baa74074f17cc70feaef31616a06ea0faeebba5",
                 "shasum": ""
             },
             "require": {
-                "ext-json": "*",
                 "iamcal/sql-parser": "^0.7.0",
                 "illuminate/console": "^11.44.2 || ^12.4.1 || ^13",
                 "illuminate/container": "^11.44.2 || ^12.4.1 || ^13",
@@ -10268,7 +10503,7 @@
                 "illuminate/pipeline": "^11.44.2 || ^12.4.1 || ^13",
                 "illuminate/support": "^11.44.2 || ^12.4.1 || ^13",
                 "php": "^8.2",
-                "phpstan/phpstan": "^2.2.0"
+                "phpstan/phpstan": "^2.2.2"
             },
             "require-dev": {
                 "doctrine/coding-standard": "^14",
@@ -10278,7 +10513,7 @@
                 "orchestra/canvas": "^v9.2.2 || ^10.0.1 || ^11",
                 "orchestra/testbench-core": "^9.12.0 || ^10.1 || ^11",
                 "phpstan/phpstan-deprecation-rules": "^2.0.1",
-                "phpunit/phpunit": "^10.5.35 || ^11.5.15 || ^12.5.8 || ^13.1.8"
+                "phpunit/phpunit": "^10.5.35 || ^11.5.15 || ^12.5.8 || ^13.3.0"
             },
             "suggest": {
                 "orchestra/testbench": "Using Larastan for analysing a package needs Testbench",
@@ -10323,7 +10558,7 @@
             ],
             "support": {
                 "issues": "https://github.com/larastan/larastan/issues",
-                "source": "https://github.com/larastan/larastan/tree/v3.10.0"
+                "source": "https://github.com/larastan/larastan/tree/v3.11.0"
             },
             "funding": [
                 {
@@ -10331,7 +10566,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-05-28T08:00:58+00:00"
+            "time": "2026-09-01T16:35:48+00:00"
         },
         {
             "name": "laravel/agent-detector",
@@ -11908,11 +12143,11 @@
         },
         {
             "name": "phpstan/phpstan",
-            "version": "2.2.10",
+            "version": "2.2.13",
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/36d1509c998b0602811824143526b4a9ee2774e7",
-                "reference": "36d1509c998b0602811824143526b4a9ee2774e7",
+                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/9ba9ac76ee9c5cf5b56d58eb5deec6315b7a0260",
+                "reference": "9ba9ac76ee9c5cf5b56d58eb5deec6315b7a0260",
                 "shasum": ""
             },
             "require": {
@@ -11968,7 +12203,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-08-30T12:46:16+00:00"
+            "time": "2026-09-03T20:38:19+00:00"
         },
         {
             "name": "phpunit/php-code-coverage",
@@ -13605,16 +13840,16 @@
         },
         {
             "name": "symfony/yaml",
-            "version": "v8.1.5",
+            "version": "v8.1.6",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/yaml.git",
-                "reference": "b3fc9e8888eeb9daddc33bfbd15d282a61f543cd"
+                "reference": "0b4aa53a67f9fece88c665f1a1dadcfd25d93fe5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/yaml/zipball/b3fc9e8888eeb9daddc33bfbd15d282a61f543cd",
-                "reference": "b3fc9e8888eeb9daddc33bfbd15d282a61f543cd",
+                "url": "https://api.github.com/repos/symfony/yaml/zipball/0b4aa53a67f9fece88c665f1a1dadcfd25d93fe5",
+                "reference": "0b4aa53a67f9fece88c665f1a1dadcfd25d93fe5",
                 "shasum": ""
             },
             "require": {
@@ -13657,7 +13892,7 @@
             "description": "Loads and dumps YAML files",
             "homepage": "https://symfony.com",
             "support": {
-                "source": "https://github.com/symfony/yaml/tree/v8.1.5"
+                "source": "https://github.com/symfony/yaml/tree/v8.1.6"
             },
             "funding": [
                 {
@@ -13677,7 +13912,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-08-21T12:16:08+00:00"
+            "time": "2026-08-30T01:03:44+00:00"
         },
         {
             "name": "ta-tikoma/phpunit-architecture-test",
@@ -13857,7 +14092,15 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": {
+        "embiken/bike-fleet": 20,
+        "embiken/bike-rental-self-booking": 20,
+        "embiken/bike-rentals": 20,
+        "embiken/brm": 20,
+        "embiken/platform-landing-page": 20,
+        "embiken/stripe-connect": 20,
+        "embiken/weather": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {

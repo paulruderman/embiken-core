@@ -1,0 +1,21 @@
+{
+    "aliases": {
+        "@bike-fleet": "packages/bike-fleet/resources/js",
+        "@bike-rentals": "packages/bike-rentals/resources/js"
+    },
+    "viteEntrypoints": [],
+    "piniaModules": {
+        "embiken/bike-fleet": {
+            "namespace": "fleet",
+            "import": "@bike-fleet/stores/fleet"
+        },
+        "embiken/bike-rentals": {
+            "namespace": "rentals",
+            "import": "@bike-rentals/stores/rentals"
+        }
+    },
+    "viewfeeds": [],
+    "inertiaPrefixes": {
+        "bike-rentals": "packages/bike-rentals/resources/js"
+    }
+}

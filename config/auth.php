@@ -1,8 +1,8 @@
 <?php
 
-use App\Models\Customer;
 use App\Models\Staff;
 use App\Models\User;
+use Embiken\BikeRentals\Models\Customer;
 
 return [
 

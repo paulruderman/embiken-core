@@ -1,18 +1,18 @@
 <?php
 
 use App\Enums\BikeAssignmentPolicy;
-use App\Enums\BikeReservationStatus;
-use App\Enums\BikeSituation;
-use App\Enums\ConfirmThreshold;
-use App\Enums\PackageMeter;
-use App\Enums\ReservationChannel;
-use App\Enums\ReservationStage;
 use App\Enums\ReturnSituation;
-use App\Enums\ServiceStage;
 use App\Enums\StaffRole;
-use App\Enums\TransactionKind;
-use App\Enums\TransactionStatus;
 use App\Enums\Weekday;
+use Embiken\BikeFleet\Enums\BikeSituation;
+use Embiken\BikeFleet\Enums\ServiceStage;
+use Embiken\BikeRentals\Enums\BikeReservationStatus;
+use Embiken\BikeRentals\Enums\ConfirmThreshold;
+use Embiken\BikeRentals\Enums\PackageMeter;
+use Embiken\BikeRentals\Enums\ReservationChannel;
+use Embiken\BikeRentals\Enums\ReservationStage;
+use Embiken\BikeRentals\Enums\TransactionKind;
+use Embiken\BikeRentals\Enums\TransactionStatus;
 
 /**
  * @return list<class-string>

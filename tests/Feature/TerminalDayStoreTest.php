@@ -1,15 +1,15 @@
 <?php
 
-use App\Actions\Reservations\AllocateLineAction;
-use App\Enums\BikeSituation;
 use App\Events\LocationBikePatched;
 use App\Events\LocationReservationPatched;
-use App\Models\Bike;
 use App\Models\Location;
-use App\Models\Reservation;
-use App\Observers\BikeObserver;
-use App\Observers\ReservationObserver;
-use App\Support\DayStoreSnapshot;
+use App\Support\DayStore;
+use Embiken\BikeFleet\Enums\BikeSituation;
+use Embiken\BikeFleet\Models\Bike;
+use Embiken\BikeFleet\Observers\BikeObserver;
+use Embiken\BikeRentals\Actions\AllocateLineAction;
+use Embiken\BikeRentals\Models\Reservation;
+use Embiken\BikeRentals\Observers\ReservationObserver;
 use Illuminate\Support\Facades\Event;
 use Tests\Concerns\MigratesTenantSchema;
 
@@ -44,14 +44,16 @@ test('the day store snapshot includes every bike and today plus occupying reserv
         'ends_at' => now($location->timezone)->addDay()->setTime(12, 0),
     ]);
 
-    $snapshot = DayStoreSnapshot::forLocation($location->fresh());
-    $reservationIds = collect($snapshot['reservations'])->pluck('id');
+    $snapshot = DayStore::forLocation($location->fresh());
+    $bikes = $snapshot['modules']['fleet']['bikes'];
+    $reservations = $snapshot['modules']['rentals']['reservations'];
+    $reservationIds = collect($reservations)->pluck('id');
 
-    expect($snapshot['bikes'])->toHaveCount(2)
-        ->and(collect($snapshot['bikes'])->pluck('bid')->all())->toContain('H-01', 'O-01')
+    expect($bikes)->toHaveCount(2)
+        ->and(collect($bikes)->pluck('bid')->all())->toContain('H-01', 'O-01')
         ->and($reservationIds)->toContain($today->id, $stale->id)
         ->and($reservationIds)->not->toContain($tomorrow->id)
-        ->and($snapshot['bikes'][0])->toHaveKeys([
+        ->and($bikes[0])->toHaveKeys([
             'id',
             'bid',
             'in_service',
@@ -62,8 +64,8 @@ test('the day store snapshot includes every bike and today plus occupying reserv
             'variant',
             'photo_url',
         ])
-        ->and($snapshot['bikes'][0])->not->toHaveKey('bike_model_variant_id')
-        ->and($snapshot['reservations'][0])->toHaveKeys([
+        ->and($bikes[0])->not->toHaveKey('bike_model_variant_id')
+        ->and($reservations[0])->toHaveKeys([
             'id',
             'stage',
             'starts_at',
@@ -75,8 +77,8 @@ test('the day store snapshot includes every bike and today plus occupying reserv
             'myrental_token',
             'lines',
         ])
-        ->and($snapshot['reservations'][0]['customer'])->toHaveKeys(['id', 'name'])
-        ->and($snapshot['reservations'][0]['lines'][0])->toHaveKeys([
+        ->and($reservations[0]['customer'])->toHaveKeys(['id', 'name'])
+        ->and($reservations[0]['lines'][0])->toHaveKeys([
             'id',
             'product_id',
             'product_label',

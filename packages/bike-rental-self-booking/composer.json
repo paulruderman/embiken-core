@@ -1,0 +1,22 @@
+{
+    "name": "embiken/bike-rental-self-booking",
+    "description": "Online Book for Embiken",
+    "type": "library",
+    "license": "proprietary",
+    "require": {
+        "php": "^8.3",
+        "embiken/bike-rentals": "@dev"
+    },
+    "autoload": {
+        "psr-4": {
+            "Embiken\\BikeRentalSelfBooking\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Embiken\\BikeRentalSelfBooking\\BikeRentalSelfBookingServiceProvider"
+            ]
+        }
+    }
+}

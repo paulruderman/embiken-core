@@ -1,16 +1,16 @@
 import { useHttp } from '@inertiajs/vue3';
-import AcceptWaiverAction from '@/actions/App/Actions/Reservations/AcceptWaiverAction';
-import AssignBikeAction from '@/actions/App/Actions/Reservations/AssignBikeAction';
-import CancelAction from '@/actions/App/Actions/Reservations/CancelAction';
-import CreateWalkInReservationAction from '@/actions/App/Actions/Reservations/CreateWalkInReservationAction';
-import ExtendAction from '@/actions/App/Actions/Reservations/ExtendAction';
-import PickupAction from '@/actions/App/Actions/Reservations/PickupAction';
-import PutAwayAction from '@/actions/App/Actions/Reservations/PutAwayAction';
-import RecordCashPaymentAction from '@/actions/App/Actions/Reservations/RecordCashPaymentAction';
-import ReturnAction from '@/actions/App/Actions/Reservations/ReturnAction';
-import SwapAssetAction from '@/actions/App/Actions/Reservations/SwapAssetAction';
+import AcceptWaiverAction from '@/actions/Embiken/BikeRentals/Actions/AcceptWaiverAction';
+import AssignBikeAction from '@/actions/Embiken/BikeRentals/Actions/AssignBikeAction';
+import CancelAction from '@/actions/Embiken/BikeRentals/Actions/CancelAction';
+import CreateWalkInReservationAction from '@/actions/Embiken/BikeRentals/Actions/CreateWalkInReservationAction';
+import ExtendAction from '@/actions/Embiken/BikeRentals/Actions/ExtendAction';
+import PickupAction from '@/actions/Embiken/BikeRentals/Actions/PickupAction';
+import PutAwayAction from '@/actions/Embiken/BikeRentals/Actions/PutAwayAction';
+import RecordCashPaymentAction from '@/actions/Embiken/BikeRentals/Actions/RecordCashPaymentAction';
+import ReturnAction from '@/actions/Embiken/BikeRentals/Actions/ReturnAction';
+import SwapAssetAction from '@/actions/Embiken/BikeRentals/Actions/SwapAssetAction';
 import { useDayStore, type DayPatch } from '@/stores/day';
-import type { Line, Reservation } from '@/pages/Terminal/prototype/mock';
+import type { Line, Reservation } from '@bike-rentals/Terminal/prototype/mock';
 
 function apply(day: ReturnType<typeof useDayStore>, payload: unknown): void {
     const patch = (payload as { data?: DayPatch })?.data ?? (payload as DayPatch);

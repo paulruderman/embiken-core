@@ -1,23 +1,23 @@
 <?php
 
-use App\Actions\Reservations\AllocateLineAction;
-use App\Actions\Reservations\CancelAction;
-use App\Actions\Reservations\RefundAction;
-use App\Actions\Reservations\ReleaseLineAction;
-use App\Actions\Reservations\SetReservationOwedAction;
-use App\Actions\Reservations\SetReservationStageAction;
-use App\Enums\BikeReservationStatus;
-use App\Enums\BikeSituation;
-use App\Enums\ReservationChannel;
-use App\Enums\ReservationStage;
-use App\Enums\TransactionKind;
-use App\Exceptions\OccupancyUnavailable;
-use App\Exceptions\OutBikesNeedConfirmation;
-use App\Models\Bike;
-use App\Models\BikeReservation;
-use App\Models\RentalPackage;
-use App\Models\Reservation;
-use App\Services\Availability;
+use Embiken\BikeFleet\Enums\BikeSituation;
+use Embiken\BikeFleet\Models\Bike;
+use Embiken\BikeRentals\Actions\AllocateLineAction;
+use Embiken\BikeRentals\Actions\CancelAction;
+use Embiken\BikeRentals\Actions\RefundAction;
+use Embiken\BikeRentals\Actions\ReleaseLineAction;
+use Embiken\BikeRentals\Actions\SetReservationOwedAction;
+use Embiken\BikeRentals\Actions\SetReservationStageAction;
+use Embiken\BikeRentals\Enums\BikeReservationStatus;
+use Embiken\BikeRentals\Enums\ReservationChannel;
+use Embiken\BikeRentals\Enums\ReservationStage;
+use Embiken\BikeRentals\Enums\TransactionKind;
+use Embiken\BikeRentals\Exceptions\OccupancyUnavailable;
+use Embiken\BikeRentals\Exceptions\OutBikesNeedConfirmation;
+use Embiken\BikeRentals\Models\BikeReservation;
+use Embiken\BikeRentals\Models\RentalPackage;
+use Embiken\BikeRentals\Models\Reservation;
+use Embiken\BikeRentals\Services\Availability;
 use Tests\Concerns\MigratesTenantSchema;
 
 uses(MigratesTenantSchema::class);

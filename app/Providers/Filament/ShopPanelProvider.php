@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Support\ModuleRegistry;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -24,7 +25,7 @@ class ShopPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
-        return $panel
+        $panel
             ->id('shop')
             ->path('manage')
             ->authGuard('staff')
@@ -59,5 +60,7 @@ class ShopPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ]);
+
+        return app(ModuleRegistry::class)->applyFilamentDiscoveries($panel);
     }
 }

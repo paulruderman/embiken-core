@@ -1,0 +1,21 @@
+{
+    "name": "embiken/brm",
+    "description": "BRM importer for Embiken",
+    "type": "library",
+    "license": "proprietary",
+    "require": {
+        "php": "^8.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "Embiken\\Brm\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Embiken\\Brm\\BrmServiceProvider"
+            ]
+        }
+    }
+}

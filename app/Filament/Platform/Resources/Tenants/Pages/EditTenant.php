@@ -9,6 +9,7 @@ use App\Actions\Platform\SuspendTenantAction;
 use App\Actions\Platform\UnsuspendTenantAction;
 use App\Filament\Platform\Resources\Tenants\TenantResource;
 use App\Models\Tenant;
+use App\Support\ModuleRegistry;
 use Filament\Actions\Action;
 use Filament\Resources\Pages\EditRecord;
 
@@ -22,8 +23,13 @@ class EditTenant extends EditRecord
      */
     protected function mutateFormDataBeforeSave(array $data): array
     {
+        $modules = app(ModuleRegistry::class)->normalizeModuleIds(
+            array_values(array_filter($data['modules'] ?? [], fn (mixed $id): bool => is_string($id))),
+        );
+
         return [
             'name' => $data['name'],
+            'modules' => $modules,
         ];
     }
 

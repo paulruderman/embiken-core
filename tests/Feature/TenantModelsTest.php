@@ -1,17 +1,17 @@
 <?php
 
-use App\Enums\BikeReservationStatus;
-use App\Enums\ReservationChannel;
-use App\Enums\ServiceStage;
-use App\Models\Bike;
-use App\Models\BikeReservation;
-use App\Models\Customer;
 use App\Models\Location;
-use App\Models\RentalPackage;
-use App\Models\RentalPackageProduct;
-use App\Models\Reservation;
-use App\Models\ServiceRequest;
 use App\Models\Staff;
+use Embiken\BikeFleet\Enums\ServiceStage;
+use Embiken\BikeFleet\Models\Bike;
+use Embiken\BikeFleet\Models\ServiceRequest;
+use Embiken\BikeRentals\Enums\BikeReservationStatus;
+use Embiken\BikeRentals\Enums\ReservationChannel;
+use Embiken\BikeRentals\Models\BikeReservation;
+use Embiken\BikeRentals\Models\Customer;
+use Embiken\BikeRentals\Models\RentalPackage;
+use Embiken\BikeRentals\Models\RentalPackageProduct;
+use Embiken\BikeRentals\Models\Reservation;
 use Tests\Concerns\MigratesTenantSchema;
 
 uses(MigratesTenantSchema::class);

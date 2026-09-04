@@ -3,6 +3,8 @@
 namespace App\Filament\Platform\Resources\Tenants\Schemas;
 
 use App\Models\Tenant;
+use App\Support\ModuleRegistry;
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
@@ -37,6 +39,12 @@ class TenantForm
                     ->email()
                     ->required()
                     ->visibleOn('create'),
+                CheckboxList::make('modules')
+                    ->options(fn (): array => collect(app(ModuleRegistry::class)->installedTenantModules())
+                        ->mapWithKeys(fn ($module): array => [$module->id() => $module->label()])
+                        ->all())
+                    ->visibleOn('edit')
+                    ->columns(2),
                 Placeholder::make('express_status')
                     ->label('Express')
                     ->visibleOn('edit')

@@ -84,3 +84,15 @@ _Avoid_: Down situation, service block row, maintenance schedule (not in this fa
 The work state of a service request: open, in progress, blocked, resolved, or cancelled. Blocked means work cannot proceed, not that the bike is occupied.
 _Avoid_: Workflow, mixing stage with `blocks_usage`
 
+**Module**:
+An installed Composer tenant plugin under `packages/` (`embiken/*`). Enablement is per Tenant.
+_Avoid_: package as a RentalPackage, addon, Laravel package in general
+
+**Viewfeed**:
+A named display a Viewscreen can show (core catalog plus enabled modules).
+_Avoid_: wallboard as the type, page, route
+
+**Viewscreen**:
+A paired display that picks a Viewfeed by slug.
+_Avoid_: Screen (the shop-floor surface), monitor, TV app
+

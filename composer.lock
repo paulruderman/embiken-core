@@ -1328,7 +1328,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/weather",
-                "reference": "5119603e811d704b5b7197dfcbffcbfcd5a58581"
+                "reference": "28280c0dbc66171d5bf701d3858125bdbd7ae3ff"
             },
             "require": {
                 "php": "^8.3"
@@ -1343,7 +1343,8 @@
             },
             "autoload": {
                 "psr-4": {
-                    "Embiken\\Weather\\": "src/"
+                    "Embiken\\Weather\\": "src/",
+                    "Embiken\\Weather\\Database\\Factories\\": "database/factories/"
                 }
             },
             "license": [

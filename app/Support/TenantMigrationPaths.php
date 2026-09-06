@@ -19,6 +19,18 @@ class TenantMigrationPaths
             }
         }
 
-        return array_values(array_unique($paths));
+        $resolved = [];
+
+        foreach ($paths as $path) {
+            $real = realpath($path);
+
+            if ($real === false || ! is_dir($real)) {
+                continue;
+            }
+
+            $resolved[$real] = $real;
+        }
+
+        return array_values($resolved);
     }
 }

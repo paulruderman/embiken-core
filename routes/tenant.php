@@ -36,4 +36,17 @@ Route::middleware([
             }
         }
     });
+
+    Route::middleware([
+        'auth:staff',
+        EnsureModuleEnabled::class.':embiken/weather',
+    ])->group(function (): void {
+        foreach (glob(base_path('packages/weather/src/Actions/*.php')) ?: [] as $file) {
+            $class = 'Embiken\\Weather\\Actions\\'.basename($file, '.php');
+
+            if (is_callable([$class, 'routes'])) {
+                $class::routes(app('router'));
+            }
+        }
+    });
 });

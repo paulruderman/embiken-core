@@ -96,3 +96,11 @@ _Avoid_: wallboard as the type, page, route
 A paired display that picks a Viewfeed by slug.
 _Avoid_: Screen (the shop-floor surface), monitor, TV app
 
+**Weather Site**:
+An observation point with coordinates and an NWS grid. Not a Location.
+_Avoid_: weather location, Location as a forecast point
+
+**Weather Period**:
+One stored hourly forecast interval for a Weather Site.
+_Avoid_: conditions row, raw NWS dump
+

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Models\Domain;
 use App\Models\Tenant;
+use App\Support\TenantMigrationPaths;
 use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\QueueTenancyBootstrapper;
@@ -190,10 +191,12 @@ return [
 
     /**
      * Parameters used by the tenants:migrate command.
+     * `--path` is TenantMigrationPaths::all() (host tenant dir plus every installed module).
+     * Config loads before providers, so ModuleServiceProvider applies the same list again after ModuleRegistry is bound.
      */
     'migration_parameters' => [
         '--force' => true, // This needs to be true to run migrations in production.
-        '--path' => [database_path('migrations/tenant')],
+        '--path' => TenantMigrationPaths::all(),
         '--realpath' => true,
     ],
 

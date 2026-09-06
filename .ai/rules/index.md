@@ -10,7 +10,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Http/**, routes/** | .ai/rules/boost/http-routes.md |
 | app/Models/** | .ai/rules/boost/models.md |
 | tests/** | .ai/rules/boost/tests.md |
-| config/** | .ai/rules/config.md |
+| config/**, config/tenancy.php | .ai/rules/config.md |
 | app/Console/** | .ai/rules/console.md |
 | app/Http/Controllers/** | .ai/rules/controllers.md |
 | app/Enums/** | .ai/rules/enums.md |
@@ -29,6 +29,8 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Http/Resources/** | .ai/rules/resources.md |
 | routes/** | .ai/rules/routes.md |
 | app/Services/** | .ai/rules/services.md |
+| app/Support/TenantMigrationPaths.php | .ai/rules/support.md |
 | database/migrations/tenant/** | .ai/rules/tenant.md |
 | resources/js/pages/Terminal/** | .ai/rules/terminal.md |
 | tests/** | .ai/rules/tests.md |
+| packages/weather/** | .ai/rules/weather.md |

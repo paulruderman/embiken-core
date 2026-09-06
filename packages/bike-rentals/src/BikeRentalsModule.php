@@ -55,7 +55,7 @@ class BikeRentalsModule extends AbstractTenantModule
 
     public function tenantMigrationPaths(): array
     {
-        return [__DIR__.'/../database/tenant/migrations'];
+        return [dirname(__DIR__).'/database/tenant/migrations'];
     }
 
     public function filamentResourceDiscoveryPaths(): array

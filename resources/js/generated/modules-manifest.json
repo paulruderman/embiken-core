@@ -1,7 +1,8 @@
 {
     "aliases": {
         "@bike-fleet": "packages/bike-fleet/resources/js",
-        "@bike-rentals": "packages/bike-rentals/resources/js"
+        "@bike-rentals": "packages/bike-rentals/resources/js",
+        "@weather": "packages/weather/resources/js"
     },
     "viteEntrypoints": [],
     "piniaModules": {
@@ -12,10 +13,22 @@
         "embiken/bike-rentals": {
             "namespace": "rentals",
             "import": "@bike-rentals/stores/rentals"
+        },
+        "embiken/weather": {
+            "namespace": "weather",
+            "import": "@weather/stores/weather"
         }
     },
-    "viewfeeds": [],
+    "viewfeeds": [
+        {
+            "slug": "weather",
+            "name": "Weather",
+            "component": "Weather/Board",
+            "inertia_page": "Weather/prototype/Index"
+        }
+    ],
     "inertiaPrefixes": {
-        "bike-rentals": "packages/bike-rentals/resources/js"
+        "bike-rentals": "packages/bike-rentals/resources/js",
+        "Weather": "packages/weather/resources/js"
     }
 }

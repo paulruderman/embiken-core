@@ -13,6 +13,7 @@ use Embiken\BikeRentals\Enums\ReservationChannel;
 use Embiken\BikeRentals\Enums\ReservationStage;
 use Embiken\BikeRentals\Enums\TransactionKind;
 use Embiken\BikeRentals\Enums\TransactionStatus;
+use Embiken\Weather\Enums\RadarSource;
 
 /**
  * @return list<class-string>
@@ -33,6 +34,7 @@ function domainEnumClasses(): array
         TransactionStatus::class,
         ServiceStage::class,
         Weekday::class,
+        RadarSource::class,
     ];
 }
 

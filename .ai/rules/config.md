@@ -1,6 +1,7 @@
 ---
 paths:
   - 'config/**'
+  - config/tenancy.php
 ---
 
 # Config
@@ -13,3 +14,6 @@ Database cache and the database queue stay on tenancy.database.central_connectio
 
 ## Do not tenant-prefix Vite and Filament assets
 Keep tenancy.filesystem.asset_helper_tenancy false. Vite, Filament, and Inertia CSS/JS are app assets, not tenant storage. asset() must not rewrite to /tenancy/assets. Enable ViteBundler so built @vite URLs use global_asset. Shop-uploaded photos still use tenant disks. Restart npm run dev after Vite server.host/hmr changes so public/hot is http://localhost:5173 instead of [::1].
+
+## Tenant migrate path is TenantMigrationPaths
+tenancy.migration_parameters.--path is TenantMigrationPaths::all() (host database/migrations/tenant plus every installed module tenantMigrationPaths, realpath'd). Do not hardcode a host-only list. Config loads before providers, so ModuleServiceProvider applies the same list after boot. Enablement does not change which folders migrate.

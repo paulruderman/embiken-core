@@ -23,6 +23,8 @@ class HandleInertiaRequests extends Middleware
     protected $withoutSsr = [
         'prototype/terminal',
         'Terminal/prototype/Index',
+        'prototype/weather',
+        'Weather/prototype/Index',
     ];
 
     public function version(Request $request): ?string

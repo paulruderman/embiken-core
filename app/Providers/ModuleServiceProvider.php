@@ -20,7 +20,9 @@ class ModuleServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        config(['tenancy.migration_parameters.--path' => TenantMigrationPaths::all()]);
+        $this->app->booted(function (): void {
+            config(['tenancy.migration_parameters.--path' => TenantMigrationPaths::all()]);
+        });
 
         $registry = $this->app->make(ModuleRegistry::class);
 

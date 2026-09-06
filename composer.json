@@ -7,6 +7,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.3",
+        "batistackapp/filament-map-picker": "^1.0",
         "embiken/bike-fleet": "@dev",
         "embiken/bike-rental-self-booking": "@dev",
         "embiken/bike-rentals": "@dev",

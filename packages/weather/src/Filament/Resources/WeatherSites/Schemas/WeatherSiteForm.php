@@ -7,6 +7,7 @@ use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
+use SalemAljebaly\FilamentMapPicker\MapPicker;
 
 class WeatherSiteForm
 {
@@ -24,13 +25,25 @@ class WeatherSiteForm
                 TextInput::make('latitude')
                     ->numeric()
                     ->required()
+                    ->live(onBlur: true)
                     ->minValue(-90)
                     ->maxValue(90),
                 TextInput::make('longitude')
                     ->numeric()
                     ->required()
+                    ->live(onBlur: true)
                     ->minValue(-180)
                     ->maxValue(180),
+                MapPicker::make('location')
+                    ->latlngFields('latitude', 'longitude')
+                    ->saved(false)
+                    ->searchable()
+                    ->collapsibleSearch()
+                    ->draggable()
+                    ->defaultLocation(39.8283, -98.5795)
+                    ->defaultZoom(4)
+                    ->height(320)
+                    ->columnSpanFull(),
                 Toggle::make('enabled')
                     ->default(true),
                 TextInput::make('sort_order')

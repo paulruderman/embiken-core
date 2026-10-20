@@ -6,6 +6,7 @@ use App\Actions\Action;
 use App\Actions\Concerns\AuthorizesStaff;
 use Embiken\BikeFleet\Enums\BikeSituation;
 use Embiken\BikeFleet\Models\Bike;
+use Embiken\BikeRentals\Enums\BikeReservationStatus;
 use Embiken\BikeRentals\Enums\ReservationChannel;
 use Embiken\BikeRentals\Exceptions\OccupancyUnavailable;
 use Embiken\BikeRentals\Http\Resources\DayPatchResource;
@@ -32,6 +33,20 @@ class AssignBikeAction extends Action
         $availability = app(Availability::class);
 
         return DB::transaction(function () use ($availability, $line, $bike, $reservation): BikeReservation {
+            $lines = $availability->lockReservationLines($reservation, [$bike]);
+            $reservation = $availability->lockReservation($reservation);
+            $line = $lines->firstWhere('id', $line->getKey());
+
+            if ($line === null) {
+                throw new InvalidArgumentException('That reservation line no longer exists.');
+            }
+
+            if ($line->status !== BikeReservationStatus::Assigned) {
+                throw new InvalidArgumentException('Only an Assigned line can be assigned a bike.');
+            }
+
+            $line->load('bike');
+            $bike = Bike::query()->whereKey($bike->getKey())->lockForUpdate()->firstOrFail();
             $availability->assertIntervalFree(
                 $reservation,
                 $reservation->starts_at,
@@ -41,9 +56,6 @@ class AssignBikeAction extends Action
                 $bike,
                 $line,
             );
-
-            $line = BikeReservation::query()->whereKey($line->getKey())->lockForUpdate()->firstOrFail();
-            $bike->refresh();
 
             $from = $line->bike;
 

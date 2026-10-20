@@ -5,6 +5,8 @@
 
 SaaS for independent bike rental shops. Tenancy is stancl/tenancy: **database-per-tenant**, identified by **domain or subdomain**. A **Tenant** is one shop operator. A **Location** is a store in the tenant database, never a stancl tenant. v1 is one Location per tenant; do not add a location picker or path.
 
+Production uses PostgreSQL for the central database and each tenant database. SQLite is for tests and local development only.
+
 ## Real-time reactive app
 
 Most interface pages will update in real-time.

@@ -9,6 +9,7 @@ use Embiken\BikeRentals\Models\Reservation;
 use Illuminate\Console\Command;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
+use Illuminate\Support\Facades\DB;
 
 class SetReservationOwedAction extends Action
 {
@@ -18,10 +19,13 @@ class SetReservationOwedAction extends Action
 
     public function handle(Reservation $reservation, int $owed): Reservation
     {
-        $reservation->owed = $owed;
-        $reservation->save();
+        return DB::transaction(function () use ($reservation, $owed): Reservation {
+            $reservation = Reservation::query()->whereKey($reservation->getKey())->lockForUpdate()->firstOrFail();
+            $reservation->owed = $owed;
+            $reservation->save();
 
-        return $reservation;
+            return $reservation;
+        }, attempts: 5);
     }
 
     public function asController(Request $request, Reservation $reservation): DayPatchResource

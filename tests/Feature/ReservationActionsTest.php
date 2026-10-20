@@ -4,8 +4,10 @@ use Embiken\BikeFleet\Enums\BikeSituation;
 use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeRentals\Actions\AllocateLineAction;
 use Embiken\BikeRentals\Actions\CancelAction;
+use Embiken\BikeRentals\Actions\PickupAction;
 use Embiken\BikeRentals\Actions\RefundAction;
 use Embiken\BikeRentals\Actions\ReleaseLineAction;
+use Embiken\BikeRentals\Actions\ReturnAction;
 use Embiken\BikeRentals\Actions\SetReservationOwedAction;
 use Embiken\BikeRentals\Actions\SetReservationStageAction;
 use Embiken\BikeRentals\Enums\BikeReservationStatus;
@@ -98,6 +100,22 @@ test('an out line cannot be released', function () {
 
     expect(fn () => app(ReleaseLineAction::class)($line))
         ->toThrow(OccupancyUnavailable::class);
+});
+
+test('pickup and return serialize reservation state transitions', function () {
+    $bike = Bike::factory()->create();
+    $reservation = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create();
+    $line = app(AllocateLineAction::class)($reservation, $bike->variant, $bike);
+
+    $pickedUp = app(PickupAction::class)->handle($line);
+
+    expect($pickedUp->fresh()->status)->toBe(BikeReservationStatus::Out)
+        ->and($bike->fresh()->bike_situation_state)->toBe(BikeSituation::RentedOut);
+
+    $returned = app(ReturnAction::class)->handle($pickedUp);
+
+    expect($returned->fresh()->status)->toBe(BikeReservationStatus::In)
+        ->and($bike->fresh()->bike_situation_state)->toBe(BikeSituation::Home);
 });
 
 test('swapAsset moves the line to another in-service bike', function () {

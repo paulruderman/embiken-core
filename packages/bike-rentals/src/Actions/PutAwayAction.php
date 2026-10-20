@@ -7,9 +7,11 @@ use App\Actions\Concerns\AuthorizesStaff;
 use Embiken\BikeFleet\Enums\BikeSituation;
 use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeRentals\Http\Resources\DayPatchResource;
+use Embiken\BikeRentals\Services\Availability;
 use Illuminate\Console\Command;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 
@@ -21,15 +23,19 @@ class PutAwayAction extends Action
 
     public function handle(Bike $bike): Bike
     {
-        if ($bike->bike_situation_state !== BikeSituation::Back) {
-            throw new InvalidArgumentException('Only a bike in back can be put away.');
-        }
+        return DB::transaction(function () use ($bike): Bike {
+            $bike = app(Availability::class)->lockBikeForMutation($bike);
 
-        $bike->bike_situation_state = BikeSituation::Home;
-        $bike->bike_situation_reservation_id = null;
-        $bike->save();
+            if ($bike->bike_situation_state !== BikeSituation::Back) {
+                throw new InvalidArgumentException('Only a bike in back can be put away.');
+            }
 
-        return $bike->refresh();
+            $bike->bike_situation_state = BikeSituation::Home;
+            $bike->bike_situation_reservation_id = null;
+            $bike->save();
+
+            return $bike->refresh();
+        }, attempts: 5);
     }
 
     public function asController(Request $request, Bike $bike): DayPatchResource

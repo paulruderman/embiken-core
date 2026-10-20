@@ -4,7 +4,11 @@ namespace Embiken\BikeFleet\Filament\Resources\Bikes\Pages;
 
 use Embiken\BikeFleet\Enums\BikeSituation;
 use Embiken\BikeFleet\Filament\Resources\Bikes\BikeResource;
+use Embiken\BikeFleet\Models\Bike;
+use Embiken\BikeFleet\Services\FleetMutationLock;
 use Filament\Resources\Pages\CreateRecord;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class CreateBike extends CreateRecord
 {
@@ -20,5 +24,17 @@ class CreateBike extends CreateRecord
         $data['bike_situation_reservation_id'] = null;
 
         return $data;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    protected function handleRecordCreation(array $data): Model
+    {
+        return DB::transaction(function () use ($data): Bike {
+            app(FleetMutationLock::class)->lockVariants([(int) $data['bike_model_variant_id']]);
+
+            return Bike::query()->create($data);
+        }, attempts: 5);
     }
 }

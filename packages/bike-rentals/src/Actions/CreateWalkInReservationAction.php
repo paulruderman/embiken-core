@@ -85,6 +85,10 @@ class CreateWalkInReservationAction extends Action
                 throw ValidationException::withMessages(['bike_id' => 'Assign a bike before walk-in prep.']);
             }
 
+            if ($bike->bike_situation_state !== BikeSituation::Home) {
+                throw ValidationException::withMessages(['bike_id' => 'A walk-in must use a bike that is still home.']);
+            }
+
             $bike->bike_situation_state = BikeSituation::Prepping;
             $bike->bike_situation_reservation_id = $reservation->id;
             $bike->save();

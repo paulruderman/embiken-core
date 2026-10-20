@@ -26,18 +26,17 @@ class CancelAction extends Action
 
     public function handle(Reservation $reservation, bool $confirmOutBikesInShop = false): Reservation
     {
-        $reservation->load('bikeReservations.bike');
+        return DB::transaction(function () use ($reservation, $confirmOutBikesInShop): Reservation {
+            $availability = app(Availability::class);
+            $lines = $availability->lockReservationLines($reservation);
+            $reservation = $availability->lockReservation($reservation);
+            $hasOut = $lines->contains(fn ($line): bool => $line->status === BikeReservationStatus::Out);
 
-        $hasOut = $reservation->bikeReservations->contains(
-            fn ($line): bool => $line->status === BikeReservationStatus::Out,
-        );
+            if ($hasOut && ! $confirmOutBikesInShop) {
+                throw new OutBikesNeedConfirmation;
+            }
 
-        if ($hasOut && ! $confirmOutBikesInShop) {
-            throw new OutBikesNeedConfirmation;
-        }
-
-        return DB::transaction(function () use ($reservation): Reservation {
-            foreach ($reservation->bikeReservations as $line) {
+            foreach ($lines as $line) {
                 if ($line->status === BikeReservationStatus::Out) {
                     continue;
                 }

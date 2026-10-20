@@ -9,6 +9,7 @@ use Embiken\BikeFleet\Enums\BikeSituation;
 use Embiken\BikeRentals\Enums\BikeReservationStatus;
 use Embiken\BikeRentals\Http\Resources\DayPatchResource;
 use Embiken\BikeRentals\Models\BikeReservation;
+use Embiken\BikeRentals\Services\Availability;
 use Illuminate\Console\Command;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
@@ -24,15 +25,25 @@ class ReturnAction extends Action
 
     public function handle(BikeReservation $line): BikeReservation
     {
-        $line->load(['bike', 'reservation.location']);
-
-        if ($line->status !== BikeReservationStatus::Out) {
-            throw new InvalidArgumentException('Only an Out line can be returned.');
-        }
+        $line->loadMissing('reservation');
 
         return DB::transaction(function () use ($line): BikeReservation {
+            $availability = app(Availability::class);
+            $lines = $availability->lockReservationLines($line->reservation);
+            $reservation = $availability->lockReservation($line->reservation);
+            $line = $lines->firstWhere('id', $line->getKey());
+
+            if ($line === null) {
+                throw new InvalidArgumentException('That reservation line no longer exists.');
+            }
+
+            if ($line->status !== BikeReservationStatus::Out) {
+                throw new InvalidArgumentException('Only an Out line can be returned.');
+            }
+
+            $line->load('bike');
+            $reservation->load('location');
             $bike = $line->bike;
-            $reservation = $line->reservation;
             $to = $reservation->location->return_situation === ReturnSituation::Back
                 ? BikeSituation::Back
                 : BikeSituation::Home;

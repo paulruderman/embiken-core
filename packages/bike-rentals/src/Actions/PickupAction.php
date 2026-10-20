@@ -6,8 +6,10 @@ use App\Actions\Action;
 use App\Actions\Concerns\AuthorizesStaff;
 use Embiken\BikeFleet\Enums\BikeSituation;
 use Embiken\BikeRentals\Enums\BikeReservationStatus;
+use Embiken\BikeRentals\Enums\ReservationStage;
 use Embiken\BikeRentals\Http\Resources\DayPatchResource;
 use Embiken\BikeRentals\Models\BikeReservation;
+use Embiken\BikeRentals\Services\Availability;
 use Illuminate\Console\Command;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
@@ -23,23 +25,37 @@ class PickupAction extends Action
 
     public function handle(BikeReservation $line): BikeReservation
     {
-        $line->load(['bike', 'reservation']);
-
-        if ($line->bike_id === null || $line->bike === null) {
-            throw new InvalidArgumentException('Assign a bike before pickup.');
-        }
-
-        if ($line->status === BikeReservationStatus::Out) {
-            return $line;
-        }
-
-        if ($line->status === BikeReservationStatus::In) {
-            throw new InvalidArgumentException('That line has already been returned.');
-        }
+        $line->loadMissing('reservation');
 
         return DB::transaction(function () use ($line): BikeReservation {
+            $availability = app(Availability::class);
+            $lines = $availability->lockReservationLines($line->reservation);
+            $reservation = $availability->lockReservation($line->reservation);
+            $line = $lines->firstWhere('id', $line->getKey());
+
+            if ($line === null) {
+                throw new InvalidArgumentException('That reservation line no longer exists.');
+            }
+
+            $line->load('bike');
+
+            if ($reservation->stage === ReservationStage::Cancelled) {
+                throw new InvalidArgumentException('A Cancelled reservation cannot be picked up.');
+            }
+
+            if ($line->status === BikeReservationStatus::Out) {
+                return $line->refresh()->load(['bike', 'reservation.customer', 'reservation.bikeReservations.product.bikeModel']);
+            }
+
+            if ($line->status === BikeReservationStatus::In) {
+                throw new InvalidArgumentException('That line has already been returned.');
+            }
+
+            if ($line->bike_id === null || $line->bike === null) {
+                throw new InvalidArgumentException('Assign a bike before pickup.');
+            }
+
             $bike = $line->bike;
-            $reservation = $line->reservation;
 
             $line->status = BikeReservationStatus::Out;
             $line->checked_out_at = now();

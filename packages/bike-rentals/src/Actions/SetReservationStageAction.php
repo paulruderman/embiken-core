@@ -4,12 +4,15 @@ namespace Embiken\BikeRentals\Actions;
 
 use App\Actions\Action;
 use App\Actions\Concerns\AuthorizesStaff;
+use Embiken\BikeRentals\Enums\BikeReservationStatus;
 use Embiken\BikeRentals\Enums\ReservationStage;
 use Embiken\BikeRentals\Http\Resources\DayPatchResource;
 use Embiken\BikeRentals\Models\Reservation;
+use Embiken\BikeRentals\Services\Availability;
 use Illuminate\Console\Command;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use InvalidArgumentException;
 
@@ -29,15 +32,25 @@ class SetReservationStageAction extends Action
             return app(CancelAction::class)($reservation, $confirmOutBikesInShop);
         }
 
-        $reservation->stage = $stage;
+        return DB::transaction(function () use ($reservation, $stage): Reservation {
+            $availability = app(Availability::class);
+            $lines = $availability->lockReservationLines($reservation);
+            $reservation = $availability->lockReservation($reservation);
 
-        if ($stage === ReservationStage::Confirmed) {
-            $reservation->expires_at = null;
-        }
+            if ($lines->contains(fn ($line): bool => $line->status === BikeReservationStatus::Out)) {
+                throw new InvalidArgumentException('A reservation with an Out line must keep its Out stage.');
+            }
 
-        $reservation->save();
+            $reservation->stage = $stage;
 
-        return $reservation;
+            if ($stage === ReservationStage::Confirmed) {
+                $reservation->expires_at = null;
+            }
+
+            $reservation->save();
+
+            return $reservation;
+        }, attempts: 5);
     }
 
     public function asController(Request $request, Reservation $reservation): DayPatchResource

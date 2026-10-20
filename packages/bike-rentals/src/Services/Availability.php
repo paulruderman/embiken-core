@@ -8,6 +8,7 @@ use Embiken\BikeFleet\Enums\BikeSituation;
 use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeFleet\Models\BikeModelVariant;
 use Embiken\BikeFleet\Models\ServiceRequest;
+use Embiken\BikeFleet\Services\FleetMutationLock;
 use Embiken\BikeRentals\Enums\BikeReservationStatus;
 use Embiken\BikeRentals\Enums\ReservationChannel;
 use Embiken\BikeRentals\Enums\ReservationStage;
@@ -31,6 +32,13 @@ class Availability
         return DB::transaction(function () use ($reservation, $product, $channel, $bike, $riderName, $riderHeightCm): BikeReservation {
             $product = $this->lockProduct($product);
             $this->healStaleOutLines($product);
+            $this->lockReservationLines($reservation, $bike === null ? [] : [$bike]);
+            $reservation = $this->lockReservation($reservation);
+
+            if ($reservation->stage === ReservationStage::Cancelled) {
+                throw new OccupancyUnavailable('A Cancelled reservation cannot receive another line.');
+            }
+
             $this->assertPackageMembership($reservation, $product);
             $this->assertIntervalFree($reservation, $reservation->starts_at, $reservation->ends_at, $channel, $product, $bike);
 
@@ -52,15 +60,15 @@ class Availability
     public function release(BikeReservation $line): void
     {
         DB::transaction(function () use ($line): void {
-            $line->refresh()->load(['product', 'bike']);
+            $line->loadMissing('reservation');
+            $lines = $this->lockReservationLines($line->reservation);
+            $line = $lines->firstWhere('id', $line->getKey());
 
-            $this->lockProduct($line->product);
-
-            if ($line->bike !== null) {
-                $this->lockBike($line->bike);
+            if ($line === null) {
+                return;
             }
 
-            $line = BikeReservation::query()->whereKey($line->getKey())->lockForUpdate()->firstOrFail();
+            $line->load(['product', 'bike', 'reservation']);
 
             if ($line->status === BikeReservationStatus::Out) {
                 throw new OccupancyUnavailable('An Out line cannot be released. Return it first.', $line->id);
@@ -118,7 +126,15 @@ class Availability
     public function swapAsset(BikeReservation $line, Bike $bike, ReservationChannel $channel): BikeReservation
     {
         return DB::transaction(function () use ($line, $bike, $channel): BikeReservation {
-            $line->refresh()->load(['reservation.rentalPackage', 'bike', 'product']);
+            $line->loadMissing('reservation');
+            $lockedLines = $this->lockReservationLines($line->reservation, [$bike]);
+            $line = $lockedLines->firstWhere('id', $line->getKey());
+
+            if ($line === null) {
+                throw new OccupancyUnavailable('That reservation line no longer exists.');
+            }
+
+            $line->load(['reservation.rentalPackage', 'bike', 'product']);
             $reservation = $line->reservation;
             $from = $line->bike;
             $product = $this->lockProduct(BikeModelVariant::query()->findOrFail($bike->bike_model_variant_id));
@@ -380,18 +396,30 @@ class Availability
 
     private function lockProduct(BikeModelVariant $product): BikeModelVariant
     {
-        return BikeModelVariant::query()
-            ->whereKey($product->getKey())
-            ->lockForUpdate()
+        return app(FleetMutationLock::class)
+            ->lockVariants([(int) $product->getKey()])
             ->firstOrFail();
     }
 
     private function lockBike(Bike $bike): Bike
     {
-        return Bike::query()
-            ->whereKey($bike->getKey())
-            ->lockForUpdate()
+        return app(FleetMutationLock::class)
+            ->lockBikes([(int) $bike->getKey()])
             ->firstOrFail();
+    }
+
+    public function lockBikeForMutation(Bike $bike): Bike
+    {
+        return app(FleetMutationLock::class)->lockBikeForMutation($bike);
+    }
+
+    public function lockReservation(Reservation $reservation): Reservation
+    {
+        if (DB::transactionLevel() === 0) {
+            throw new LogicException('Reservations must be locked inside a transaction.');
+        }
+
+        return Reservation::query()->whereKey($reservation->getKey())->lockForUpdate()->firstOrFail();
     }
 
     /**
@@ -470,7 +498,7 @@ class Availability
      *
      * @return Collection<int, BikeReservation>
      */
-    public function lockReservationLines(Reservation $reservation): Collection
+    public function lockReservationLines(Reservation $reservation, array $additionalBikes = []): Collection
     {
         if (DB::transactionLevel() === 0) {
             throw new LogicException('Reservation lines must be locked inside a transaction.');
@@ -484,17 +512,42 @@ class Availability
             ->orderBy('id')
             ->get();
 
-        foreach ($lines as $line) {
-            $this->lockProduct($line->product);
+        $fleetLock = app(FleetMutationLock::class);
+        $additionalVariantIdsByBike = collect($additionalBikes)
+            ->mapWithKeys(fn (Bike $bike): array => [
+                $bike->getKey() => (int) Bike::query()->whereKey($bike->getKey())->value('bike_model_variant_id'),
+            ]);
+        $variantIds = $lines->pluck('product_id')
+            ->merge($additionalVariantIdsByBike->values())
+            ->map(fn (int|string $id): int => (int) $id)
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
+        $fleetLock->lockVariants($variantIds);
 
-            if ($line->bike !== null) {
-                $this->lockBike($line->bike);
+        $bikeIds = $lines->pluck('bike_id')
+            ->merge(collect($additionalBikes)->map(fn (Bike $bike): int => (int) $bike->getKey()))
+            ->filter()
+            ->map(fn (int|string $id): int => (int) $id)
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
+        $lockedBikes = $fleetLock->lockBikes($bikeIds)->keyBy('id');
+
+        foreach ($additionalVariantIdsByBike as $bikeId => $variantId) {
+            if ($lockedBikes->get($bikeId)?->bike_model_variant_id !== $variantId) {
+                throw new LogicException('A bike variant changed while reservation locks were being acquired.');
             }
         }
 
-        return $lines->map(fn (BikeReservation $line): BikeReservation => BikeReservation::query()
+        $lockedLines = $lines->map(fn (BikeReservation $line): BikeReservation => BikeReservation::query()
             ->whereKey($line->getKey())
             ->lockForUpdate()
             ->firstOrFail());
+        $this->lockReservation($reservation);
+
+        return $lockedLines;
     }
 }

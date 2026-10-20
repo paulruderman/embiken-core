@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Carbon\CarbonImmutable;
+use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
@@ -23,6 +24,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (app()->runningInConsole()) {
+            $centralDomain = config('tenancy.central_domains.0');
+
+            if (is_string($centralDomain) && $centralDomain !== '') {
+                Filament::currentDomain($centralDomain);
+            }
+        }
+
         $this->configureDefaults();
     }
 

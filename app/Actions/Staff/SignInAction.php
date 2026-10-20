@@ -64,7 +64,7 @@ class SignInAction extends Action
 
         $request->session()->regenerate();
 
-        return redirect()->intended('/prototype/terminal');
+        return redirect()->intended('/terminal');
     }
 
     public function asCommand(Command $command): int

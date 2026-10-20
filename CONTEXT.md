@@ -59,8 +59,9 @@ _Avoid_: ops `/t/`, HasTenants, “open shop” as a User session
 ## Reservation
 
 **Reservation**:
-One rental ticket: one Customer, one interval, one optional RentalPackage, and one or more Lines.
-_Avoid_: Booking, order, cart (Provisional is a stage), a one-bike header
+One rental: one Customer, one interval, one optional RentalPackage, and one or more Lines.
+Preferred term going forward; **Booking** is also a valid synonym and appears in legacy versions.
+_Avoid_: order, cart (Provisional is a stage), a one-bike header
 
 **Line**:
 One `bike_reservation` row: one variant (class or assigned Bike) on that Reservation. Quantity is N rows. Optional Terminal nickname (`rider_name`) and `rider_height_cm` describe the person on that line, not a Customer.
@@ -77,8 +78,12 @@ A hold on a Line for a Reservation interval (`[starts_at, ends_at]` inclusive) p
 _Avoid_: ledger, allocation pool
 
 **Service request**:
-A shop ticket on one Bike. A non-resolved, non-cancelled ticket with `blocks_usage` occupies that bike. Parking the bike (`in_service` false) is a separate Staff flag.
+A maintenance request for one Bike. A non-resolved, non-cancelled request with `blocks_usage` occupies that bike. Parking the bike (`in_service` false) is a separate Staff flag.
 _Avoid_: Down situation, service block row, maintenance schedule (not in this family)
+
+**Ticket**:
+A maintenance/service request for a Bike. In conversation and user-facing language, “ticket” means this request, never a rental Reservation.
+_Avoid_: Reservation, rental, booking
 
 **ServiceStage**:
 The work state of a service request: open, in progress, blocked, resolved, or cancelled. Blocked means work cannot proceed, not that the bike is occupied.

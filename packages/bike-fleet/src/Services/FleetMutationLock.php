@@ -66,23 +66,41 @@ class FleetMutationLock
      */
     public function lockBikeForMutation(Bike $bike, array $additionalVariantIds = []): Bike
     {
+        return $this->lockBikesForMutation([(int) $bike->getKey()], $additionalVariantIds)->firstOrFail();
+    }
+
+    /**
+     * Lock all bikes and their current variants in stable variant-before-bike order.
+     *
+     * @param  array<int, int>  $bikeIds
+     * @param  array<int, int>  $additionalVariantIds
+     * @return Collection<int, Bike>
+     */
+    public function lockBikesForMutation(array $bikeIds, array $additionalVariantIds = []): Collection
+    {
         $this->ensureTransaction();
 
-        $currentVariantId = Bike::query()->whereKey($bike->getKey())->value('bike_model_variant_id');
+        $ids = collect($bikeIds)->unique()->sort()->values();
+        $currentVariants = Bike::query()
+            ->whereKey($ids->all())
+            ->orderBy('id')
+            ->pluck('bike_model_variant_id', 'id');
 
-        if ($currentVariantId === null) {
-            throw (new ModelNotFoundException)->setModel(Bike::class, [$bike->getKey()]);
+        if ($currentVariants->count() !== $ids->count() || $currentVariants->contains(null)) {
+            throw (new ModelNotFoundException)->setModel(Bike::class, $ids->all());
         }
 
-        $variantIds = array_map('intval', [...$additionalVariantIds, $currentVariantId]);
+        $variantIds = array_map('intval', [...$additionalVariantIds, ...$currentVariants->values()->all()]);
         $this->lockVariants($variantIds);
-        $lockedBike = $this->lockBikes([(int) $bike->getKey()])->firstOrFail();
+        $lockedBikes = $this->lockBikes($ids->all())->keyBy('id');
 
-        if ($lockedBike->bike_model_variant_id !== (int) $currentVariantId) {
-            throw new LogicException('The bike variant changed while its mutation lock was being acquired.');
+        foreach ($currentVariants as $bikeId => $variantId) {
+            if ($lockedBikes->get($bikeId)?->bike_model_variant_id !== (int) $variantId) {
+                throw new LogicException('The bike variant changed while its mutation lock was being acquired.');
+            }
         }
 
-        return $lockedBike;
+        return $ids->map(fn (int $id): Bike => $lockedBikes->get($id))->values();
     }
 
     private function ensureTransaction(): void

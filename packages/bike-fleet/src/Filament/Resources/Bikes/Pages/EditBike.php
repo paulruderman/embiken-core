@@ -20,7 +20,14 @@ class EditBike extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            DeleteAction::make(),
+            DeleteAction::make()->using(function (Model $record): bool {
+                return DB::transaction(function () use ($record): bool {
+                    $bike = app(FleetMutationLock::class)
+                        ->lockBikeForMutation(Bike::query()->findOrFail($record->getKey()));
+
+                    return (bool) $bike->delete();
+                }, attempts: 5);
+            }),
         ];
     }
 

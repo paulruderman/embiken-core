@@ -31,7 +31,7 @@ class AssignBikeAction extends Action
         $reservation = $line->reservation;
         $availability = app(Availability::class);
 
-        try {
+        return DB::transaction(function () use ($availability, $line, $bike, $reservation): BikeReservation {
             $availability->assertIntervalFree(
                 $reservation,
                 $reservation->starts_at,
@@ -41,11 +41,10 @@ class AssignBikeAction extends Action
                 $bike,
                 $line,
             );
-        } catch (OccupancyUnavailable $exception) {
-            throw $exception;
-        }
 
-        return DB::transaction(function () use ($line, $bike, $reservation): BikeReservation {
+            $line = BikeReservation::query()->whereKey($line->getKey())->lockForUpdate()->firstOrFail();
+            $bike->refresh();
+
             $from = $line->bike;
 
             if ($from !== null && $from->id !== $bike->id && $from->bike_situation_reservation_id === $reservation->id) {
@@ -66,7 +65,7 @@ class AssignBikeAction extends Action
             $bike->save();
 
             return $line->refresh()->load(['bike', 'reservation.customer', 'reservation.bikeReservations.product.bikeModel']);
-        });
+        }, attempts: 5);
     }
 
     public function asController(Request $request, BikeReservation $line): DayPatchResource

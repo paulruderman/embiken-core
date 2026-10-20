@@ -14,6 +14,7 @@ use Illuminate\Console\Command;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 class ExtendAction extends Action
@@ -24,26 +25,30 @@ class ExtendAction extends Action
 
     public function handle(Reservation $reservation, CarbonInterface $endsAt, ?int $owed = null): Reservation
     {
-        if ($reservation->stage === ReservationStage::Provisional) {
-            throw new InvalidArgumentException('Do not extend Provisional.');
-        }
+        return DB::transaction(function () use ($reservation, $endsAt, $owed): Reservation {
+            app(Availability::class)->assertIntervalFree(
+                $reservation,
+                $reservation->starts_at,
+                $endsAt,
+                ReservationChannel::Terminal,
+            );
 
-        app(Availability::class)->assertIntervalFree(
-            $reservation,
-            $reservation->starts_at,
-            $endsAt,
-            ReservationChannel::Terminal,
-        );
+            $reservation = Reservation::query()->whereKey($reservation->getKey())->lockForUpdate()->firstOrFail();
 
-        $reservation->ends_at = $endsAt;
+            if ($reservation->stage === ReservationStage::Provisional) {
+                throw new InvalidArgumentException('Do not extend Provisional.');
+            }
 
-        if ($owed !== null) {
-            $reservation->owed = $owed;
-        }
+            $reservation->ends_at = $endsAt;
 
-        $reservation->save();
+            if ($owed !== null) {
+                $reservation->owed = $owed;
+            }
 
-        return $reservation;
+            $reservation->save();
+
+            return $reservation;
+        }, attempts: 5);
     }
 
     public function asController(Request $request, Reservation $reservation): DayPatchResource

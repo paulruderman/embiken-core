@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Tenant;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -21,4 +22,14 @@ Artisan::command('inspire', function () {
 Schedule::command('weather:refresh')
     ->everyTenMinutes()
     ->withoutOverlapping()
+    ->onOneServer();
+
+Schedule::call(function (): void {
+    foreach (Tenant::query()->orderBy('id')->cursor() as $tenant) {
+        Artisan::call('reservations:tick', ['--tenant' => $tenant->id]);
+    }
+})
+    ->name('reservations:tick')
+    ->everyMinute()
+    ->withoutOverlapping(30)
     ->onOneServer();

@@ -16,6 +16,7 @@ use Embiken\BikeRentals\Models\BikeReservation;
 use Embiken\BikeRentals\Models\Reservation;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use LogicException;
 
 class Availability
 {
@@ -28,12 +29,10 @@ class Availability
         ?int $riderHeightCm = null,
     ): BikeReservation {
         return DB::transaction(function () use ($reservation, $product, $channel, $bike, $riderName, $riderHeightCm): BikeReservation {
+            $product = $this->lockProduct($product);
+            $this->healStaleOutLines($product);
             $this->assertPackageMembership($reservation, $product);
             $this->assertIntervalFree($reservation, $reservation->starts_at, $reservation->ends_at, $channel, $product, $bike);
-
-            if ($bike !== null) {
-                $this->assertBikeAssignable($bike, $product, $channel);
-            }
 
             $line = new BikeReservation;
             $line->reservation()->associate($reservation);
@@ -53,7 +52,15 @@ class Availability
     public function release(BikeReservation $line): void
     {
         DB::transaction(function () use ($line): void {
-            $line->refresh();
+            $line->refresh()->load(['product', 'bike']);
+
+            $this->lockProduct($line->product);
+
+            if ($line->bike !== null) {
+                $this->lockBike($line->bike);
+            }
+
+            $line = BikeReservation::query()->whereKey($line->getKey())->lockForUpdate()->firstOrFail();
 
             if ($line->status === BikeReservationStatus::Out) {
                 throw new OccupancyUnavailable('An Out line cannot be released. Return it first.', $line->id);
@@ -114,10 +121,16 @@ class Availability
             $line->refresh()->load(['reservation.rentalPackage', 'bike', 'product']);
             $reservation = $line->reservation;
             $from = $line->bike;
-            $product = $bike->variant()->with('bikeModel')->firstOrFail();
+            $product = $this->lockProduct(BikeModelVariant::query()->findOrFail($bike->bike_model_variant_id));
+            $bike = $this->lockBike($bike);
 
+            if ($bike->bike_model_variant_id !== $product->id) {
+                throw new OccupancyUnavailable('That bike changed variants while the swap was being checked.');
+            }
+
+            $product->load('bikeModel');
+            $this->healStaleOutLines($product);
             $this->assertPackageMembership($reservation, $product);
-            $this->assertBikeAssignable($bike, $product, $channel);
             $this->assertIntervalFree(
                 $reservation,
                 $reservation->starts_at,
@@ -176,18 +189,19 @@ class Availability
         ?Bike $bike = null,
         ?BikeReservation $ignoreLine = null,
     ): void {
-        $honorBuffer = $channel === ReservationChannel::Book;
-
-        if ($bike !== null) {
-            $this->assertBikeInterval($bike, $startsAt, $endsAt, $honorBuffer, $reservation->id, $ignoreLine?->id);
-
-            return;
+        if (DB::transactionLevel() === 0) {
+            throw new LogicException('Availability checks that reserve capacity must run inside a transaction.');
         }
+
+        $honorBuffer = $channel === ReservationChannel::Book;
 
         if ($product === null) {
             $reservation->loadMissing('bikeReservations.product', 'bikeReservations.bike');
 
-            foreach ($reservation->bikeReservations as $line) {
+            $lines = $reservation->bikeReservations
+                ->sortBy(fn (BikeReservation $line): string => sprintf('%010d:%010d', $line->product_id, $line->bike_id ?? 0));
+
+            foreach ($lines as $line) {
                 $this->assertIntervalFree(
                     $reservation,
                     $startsAt,
@@ -202,7 +216,18 @@ class Availability
             return;
         }
 
+        $product = $this->lockProduct($product);
+
+        if ($bike !== null) {
+            $bike = $this->lockBike($bike);
+            $this->assertBikeAssignable($bike, $product, $channel);
+        }
+
         $this->assertClassCapacity($product, $startsAt, $endsAt, $honorBuffer, $channel, $reservation->id, $ignoreLine?->id);
+
+        if ($bike !== null) {
+            $this->assertBikeInterval($bike, $startsAt, $endsAt, $honorBuffer, $reservation->id, $ignoreLine?->id);
+        }
     }
 
     private function assertPackageMembership(Reservation $reservation, BikeModelVariant $product): void
@@ -303,8 +328,11 @@ class Availability
                 ->whereKeyNot($ignoreReservationId)
                 ->where('stage', '!=', ReservationStage::Cancelled))
             ->get()
-            ->filter(function (BikeReservation $line) use ($startsAt, $endsAt, $buffer): bool {
-                $occupiedUntil = $line->reservation->ends_at->copy()->addMinutes($buffer);
+            ->filter(function (BikeReservation $line) use ($startsAt, $endsAt, $buffer, $product): bool {
+                $lineBuffer = $line->reservation->stage === ReservationStage::NoShow
+                    ? $this->effectiveBufferMinutesForProduct($product)
+                    : $buffer;
+                $occupiedUntil = $line->reservation->ends_at->copy()->addMinutes($lineBuffer);
 
                 return $line->reservation->starts_at->lte($endsAt) && $occupiedUntil->gte($startsAt);
             })
@@ -348,5 +376,125 @@ class Availability
 
         $reservation->expires_at = now()->addMinutes((int) config('embiken.provisional_ttl_minutes'));
         $reservation->save();
+    }
+
+    private function lockProduct(BikeModelVariant $product): BikeModelVariant
+    {
+        return BikeModelVariant::query()
+            ->whereKey($product->getKey())
+            ->lockForUpdate()
+            ->firstOrFail();
+    }
+
+    private function lockBike(Bike $bike): Bike
+    {
+        return Bike::query()
+            ->whereKey($bike->getKey())
+            ->lockForUpdate()
+            ->firstOrFail();
+    }
+
+    /**
+     * Heal Out lines whose rental interval and turnaround buffer have passed.
+     *
+     * The variant lock serializes these updates with allocation checks for the
+     * same variant. Cancelled reservations are intentionally left untouched.
+     */
+    public function healStaleOutLines(BikeModelVariant $product, ?CarbonInterface $now = null): int
+    {
+        if (DB::transactionLevel() === 0) {
+            throw new LogicException('Stale Out lines must be healed inside a transaction.');
+        }
+
+        $product = $this->lockProduct($product);
+        $now ??= now();
+        $healed = 0;
+
+        $lineIds = BikeReservation::query()
+            ->where('product_id', $product->id)
+            ->where('status', BikeReservationStatus::Out)
+            ->whereHas('reservation', fn ($query) => $query->where('stage', '!=', ReservationStage::Cancelled))
+            ->orderBy('id')
+            ->pluck('id');
+
+        foreach ($lineIds as $lineId) {
+            $line = BikeReservation::query()
+                ->whereKey($lineId)
+                ->lockForUpdate()
+                ->first();
+
+            if ($line === null || $line->status !== BikeReservationStatus::Out) {
+                continue;
+            }
+
+            $reservation = $line->reservation()->lockForUpdate()->firstOrFail();
+
+            if ($reservation->stage === ReservationStage::Cancelled) {
+                continue;
+            }
+
+            $line->load(['bike', 'product.bikeModel', 'reservation.location']);
+            $buffer = $line->bike !== null
+                ? $this->effectiveBufferMinutes($line->bike)
+                : max(
+                    $line->reservation->location->minimum_turnaround_buffer_minutes,
+                    $line->product->bikeModel->padding_minutes ?? 0,
+                );
+
+            if ($reservation->ends_at->copy()->addMinutes($buffer)->isAfter($now)) {
+                continue;
+            }
+
+            $bike = $line->bike === null ? null : $this->lockBike($line->bike);
+
+            $line->status = BikeReservationStatus::In;
+            $line->checked_in_at = null;
+            $line->save();
+
+            if ($bike !== null && $bike->bike_situation_reservation_id === $reservation->id) {
+                $bike->bike_situation_state = BikeSituation::Home;
+                $bike->bike_situation_reservation_id = null;
+                $bike->save();
+            }
+
+            $reservation->recomputeStageCache();
+            $healed++;
+        }
+
+        return $healed;
+    }
+
+    /**
+     * Lock every line's availability rows in a stable order before a reservation
+     * lifecycle transition writes to the reservation itself.
+     *
+     * @return Collection<int, BikeReservation>
+     */
+    public function lockReservationLines(Reservation $reservation): Collection
+    {
+        if (DB::transactionLevel() === 0) {
+            throw new LogicException('Reservation lines must be locked inside a transaction.');
+        }
+
+        $lines = BikeReservation::query()
+            ->where('reservation_id', $reservation->id)
+            ->with(['product', 'bike'])
+            ->orderBy('product_id')
+            ->orderBy('bike_id')
+            ->orderBy('id')
+            ->get();
+
+        foreach ($lines as $line) {
+            $this->lockProduct($line->product);
+
+            if ($line->bike !== null) {
+                $this->lockBike($line->bike);
+            }
+        }
+
+        return $lines->map(fn (BikeReservation $line): BikeReservation => BikeReservation::query()
+            ->whereKey($line->getKey())
+            ->lockForUpdate()
+            ->firstOrFail());
     }
 }

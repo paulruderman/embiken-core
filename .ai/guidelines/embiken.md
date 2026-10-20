@@ -46,14 +46,8 @@ Auth: platform **Users** (central DB, one admin class). The first User is Artisa
 
 ## How we write decisions
 
-Never hand-edit `AGENTS.md`, `CLAUDE.md`, or `.ai/rules/boost/**`. Always-on law goes in `.ai/guidelines/embiken.md`, then `php artisan boost:update --no-discover --no-interaction`. Path-scoped law via Boost `record-rule`. Do not duplicate essays. `CONTEXT.md` is the glossary (what a word means, `_Avoid_`); this file is law (must / must-not); `docs/adr/` is why. Open `CONTEXT.md` for names before using domain words. Do not paste the glossary here or put law in `CONTEXT.md`.
+Never hand-edit `AGENTS.md`, `CLAUDE.md`, or `.ai/rules/boost/**`. Always-on law goes in `.ai/guidelines/embiken.md`, then `php artisan boost:update --no-discover --no-interaction`. Path-scoped law via Boost `record-rule`. Do not duplicate essays. `CONTEXT.md` is the glossary (what a word means, `_Avoid_`); this file is law (must / must-not). Open `CONTEXT.md` for names before using domain words. Do not paste the glossary here or put law in `CONTEXT.md`.
 
-## Agent skills
+## Issues
 
-### Issue tracker
-
-GitHub Issues on `paulruderman/embiken-core` via `gh`. See `docs/agents/issue-tracker.md`.
-
-### Domain docs
-
-Single-context: `CONTEXT.md` (glossary) and `docs/adr/` (why) at the repo root, created lazily. This file is law. See `docs/agents/domain.md`.
+GitHub Issues on `paulruderman/embiken-core` via `gh`.

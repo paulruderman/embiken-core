@@ -49,17 +49,11 @@ Auth: platform **Users** (central DB, one admin class). The first User is Artisa
 
 ## How we write decisions
 
-Never hand-edit `AGENTS.md`, `CLAUDE.md`, or `.ai/rules/boost/**`. Always-on law goes in `.ai/guidelines/embiken.md`, then `php artisan boost:update --no-discover --no-interaction`. Path-scoped law via Boost `record-rule`. Do not duplicate essays. `CONTEXT.md` is the glossary (what a word means, `_Avoid_`); this file is law (must / must-not); `docs/adr/` is why. Open `CONTEXT.md` for names before using domain words. Do not paste the glossary here or put law in `CONTEXT.md`.
+Never hand-edit `AGENTS.md`, `CLAUDE.md`, or `.ai/rules/boost/**`. Always-on law goes in `.ai/guidelines/embiken.md`, then `php artisan boost:update --no-discover --no-interaction`. Path-scoped law via Boost `record-rule`. Do not duplicate essays. `CONTEXT.md` is the glossary (what a word means, `_Avoid_`); this file is law (must / must-not). Open `CONTEXT.md` for names before using domain words. Do not paste the glossary here or put law in `CONTEXT.md`.
 
-## Agent skills
+## Issues
 
-### Issue tracker
-
-GitHub Issues on `paulruderman/embiken-core` via `gh`. See `docs/agents/issue-tracker.md`.
-
-### Domain docs
-
-Single-context: `CONTEXT.md` (glossary) and `docs/adr/` (why) at the repo root, created lazily. This file is law. See `docs/agents/domain.md`.
+GitHub Issues on `paulruderman/embiken-core` via `gh`.
 
 === foundation rules ===
 
@@ -226,12 +220,5 @@ Use Wayfinder to generate TypeScript functions for Laravel routes. Import from `
 
 - If you have modified any PHP files, you must run `vendor/bin/pint --dirty --format agent` before finalizing changes to ensure your code matches the project's expected style.
 - Do not run `vendor/bin/pint --test --format agent`, simply run `vendor/bin/pint --format agent` to fix any formatting issues.
-
-=== inertia-vue/core rules ===
-
-# Inertia + Vue
-
-Vue components must have a single root element.
-- IMPORTANT: Activate `inertia-vue-development` when working with Inertia Vue client-side patterns.
 
 </laravel-boost-guidelines>

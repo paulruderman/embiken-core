@@ -19,6 +19,7 @@
         "echo-vue-development",
         "echo-development",
         "tailwindcss-development",
-        "deploying-laravel-cloud"
+        "deploying-laravel-cloud",
+        "feature-slices"
     ]
 }

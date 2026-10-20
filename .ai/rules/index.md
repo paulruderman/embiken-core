@@ -7,7 +7,6 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Actions/** | .ai/rules/actions.md |
 | docs/adr/** | .ai/rules/adr.md |
 | app/Http/**, routes/** | .ai/rules/boost/http-routes.md |
-| resources/js/** | .ai/rules/boost/js.md |
 | app/Models/** | .ai/rules/boost/models.md |
 | tests/** | .ai/rules/boost/tests.md |
 | config/**, config/tenancy.php | .ai/rules/config.md |

@@ -1,5 +1,6 @@
 {
     "agents": [
+        "codex",
         "cursor",
         "claude_code"
     ],
@@ -10,9 +11,13 @@
     "sail": false,
     "skills": [
         "infer-conventions",
+        "deploying-to-cloud",
         "laravel-best-practices",
         "testing-best-practices",
         "wayfinder-development",
+        "inertia-vue-development",
+        "echo-vue-development",
+        "echo-development",
         "tailwindcss-development",
         "deploying-laravel-cloud"
     ]

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\Platform\ConsumeImpersonationAction;
+use App\Actions\Shop\UpdateShopBrandingAction;
 use App\Actions\Staff\SignInAction;
 use App\Http\Middleware\EnsureModuleEnabled;
 use Illuminate\Support\Facades\Route;
@@ -23,6 +24,10 @@ Route::middleware([
 
     Route::get('/terminal/login', SignInAction::class)->name('staff.login');
     Route::post('/terminal/login', SignInAction::class)->name('staff.login.store');
+
+    Route::post('/shop/branding', UpdateShopBrandingAction::class)
+        ->middleware('auth:staff')
+        ->name('shop.branding.update');
 
     Route::middleware([
         'auth:staff',

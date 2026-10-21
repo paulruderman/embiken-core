@@ -39,6 +39,14 @@ class TenantForm
                     ->email()
                     ->required()
                     ->visibleOn('create'),
+                TextInput::make('manager_name')
+                    ->label('Manager name')
+                    ->visibleOn('edit'),
+                TextInput::make('manager_email')
+                    ->label('Manager email')
+                    ->email()
+                    ->helperText('Saved for tenant provisioning. Saving this form does not send an invitation.')
+                    ->visibleOn('edit'),
                 CheckboxList::make('modules')
                     ->options(fn (): array => collect(app(ModuleRegistry::class)->installedTenantModules())
                         ->mapWithKeys(fn ($module): array => [$module->id() => $module->label()])

@@ -1,18 +1,25 @@
 <?php
 
 use App\Actions\Platform\ProvisionShopAction;
+use App\Actions\Shop\UpdateShopBrandingAction;
 use App\Enums\StaffRole;
+use App\Filament\Shop\Pages\Branding;
 use App\Filament\Shop\Resources\Locations\LocationResource;
 use App\Filament\Shop\Resources\Locations\Pages\ListLocations;
 use App\Filament\Shop\Resources\Staff\StaffResource;
 use App\Models\Location;
+use App\Models\ShopSetting;
 use App\Models\Staff;
 use App\Notifications\SetPasswordNotification;
 use Embiken\BikeRentals\Filament\Resources\Reservations\Pages\EditReservation;
 use Embiken\BikeRentals\Filament\Resources\Reservations\ReservationResource;
 use Embiken\BikeRentals\Models\Reservation;
 use Filament\Facades\Filament;
+use Filament\Support\Colors\Color;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Tests\Concerns\MigratesTenantSchema;
 
@@ -57,10 +64,96 @@ test('a manager can open the location list', function () {
         ->assertOk();
 });
 
+test('a manager can configure shop branding', function () {
+    $staff = Staff::factory()->create();
+
+    $this->actingAs($staff, 'staff');
+
+    Livewire::test(Branding::class)
+        ->assertOk()
+        ->set('data.brand_name', 'River Cycles')
+        ->set('data.primary_color', '#336699')
+        ->set('data.brand_gray_color', '#667788')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect(ShopSetting::current()->brand_name)->toBe('River Cycles')
+        ->and(ShopSetting::current()->primary_color)->toBe('#336699')
+        ->and(ShopSetting::current()->brand_gray_color)->toBe('#667788');
+});
+
+test('the branding form previews generated primary color shades when the color changes', function () {
+    $staff = Staff::factory()->create();
+
+    $this->actingAs($staff, 'staff');
+
+    Livewire::test(Branding::class)
+        ->assertSee('Primary shades')
+        ->assertSee('Gray shades')
+        ->assertSee('Shade 50:')
+        ->assertSee('Shade 950:')
+        ->set('data.primary_color', '#336699')
+        ->assertSee(Color::convertToHex(Color::hex('#336699')[500]))
+        ->set('data.brand_gray_color', '#667788')
+        ->assertSee(Color::convertToHex(Color::hex('#667788')[500]));
+});
+
+test('the shop panel falls back to the application brand and default palette without tenant settings', function () {
+    $panel = Filament::getPanel('shop');
+
+    expect($panel->getBrandName())->toBe((string) config('app.name'))
+        ->and($panel->getBrandLogo())->toBeNull()
+        ->and($panel->getFavicon())->toBe(global_asset('favicon.svg'))
+        ->and($panel->getColors()['primary'])->toBe(Color::hex(ShopSetting::DEFAULT_PRIMARY_COLOR))
+        ->and($panel->getColors()['gray'])->toBe(Color::hex(ShopSetting::DEFAULT_GRAY_COLOR));
+});
+
+test('a manager can upload a tenant logo for shop branding', function () {
+    Storage::fake('public');
+    $staff = Staff::factory()->create();
+
+    $this->actingAs($staff, 'staff');
+
+    Livewire::test(Branding::class)
+        ->set('data.logo_path', UploadedFile::fake()->image('logo.png'))
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $settings = ShopSetting::current();
+
+    expect($settings->logo_path)->toStartWith('branding/');
+    Storage::disk('public')->assertExists($settings->logo_path);
+});
+
+test('shop branding rejects an invalid primary color without changing settings', function () {
+    $settings = ShopSetting::factory()->create([
+        'id' => ShopSetting::SINGLETON_ID,
+        'primary_color' => '#336699',
+    ]);
+
+    expect(fn () => app(UpdateShopBrandingAction::class)([
+        'brand_name' => null,
+        'primary_color' => 'blue',
+        'brand_gray_color' => ShopSetting::DEFAULT_GRAY_COLOR,
+        'logo_path' => null,
+        'favicon_path' => null,
+    ]))->toThrow(ValidationException::class);
+
+    expect($settings->fresh()->primary_color)->toBe('#336699');
+});
+
 test('counter staff cannot access the shop panel', function () {
     $counter = Staff::factory()->counter()->create();
 
     expect($counter->canAccessPanel(Filament::getPanel('shop')))->toBeFalse();
+});
+
+test('counter staff cannot open shop branding settings', function () {
+    $counter = Staff::factory()->counter()->create();
+
+    $this->actingAs($counter, 'staff');
+
+    expect(Branding::canAccess())->toBeFalse();
 });
 
 test('the platform manager can access the shop panel', function () {

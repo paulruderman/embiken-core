@@ -5,8 +5,9 @@ namespace App\Actions\Platform;
 use App\Actions\Action;
 use App\Models\Staff;
 use App\Models\Tenant;
+use Filament\Facades\Filament;
 use Illuminate\Console\Command;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\ValidationException;
@@ -42,9 +43,11 @@ class ImpersonatePlatformManagerAction extends Action
         return $url;
     }
 
-    public function asController(Request $request, Tenant $tenant): JsonResponse
+    public function asController(Request $request, Tenant $tenant): RedirectResponse
     {
-        return response()->json(['url' => $this->handle($tenant)]);
+        abort_unless($request->user('web')?->canAccessPanel(Filament::getPanel('platform')), 403);
+
+        return redirect()->away($this->handle($tenant));
     }
 
     public function asCommand(Command $command): int

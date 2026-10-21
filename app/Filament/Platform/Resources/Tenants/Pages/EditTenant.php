@@ -3,7 +3,6 @@
 namespace App\Filament\Platform\Resources\Tenants\Pages;
 
 use App\Actions\Platform\DeleteTenantAction;
-use App\Actions\Platform\ImpersonatePlatformManagerAction;
 use App\Actions\Platform\StartExpressAccountLinkAction;
 use App\Actions\Platform\SuspendTenantAction;
 use App\Actions\Platform\UnsuspendTenantAction;
@@ -29,6 +28,8 @@ class EditTenant extends EditRecord
 
         return [
             'name' => $data['name'],
+            'manager_name' => $data['manager_name'] ?? null,
+            'manager_email' => $data['manager_email'] ?? null,
             'modules' => $modules,
         ];
     }
@@ -50,7 +51,10 @@ class EditTenant extends EditRecord
                 ->label('Retry Account Link')
                 ->action(fn () => app(StartExpressAccountLinkAction::class)($tenant)),
             Action::make('impersonate')
-                ->url(fn (): string => app(ImpersonatePlatformManagerAction::class)($tenant))
+                ->url(fn (): string => route(
+                    'platform.tenants.impersonate.'.str_replace('.', '_', request()->getHost()),
+                    ['tenant' => $tenant],
+                ))
                 ->openUrlInNewTab(),
             Action::make('delete')
                 ->color('danger')

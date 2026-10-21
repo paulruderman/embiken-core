@@ -26,6 +26,8 @@ class CreateTenantAction extends Action
     ): Tenant {
         $tenant = Tenant::create([
             'name' => $name,
+            'manager_name' => $managerName,
+            'manager_email' => $managerEmail,
             'charges_enabled' => false,
             'transfers_active' => false,
             'modules' => ModuleRegistry::defaultTenantModuleIds(),

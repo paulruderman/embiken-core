@@ -3,7 +3,6 @@
 namespace App\Filament\Platform\Resources\Tenants\Tables;
 
 use App\Actions\Platform\DeleteTenantAction;
-use App\Actions\Platform\ImpersonatePlatformManagerAction;
 use App\Actions\Platform\StartExpressAccountLinkAction;
 use App\Actions\Platform\SuspendTenantAction;
 use App\Actions\Platform\UnsuspendTenantAction;
@@ -50,7 +49,10 @@ class TenantsTable
                     ->label('Retry Account Link')
                     ->action(fn (Tenant $record) => app(StartExpressAccountLinkAction::class)($record)),
                 Action::make('impersonate')
-                    ->url(fn (Tenant $record): string => app(ImpersonatePlatformManagerAction::class)($record))
+                    ->url(fn (Tenant $record): string => route(
+                        'platform.tenants.impersonate.'.str_replace('.', '_', request()->getHost()),
+                        ['tenant' => $record],
+                    ))
                     ->openUrlInNewTab(),
                 Action::make('delete')
                     ->color('danger')

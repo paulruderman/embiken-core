@@ -6,6 +6,7 @@ use App\Actions\Platform\InviteUserAction;
 use App\Actions\Platform\StartExpressAccountLinkAction;
 use App\Actions\Platform\SuspendTenantAction;
 use App\Actions\Platform\UnsuspendTenantAction;
+use App\Filament\Platform\Resources\Tenants\Pages\ListTenants;
 use App\Filament\Platform\Resources\Users\Pages\ListUsers;
 use App\Filament\Platform\Resources\Users\UserResource;
 use App\Models\Tenant;
@@ -25,6 +26,17 @@ test('a platform user can open the user list', function () {
     $this->actingAs($user);
 
     Livewire::test(ListUsers::class)
+        ->assertOk();
+});
+
+test('a platform user can open the tenant list', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user);
+
+    $this->get('http://localhost/platform/tenants')->assertOk();
+
+    Livewire::test(ListTenants::class)
         ->assertOk();
 });
 

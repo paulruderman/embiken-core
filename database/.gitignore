@@ -1,2 +1,4 @@
 *.sqlite*
 tenant*
+!migrations/tenant/
+!migrations/tenant/*.php

@@ -14,6 +14,8 @@ use Stancl\Tenancy\Database\Models\Tenant as BaseTenant;
 /**
  * @property string $id
  * @property string $name
+ * @property string|null $manager_name
+ * @property string|null $manager_email
  * @property Carbon|null $suspended_at
  * @property string|null $stripe_connect_account_id
  * @property bool $charges_enabled
@@ -35,6 +37,8 @@ class Tenant extends BaseTenant implements TenantWithDatabase
         return [
             'id',
             'name',
+            'manager_name',
+            'manager_email',
             'suspended_at',
             'stripe_connect_account_id',
             'charges_enabled',

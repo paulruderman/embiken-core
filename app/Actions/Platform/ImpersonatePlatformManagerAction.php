@@ -31,9 +31,11 @@ class ImpersonatePlatformManagerAction extends Action
 
         $root = rtrim((string) config('app.url'), '/');
         $scheme = parse_url($root, PHP_URL_SCHEME) ?: 'http';
+        $port = parse_url($root, PHP_URL_PORT);
         $previous = URL::current();
 
-        URL::forceRootUrl($scheme.'://'.$domain);
+        $tenantRoot = $scheme.'://'.$domain.($port === null ? '' : ':'.$port);
+        URL::forceRootUrl($tenantRoot);
         $url = URL::temporarySignedRoute('staff.impersonate', now()->addMinutes(5), ['staff' => $staffId]);
         URL::forceRootUrl($root === '' ? $previous : $root);
 

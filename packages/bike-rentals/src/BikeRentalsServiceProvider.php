@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Embiken\BikeRentals;
 
+use Embiken\BikeRentals\Actions\ShowTerminalAction;
 use Embiken\BikeRentals\Actions\TickReservationLifecycleAction;
 use Illuminate\Support\ServiceProvider;
 use Lorisleiva\Actions\Facades\Actions;
@@ -14,6 +15,7 @@ class BikeRentalsServiceProvider extends ServiceProvider
     {
         if ($this->app->runningInConsole()) {
             Actions::registerCommandsForAction(TickReservationLifecycleAction::class);
+            Actions::registerCommandsForAction(ShowTerminalAction::class);
         }
     }
 

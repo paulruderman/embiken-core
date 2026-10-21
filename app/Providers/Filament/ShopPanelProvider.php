@@ -28,6 +28,7 @@ class ShopPanelProvider extends PanelProvider
         $panel
             ->id('shop')
             ->path('manage')
+            ->brandName(fn (): string => tenant()?->name ?? (string) config('app.name'))
             ->authGuard('staff')
             ->authPasswordBroker('staff')
             ->login()

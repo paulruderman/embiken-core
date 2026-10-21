@@ -6,6 +6,8 @@ use App\Actions\Action;
 use App\Enums\StaffRole;
 use App\Models\ShopSetting;
 use App\Models\Staff;
+use App\Support\BrandColor;
+use Closure;
 use Illuminate\Console\Command;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -56,11 +58,11 @@ class UpdateShopBrandingAction extends Action
                 default: $current->brand_name ?? '',
             ),
             'primary_color' => $command->option('primary-color') ?? \Laravel\Prompts\text(
-                'Primary HEX color (blank uses the default)',
+                'Primary Tailwind color class or HEX value (blank uses the default)',
                 default: $current->primary_color ?? '',
             ),
             'brand_gray_color' => $command->option('brand-gray-color') ?? \Laravel\Prompts\text(
-                'Brand gray HEX color (blank uses the default)',
+                'Brand gray Tailwind color class or HEX value (blank uses the default)',
                 default: $current->brand_gray_color ?? '',
             ),
             'logo_path' => $command->option('logo-path') ?? \Laravel\Prompts\text(
@@ -87,10 +89,16 @@ class UpdateShopBrandingAction extends Action
      */
     private function rules(): array
     {
+        $colorRule = static function (string $attribute, mixed $value, Closure $fail): void {
+            if (! BrandColor::isValid($value)) {
+                $fail('Enter a Tailwind color family name or a six-digit HEX value.');
+            }
+        };
+
         return [
             'brand_name' => ['present', 'nullable', 'string', 'max:255'],
-            'primary_color' => ['present', 'nullable', 'regex:/\A#[0-9A-Fa-f]{6}\z/'],
-            'brand_gray_color' => ['present', 'nullable', 'regex:/\A#[0-9A-Fa-f]{6}\z/'],
+            'primary_color' => ['present', 'nullable', 'string', 'max:32', $colorRule],
+            'brand_gray_color' => ['present', 'nullable', 'string', 'max:32', $colorRule],
             'logo_path' => ['present', 'nullable', 'string', 'max:1024', 'regex:/\Abranding\/[A-Za-z0-9][A-Za-z0-9._-]*\.(?:png|jpe?g|webp)\z/i'],
             'favicon_path' => ['present', 'nullable', 'string', 'max:1024', 'regex:/\Abranding\/[A-Za-z0-9][A-Za-z0-9._-]*\.png\z/i'],
         ];

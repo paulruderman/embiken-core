@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Models\ShopSetting;
+use App\Support\BrandColor;
 use App\Support\ModuleRegistry;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -11,7 +12,6 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
-use Filament\Support\Colors\Color;
 use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -113,10 +113,6 @@ class ShopPanelProvider extends PanelProvider
      */
     private function paletteForColor(?string $color, string $default): array
     {
-        if (! is_string($color) || preg_match('/\A#[0-9A-Fa-f]{6}\z/', $color) !== 1) {
-            $color = $default;
-        }
-
-        return Color::hex($color);
+        return BrandColor::palette($color, $default);
     }
 }

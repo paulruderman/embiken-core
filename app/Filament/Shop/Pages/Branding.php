@@ -4,11 +4,12 @@ namespace App\Filament\Shop\Pages;
 
 use App\Actions\Shop\UpdateShopBrandingAction;
 use App\Enums\StaffRole;
+use App\Filament\Shop\Forms\Components\BrandColorDropdown;
 use App\Models\ShopSetting;
 use App\Models\Staff;
+use App\Support\BrandColor;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\BaseFileUpload;
-use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
@@ -48,6 +49,8 @@ class Branding extends Page
 
     public function form(Schema $schema): Schema
     {
+        $colorHelperText = 'Enter a Tailwind color family name to use all its shades, or a six-digit HEX value such as #336699.';
+
         return $schema
             ->components([
                 TextInput::make('brand_name')
@@ -56,10 +59,11 @@ class Branding extends Page
                     ->maxLength(255),
                 Grid::make(['default' => 1, 'lg' => 2])
                     ->schema([
-                        ColorPicker::make('primary_color')
+                        BrandColorDropdown::make('primary_color')
                             ->label('Primary color')
-                            ->helperText('Choose one HEX color. Filament generates the matching shades.')
-                            ->hex()
+                            ->placeholder('blue or #336699')
+                            ->helperText($colorHelperText)
+                            ->maxLength(32)
                             ->live(),
                         View::make('filament.shop.components.brand-color-palette')
                             ->viewData(fn (Get $get): array => self::palettePreview(
@@ -70,10 +74,11 @@ class Branding extends Page
                     ]),
                 Grid::make(['default' => 1, 'lg' => 2])
                     ->schema([
-                        ColorPicker::make('brand_gray_color')
+                        BrandColorDropdown::make('brand_gray_color')
                             ->label('Brand gray')
-                            ->helperText('Used by Filament for neutral surfaces and interface elements.')
-                            ->hex()
+                            ->placeholder('gray or #6B7280')
+                            ->helperText($colorHelperText)
+                            ->maxLength(32)
                             ->live(),
                         View::make('filament.shop.components.brand-color-palette')
                             ->viewData(fn (Get $get): array => self::palettePreview(
@@ -118,7 +123,7 @@ class Branding extends Page
      */
     private static function palettePreview(?string $color, string $defaultColor, string $label): array
     {
-        $palette = filled($color) ? Color::hex($color) : Color::hex($defaultColor);
+        $palette = BrandColor::palette($color, $defaultColor);
 
         return [
             'label' => $label,

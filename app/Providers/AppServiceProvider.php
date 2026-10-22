@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use Carbon\CarbonImmutable;
 use Filament\Facades\Filament;
+use Filament\Support\Facades\FilamentView;
+use Filament\View\PanelsRenderHook;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
@@ -24,6 +26,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::HEAD_START,
+            fn () => view('filament.sidebar-state'),
+        );
+
         if (app()->runningInConsole()) {
             $centralDomain = config('tenancy.central_domains.0');
 

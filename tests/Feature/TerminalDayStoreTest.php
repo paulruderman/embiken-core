@@ -56,6 +56,7 @@ test('the day store snapshot includes every bike and today plus occupying reserv
         ->and($bikes[0])->toHaveKeys([
             'id',
             'bid',
+            'product_id',
             'in_service',
             'self_bookable',
             'bike_situation_state',

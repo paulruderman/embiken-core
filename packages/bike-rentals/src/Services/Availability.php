@@ -51,9 +51,46 @@ class Availability
             $line->rider_height_cm = $riderHeightCm;
             $line->save();
 
+            if ($bike !== null) {
+                $bike->bike_situation_state = BikeSituation::Prepping;
+                $bike->bike_situation_reservation_id = $reservation->id;
+                $bike->save();
+            }
+
             $this->bumpExpiresAt($reservation);
 
             return $line;
+        });
+    }
+
+    public function unassign(BikeReservation $line): BikeReservation
+    {
+        return DB::transaction(function () use ($line): BikeReservation {
+            $line->refresh()->load(['reservation', 'bike']);
+
+            if ($line->status !== BikeReservationStatus::Assigned) {
+                throw new OccupancyUnavailable('Only an Assigned line can be unassigned.', $line->id);
+            }
+
+            if ($line->bike_id === null) {
+                throw new OccupancyUnavailable('That line has no bike.', $line->id);
+            }
+
+            $reservation = $line->reservation;
+            $bike = $line->bike;
+
+            $line->bike()->dissociate();
+            $line->save();
+
+            if ($bike !== null && $bike->bike_situation_reservation_id === $reservation->id) {
+                $bike->bike_situation_state = BikeSituation::Home;
+                $bike->bike_situation_reservation_id = null;
+                $bike->save();
+            }
+
+            $this->bumpExpiresAt($reservation);
+
+            return $line->refresh();
         });
     }
 
@@ -70,8 +107,13 @@ class Availability
 
             $line->load(['product', 'bike', 'reservation']);
 
-            if ($line->status === BikeReservationStatus::Out) {
-                throw new OccupancyUnavailable('An Out line cannot be released. Return it first.', $line->id);
+            if ($line->status !== BikeReservationStatus::Assigned) {
+                throw new OccupancyUnavailable(
+                    $line->status === BikeReservationStatus::Out
+                        ? 'An Out line cannot be released. Return it first.'
+                        : 'Only an Assigned line can be released.',
+                    $line->id,
+                );
             }
 
             $reservation = $line->reservation;

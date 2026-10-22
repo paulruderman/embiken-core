@@ -10,6 +10,7 @@ use Embiken\BikeRentals\Actions\ReleaseLineAction;
 use Embiken\BikeRentals\Actions\ReturnAction;
 use Embiken\BikeRentals\Actions\SetReservationOwedAction;
 use Embiken\BikeRentals\Actions\SetReservationStageAction;
+use Embiken\BikeRentals\Actions\UnassignBikeAction;
 use Embiken\BikeRentals\Enums\BikeReservationStatus;
 use Embiken\BikeRentals\Enums\ReservationChannel;
 use Embiken\BikeRentals\Enums\ReservationStage;
@@ -89,6 +90,84 @@ test('staff may set confirmed and owed, and refunds recompute paid', function ()
         ->and($reservation->fresh()->owed)->toBe(6000)
         ->and($reservation->fresh()->paid)->toBe(-1000)
         ->and($transaction->kind)->toBe(TransactionKind::Refund);
+});
+
+test('a second allocated line does not replace the first bike', function () {
+    $first = Bike::factory()->create();
+    $second = Bike::factory()->recycle($first->location)->recycle($first->variant)->create();
+    $reservation = Reservation::factory()->confirmed()->terminal()->recycle($first->location)->create();
+
+    $firstLine = app(AllocateLineAction::class)($reservation, $first->variant, $first);
+    $secondLine = app(AllocateLineAction::class)($reservation, $second->variant, $second);
+
+    expect($firstLine->fresh()->bike_id)->toBe($first->id)
+        ->and($secondLine->bike_id)->toBe($second->id)
+        ->and($reservation->fresh()->bikeReservations)->toHaveCount(2);
+});
+
+test('allocating with a bike sets prepping on that bike', function () {
+    $bike = Bike::factory()->create();
+    $reservation = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create();
+
+    app(AllocateLineAction::class)($reservation, $bike->variant, $bike);
+
+    expect($bike->fresh()->bike_situation_state)->toBe(BikeSituation::Prepping)
+        ->and($bike->fresh()->bike_situation_reservation_id)->toBe($reservation->id);
+});
+
+test('allocate infers the variant from a bike when product is omitted', function () {
+    $bike = Bike::factory()->create();
+    $reservation = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create();
+
+    $line = app(AllocateLineAction::class)($reservation, null, $bike);
+
+    expect($line->product_id)->toBe($bike->bike_model_variant_id)
+        ->and($line->bike_id)->toBe($bike->id);
+});
+
+test('unassign clears the bike and keeps the line', function () {
+    $bike = Bike::factory()->create();
+    $reservation = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create();
+    $line = app(AllocateLineAction::class)($reservation, $bike->variant, $bike);
+
+    $unassigned = app(UnassignBikeAction::class)($line);
+
+    expect($unassigned->bike_id)->toBeNull()
+        ->and($unassigned->product_id)->toBe($bike->bike_model_variant_id)
+        ->and($bike->fresh()->bike_situation_state)->toBe(BikeSituation::Home)
+        ->and($bike->fresh()->bike_situation_reservation_id)->toBeNull()
+        ->and(BikeReservation::query()->find($line->id))->not->toBeNull();
+});
+
+test('an out line cannot be unassigned', function () {
+    $bike = Bike::factory()->create();
+    $reservation = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create();
+    $line = app(AllocateLineAction::class)($reservation, $bike->variant, $bike);
+    $line->status = BikeReservationStatus::Out;
+    $line->save();
+
+    expect(fn () => app(UnassignBikeAction::class)($line))
+        ->toThrow(OccupancyUnavailable::class);
+});
+
+test('the last line cannot be released', function () {
+    $bike = Bike::factory()->create();
+    $reservation = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create();
+    $line = app(AllocateLineAction::class)($reservation, $bike->variant, $bike);
+
+    expect(fn () => app(ReleaseLineAction::class)($line))
+        ->toThrow(OccupancyUnavailable::class);
+});
+
+test('an in line cannot be released', function () {
+    $bike = Bike::factory()->create();
+    $reservation = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create();
+    $line = app(AllocateLineAction::class)($reservation, $bike->variant, $bike);
+    $line->status = BikeReservationStatus::In;
+    $line->save();
+
+    expect(fn () => app(ReleaseLineAction::class)($line))
+        ->toThrow(OccupancyUnavailable::class);
 });
 
 test('an out line cannot be released', function () {

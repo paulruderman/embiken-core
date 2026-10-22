@@ -112,3 +112,6 @@ Book and MyRental extend Actions check Location hours; quoteOccupancy does not. 
 
 ## Provisional expires_at bump including failed pay
 Checkout allocate creates the Provisional lock. Bump Reservation expires_at on allocate, contact/waiver writes, and pay attempts (success or fail). Tick CancelAction when expires_at passed and stage is still Provisional with no Out. Back after lock amends the same reservation via allocate/release; do not CancelAction plus create from Book.
+
+## Allocate, unassign, and release lines
+AllocateLineAction adds a line (optional bike; infer variant from the bike). UnassignBikeAction clears bike_id and homes the bike; the line stays. ReleaseLineAction deletes an Assigned line only, not Out/In, and not the last line (CancelAction still releases unused lines including the last). allocate with a bike writes prepping. Do not treat add/unassign/release as SwapAsset.

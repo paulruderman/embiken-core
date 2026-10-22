@@ -29,7 +29,7 @@ Day store and CFD ticket payloads include every bike_reservation on a reservatio
 ## Location-channel day-store DTO
 Location-channel DTOs (Inertia props, Echo broadcastWith, Action jsonResponse) are never Eloquent graphs.
 
-Bike: id, bid, in_service, self_bookable, bike_situation_state, bike_situation_reservation_id, model (BikeModel name), variant (size), photo_url (bike then variant then model).
+Bike: id, bid, product_id (variant id), in_service, self_bookable, bike_situation_state, bike_situation_reservation_id, model (BikeModel name), variant (size), photo_url (bike then variant then model). Do not dump bike_model_variant_id.
 
 Line: id, product_id, product_label, bike_id, status (assigned/out/in), rider_name, rider_height_cm.
 
@@ -44,3 +44,6 @@ Do not call useEcho during SSR. useEcho instantiates Pusher in setup (not onMoun
 
 ## Shared enum meta for SPA badges
 Inertia shares enums.* lookup tables. Use getEnumLabel / getStatusBadgeClasses from @/lib/enums and value consts from @/types/domain for comparisons. Do not hardcode production situation/stage labels or colors in Vue.
+
+## Bike day-store DTO has product_id
+Day-store bike DTO includes product_id (the variant id), matching Line.product_id. Do not dump bike_model_variant_id.

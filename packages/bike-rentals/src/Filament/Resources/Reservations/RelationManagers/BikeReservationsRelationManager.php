@@ -8,6 +8,8 @@ use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeFleet\Models\BikeModelVariant;
 use Embiken\BikeRentals\Actions\AllocateLineAction;
 use Embiken\BikeRentals\Actions\ReleaseLineAction;
+use Embiken\BikeRentals\Actions\UnassignBikeAction;
+use Embiken\BikeRentals\Enums\BikeReservationStatus;
 use Embiken\BikeRentals\Models\BikeReservation;
 use Embiken\BikeRentals\Models\Reservation;
 use Filament\Actions\Action;
@@ -123,7 +125,18 @@ class BikeReservationsRelationManager extends RelationManager
                     }),
             ])
             ->recordActions([
+                Action::make('unassign')
+                    ->visible(fn (BikeReservation $record): bool => $record->bike_id !== null && $record->status === BikeReservationStatus::Assigned)
+                    ->requiresConfirmation()
+                    ->action(fn (BikeReservation $record) => app(UnassignBikeAction::class)($record)),
                 Action::make('release')
+                    ->visible(function (BikeReservation $record): bool {
+                        if ($record->status !== BikeReservationStatus::Assigned) {
+                            return false;
+                        }
+
+                        return $record->reservation->bikeReservations()->count() > 1;
+                    })
                     ->requiresConfirmation()
                     ->action(fn (BikeReservation $record) => app(ReleaseLineAction::class)($record)),
             ]);

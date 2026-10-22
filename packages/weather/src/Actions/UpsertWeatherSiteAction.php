@@ -28,8 +28,9 @@ class UpsertWeatherSiteAction extends Action
         float $longitude,
         bool $enabled = true,
         ?int $sortOrder = null,
+        ?WeatherSite $site = null,
     ): WeatherSite {
-        $site = WeatherSite::query()->where('code', $code)->first();
+        $site ??= WeatherSite::query()->where('code', $code)->first();
 
         $coordinatesChanged = $site === null
             || (float) $site->latitude !== $latitude

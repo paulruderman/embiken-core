@@ -4,12 +4,14 @@ namespace Embiken\BikeRentals\Actions;
 
 use App\Actions\Action;
 use App\Actions\Concerns\AuthorizesStaff;
+use Embiken\BikeRentals\Exceptions\OccupancyUnavailable;
 use Embiken\BikeRentals\Http\Resources\DayPatchResource;
 use Embiken\BikeRentals\Models\BikeReservation;
 use Embiken\BikeRentals\Services\Availability;
 use Illuminate\Console\Command;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
+use Illuminate\Validation\ValidationException;
 
 class ReleaseLineAction extends Action
 {
@@ -19,6 +21,12 @@ class ReleaseLineAction extends Action
 
     public function handle(BikeReservation $line): void
     {
+        $line->loadMissing('reservation.bikeReservations');
+
+        if ($line->reservation->bikeReservations->count() <= 1) {
+            throw new OccupancyUnavailable('A reservation must keep at least one line.', $line->id);
+        }
+
         app(Availability::class)->release($line);
     }
 
@@ -26,7 +34,12 @@ class ReleaseLineAction extends Action
     {
         $reservation = $line->reservation;
         $bike = $line->bike;
-        $this->handle($line);
+
+        try {
+            $this->handle($line);
+        } catch (OccupancyUnavailable $exception) {
+            throw ValidationException::withMessages(['line' => $exception->reason]);
+        }
 
         return new DayPatchResource([
             'reservation' => $reservation->refresh()->load(['customer', 'bikeReservations.product.bikeModel']),

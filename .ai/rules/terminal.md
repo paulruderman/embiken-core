@@ -25,3 +25,6 @@ Assign and Swap are per bike_reservation line and live on that row in the ticket
 
 ## Assign candidates show model and variant
 Assign and Swap candidate chips always show bid plus BikeModel and BikeModelVariant (size/class), not bid and situation alone. Do not truncate the catalog line off the chip.
+
+## Add and remove lines without swap
+Add bike and Add size (variant line) hang on the ticket header as Another rider, not a second slot list. Unassign (keep the line) and Drop/Release hang on the line row with Assign/Swap. Swap still replaces a bike on that row. ReleaseLineAction refuses the last line; cancel the reservation instead. Unassign is allowed on the last line.

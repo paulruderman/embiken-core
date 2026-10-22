@@ -21,6 +21,7 @@ class LocationBikeResource extends JsonResource
         return [
             'id' => $this->id,
             'bid' => $this->bid,
+            'product_id' => $this->bike_model_variant_id,
             'in_service' => $this->in_service,
             'self_bookable' => $this->self_bookable,
             'bike_situation_state' => $this->bike_situation_state->value,

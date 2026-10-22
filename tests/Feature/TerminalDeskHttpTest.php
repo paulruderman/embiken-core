@@ -87,6 +87,7 @@ test('staff can open the terminal prototype with the day-store DTO', function ()
                 ->where('bid', 'T-01')
                 ->has('bike_situation_state')
                 ->has('model')
+                ->has('product_id')
                 ->missing('bike_model_variant_id')
                 ->etc())
             ->has('reservations')
@@ -256,4 +257,38 @@ test('swap refuses a variant that is not on the package', function () {
         ])
         ->assertUnprocessable()
         ->assertJsonValidationErrors('bike_id');
+});
+
+test('staff can add a bike and unassign without swapping', function () {
+    $shop = provisionDeskShop('desk-grow.localhost');
+    $this->deskTenant = $shop['tenant'];
+
+    $reservationId = null;
+    $firstLineId = null;
+    $secondBikeId = null;
+
+    $shop['tenant']->run(function () use ($shop, &$reservationId, &$firstLineId, &$secondBikeId): void {
+        $first = Bike::factory()->recycle($shop['location'])->create();
+        $second = Bike::factory()->recycle($shop['location'])->recycle($first->variant)->create();
+        $reservation = Reservation::factory()->confirmed()->terminal()->recycle($shop['location'])->create();
+        $line = app(AllocateLineAction::class)($reservation, $first->variant, $first);
+        $reservationId = $reservation->id;
+        $firstLineId = $line->id;
+        $secondBikeId = $second->id;
+    });
+
+    $this->actingAs($shop['staff'], 'staff');
+
+    $this->postJson("http://desk-grow.localhost/reservations/{$reservationId}/lines", [
+        'bike_id' => $secondBikeId,
+    ])
+        ->assertOk()
+        ->assertJsonPath('reservation.id', $reservationId);
+
+    $this->postJson("http://desk-grow.localhost/lines/{$firstLineId}/unassign")
+        ->assertOk()
+        ->assertJsonPath('reservation.lines.0.bike_id', null);
+
+    $this->deleteJson("http://desk-grow.localhost/lines/{$firstLineId}")
+        ->assertOk();
 });

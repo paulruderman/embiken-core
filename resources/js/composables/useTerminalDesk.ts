@@ -1,5 +1,6 @@
 import { useHttp } from '@inertiajs/vue3';
 import AcceptWaiverAction from '@/actions/Embiken/BikeRentals/Actions/AcceptWaiverAction';
+import AllocateLineAction from '@/actions/Embiken/BikeRentals/Actions/AllocateLineAction';
 import AssignBikeAction from '@/actions/Embiken/BikeRentals/Actions/AssignBikeAction';
 import CancelAction from '@/actions/Embiken/BikeRentals/Actions/CancelAction';
 import CreateWalkInReservationAction from '@/actions/Embiken/BikeRentals/Actions/CreateWalkInReservationAction';
@@ -7,8 +8,10 @@ import ExtendAction from '@/actions/Embiken/BikeRentals/Actions/ExtendAction';
 import PickupAction from '@/actions/Embiken/BikeRentals/Actions/PickupAction';
 import PutAwayAction from '@/actions/Embiken/BikeRentals/Actions/PutAwayAction';
 import RecordCashPaymentAction from '@/actions/Embiken/BikeRentals/Actions/RecordCashPaymentAction';
+import ReleaseLineAction from '@/actions/Embiken/BikeRentals/Actions/ReleaseLineAction';
 import ReturnAction from '@/actions/Embiken/BikeRentals/Actions/ReturnAction';
 import SwapAssetAction from '@/actions/Embiken/BikeRentals/Actions/SwapAssetAction';
+import UnassignBikeAction from '@/actions/Embiken/BikeRentals/Actions/UnassignBikeAction';
 import { useDayStore, type DayPatch } from '@/stores/day';
 import type { Line, Reservation } from '@bike-rentals/Terminal/prototype/mock';
 
@@ -22,12 +25,13 @@ export function useTerminalDesk() {
     const day = useDayStore();
     const http = useHttp<Record<string, unknown>, DayPatch>({});
 
-    function post(
+    function request(
+        method: 'post' | 'delete',
         url: string,
         body: Record<string, unknown> = {},
         onSuccess?: (patch: DayPatch) => void,
     ): void {
-        http.transform(() => body).post(url, {
+        http.transform(() => body)[method](url, {
             onSuccess: (response) => {
                 apply(day, response);
                 const patch =
@@ -35,6 +39,14 @@ export function useTerminalDesk() {
                 onSuccess?.(patch);
             },
         });
+    }
+
+    function post(
+        url: string,
+        body: Record<string, unknown> = {},
+        onSuccess?: (patch: DayPatch) => void,
+    ): void {
+        request('post', url, body, onSuccess);
     }
 
     return {
@@ -75,8 +87,25 @@ export function useTerminalDesk() {
         assignBike(line: Line, bikeId: number): void {
             post(AssignBikeAction.url({ line: line.id }), { bike_id: bikeId });
         },
+        unassignBike(line: Line): void {
+            post(UnassignBikeAction.url({ line: line.id }));
+        },
         swapAsset(line: Line, bikeId: number): void {
             post(SwapAssetAction.url({ line: line.id }), { bike_id: bikeId });
+        },
+        allocateLine(reservation: Reservation, productId: number, bikeId?: number): void {
+            const body: Record<string, unknown> = {};
+
+            if (bikeId !== undefined) {
+                body.bike_id = bikeId;
+            } else {
+                body.product_id = productId;
+            }
+
+            post(AllocateLineAction.url(reservation.id), body);
+        },
+        releaseLine(line: Line): void {
+            request('delete', ReleaseLineAction.url({ line: line.id }));
         },
         extendReservation(reservation: Reservation, requote: boolean): void {
             const ends = new Date(reservation.endsAtIso);

@@ -9,6 +9,7 @@ import type {
 export type DayBike = {
     id: number;
     bid: string;
+    product_id: number;
     in_service: boolean;
     self_bookable: boolean;
     bike_situation_state: BikeSituation;

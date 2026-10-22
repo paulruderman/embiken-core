@@ -25,11 +25,18 @@ class AllocateLineAction extends Action
 
     public function handle(
         Reservation $reservation,
-        BikeModelVariant $product,
+        ?BikeModelVariant $product = null,
         ?Bike $bike = null,
         ?string $riderName = null,
         ?int $riderHeightCm = null,
     ): BikeReservation {
+        $bike?->loadMissing('variant');
+        $product ??= $bike?->variant;
+
+        if ($product === null) {
+            throw ValidationException::withMessages(['product_id' => 'Allocate needs a variant or a bike.']);
+        }
+
         return app(Availability::class)->allocate(
             $reservation,
             $product,
@@ -43,8 +50,8 @@ class AllocateLineAction extends Action
     public function asController(Request $request, Reservation $reservation): DayPatchResource
     {
         $data = $request->validate([
-            'product_id' => ['required', 'integer', 'exists:bike_model_variants,id'],
-            'bike_id' => ['nullable', 'integer', 'exists:bikes,id'],
+            'product_id' => ['required_without:bike_id', 'nullable', 'integer', 'exists:bike_model_variants,id'],
+            'bike_id' => ['required_without:product_id', 'nullable', 'integer', 'exists:bikes,id'],
             'rider_name' => ['nullable', 'string', 'max:255'],
             'rider_height_cm' => ['nullable', 'integer', 'min:0'],
         ]);
@@ -52,7 +59,7 @@ class AllocateLineAction extends Action
         try {
             $line = $this->handle(
                 $reservation,
-                BikeModelVariant::query()->findOrFail($data['product_id']),
+                isset($data['product_id']) ? BikeModelVariant::query()->findOrFail($data['product_id']) : null,
                 isset($data['bike_id']) ? Bike::query()->findOrFail($data['bike_id']) : null,
                 $data['rider_name'] ?? null,
                 isset($data['rider_height_cm']) ? (int) $data['rider_height_cm'] : null,
@@ -77,10 +84,14 @@ class AllocateLineAction extends Action
     public function asCommand(Command $command): int
     {
         $this->initializeTenancyFromCommand($command);
+        $bike = $command->option('bike') ? Bike::query()->findOrFail($command->option('bike')) : null;
+        $productArgument = $command->argument('product');
         $line = $this->handle(
             Reservation::query()->findOrFail($command->argument('reservation') ?: \Laravel\Prompts\text('Reservation id')),
-            BikeModelVariant::query()->findOrFail($command->argument('product') ?: \Laravel\Prompts\text('Variant id')),
-            $command->option('bike') ? Bike::query()->findOrFail($command->option('bike')) : null,
+            $productArgument
+                ? BikeModelVariant::query()->findOrFail($productArgument)
+                : ($bike === null ? BikeModelVariant::query()->findOrFail(\Laravel\Prompts\text('Variant id')) : null),
+            $bike,
             $command->option('rider-name') ?: null,
             $command->option('rider-height') !== null ? (int) $command->option('rider-height') : null,
         );

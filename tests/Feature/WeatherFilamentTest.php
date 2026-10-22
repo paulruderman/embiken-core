@@ -102,6 +102,11 @@ test('a manager can create a weather site from filament', function () {
     $tenant->run(function (): void {
         Livewire::test(CreateWeatherSite::class)
             ->assertSuccessful()
+            ->assertSee('weather-site-map-picker', false)
+            ->assertSee('data-start-zoom="12"', false)
+            ->assertSee('data-min-zoom="4"', false)
+            ->assertSee('data-max-zoom="16"', false)
+            ->assertDontSee('weather-site-map-zoom', false)
             ->fillForm([
                 'code' => 'SH',
                 'label' => 'Shop desk',
@@ -156,6 +161,11 @@ test('a manager can edit a weather site from filament', function () {
     $tenant->run(function () use ($siteId): void {
         $page = Livewire::test(EditWeatherSite::class, ['record' => $siteId])
             ->assertSuccessful()
+            ->assertSee('weather-site-map-picker', false)
+            ->assertSee('data-start-zoom="12"', false)
+            ->assertSee('data-min-zoom="4"', false)
+            ->assertSee('data-max-zoom="16"', false)
+            ->assertDontSee('weather-site-map-zoom', false)
             ->fillForm([
                 'latitude' => 43.6591,
                 'longitude' => -70.2568,
@@ -171,5 +181,95 @@ test('a manager can edit a weather site from filament', function () {
             ->and($site->nws_office)->toBe('GYX')
             ->and($site->nws_grid_x)->toBe(10)
             ->and($site->nws_grid_y)->toBe(20);
+    });
+});
+
+test('a manager can persist coordinates set on the livewire data bag', function () {
+    Notification::fake();
+    Http::fake([
+        'api.weather.gov/points/*' => Http::response([
+            'properties' => [
+                'gridId' => 'OKX',
+                'gridX' => 33,
+                'gridY' => 35,
+            ],
+        ]),
+    ]);
+
+    $tenant = Tenant::create([
+        'name' => 'Wx Map Set',
+        'modules' => ['embiken/bike-fleet', 'embiken/bike-rentals', 'embiken/weather'],
+    ]);
+    $tenant->domains()->create(['domain' => 'wx-fil-map.localhost']);
+    $this->weatherFilamentTenant = $tenant;
+
+    $staff = null;
+    $siteId = null;
+
+    $tenant->run(function () use (&$staff, &$siteId): void {
+        $location = Location::factory()->create();
+        $staff = Staff::factory()->recycle($location)->create();
+        $siteId = WeatherSite::factory()->create(['code' => 'SH'])->getKey();
+    });
+
+    $this->actingAs($staff, 'staff');
+    Filament::setCurrentPanel('shop');
+
+    $tenant->run(function () use ($siteId): void {
+        Livewire::test(EditWeatherSite::class, ['record' => $siteId])
+            ->set('data.latitude', 40.7128)
+            ->set('data.longitude', -74.006)
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $site = WeatherSite::query()->findOrFail($siteId);
+
+        expect((float) $site->latitude)->toBe(40.7128)
+            ->and((float) $site->longitude)->toBe(-74.006);
+    });
+});
+
+test('editing a weather site code updates the same row', function () {
+    Notification::fake();
+    Http::fake([
+        'api.weather.gov/points/*' => Http::response([
+            'properties' => [
+                'gridId' => 'BTV',
+                'gridX' => 89,
+                'gridY' => 57,
+            ],
+        ]),
+    ]);
+
+    $tenant = Tenant::create([
+        'name' => 'Wx Code',
+        'modules' => ['embiken/bike-fleet', 'embiken/bike-rentals', 'embiken/weather'],
+    ]);
+    $tenant->domains()->create(['domain' => 'wx-fil-code.localhost']);
+    $this->weatherFilamentTenant = $tenant;
+
+    $staff = null;
+    $siteId = null;
+
+    $tenant->run(function () use (&$staff, &$siteId): void {
+        $location = Location::factory()->create();
+        $staff = Staff::factory()->recycle($location)->create();
+        $siteId = WeatherSite::factory()->create(['code' => 'SH', 'label' => 'Shop desk'])->getKey();
+    });
+
+    $this->actingAs($staff, 'staff');
+    Filament::setCurrentPanel('shop');
+
+    $tenant->run(function () use ($siteId): void {
+        Livewire::test(EditWeatherSite::class, ['record' => $siteId])
+            ->fillForm([
+                'code' => 'HQ',
+                'label' => 'Shop desk',
+            ])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        expect(WeatherSite::query()->count())->toBe(1)
+            ->and(WeatherSite::query()->findOrFail($siteId)->code)->toBe('HQ');
     });
 });

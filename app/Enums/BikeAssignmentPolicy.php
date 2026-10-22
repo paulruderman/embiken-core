@@ -21,9 +21,9 @@ enum BikeAssignmentPolicy: string implements HasColor, HasDescription, HasIcon, 
     public function getLabel(): string
     {
         return match ($this) {
-            self::Terminal => 'Terminal assign',
-            self::BookMayPin => 'Book may pin',
-            self::PickupOnly => 'Pickup only',
+            self::Terminal => 'Staff assigns',
+            self::BookMayPin => 'Customer may request specific bike',
+            self::PickupOnly => 'Staff assigns a bike at pickup only',
         };
     }
 

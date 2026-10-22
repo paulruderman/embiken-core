@@ -11,6 +11,7 @@ export type Stage = string;
 export type Bike = {
     id: number;
     bid: string;
+    product_id: number;
     model: string;
     variant: string;
     situation: Situation;
@@ -19,8 +20,10 @@ export type Bike = {
 
 export type Line = {
     id: number;
+    product_id: number;
     product: string;
     bike_id: number | null;
+    status: string;
 };
 
 export type Reservation = {
@@ -64,6 +67,7 @@ function mapBike(bike: DayBike): Bike {
     return {
         id: bike.id,
         bid: bike.bid,
+        product_id: bike.product_id,
         model: bike.model,
         variant: bike.variant,
         situation: bike.bike_situation_state,
@@ -86,8 +90,10 @@ function mapReservation(reservation: DayReservation, timezone: string): Reservat
         myrental: reservation.myrental_token ?? '',
         lines: reservation.lines.map((line) => ({
             id: line.id,
+            product_id: line.product_id,
             product: line.product_label,
             bike_id: line.bike_id,
+            status: line.status,
         })),
     };
 }
@@ -248,12 +254,42 @@ export function candidateBikes(shop: Shop, reservation: Reservation, line: Line,
             }
 
             if (mode === 'assign') {
-                return bike.situation === 'home';
+                return bike.situation === 'home' && bike.product_id === line.product_id;
             }
 
             return bike.id !== line.bike_id;
         })
         .sort((left, right) => rankForLine(line, left) - rankForLine(line, right) || left.bid.localeCompare(right.bid));
+}
+
+export function addBikeCandidates(shop: Shop, reservation: Reservation): Bike[] {
+    const taken = new Set(reservation.lines.map((line) => line.bike_id).filter((id): id is number => id !== null));
+
+    return shop.bikes
+        .filter((bike) => bike.in_service && bike.situation === 'home' && !taken.has(bike.id))
+        .sort((left, right) => left.bid.localeCompare(right.bid));
+}
+
+export type LineVariantChip = {
+    product_id: number;
+    label: string;
+};
+
+export function addLineVariants(shop: Shop): LineVariantChip[] {
+    const seen = new Map<number, LineVariantChip>();
+
+    for (const bike of shop.bikes) {
+        if (!bike.in_service || seen.has(bike.product_id)) {
+            continue;
+        }
+
+        seen.set(bike.product_id, {
+            product_id: bike.product_id,
+            label: bikeProduct(bike),
+        });
+    }
+
+    return [...seen.values()].sort((left, right) => left.label.localeCompare(right.label));
 }
 
 export function hourOf(stamp: string): number {

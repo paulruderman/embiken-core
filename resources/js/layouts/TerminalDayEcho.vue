@@ -1,10 +1,6 @@
 <script setup lang="ts">
 import { useEcho } from '@laravel/echo-vue';
-import {
-    useDayStore,
-    type DayBike,
-    type DayReservation,
-} from '@/stores/day';
+import { useDayStore, type DayBike, type DayReservation } from '@/stores/day';
 
 const props = defineProps<{
     tenantId: string;

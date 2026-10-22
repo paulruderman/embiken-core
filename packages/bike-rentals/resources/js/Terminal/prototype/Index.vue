@@ -30,7 +30,10 @@ import VariantRHopper from './VariantRHopper.vue';
 import VariantSPortraits from './VariantSPortraits.vue';
 import VariantTShuttle from './VariantTShuttle.vue';
 import WeatherStrip from '@weather/components/WeatherStrip.vue';
-import { useWeatherStore, type WeatherSiteSnapshot } from '@weather/stores/weather';
+import {
+    useWeatherStore,
+    type WeatherSiteSnapshot,
+} from '@weather/stores/weather';
 
 defineOptions({ layout: TerminalLayout });
 
@@ -58,10 +61,18 @@ const variants = [
 ];
 
 const page = usePage();
-const enabledModules = computed(() => (page.props.enabledModules as string[]) ?? []);
-const weatherEnabled = computed(() => enabledModules.value.includes('embiken/weather'));
+const enabledModules = computed(
+    () => (page.props.enabledModules as string[]) ?? [],
+);
+const weatherEnabled = computed(() =>
+    enabledModules.value.includes('embiken/weather'),
+);
 const weather = useWeatherStore();
-const weatherModule = (page.props.modules as { weather?: { sites?: WeatherSiteSnapshot[] } } | undefined)?.weather;
+const weatherModule = (
+    page.props.modules as
+        | { weather?: { sites?: WeatherSiteSnapshot[] } }
+        | undefined
+)?.weather;
 
 if (weatherModule?.sites) {
     weather.hydrate({ sites: weatherModule.sites });
@@ -70,9 +81,13 @@ if (weatherModule?.sites) {
 const weatherSites = computed(() => weather.sites);
 
 const current = computed(() => {
-    const query = new URL(page.url, 'http://localhost').searchParams.get('variant');
+    const query = new URL(page.url, 'http://localhost').searchParams.get(
+        'variant',
+    );
 
-    return variants.some((variant) => variant.key === query) ? (query as string) : 'A';
+    return variants.some((variant) => variant.key === query)
+        ? (query as string)
+        : 'A';
 });
 
 function select(key: string): void {
@@ -87,7 +102,10 @@ function select(key: string): void {
 <template>
     <div>
         <Head title="Terminal POS prototype" />
-        <div v-if="weatherEnabled && weatherSites.length > 0" class="bg-neutral-950 p-3">
+        <div
+            v-if="weatherEnabled && weatherSites.length > 0"
+            class="bg-neutral-950 p-3"
+        >
             <WeatherStrip :sites="weatherSites" />
         </div>
         <VariantAFloor v-if="current === 'A'" />
@@ -110,6 +128,10 @@ function select(key: string): void {
         <VariantRHopper v-else-if="current === 'R'" />
         <VariantSPortraits v-else-if="current === 'S'" />
         <VariantTShuttle v-else-if="current === 'T'" />
-        <PrototypeSwitcher :variants="variants" :current="current" @select="select" />
+        <PrototypeSwitcher
+            :variants="variants"
+            :current="current"
+            @select="select"
+        />
     </div>
 </template>

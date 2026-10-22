@@ -33,10 +33,14 @@ const verb = ref<Verb>('none');
 const toast = ref('Select a ticket, then a verb.');
 
 const selected = computed(() =>
-    shop.reservations.find((reservation) => reservation.id === selectedId.value),
+    shop.reservations.find(
+        (reservation) => reservation.id === selectedId.value,
+    ),
 );
 
-const stack = computed(() => `deck · ${verb.value} · ticket ${selectedId.value ?? 'none'}`);
+const stack = computed(
+    () => `deck · ${verb.value} · ticket ${selectedId.value ?? 'none'}`,
+);
 
 function flash(message: string): void {
     toast.value = message;
@@ -127,7 +131,9 @@ function doExtend(requote: boolean): void {
     desk.extendReservation(reservation, requote);
 
     verb.value = 'none';
-    flash(`Now ${reservation.starts}–${reservation.ends}, owed ${money(reservation.owed)}`);
+    flash(
+        `Now ${reservation.starts}–${reservation.ends}, owed ${money(reservation.owed)}`,
+    );
 }
 
 const verbs: { id: Verb; label: string }[] = [
@@ -162,14 +168,20 @@ const verbs: { id: Verb; label: string }[] = [
         </nav>
 
         <div class="flex min-w-0 flex-1 flex-col">
-            <header class="flex items-center gap-3 border-b border-lime-900 px-3 py-2">
+            <header
+                class="flex items-center gap-3 border-b border-lime-900 px-3 py-2"
+            >
                 <span class="font-mono text-xs">{{ stack }}</span>
                 <span class="ml-auto text-sm text-amber-300">{{ toast }}</span>
             </header>
 
             <div class="flex flex-1 overflow-hidden">
-                <section class="w-72 overflow-auto border-r border-lime-900 p-2">
-                    <h2 class="mb-2 text-xs tracking-widest uppercase">Tickets</h2>
+                <section
+                    class="w-72 overflow-auto border-r border-lime-900 p-2"
+                >
+                    <h2 class="mb-2 text-xs tracking-widest uppercase">
+                        Tickets
+                    </h2>
                     <button
                         v-for="reservation in openReservations(shop)"
                         :key="reservation.id"
@@ -182,13 +194,19 @@ const verbs: { id: Verb; label: string }[] = [
                         "
                         @click="selectTicket(reservation)"
                     >
-                        <div class="text-lg font-semibold">{{ reservation.customer }}</div>
+                        <div class="text-lg font-semibold">
+                            {{ reservation.customer }}
+                        </div>
                         <div class="text-xs text-lime-600">
                             {{ reservation.starts }}–{{ reservation.ends }}
                             ·
                             {{
                                 reservation.lines
-                                    .map((line) => bikeFor(shop, line.bike_id)?.bid ?? '—')
+                                    .map(
+                                        (line) =>
+                                            bikeFor(shop, line.bike_id)?.bid ??
+                                            '—',
+                                    )
                                     .join(' ')
                             }}
                         </div>
@@ -202,18 +220,26 @@ const verbs: { id: Verb; label: string }[] = [
                 </section>
 
                 <section class="flex-1 p-4">
-                    <div v-if="!selected" class="text-lime-700">No ticket. Walk-in or tap a row.</div>
+                    <div v-if="!selected" class="text-lime-700">
+                        No ticket. Walk-in or tap a row.
+                    </div>
                     <div v-else class="space-y-3">
-                        <h1 class="text-3xl font-bold text-lime-200">{{ selected.customer }}</h1>
+                        <h1 class="text-3xl font-bold text-lime-200">
+                            {{ selected.customer }}
+                        </h1>
                         <p class="text-4xl font-bold text-lime-100">
                             {{ selected.starts }}–{{ selected.ends }}
                         </p>
                         <p class="text-2xl text-amber-300">
-                            owed {{ money(selected.owed) }} / paid {{ money(selected.paid) }}
+                            owed {{ money(selected.owed) }} / paid
+                            {{ money(selected.paid) }}
                         </p>
                         <p>{{ selected.stage }}</p>
                         <p>Waiver {{ selected.waiver ? 'yes' : 'NO' }}</p>
-                        <PrototypePartyLines :shop="shop" :reservation="selected" />
+                        <PrototypePartyLines
+                            :shop="shop"
+                            :reservation="selected"
+                        />
 
                         <div v-if="verb === 'extend'" class="flex gap-2 pt-4">
                             <button
@@ -235,7 +261,9 @@ const verbs: { id: Verb; label: string }[] = [
                 </section>
 
                 <aside class="w-56 overflow-auto border-l border-lime-900 p-2">
-                    <h2 class="mb-2 text-xs tracking-widest uppercase">Bikes</h2>
+                    <h2 class="mb-2 text-xs tracking-widest uppercase">
+                        Bikes
+                    </h2>
                     <button
                         v-for="bike in shop.bikes"
                         :key="bike.id"
@@ -244,7 +272,9 @@ const verbs: { id: Verb; label: string }[] = [
                         @click="flash(`${bike.bid} ${bikeCaption(shop, bike)}`)"
                     >
                         <span class="text-xl font-bold">{{ bike.bid }}</span>
-                        <span class="truncate text-xs">{{ bikeCaption(shop, bike) }}</span>
+                        <span class="truncate text-xs">{{
+                            bikeCaption(shop, bike)
+                        }}</span>
                     </button>
                 </aside>
             </div>

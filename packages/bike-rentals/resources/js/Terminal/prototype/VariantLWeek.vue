@@ -28,9 +28,7 @@ const focus = computed(() =>
     shop.reservations.find((reservation) => reservation.id === focusId.value),
 );
 
-const hourGrid = computed(
-    () => `repeat(${hours.length}, minmax(0, 1fr))`,
-);
+const hourGrid = computed(() => `repeat(${hours.length}, minmax(0, 1fr))`);
 
 function col(stamp: string): number {
     const hour = Math.min(18, Math.max(8, hourOf(stamp)));
@@ -40,7 +38,10 @@ function col(stamp: string): number {
 
 function barStyle(reservation: Reservation): Record<string, string> {
     const start = col(reservation.starts);
-    const end = Math.min(hours.length + 1, Math.max(start + 1, col(reservation.ends)));
+    const end = Math.min(
+        hours.length + 1,
+        Math.max(start + 1, col(reservation.ends)),
+    );
 
     return {
         gridColumn: `${start} / ${end}`,
@@ -72,9 +73,12 @@ function doExtend(requote: boolean): void {
     }
 }
 
-
 function doCancel(reservation: Reservation): void {
-    if (reservation.lines.some((line) => bikeFor(shop, line.bike_id)?.situation === 'rented_out')) {
+    if (
+        reservation.lines.some(
+            (line) => bikeFor(shop, line.bike_id)?.situation === 'rented_out',
+        )
+    ) {
         toast.value = 'Return Out bikes first';
         return;
     }
@@ -85,12 +89,18 @@ function doCancel(reservation: Reservation): void {
 </script>
 
 <template>
-    <div class="flex min-h-screen flex-col bg-emerald-950 pb-24 text-emerald-50">
+    <div
+        class="flex min-h-screen flex-col bg-emerald-950 pb-24 text-emerald-50"
+    >
         <header class="flex items-center gap-2 px-3 py-2">
             <span class="font-semibold">Week</span>
             <span class="font-mono text-xs">week › {{ today }}</span>
             <span class="ml-auto text-sm text-amber-300">{{ toast }}</span>
-            <button type="button" class="h-14 rounded-2xl bg-emerald-400 px-4 font-bold text-emerald-950" @click="walkIn">
+            <button
+                type="button"
+                class="h-14 rounded-2xl bg-emerald-400 px-4 font-bold text-emerald-950"
+                @click="walkIn"
+            >
                 Walk-in
             </button>
         </header>
@@ -102,13 +112,17 @@ function doCancel(reservation: Reservation): void {
                 :class="day === today ? 'bg-emerald-800' : 'bg-emerald-900/50'"
             >
                 <div class="flex items-start gap-2">
-                    <span class="w-10 shrink-0 pt-1 text-sm font-bold">{{ day }}</span>
+                    <span class="w-10 shrink-0 pt-1 text-sm font-bold">{{
+                        day
+                    }}</span>
                     <div v-if="day === today" class="min-w-0 flex-1">
                         <div
                             class="mb-1 grid text-center text-[10px] text-emerald-300"
                             :style="{ gridTemplateColumns: hourGrid }"
                         >
-                            <span v-for="hour in hours" :key="hour">{{ hour }}</span>
+                            <span v-for="hour in hours" :key="hour">{{
+                                hour
+                            }}</span>
                         </div>
                         <div class="flex flex-col gap-1">
                             <div
@@ -140,20 +154,80 @@ function doCancel(reservation: Reservation): void {
         <aside v-if="focus" class="border-t border-emerald-800 p-3">
             <div class="text-2xl font-bold">{{ focus.customer }}</div>
             <div class="text-3xl">{{ focus.starts }}–{{ focus.ends }}</div>
-            <div class="mb-2 text-xl text-amber-300">owed {{ money(focus.owed) }} / paid {{ money(focus.paid) }}</div>
-            <PrototypePartyLines class="mb-2" :shop="shop" :reservation="focus" />
+            <div class="mb-2 text-xl text-amber-300">
+                owed {{ money(focus.owed) }} / paid {{ money(focus.paid) }}
+            </div>
+            <PrototypePartyLines
+                class="mb-2"
+                :shop="shop"
+                :reservation="focus"
+            />
             <div v-if="pane === 'extend'" class="grid grid-cols-2 gap-2">
-                <button type="button" class="h-14 rounded-xl bg-emerald-800" @click="doExtend(false)">Keep owed</button>
-                <button type="button" class="h-14 rounded-xl bg-amber-400 text-emerald-950" @click="doExtend(true)">Requote</button>
+                <button
+                    type="button"
+                    class="h-14 rounded-xl bg-emerald-800"
+                    @click="doExtend(false)"
+                >
+                    Keep owed
+                </button>
+                <button
+                    type="button"
+                    class="h-14 rounded-xl bg-amber-400 text-emerald-950"
+                    @click="doExtend(true)"
+                >
+                    Requote
+                </button>
             </div>
             <div v-else class="grid grid-cols-4 gap-2">
-                <button type="button" class="h-14 rounded-xl bg-sky-700" @click="desk.pickup(focus)">Pickup</button>
-                <button type="button" class="h-14 rounded-xl bg-orange-500 text-emerald-950" @click="desk.markReturned(focus)">Return</button>
-                <button type="button" class="h-14 rounded-xl bg-emerald-800" @click="pane = 'extend'">Extend</button>
-                <button type="button" class="h-14 rounded-xl bg-emerald-800" @click="desk.takeCash(focus)">Cash</button>
-                <button type="button" class="h-14 rounded-xl bg-emerald-800" @click="desk.acceptWaiver(focus)">Waiver</button>
-                <button type="button" class="h-14 rounded-xl bg-emerald-800" @click="toast = focus.myrental">URL</button>
-                <button type="button" class="h-14 rounded-xl bg-rose-900" @click="doCancel(focus)">Cancel</button>
+                <button
+                    type="button"
+                    class="h-14 rounded-xl bg-sky-700"
+                    @click="desk.pickup(focus)"
+                >
+                    Pickup
+                </button>
+                <button
+                    type="button"
+                    class="h-14 rounded-xl bg-orange-500 text-emerald-950"
+                    @click="desk.markReturned(focus)"
+                >
+                    Return
+                </button>
+                <button
+                    type="button"
+                    class="h-14 rounded-xl bg-emerald-800"
+                    @click="pane = 'extend'"
+                >
+                    Extend
+                </button>
+                <button
+                    type="button"
+                    class="h-14 rounded-xl bg-emerald-800"
+                    @click="desk.takeCash(focus)"
+                >
+                    Cash
+                </button>
+                <button
+                    type="button"
+                    class="h-14 rounded-xl bg-emerald-800"
+                    @click="desk.acceptWaiver(focus)"
+                >
+                    Waiver
+                </button>
+                <button
+                    type="button"
+                    class="h-14 rounded-xl bg-emerald-800"
+                    @click="toast = focus.myrental"
+                >
+                    URL
+                </button>
+                <button
+                    type="button"
+                    class="h-14 rounded-xl bg-rose-900"
+                    @click="doCancel(focus)"
+                >
+                    Cancel
+                </button>
             </div>
         </aside>
     </div>

@@ -31,8 +31,13 @@ const imageUrl = computed(() => {
 onMounted(() => {
     http.get(GetRadarFramesAction.url(), {
         onSuccess: (response) => {
-            const payload = (response as { data?: { source?: string; frames?: RadarFrame[] } }).data
-                ?? (response as { source?: string; frames?: RadarFrame[] });
+            const payload =
+                (
+                    response as {
+                        data?: { source?: string; frames?: RadarFrame[] };
+                    }
+                ).data ??
+                (response as { source?: string; frames?: RadarFrame[] });
             source.value = payload.source ?? 'rainviewer';
             frames.value = payload.frames ?? [];
             index.value = Math.max(frames.value.length - 1, 0);
@@ -55,7 +60,9 @@ onUnmounted(() => {
 
 <template>
     <div class="overflow-hidden rounded-xl bg-black/50 ring-1 ring-white/15">
-        <div class="flex items-center justify-between px-3 py-2 text-xs text-white/60">
+        <div
+            class="flex items-center justify-between px-3 py-2 text-xs text-white/60"
+        >
             <span>Radar · {{ source }}</span>
             <span v-if="current">{{ current.timeIso }}</span>
         </div>

@@ -108,7 +108,9 @@ function doCancel(reservation: Reservation): void {
     });
 
     if (out) {
-        flash('Out bikes — confirm they are in the shop, then return. Not auto-returned.');
+        flash(
+            'Out bikes — confirm they are in the shop, then return. Not auto-returned.',
+        );
         return;
     }
 
@@ -148,7 +150,9 @@ function copyLink(reservation: Reservation): void {
     <div class="flex min-h-screen flex-col bg-zinc-950 pb-24 text-zinc-100">
         <header class="flex items-center gap-3 px-4 py-3">
             <div class="text-lg font-semibold tracking-tight">Floor</div>
-            <div class="rounded-full bg-zinc-800 px-3 py-1 font-mono text-xs">{{ stack }}</div>
+            <div class="rounded-full bg-zinc-800 px-3 py-1 font-mono text-xs">
+                {{ stack }}
+            </div>
             <div class="ml-auto text-sm text-amber-300">{{ toast }}</div>
             <button
                 type="button"
@@ -160,13 +164,21 @@ function copyLink(reservation: Reservation): void {
         </header>
 
         <div class="grid flex-1 gap-6 px-4 pb-4 lg:grid-cols-5">
-            <section v-for="group in groups" :key="group.situation" class="min-h-40">
-                <h2 class="mb-2 text-xs font-semibold tracking-widest text-zinc-500 uppercase">
+            <section
+                v-for="group in groups"
+                :key="group.situation"
+                class="min-h-40"
+            >
+                <h2
+                    class="mb-2 text-xs font-semibold tracking-widest text-zinc-500 uppercase"
+                >
                     {{ group.label }}
                 </h2>
                 <div class="grid grid-cols-2 gap-2">
                     <button
-                        v-for="bike in shop.bikes.filter((item) => item.situation === group.situation)"
+                        v-for="bike in shop.bikes.filter(
+                            (item) => item.situation === group.situation,
+                        )"
                         :key="bike.id"
                         type="button"
                         class="flex h-20 flex-col items-start justify-center rounded-2xl px-3 text-left"
@@ -175,7 +187,9 @@ function copyLink(reservation: Reservation): void {
                     >
                         <span class="text-2xl font-bold">{{ bike.bid }}</span>
                         <span class="text-xs opacity-80">{{ bike.model }}</span>
-                        <span class="text-xs opacity-80">{{ bikeCaption(shop, bike) }}</span>
+                        <span class="text-xs opacity-80">{{
+                            bikeCaption(shop, bike)
+                        }}</span>
                     </button>
                 </div>
             </section>
@@ -187,24 +201,37 @@ function copyLink(reservation: Reservation): void {
         >
             <div class="mb-3 flex items-start justify-between gap-3">
                 <div>
-                    <div class="text-2xl font-semibold">{{ focus.customer }}</div>
+                    <div class="text-2xl font-semibold">
+                        {{ focus.customer }}
+                    </div>
                     <div class="text-3xl font-bold tracking-tight">
                         {{ focus.starts }}–{{ focus.ends }}
                     </div>
                     <div class="text-2xl font-semibold text-amber-300">
-                        owed {{ money(focus.owed) }} / paid {{ money(focus.paid) }}
+                        owed {{ money(focus.owed) }} / paid
+                        {{ money(focus.paid) }}
                     </div>
                     <div class="text-sm text-zinc-400">{{ focus.stage }}</div>
                 </div>
-                <button type="button" class="h-14 w-14 rounded-2xl bg-zinc-800" @click="focusId = null">
+                <button
+                    type="button"
+                    class="h-14 w-14 rounded-2xl bg-zinc-800"
+                    @click="focusId = null"
+                >
                     ✕
                 </button>
             </div>
 
-            <PrototypePartyLines class="mb-3" :shop="shop" :reservation="focus" />
+            <PrototypePartyLines
+                class="mb-3"
+                :shop="shop"
+                :reservation="focus"
+            />
 
             <div v-if="extending" class="grid grid-cols-1 gap-2">
-                <p class="text-lg">Push ends one hour. Requote also adds $20.</p>
+                <p class="text-lg">
+                    Push ends one hour. Requote also adds $20.
+                </p>
                 <button
                     type="button"
                     class="h-20 rounded-2xl bg-zinc-700 text-2xl"
@@ -222,7 +249,11 @@ function copyLink(reservation: Reservation): void {
             </div>
 
             <div v-else class="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                <button type="button" class="h-16 rounded-2xl bg-sky-600 text-lg" @click="doPickup(focus)">
+                <button
+                    type="button"
+                    class="h-16 rounded-2xl bg-sky-600 text-lg"
+                    @click="doPickup(focus)"
+                >
                     Pickup
                 </button>
                 <button
@@ -232,19 +263,39 @@ function copyLink(reservation: Reservation): void {
                 >
                     Return
                 </button>
-                <button type="button" class="h-16 rounded-2xl bg-zinc-800 text-lg" @click="extending = true">
+                <button
+                    type="button"
+                    class="h-16 rounded-2xl bg-zinc-800 text-lg"
+                    @click="extending = true"
+                >
                     Extend
                 </button>
-                <button type="button" class="h-16 rounded-2xl bg-emerald-700 text-lg" @click="doCash(focus)">
+                <button
+                    type="button"
+                    class="h-16 rounded-2xl bg-emerald-700 text-lg"
+                    @click="doCash(focus)"
+                >
                     Cash / other
                 </button>
-                <button type="button" class="h-16 rounded-2xl bg-zinc-800 text-lg" @click="desk.acceptWaiver(focus)">
+                <button
+                    type="button"
+                    class="h-16 rounded-2xl bg-zinc-800 text-lg"
+                    @click="desk.acceptWaiver(focus)"
+                >
                     {{ focus.waiver ? 'Waiver ✓' : 'Waiver' }}
                 </button>
-                <button type="button" class="h-16 rounded-2xl bg-zinc-800 text-lg" @click="copyLink(focus)">
+                <button
+                    type="button"
+                    class="h-16 rounded-2xl bg-zinc-800 text-lg"
+                    @click="copyLink(focus)"
+                >
                     {{ copied ? 'Copied URL' : 'MyRental URL' }}
                 </button>
-                <button type="button" class="h-16 rounded-2xl bg-rose-900 text-lg" @click="doCancel(focus)">
+                <button
+                    type="button"
+                    class="h-16 rounded-2xl bg-rose-900 text-lg"
+                    @click="doCancel(focus)"
+                >
                     Cancel
                 </button>
             </div>

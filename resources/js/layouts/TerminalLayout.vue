@@ -2,10 +2,7 @@
 import { onMounted, ref } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import TerminalDayEcho from '@/layouts/TerminalDayEcho.vue';
-import {
-    useDayStore,
-    type DaySnapshot,
-} from '@/stores/day';
+import { useDayStore, type DaySnapshot } from '@/stores/day';
 
 const page = usePage();
 const day = useDayStore();

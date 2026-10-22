@@ -38,9 +38,7 @@ export function resolveEnumBadgeClasses(
     const meta = getEnumMeta(enumName, value);
     const color = isStatusColor(meta?.color) ? meta.color : fallbackColor;
 
-    return (
-        semanticBadgeClasses[color] ?? semanticBadgeClasses[DEFAULT_COLOR]
-    );
+    return semanticBadgeClasses[color] ?? semanticBadgeClasses[DEFAULT_COLOR];
 }
 
 /**
@@ -87,9 +85,7 @@ export function getStatusBadgeClasses(
  * Get semantic badge classes directly from a color name (no enum lookup needed).
  */
 export function getBadgeClassesForColor(color: StatusColor): string {
-    return (
-        semanticBadgeClasses[color] ?? semanticBadgeClasses[DEFAULT_COLOR]
-    );
+    return semanticBadgeClasses[color] ?? semanticBadgeClasses[DEFAULT_COLOR];
 }
 
 function formatFallbackLabel(value: string | null | undefined): string {

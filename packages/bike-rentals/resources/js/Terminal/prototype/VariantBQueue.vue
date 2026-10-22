@@ -100,11 +100,15 @@ function doExtend(requote: boolean): void {
 
     extendChoice.value = requote ? 'requote' : 'keep';
     screen.value = 'ticket';
-    flash(`Now ${reservation.starts}–${reservation.ends}, owed ${money(reservation.owed)}`);
+    flash(
+        `Now ${reservation.starts}–${reservation.ends}, owed ${money(reservation.owed)}`,
+    );
 }
 
 function confirmCancel(reservation: Reservation): void {
-    const out = reservation.lines.some((line) => bikeFor(shop, line.bike_id)?.situation === 'rented_out');
+    const out = reservation.lines.some(
+        (line) => bikeFor(shop, line.bike_id)?.situation === 'rented_out',
+    );
 
     if (out) {
         flash('Out bikes still out. Return them from the ticket.');
@@ -117,7 +121,6 @@ function confirmCancel(reservation: Reservation): void {
     focusId.value = null;
 }
 
-
 function dueBadge(reservation: Reservation): string {
     if (reservation.owed !== reservation.paid) {
         return `DUE ${money(reservation.owed - reservation.paid)}`;
@@ -129,7 +132,9 @@ function dueBadge(reservation: Reservation): string {
 
 <template>
     <div class="flex min-h-screen flex-col bg-stone-200 pb-24 text-stone-900">
-        <header class="flex items-center gap-3 bg-stone-800 px-4 py-3 text-stone-100">
+        <header
+            class="flex items-center gap-3 bg-stone-800 px-4 py-3 text-stone-100"
+        >
             <button
                 v-if="screen !== 'queue'"
                 type="button"
@@ -138,8 +143,12 @@ function dueBadge(reservation: Reservation): string {
             >
                 Back
             </button>
-            <div class="text-lg font-semibold">{{ screen === 'queue' ? 'Today' : screen }}</div>
-            <div class="rounded-full bg-stone-700 px-3 py-1 font-mono text-xs">{{ stack }}</div>
+            <div class="text-lg font-semibold">
+                {{ screen === 'queue' ? 'Today' : screen }}
+            </div>
+            <div class="rounded-full bg-stone-700 px-3 py-1 font-mono text-xs">
+                {{ stack }}
+            </div>
             <div class="ml-auto text-sm text-amber-200">{{ toast }}</div>
         </header>
 
@@ -160,13 +169,19 @@ function dueBadge(reservation: Reservation): string {
                     @click="openTicket(reservation)"
                 >
                     <div>
-                        <div class="text-2xl font-bold">{{ reservation.customer }}</div>
+                        <div class="text-2xl font-bold">
+                            {{ reservation.customer }}
+                        </div>
                         <div class="text-sm text-stone-600">
                             {{ reservation.starts }}–{{ reservation.ends }}
                             ·
                             {{
                                 reservation.lines
-                                    .map((line) => bikeFor(shop, line.bike_id)?.bid ?? '—')
+                                    .map(
+                                        (line) =>
+                                            bikeFor(shop, line.bike_id)?.bid ??
+                                            '—',
+                                    )
                                     .join(' ')
                             }}
                         </div>
@@ -185,40 +200,76 @@ function dueBadge(reservation: Reservation): string {
             </div>
         </main>
 
-        <main v-else-if="screen === 'ticket' && focus" class="flex flex-1 flex-col gap-4 p-4">
+        <main
+            v-else-if="screen === 'ticket' && focus"
+            class="flex flex-1 flex-col gap-4 p-4"
+        >
             <h1 class="text-4xl font-bold">{{ focus.customer }}</h1>
-            <p class="text-4xl font-bold">{{ focus.starts }}–{{ focus.ends }}</p>
+            <p class="text-4xl font-bold">
+                {{ focus.starts }}–{{ focus.ends }}
+            </p>
             <p class="text-3xl font-semibold text-red-700">
                 owed {{ money(focus.owed) }} / paid {{ money(focus.paid) }}
             </p>
             <p class="text-lg">{{ focus.stage }}</p>
             <PrototypePartyLines :shop="shop" :reservation="focus" />
             <div class="mt-auto grid grid-cols-2 gap-3">
-                <button type="button" class="h-24 rounded-2xl bg-sky-700 text-2xl text-white" @click="doPickup(focus)">
+                <button
+                    type="button"
+                    class="h-24 rounded-2xl bg-sky-700 text-2xl text-white"
+                    @click="doPickup(focus)"
+                >
                     Pickup
                 </button>
-                <button type="button" class="h-24 rounded-2xl bg-orange-500 text-2xl" @click="doReturn(focus)">
+                <button
+                    type="button"
+                    class="h-24 rounded-2xl bg-orange-500 text-2xl"
+                    @click="doReturn(focus)"
+                >
                     Return
                 </button>
-                <button type="button" class="h-24 rounded-2xl bg-stone-800 text-2xl text-white" @click="screen = 'extend'">
+                <button
+                    type="button"
+                    class="h-24 rounded-2xl bg-stone-800 text-2xl text-white"
+                    @click="screen = 'extend'"
+                >
                     Extend
                 </button>
-                <button type="button" class="h-24 rounded-2xl bg-emerald-700 text-2xl text-white" @click="doCash(focus)">
+                <button
+                    type="button"
+                    class="h-24 rounded-2xl bg-emerald-700 text-2xl text-white"
+                    @click="doCash(focus)"
+                >
                     Cash / other
                 </button>
-                <button type="button" class="h-24 rounded-2xl bg-stone-800 text-2xl text-white" @click="desk.acceptWaiver(focus)">
+                <button
+                    type="button"
+                    class="h-24 rounded-2xl bg-stone-800 text-2xl text-white"
+                    @click="desk.acceptWaiver(focus)"
+                >
                     {{ focus.waiver ? 'Waiver ✓' : 'Waiver' }}
                 </button>
-                <button type="button" class="h-24 rounded-2xl bg-stone-800 text-2xl text-white" @click="flash(focus.myrental)">
+                <button
+                    type="button"
+                    class="h-24 rounded-2xl bg-stone-800 text-2xl text-white"
+                    @click="flash(focus.myrental)"
+                >
                     Reveal URL
                 </button>
-                <button type="button" class="h-24 rounded-2xl bg-red-800 text-2xl text-white" @click="screen = 'cancel'">
+                <button
+                    type="button"
+                    class="h-24 rounded-2xl bg-red-800 text-2xl text-white"
+                    @click="screen = 'cancel'"
+                >
                     Cancel
                 </button>
             </div>
         </main>
 
-        <main v-else-if="screen === 'extend' && focus" class="flex flex-1 flex-col gap-4 p-6">
+        <main
+            v-else-if="screen === 'extend' && focus"
+            class="flex flex-1 flex-col gap-4 p-6"
+        >
             <h1 class="text-3xl font-bold">Extend {{ focus.customer }}</h1>
             <p>Keep owed, or requote through the new ends_at.</p>
             <button
@@ -237,9 +288,15 @@ function dueBadge(reservation: Reservation): string {
             </button>
         </main>
 
-        <main v-else-if="screen === 'cancel' && focus" class="flex flex-1 flex-col gap-4 p-6">
+        <main
+            v-else-if="screen === 'cancel' && focus"
+            class="flex flex-1 flex-col gap-4 p-6"
+        >
             <h1 class="text-3xl font-bold">Cancel {{ focus.customer }}?</h1>
-            <p>Out bikes are not auto-returned. Confirm they are in the shop first.</p>
+            <p>
+                Out bikes are not auto-returned. Confirm they are in the shop
+                first.
+            </p>
             <button
                 type="button"
                 class="h-24 rounded-2xl bg-red-800 text-2xl text-white"

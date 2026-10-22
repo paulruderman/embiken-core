@@ -81,9 +81,10 @@ function doExtend(requote: boolean): void {
     }
 
     pane.value = 'ticket';
-    flash(`Now ${reservation.starts}–${reservation.ends}, owed ${money(reservation.owed)}`);
+    flash(
+        `Now ${reservation.starts}–${reservation.ends}, owed ${money(reservation.owed)}`,
+    );
 }
-
 
 function doCancel(reservation: Reservation): void {
     const out = reservation.lines.some(
@@ -104,7 +105,9 @@ function doCancel(reservation: Reservation): void {
     <div class="flex min-h-screen flex-col bg-slate-900 pb-24 text-slate-100">
         <header class="flex items-center gap-3 px-4 py-3">
             <div class="text-lg font-semibold">Today</div>
-            <div class="rounded-full bg-slate-800 px-3 py-1 font-mono text-xs">{{ stack }}</div>
+            <div class="rounded-full bg-slate-800 px-3 py-1 font-mono text-xs">
+                {{ stack }}
+            </div>
             <div class="ml-auto text-sm text-amber-300">{{ toast }}</div>
             <button
                 type="button"
@@ -118,7 +121,9 @@ function doCancel(reservation: Reservation): void {
         <div class="min-h-0 flex-1 overflow-auto px-4">
             <div
                 class="mb-2 grid text-center text-xs text-slate-500"
-                :style="{ gridTemplateColumns: `repeat(${hours.length}, minmax(0, 1fr))` }"
+                :style="{
+                    gridTemplateColumns: `repeat(${hours.length}, minmax(0, 1fr))`,
+                }"
             >
                 <span v-for="hour in hours" :key="hour">{{ hour }}:00</span>
             </div>
@@ -127,22 +132,32 @@ function doCancel(reservation: Reservation): void {
                 :key="reservation.id"
                 type="button"
                 class="relative mb-2 grid h-20 w-full rounded-xl bg-slate-800"
-                :style="{ gridTemplateColumns: `repeat(${hours.length}, minmax(0, 1fr))` }"
+                :style="{
+                    gridTemplateColumns: `repeat(${hours.length}, minmax(0, 1fr))`,
+                }"
                 @click="openTicket(reservation)"
             >
                 <div
                     class="flex items-center rounded-xl bg-cyan-700 px-3 text-left"
-                    :class="focusId === reservation.id ? 'ring-2 ring-cyan-300' : ''"
+                    :class="
+                        focusId === reservation.id ? 'ring-2 ring-cyan-300' : ''
+                    "
                     :style="barStyle(reservation)"
                 >
                     <div>
-                        <div class="text-lg font-bold">{{ reservation.customer }}</div>
+                        <div class="text-lg font-bold">
+                            {{ reservation.customer }}
+                        </div>
                         <div class="text-xs">
                             {{ reservation.starts }}–{{ reservation.ends }}
                             ·
                             {{
                                 reservation.lines
-                                    .map((line) => bikeFor(shop, line.bike_id)?.bid ?? '—')
+                                    .map(
+                                        (line) =>
+                                            bikeFor(shop, line.bike_id)?.bid ??
+                                            '—',
+                                    )
                                     .join(' ')
                             }}
                             · owed {{ money(reservation.owed) }}
@@ -158,20 +173,37 @@ function doCancel(reservation: Reservation): void {
         >
             <div class="mb-3 flex items-start justify-between">
                 <div>
-                    <div class="text-2xl font-semibold">{{ focus.customer }}</div>
-                    <div class="text-3xl font-bold">{{ focus.starts }}–{{ focus.ends }}</div>
-                    <div class="text-xl text-amber-300">
-                        owed {{ money(focus.owed) }} / paid {{ money(focus.paid) }}
+                    <div class="text-2xl font-semibold">
+                        {{ focus.customer }}
                     </div>
-                    <PrototypePartyLines class="mt-2" :shop="shop" :reservation="focus" />
+                    <div class="text-3xl font-bold">
+                        {{ focus.starts }}–{{ focus.ends }}
+                    </div>
+                    <div class="text-xl text-amber-300">
+                        owed {{ money(focus.owed) }} / paid
+                        {{ money(focus.paid) }}
+                    </div>
+                    <PrototypePartyLines
+                        class="mt-2"
+                        :shop="shop"
+                        :reservation="focus"
+                    />
                 </div>
-                <button type="button" class="h-14 w-14 rounded-2xl bg-slate-800" @click="focusId = null">
+                <button
+                    type="button"
+                    class="h-14 w-14 rounded-2xl bg-slate-800"
+                    @click="focusId = null"
+                >
                     ✕
                 </button>
             </div>
 
             <div v-if="pane === 'extend'" class="grid grid-cols-2 gap-2">
-                <button type="button" class="h-16 rounded-2xl bg-slate-700 text-lg" @click="doExtend(false)">
+                <button
+                    type="button"
+                    class="h-16 rounded-2xl bg-slate-700 text-lg"
+                    @click="doExtend(false)"
+                >
                     Keep owed
                 </button>
                 <button
@@ -183,7 +215,11 @@ function doCancel(reservation: Reservation): void {
                 </button>
             </div>
             <div v-else class="grid grid-cols-4 gap-2">
-                <button type="button" class="h-16 rounded-2xl bg-sky-700" @click="desk.pickup(focus)">
+                <button
+                    type="button"
+                    class="h-16 rounded-2xl bg-sky-700"
+                    @click="desk.pickup(focus)"
+                >
                     Pickup
                 </button>
                 <button
@@ -193,19 +229,39 @@ function doCancel(reservation: Reservation): void {
                 >
                     Return
                 </button>
-                <button type="button" class="h-16 rounded-2xl bg-slate-800" @click="pane = 'extend'">
+                <button
+                    type="button"
+                    class="h-16 rounded-2xl bg-slate-800"
+                    @click="pane = 'extend'"
+                >
                     Extend
                 </button>
-                <button type="button" class="h-16 rounded-2xl bg-emerald-700" @click="desk.takeCash(focus)">
+                <button
+                    type="button"
+                    class="h-16 rounded-2xl bg-emerald-700"
+                    @click="desk.takeCash(focus)"
+                >
                     Cash
                 </button>
-                <button type="button" class="h-16 rounded-2xl bg-slate-800" @click="desk.acceptWaiver(focus)">
+                <button
+                    type="button"
+                    class="h-16 rounded-2xl bg-slate-800"
+                    @click="desk.acceptWaiver(focus)"
+                >
                     Waiver
                 </button>
-                <button type="button" class="h-16 rounded-2xl bg-slate-800" @click="flash(focus.myrental)">
+                <button
+                    type="button"
+                    class="h-16 rounded-2xl bg-slate-800"
+                    @click="flash(focus.myrental)"
+                >
                     URL
                 </button>
-                <button type="button" class="h-16 rounded-2xl bg-rose-900" @click="doCancel(focus)">
+                <button
+                    type="button"
+                    class="h-16 rounded-2xl bg-rose-900"
+                    @click="doCancel(focus)"
+                >
                     Cancel
                 </button>
             </div>

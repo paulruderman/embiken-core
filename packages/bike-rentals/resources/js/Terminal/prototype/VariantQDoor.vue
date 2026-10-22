@@ -25,11 +25,15 @@ const focus = computed(() =>
 );
 
 function isStaged(reservation: Reservation): boolean {
-    return reservation.lines.some((line) => bikeFor(shop, line.bike_id)?.situation === 'staged');
+    return reservation.lines.some(
+        (line) => bikeFor(shop, line.bike_id)?.situation === 'staged',
+    );
 }
 
 const windowQueue = computed(() => openReservations(shop).filter(isStaged));
-const behind = computed(() => openReservations(shop).filter((reservation) => !isStaged(reservation)));
+const behind = computed(() =>
+    openReservations(shop).filter((reservation) => !isStaged(reservation)),
+);
 
 function flash(message: string): void {
     toast.value = message;
@@ -55,7 +59,11 @@ function doExtend(requote: boolean): void {
 }
 
 function doCancel(reservation: Reservation): void {
-    if (reservation.lines.some((line) => bikeFor(shop, line.bike_id)?.situation === 'rented_out')) {
+    if (
+        reservation.lines.some(
+            (line) => bikeFor(shop, line.bike_id)?.situation === 'rented_out',
+        )
+    ) {
         flash('Return Out bikes first');
         return;
     }
@@ -72,16 +80,26 @@ function handOut(reservation: Reservation): void {
 
 <template>
     <div class="flex min-h-screen flex-col bg-yellow-100 pb-24 text-stone-900">
-        <header class="flex items-center gap-2 bg-yellow-900 px-3 py-2 text-yellow-50">
+        <header
+            class="flex items-center gap-2 bg-yellow-900 px-3 py-2 text-yellow-50"
+        >
             <span class="font-semibold">Dutch door</span>
             <span class="ml-auto text-sm text-amber-200">{{ toast }}</span>
-            <button type="button" class="h-14 rounded-2xl bg-yellow-300 px-4 font-bold text-yellow-950" @click="walkIn">
+            <button
+                type="button"
+                class="h-14 rounded-2xl bg-yellow-300 px-4 font-bold text-yellow-950"
+                @click="walkIn"
+            >
                 Walk-in
             </button>
         </header>
         <div class="relative min-h-0 flex-1">
             <div class="absolute inset-0 bg-stone-800 p-3 opacity-40">
-                <p class="mb-2 text-xs tracking-widest text-stone-400 uppercase">Behind the door</p>
+                <p
+                    class="mb-2 text-xs tracking-widest text-stone-400 uppercase"
+                >
+                    Behind the door
+                </p>
                 <button
                     v-for="reservation in behind"
                     :key="reservation.id"
@@ -92,9 +110,18 @@ function handOut(reservation: Reservation): void {
                     {{ reservation.customer }}
                 </button>
             </div>
-            <div class="relative mx-auto mt-8 w-[min(100%,28rem)] rounded-t-[3rem] border-8 border-yellow-950 bg-yellow-50 p-4 shadow-2xl">
-                <p class="mb-2 text-center text-xs tracking-widest uppercase">Window — staged, waiting</p>
-                <p v-if="windowQueue.length === 0" class="py-10 text-center text-stone-400">Nobody at the door</p>
+            <div
+                class="relative mx-auto mt-8 w-[min(100%,28rem)] rounded-t-[3rem] border-8 border-yellow-950 bg-yellow-50 p-4 shadow-2xl"
+            >
+                <p class="mb-2 text-center text-xs tracking-widest uppercase">
+                    Window — staged, waiting
+                </p>
+                <p
+                    v-if="windowQueue.length === 0"
+                    class="py-10 text-center text-stone-400"
+                >
+                    Nobody at the door
+                </p>
                 <button
                     v-for="reservation in windowQueue"
                     :key="reservation.id"
@@ -102,8 +129,12 @@ function handOut(reservation: Reservation): void {
                     class="mb-2 w-full rounded-2xl bg-yellow-200 p-4 text-left"
                     @click="openTicket(reservation)"
                 >
-                    <div class="text-3xl font-black">{{ reservation.customer }}</div>
-                    <div class="text-lg">{{ reservation.starts }} — tap ticket, or hand through</div>
+                    <div class="text-3xl font-black">
+                        {{ reservation.customer }}
+                    </div>
+                    <div class="text-lg">
+                        {{ reservation.starts }} — tap ticket, or hand through
+                    </div>
                     <span
                         class="mt-2 inline-block rounded-full bg-yellow-900 px-4 py-2 text-lg font-bold text-yellow-50"
                         @click.stop="handOut(reservation)"
@@ -113,23 +144,86 @@ function handOut(reservation: Reservation): void {
                 </button>
             </div>
         </div>
-        <aside v-if="focus" class="border-t-4 border-yellow-950 bg-yellow-50 p-3">
+        <aside
+            v-if="focus"
+            class="border-t-4 border-yellow-950 bg-yellow-50 p-3"
+        >
             <div class="text-2xl font-bold">{{ focus.customer }}</div>
             <div class="text-3xl">{{ focus.starts }}–{{ focus.ends }}</div>
-            <div class="mb-2 text-xl text-red-700">owed {{ money(focus.owed) }} / paid {{ money(focus.paid) }}</div>
-            <PrototypePartyLines class="mb-2" :shop="shop" :reservation="focus" />
+            <div class="mb-2 text-xl text-red-700">
+                owed {{ money(focus.owed) }} / paid {{ money(focus.paid) }}
+            </div>
+            <PrototypePartyLines
+                class="mb-2"
+                :shop="shop"
+                :reservation="focus"
+            />
             <div v-if="pane === 'extend'" class="grid grid-cols-2 gap-2">
-                <button type="button" class="h-14 rounded-xl bg-stone-800 text-white" @click="doExtend(false)">Keep owed</button>
-                <button type="button" class="h-14 rounded-xl bg-amber-400" @click="doExtend(true)">Requote</button>
+                <button
+                    type="button"
+                    class="h-14 rounded-xl bg-stone-800 text-white"
+                    @click="doExtend(false)"
+                >
+                    Keep owed
+                </button>
+                <button
+                    type="button"
+                    class="h-14 rounded-xl bg-amber-400"
+                    @click="doExtend(true)"
+                >
+                    Requote
+                </button>
             </div>
             <div v-else class="grid grid-cols-4 gap-2">
-                <button type="button" class="h-14 rounded-xl bg-sky-700 text-white" @click="desk.pickup(focus)">Pickup</button>
-                <button type="button" class="h-14 rounded-xl bg-orange-500" @click="desk.markReturned(focus)">Return</button>
-                <button type="button" class="h-14 rounded-xl bg-stone-800 text-white" @click="pane = 'extend'">Extend</button>
-                <button type="button" class="h-14 rounded-xl bg-emerald-800 text-white" @click="desk.takeCash(focus)">Cash</button>
-                <button type="button" class="h-14 rounded-xl bg-stone-800 text-white" @click="desk.acceptWaiver(focus)">Waiver</button>
-                <button type="button" class="h-14 rounded-xl bg-stone-800 text-white" @click="flash(focus.myrental)">URL</button>
-                <button type="button" class="h-14 rounded-xl bg-rose-900 text-white" @click="doCancel(focus)">Cancel</button>
+                <button
+                    type="button"
+                    class="h-14 rounded-xl bg-sky-700 text-white"
+                    @click="desk.pickup(focus)"
+                >
+                    Pickup
+                </button>
+                <button
+                    type="button"
+                    class="h-14 rounded-xl bg-orange-500"
+                    @click="desk.markReturned(focus)"
+                >
+                    Return
+                </button>
+                <button
+                    type="button"
+                    class="h-14 rounded-xl bg-stone-800 text-white"
+                    @click="pane = 'extend'"
+                >
+                    Extend
+                </button>
+                <button
+                    type="button"
+                    class="h-14 rounded-xl bg-emerald-800 text-white"
+                    @click="desk.takeCash(focus)"
+                >
+                    Cash
+                </button>
+                <button
+                    type="button"
+                    class="h-14 rounded-xl bg-stone-800 text-white"
+                    @click="desk.acceptWaiver(focus)"
+                >
+                    Waiver
+                </button>
+                <button
+                    type="button"
+                    class="h-14 rounded-xl bg-stone-800 text-white"
+                    @click="flash(focus.myrental)"
+                >
+                    URL
+                </button>
+                <button
+                    type="button"
+                    class="h-14 rounded-xl bg-rose-900 text-white"
+                    @click="doCancel(focus)"
+                >
+                    Cancel
+                </button>
             </div>
         </aside>
     </div>

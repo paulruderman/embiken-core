@@ -25,8 +25,12 @@ const focus = computed(() =>
     shop.reservations.find((reservation) => reservation.id === focusId.value),
 );
 
-const hopper = computed(() => shop.bikes.filter((bike) => bike.situation === 'back'));
-const rest = computed(() => shop.bikes.filter((bike) => bike.situation !== 'back'));
+const hopper = computed(() =>
+    shop.bikes.filter((bike) => bike.situation === 'back'),
+);
+const rest = computed(() =>
+    shop.bikes.filter((bike) => bike.situation !== 'back'),
+);
 
 function flash(message: string): void {
     toast.value = message;
@@ -70,9 +74,12 @@ function doExtend(requote: boolean): void {
     }
 }
 
-
 function doCancel(reservation: Reservation): void {
-    if (reservation.lines.some((line) => bikeFor(shop, line.bike_id)?.situation === 'rented_out')) {
+    if (
+        reservation.lines.some(
+            (line) => bikeFor(shop, line.bike_id)?.situation === 'rented_out',
+        )
+    ) {
         flash('Return Out bikes first');
         return;
     }
@@ -87,12 +94,18 @@ function doCancel(reservation: Reservation): void {
         <header class="flex items-center gap-2 px-3 py-2">
             <span class="font-semibold">Hopper</span>
             <span class="ml-auto text-sm text-amber-300">{{ toast }}</span>
-            <button type="button" class="h-14 rounded-2xl bg-stone-200 px-4 font-bold text-stone-950" @click="walkIn">
+            <button
+                type="button"
+                class="h-14 rounded-2xl bg-stone-200 px-4 font-bold text-stone-950"
+                @click="walkIn"
+            >
                 Walk-in
             </button>
         </header>
         <div class="min-h-0 flex-1 overflow-auto px-3">
-            <h2 class="mb-2 text-xs tracking-widest text-stone-500 uppercase">Back — put away</h2>
+            <h2 class="mb-2 text-xs tracking-widest text-stone-500 uppercase">
+                Back — put away
+            </h2>
             <div class="mb-6 grid grid-cols-2 gap-3">
                 <button
                     v-for="bike in hopper"
@@ -104,9 +117,16 @@ function doCancel(reservation: Reservation): void {
                     <div class="text-4xl font-black">{{ bike.bid }}</div>
                     <div class="text-sm">{{ bikeCaption(shop, bike) }}</div>
                 </button>
-                <p v-if="hopper.length === 0" class="col-span-2 py-8 text-center text-stone-600">Hopper empty</p>
+                <p
+                    v-if="hopper.length === 0"
+                    class="col-span-2 py-8 text-center text-stone-600"
+                >
+                    Hopper empty
+                </p>
             </div>
-            <h2 class="mb-2 text-xs tracking-widest text-stone-500 uppercase">Everyone else</h2>
+            <h2 class="mb-2 text-xs tracking-widest text-stone-500 uppercase">
+                Everyone else
+            </h2>
             <div class="flex flex-wrap gap-2">
                 <button
                     v-for="bike in rest"
@@ -116,27 +136,89 @@ function doCancel(reservation: Reservation): void {
                     @click="openBike(bike)"
                 >
                     <div class="font-bold">{{ bike.bid }}</div>
-                    <div class="truncate text-[10px] text-stone-400">{{ bikeCaption(shop, bike) }}</div>
+                    <div class="truncate text-[10px] text-stone-400">
+                        {{ bikeCaption(shop, bike) }}
+                    </div>
                 </button>
             </div>
         </div>
         <aside v-if="focus" class="border-t border-stone-800 p-3">
             <div class="text-2xl font-bold">{{ focus.customer }}</div>
             <div class="text-3xl">{{ focus.starts }}–{{ focus.ends }}</div>
-            <div class="mb-2 text-xl text-amber-300">owed {{ money(focus.owed) }} / paid {{ money(focus.paid) }}</div>
-            <PrototypePartyLines class="mb-2" :shop="shop" :reservation="focus" />
+            <div class="mb-2 text-xl text-amber-300">
+                owed {{ money(focus.owed) }} / paid {{ money(focus.paid) }}
+            </div>
+            <PrototypePartyLines
+                class="mb-2"
+                :shop="shop"
+                :reservation="focus"
+            />
             <div v-if="pane === 'extend'" class="grid grid-cols-2 gap-2">
-                <button type="button" class="h-14 rounded-xl bg-stone-800" @click="doExtend(false)">Keep owed</button>
-                <button type="button" class="h-14 rounded-xl bg-amber-400 text-stone-950" @click="doExtend(true)">Requote</button>
+                <button
+                    type="button"
+                    class="h-14 rounded-xl bg-stone-800"
+                    @click="doExtend(false)"
+                >
+                    Keep owed
+                </button>
+                <button
+                    type="button"
+                    class="h-14 rounded-xl bg-amber-400 text-stone-950"
+                    @click="doExtend(true)"
+                >
+                    Requote
+                </button>
             </div>
             <div v-else class="grid grid-cols-4 gap-2">
-                <button type="button" class="h-14 rounded-xl bg-sky-700" @click="desk.pickup(focus)">Pickup</button>
-                <button type="button" class="h-14 rounded-xl bg-orange-500 text-stone-950" @click="desk.markReturned(focus)">Return</button>
-                <button type="button" class="h-14 rounded-xl bg-stone-800" @click="pane = 'extend'">Extend</button>
-                <button type="button" class="h-14 rounded-xl bg-emerald-800" @click="desk.takeCash(focus)">Cash</button>
-                <button type="button" class="h-14 rounded-xl bg-stone-800" @click="desk.acceptWaiver(focus)">Waiver</button>
-                <button type="button" class="h-14 rounded-xl bg-stone-800" @click="flash(focus.myrental)">URL</button>
-                <button type="button" class="h-14 rounded-xl bg-rose-900" @click="doCancel(focus)">Cancel</button>
+                <button
+                    type="button"
+                    class="h-14 rounded-xl bg-sky-700"
+                    @click="desk.pickup(focus)"
+                >
+                    Pickup
+                </button>
+                <button
+                    type="button"
+                    class="h-14 rounded-xl bg-orange-500 text-stone-950"
+                    @click="desk.markReturned(focus)"
+                >
+                    Return
+                </button>
+                <button
+                    type="button"
+                    class="h-14 rounded-xl bg-stone-800"
+                    @click="pane = 'extend'"
+                >
+                    Extend
+                </button>
+                <button
+                    type="button"
+                    class="h-14 rounded-xl bg-emerald-800"
+                    @click="desk.takeCash(focus)"
+                >
+                    Cash
+                </button>
+                <button
+                    type="button"
+                    class="h-14 rounded-xl bg-stone-800"
+                    @click="desk.acceptWaiver(focus)"
+                >
+                    Waiver
+                </button>
+                <button
+                    type="button"
+                    class="h-14 rounded-xl bg-stone-800"
+                    @click="flash(focus.myrental)"
+                >
+                    URL
+                </button>
+                <button
+                    type="button"
+                    class="h-14 rounded-xl bg-rose-900"
+                    @click="doCancel(focus)"
+                >
+                    Cancel
+                </button>
             </div>
         </aside>
     </div>

@@ -65,7 +65,9 @@ function doExtend(requote: boolean): void {
     desk.extendReservation(reservation, requote);
 
     mode.value = 'actions';
-    flash(`Now ${reservation.starts}–${reservation.ends}, owed ${money(reservation.owed)}`);
+    flash(
+        `Now ${reservation.starts}–${reservation.ends}, owed ${money(reservation.owed)}`,
+    );
 }
 
 function doCancel(reservation: Reservation): void {
@@ -102,7 +104,9 @@ function tileClass(bike: Bike): string {
         <section class="flex w-[42%] flex-col border-r border-neutral-300 p-3">
             <div class="mb-2 flex items-center justify-between">
                 <h1 class="text-xl font-semibold">Bikes</h1>
-                <span class="font-mono text-xs text-neutral-500">{{ stack }}</span>
+                <span class="font-mono text-xs text-neutral-500">{{
+                    stack
+                }}</span>
             </div>
             <div class="grid grid-cols-2 gap-2 overflow-auto">
                 <button
@@ -131,18 +135,30 @@ function tileClass(bike: Bike): string {
                 <div class="text-sm text-amber-700">{{ toast }}</div>
             </div>
 
-            <div v-if="!focus" class="flex flex-1 items-center text-2xl text-neutral-400">
+            <div
+                v-if="!focus"
+                class="flex flex-1 items-center text-2xl text-neutral-400"
+            >
                 Tap a bike. Ticket stays on this side.
             </div>
             <div v-else class="flex flex-1 flex-col">
                 <h2 class="text-3xl font-bold">{{ focus.customer }}</h2>
-                <p class="text-4xl font-bold">{{ focus.starts }}–{{ focus.ends }}</p>
+                <p class="text-4xl font-bold">
+                    {{ focus.starts }}–{{ focus.ends }}
+                </p>
                 <p class="text-2xl font-semibold text-red-700">
                     owed {{ money(focus.owed) }} / paid {{ money(focus.paid) }}
                 </p>
                 <p class="mb-2 text-neutral-500">{{ focus.stage }}</p>
-                <PrototypePartyLines class="mb-4" :shop="shop" :reservation="focus" />
-                <div v-if="mode === 'extend'" class="mt-auto grid grid-cols-2 gap-3">
+                <PrototypePartyLines
+                    class="mb-4"
+                    :shop="shop"
+                    :reservation="focus"
+                />
+                <div
+                    v-if="mode === 'extend'"
+                    class="mt-auto grid grid-cols-2 gap-3"
+                >
                     <button
                         type="button"
                         class="h-20 rounded-2xl bg-neutral-800 text-2xl text-white"

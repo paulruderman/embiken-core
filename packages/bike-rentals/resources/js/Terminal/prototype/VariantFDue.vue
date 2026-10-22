@@ -43,21 +43,31 @@ function situationOf(reservation: Reservation): string {
     return bike?.situation ?? 'none';
 }
 
-function bucket(label: string, match: (reservation: Reservation) => boolean): Reservation[] {
+function bucket(
+    label: string,
+    match: (reservation: Reservation) => boolean,
+): Reservation[] {
     return openReservations(shop).filter(match);
 }
 
 const late = computed(() =>
-    bucket('late', (reservation) => situationOf(reservation) === 'rented_out' && hourLate(reservation)),
+    bucket(
+        'late',
+        (reservation) =>
+            situationOf(reservation) === 'rented_out' && hourLate(reservation),
+    ),
 );
 const out = computed(() =>
     bucket(
         'out',
-        (reservation) => situationOf(reservation) === 'rented_out' && !hourLate(reservation),
+        (reservation) =>
+            situationOf(reservation) === 'rented_out' && !hourLate(reservation),
     ),
 );
 const next = computed(() =>
-    bucket('next', (reservation) => ['prepping', 'staged'].includes(situationOf(reservation))),
+    bucket('next', (reservation) =>
+        ['prepping', 'staged'].includes(situationOf(reservation)),
+    ),
 );
 const back = computed(() =>
     bucket('back', (reservation) => situationOf(reservation) === 'back'),
@@ -104,7 +114,9 @@ function doExtend(requote: boolean): void {
     }
 
     pane.value = 'ticket';
-    flash(`Now ${reservation.starts}–${reservation.ends}, owed ${money(reservation.owed)}`);
+    flash(
+        `Now ${reservation.starts}–${reservation.ends}, owed ${money(reservation.owed)}`,
+    );
 }
 
 function doCancel(reservation: Reservation): void {
@@ -128,7 +140,11 @@ function doCancel(reservation: Reservation): void {
             <button
                 type="button"
                 class="h-14 flex-1 rounded-xl border-2 text-lg font-bold"
-                :class="home === 'due' ? 'border-yellow-300 bg-yellow-300 text-black' : 'border-yellow-700'"
+                :class="
+                    home === 'due'
+                        ? 'border-yellow-300 bg-yellow-300 text-black'
+                        : 'border-yellow-700'
+                "
                 @click="home = 'due'"
             >
                 Due
@@ -136,7 +152,11 @@ function doCancel(reservation: Reservation): void {
             <button
                 type="button"
                 class="h-14 flex-1 rounded-xl border-2 text-lg font-bold"
-                :class="home === 'floor' ? 'border-yellow-300 bg-yellow-300 text-black' : 'border-yellow-700'"
+                :class="
+                    home === 'floor'
+                        ? 'border-yellow-300 bg-yellow-300 text-black'
+                        : 'border-yellow-700'
+                "
                 @click="home = 'floor'"
             >
                 Floor
@@ -145,20 +165,32 @@ function doCancel(reservation: Reservation): void {
         </header>
         <div class="px-3 text-sm text-amber-200">{{ toast }}</div>
 
-        <main v-if="home === 'floor'" class="grid grid-cols-3 gap-2 overflow-auto p-3">
+        <main
+            v-if="home === 'floor'"
+            class="grid grid-cols-3 gap-2 overflow-auto p-3"
+        >
             <button
                 v-for="bike in shop.bikes"
                 :key="bike.id"
                 type="button"
                 class="h-20 rounded-2xl border border-yellow-800 p-2 text-left text-2xl font-bold"
-                @click="reservationForBike(shop, bike.id) ? openTicket(reservationForBike(shop, bike.id)!) : flash(bikeCaption(shop, bike))"
+                @click="
+                    reservationForBike(shop, bike.id)
+                        ? openTicket(reservationForBike(shop, bike.id)!)
+                        : flash(bikeCaption(shop, bike))
+                "
             >
                 {{ bike.bid }}
-                <span class="block text-xs font-normal">{{ bikeCaption(shop, bike) }}</span>
+                <span class="block text-xs font-normal">{{
+                    bikeCaption(shop, bike)
+                }}</span>
             </button>
         </main>
 
-        <main v-else class="flex min-h-0 flex-1 flex-col gap-3 overflow-auto p-3">
+        <main
+            v-else
+            class="flex min-h-0 flex-1 flex-col gap-3 overflow-auto p-3"
+        >
             <button
                 type="button"
                 class="h-20 w-full rounded-2xl bg-yellow-300 text-2xl font-bold text-black"
@@ -167,13 +199,20 @@ function doCancel(reservation: Reservation): void {
                 Walk-in
             </button>
 
-            <section v-for="group in [
-                { title: 'Late', rows: late },
-                { title: 'Out', rows: out },
-                { title: 'Next', rows: next },
-                { title: 'Back (put-away)', rows: back },
-            ]" :key="group.title">
-                <h2 class="mb-1 text-xs tracking-widest text-yellow-700 uppercase">{{ group.title }}</h2>
+            <section
+                v-for="group in [
+                    { title: 'Late', rows: late },
+                    { title: 'Out', rows: out },
+                    { title: 'Next', rows: next },
+                    { title: 'Back (put-away)', rows: back },
+                ]"
+                :key="group.title"
+            >
+                <h2
+                    class="mb-1 text-xs tracking-widest text-yellow-700 uppercase"
+                >
+                    {{ group.title }}
+                </h2>
                 <button
                     v-for="reservation in group.rows"
                     :key="reservation.id"
@@ -187,29 +226,52 @@ function doCancel(reservation: Reservation): void {
                     @click="openTicket(reservation)"
                 >
                     <div>
-                        <div class="text-2xl font-bold">{{ reservation.customer }}</div>
+                        <div class="text-2xl font-bold">
+                            {{ reservation.customer }}
+                        </div>
                         <div class="text-sm text-yellow-600">
-                            {{ reservation.starts }}–{{ reservation.ends }} · owed
+                            {{ reservation.starts }}–{{ reservation.ends }} ·
+                            owed
                             {{ money(reservation.owed) }}
                         </div>
                     </div>
                     <div class="text-xl font-bold">
                         {{
                             reservation.lines
-                                .map((line) => bikeFor(shop, line.bike_id)?.bid ?? '—')
+                                .map(
+                                    (line) =>
+                                        bikeFor(shop, line.bike_id)?.bid ?? '—',
+                                )
                                 .join(' ')
                         }}
                     </div>
                 </button>
             </section>
 
-            <div v-if="focus" class="mt-auto rounded-2xl border border-yellow-700 p-3">
-                <div class="text-2xl font-bold text-yellow-100">{{ focus.customer }}</div>
-                <div class="text-3xl font-bold">{{ focus.starts }}–{{ focus.ends }}</div>
-                <div class="mb-3 text-xl">owed {{ money(focus.owed) }} / paid {{ money(focus.paid) }}</div>
-                <PrototypePartyLines class="mb-3" :shop="shop" :reservation="focus" />
+            <div
+                v-if="focus"
+                class="mt-auto rounded-2xl border border-yellow-700 p-3"
+            >
+                <div class="text-2xl font-bold text-yellow-100">
+                    {{ focus.customer }}
+                </div>
+                <div class="text-3xl font-bold">
+                    {{ focus.starts }}–{{ focus.ends }}
+                </div>
+                <div class="mb-3 text-xl">
+                    owed {{ money(focus.owed) }} / paid {{ money(focus.paid) }}
+                </div>
+                <PrototypePartyLines
+                    class="mb-3"
+                    :shop="shop"
+                    :reservation="focus"
+                />
                 <div v-if="pane === 'extend'" class="grid grid-cols-2 gap-2">
-                    <button type="button" class="h-16 border-2 border-yellow-300 text-lg" @click="doExtend(false)">
+                    <button
+                        type="button"
+                        class="h-16 border-2 border-yellow-300 text-lg"
+                        @click="doExtend(false)"
+                    >
                         Keep owed
                     </button>
                     <button
@@ -221,7 +283,11 @@ function doCancel(reservation: Reservation): void {
                     </button>
                 </div>
                 <div v-else class="grid grid-cols-4 gap-2">
-                    <button type="button" class="h-14 border border-yellow-800" @click="desk.pickup(focus)">
+                    <button
+                        type="button"
+                        class="h-14 border border-yellow-800"
+                        @click="desk.pickup(focus)"
+                    >
                         Pickup
                     </button>
                     <button
@@ -231,19 +297,39 @@ function doCancel(reservation: Reservation): void {
                     >
                         Return
                     </button>
-                    <button type="button" class="h-14 border border-yellow-800" @click="pane = 'extend'">
+                    <button
+                        type="button"
+                        class="h-14 border border-yellow-800"
+                        @click="pane = 'extend'"
+                    >
                         Extend
                     </button>
-                    <button type="button" class="h-14 border border-yellow-800" @click="desk.takeCash(focus)">
+                    <button
+                        type="button"
+                        class="h-14 border border-yellow-800"
+                        @click="desk.takeCash(focus)"
+                    >
                         Cash
                     </button>
-                    <button type="button" class="h-14 border border-yellow-800" @click="desk.acceptWaiver(focus)">
+                    <button
+                        type="button"
+                        class="h-14 border border-yellow-800"
+                        @click="desk.acceptWaiver(focus)"
+                    >
                         Waiver
                     </button>
-                    <button type="button" class="h-14 border border-yellow-800" @click="flash(focus.myrental)">
+                    <button
+                        type="button"
+                        class="h-14 border border-yellow-800"
+                        @click="flash(focus.myrental)"
+                    >
                         URL
                     </button>
-                    <button type="button" class="h-14 border border-yellow-800" @click="doCancel(focus)">
+                    <button
+                        type="button"
+                        class="h-14 border border-yellow-800"
+                        @click="doCancel(focus)"
+                    >
                         Cancel
                     </button>
                 </div>

@@ -267,3 +267,40 @@ test('unassign leaves another reservations physical bike state alone', function 
         ->and($bike->fresh()->bike_situation_state)->toBe(BikeSituation::Staged)
         ->and($bike->fresh()->bike_situation_reservation_id)->toBe($other->id);
 });
+
+test('cancel releases unused lines and preserves already returned lines', function () {
+    $bike = Bike::factory()->create();
+    $spare = Bike::factory()->recycle($bike->location)->recycle($bike->variant)->create();
+    $reservation = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create();
+    $returned = app(AllocateLineAction::class)($reservation, $bike->variant, $bike);
+    $unused = app(AllocateLineAction::class)($reservation, $spare->variant, $spare);
+    app(PickupAction::class)($returned);
+    app(ReturnAction::class)($returned->fresh());
+
+    app(CancelAction::class)($reservation);
+
+    expect($returned->fresh()->status)->toBe(BikeReservationStatus::In)
+        ->and(BikeReservation::query()->find($unused->id))->toBeNull()
+        ->and($reservation->fresh()->stage)->toBe(ReservationStage::Cancelled);
+});
+
+test('future allocation does not steal the bikes current physical reservation', function () {
+    $this->travelTo(now()->startOfMinute());
+    $bike = Bike::factory()->create();
+    $current = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create([
+        'starts_at' => now()->subHour(),
+        'ends_at' => now()->addHour(),
+    ]);
+    $line = app(AllocateLineAction::class)($current, $bike->variant, $bike);
+    app(PickupAction::class)($line);
+    $future = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create([
+        'starts_at' => now()->addDay(),
+        'ends_at' => now()->addDay()->addHour(),
+    ]);
+
+    $futureLine = app(AllocateLineAction::class)($future, $bike->variant, $bike);
+
+    expect($futureLine->bike_id)->toBe($bike->id)
+        ->and($bike->fresh()->bike_situation_state)->toBe(BikeSituation::RentedOut)
+        ->and($bike->fresh()->bike_situation_reservation_id)->toBe($current->id);
+});

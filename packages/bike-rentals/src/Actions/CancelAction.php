@@ -37,7 +37,7 @@ class CancelAction extends Action
             }
 
             foreach ($lines as $line) {
-                if ($line->status === BikeReservationStatus::Out) {
+                if ($line->status !== BikeReservationStatus::Assigned) {
                     continue;
                 }
 

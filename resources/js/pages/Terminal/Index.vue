@@ -231,6 +231,9 @@ function pickUpLine(line: DayLine): void {
             onFinish: () => {
                 pendingLineId.value = null;
             },
+        })
+        .catch(() => {
+            // The request callbacks above display the failure.
         });
 }
 function openPicker(
@@ -274,6 +277,9 @@ function changeLine(
             onFinish: () => {
                 pendingLineId.value = null;
             },
+        })
+        .catch(() => {
+            // The request callbacks above display the failure.
         });
 }
 

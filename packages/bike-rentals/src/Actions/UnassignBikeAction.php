@@ -49,7 +49,16 @@ class UnassignBikeAction extends Action
     public function asCommand(Command $command): int
     {
         $this->initializeTenancyFromCommand($command);
-        $line = $this->handle(BikeReservation::query()->findOrFail($command->argument('line') ?: \Laravel\Prompts\text('Line id')));
+        $lineId = $command->argument('line');
+
+        if (! $lineId && $command->option('no-interaction')) {
+            $command->error('A line id is required.');
+
+            return self::FAILURE;
+        }
+
+        $lineId ??= \Laravel\Prompts\text('Line id');
+        $line = $this->handle(BikeReservation::query()->whereKey($lineId)->firstOrFail());
         $command->info("Unassigned line {$line->id}");
 
         return self::SUCCESS;

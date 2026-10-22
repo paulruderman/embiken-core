@@ -98,6 +98,13 @@ function confirmDrop(line: Line): void {
 
 <template>
     <div class="space-y-2">
+        <p
+            v-if="desk.error"
+            role="alert"
+            class="rounded-xl bg-red-950 p-3 text-red-100"
+        >
+            {{ desk.error }}
+        </p>
         <ul class="max-h-52 space-y-2 overflow-y-auto text-sm">
             <li
                 v-for="row in rows"

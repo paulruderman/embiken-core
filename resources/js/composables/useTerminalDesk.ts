@@ -1,4 +1,5 @@
 import { useHttp } from '@inertiajs/vue3';
+import { ref } from 'vue';
 import AcceptWaiverAction from '@/actions/Embiken/BikeRentals/Actions/AcceptWaiverAction';
 import AllocateLineAction from '@/actions/Embiken/BikeRentals/Actions/AllocateLineAction';
 import AssignBikeAction from '@/actions/Embiken/BikeRentals/Actions/AssignBikeAction';
@@ -24,6 +25,7 @@ function apply(day: ReturnType<typeof useDayStore>, payload: unknown): void {
 
 export function useTerminalDesk() {
     const day = useDayStore();
+    const error = ref('');
     const http = useHttp<
         Record<string, string | number | boolean | null>,
         DayPatch
@@ -35,15 +37,17 @@ export function useTerminalDesk() {
         body: Record<string, unknown> = {},
         onSuccess?: (patch: DayPatch) => void,
     ): void {
-        http.transform(() => body)[method](url, {
-            onSuccess: (response) => {
-                apply(day, response);
-                const patch =
-                    (response as { data?: DayPatch })?.data ??
-                    (response as DayPatch);
-                onSuccess?.(patch);
-            },
-        });
+        void http
+            .transform(() => body)
+            [method](url, {
+                onSuccess: (response) => {
+                    apply(day, response);
+                    const patch =
+                        (response as { data?: DayPatch })?.data ??
+                        (response as DayPatch);
+                    onSuccess?.(patch);
+                },
+            });
     }
 
     function post(
@@ -55,6 +59,9 @@ export function useTerminalDesk() {
     }
 
     return {
+        get error(): string {
+            return error.value;
+        },
         pickup(reservation: Reservation): void {
             for (const line of reservation.lines) {
                 if (line.bike_id) {

@@ -59,7 +59,7 @@ class AllocateLineAction extends Action
         try {
             $line = $this->handle(
                 $reservation,
-                isset($data['product_id']) ? BikeModelVariant::query()->findOrFail($data['product_id']) : null,
+                isset($data['product_id']) ? BikeModelVariant::query()->whereKey($data['product_id'])->firstOrFail() : null,
                 isset($data['bike_id']) ? Bike::query()->findOrFail($data['bike_id']) : null,
                 $data['rider_name'] ?? null,
                 isset($data['rider_height_cm']) ? (int) $data['rider_height_cm'] : null,
@@ -86,10 +86,16 @@ class AllocateLineAction extends Action
         $this->initializeTenancyFromCommand($command);
         $bike = $command->option('bike') ? Bike::query()->findOrFail($command->option('bike')) : null;
         $productArgument = $command->argument('product');
+
+        if ($command->option('no-interaction') && (! $command->argument('reservation') || (! $productArgument && $bike === null))) {
+            $command->error('A reservation and a variant or bike are required.');
+
+            return self::FAILURE;
+        }
         $line = $this->handle(
             Reservation::query()->findOrFail($command->argument('reservation') ?: \Laravel\Prompts\text('Reservation id')),
             $productArgument
-                ? BikeModelVariant::query()->findOrFail($productArgument)
+                ? BikeModelVariant::query()->whereKey($productArgument)->firstOrFail()
                 : ($bike === null ? BikeModelVariant::query()->findOrFail(\Laravel\Prompts\text('Variant id')) : null),
             $bike,
             $command->option('rider-name') ?: null,

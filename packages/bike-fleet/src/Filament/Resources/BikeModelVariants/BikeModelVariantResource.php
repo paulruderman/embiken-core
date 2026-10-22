@@ -3,6 +3,8 @@
 namespace Embiken\BikeFleet\Filament\Resources\BikeModelVariants;
 
 use App\Filament\Concerns\RequiresTenantModule;
+use App\Filament\Shop\Concerns\HasShopSetupBadge;
+use App\Filament\Shop\Support\ShopSetupReadiness;
 use BackedEnum;
 use Embiken\BikeFleet\Filament\Resources\BikeModelVariants\Pages\CreateBikeModelVariant;
 use Embiken\BikeFleet\Filament\Resources\BikeModelVariants\Pages\EditBikeModelVariant;
@@ -17,7 +19,13 @@ use Filament\Tables\Table;
 
 class BikeModelVariantResource extends Resource
 {
+    use HasShopSetupBadge;
     use RequiresTenantModule;
+
+    protected static function shopSetupBadgeStep(): string
+    {
+        return ShopSetupReadiness::BikeModelVariants;
+    }
 
     public static function tenantModuleId(): string
     {

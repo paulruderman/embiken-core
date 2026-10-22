@@ -2,6 +2,7 @@
 
 namespace Embiken\BikeFleet\Filament\Resources\ServiceRequests\Tables;
 
+use App\Filament\Shop\Support\ShopSetupReadiness;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
@@ -12,7 +13,7 @@ class ServiceRequestsTable
 {
     public static function configure(Table $table): Table
     {
-        return $table
+        $table = $table
             ->columns([
                 TextColumn::make('bike.bid')
                     ->label('Bike')
@@ -30,5 +31,11 @@ class ServiceRequestsTable
                 DeleteAction::make(),
             ])
             ->toolbarActions([]);
+
+        return app(ShopSetupReadiness::class)->configureEmptyState(
+            $table,
+            ShopSetupReadiness::ServiceRequests,
+            'No service requests yet',
+        );
     }
 }

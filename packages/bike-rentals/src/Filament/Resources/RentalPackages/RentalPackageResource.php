@@ -3,6 +3,8 @@
 namespace Embiken\BikeRentals\Filament\Resources\RentalPackages;
 
 use App\Filament\Concerns\RequiresTenantModule;
+use App\Filament\Shop\Concerns\HasShopSetupBadge;
+use App\Filament\Shop\Support\ShopSetupReadiness;
 use BackedEnum;
 use Embiken\BikeRentals\Filament\Resources\RentalPackages\Pages\CreateRentalPackage;
 use Embiken\BikeRentals\Filament\Resources\RentalPackages\Pages\EditRentalPackage;
@@ -18,7 +20,13 @@ use Filament\Tables\Table;
 
 class RentalPackageResource extends Resource
 {
+    use HasShopSetupBadge;
     use RequiresTenantModule;
+
+    protected static function shopSetupBadgeStep(): string
+    {
+        return ShopSetupReadiness::BookOffer;
+    }
 
     public static function tenantModuleId(): string
     {

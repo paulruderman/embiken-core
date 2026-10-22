@@ -2,6 +2,9 @@
 
 namespace Embiken\BikeRentals\Filament\Resources\RentalPackages\RelationManagers;
 
+use App\Filament\Shop\Support\ShopSetupReadiness;
+use Embiken\BikeFleet\Models\BikeModelVariant;
+use Filament\Actions\Action;
 use Filament\Actions\AttachAction;
 use Filament\Actions\DetachAction;
 use Filament\Actions\EditAction;
@@ -37,8 +40,24 @@ class VariantsRelationManager extends RelationManager
                 TextColumn::make('rate_cents')
                     ->label('Rate (cents)'),
             ])
+            ->emptyStateHeading('No variants in this package yet')
+            ->emptyStateDescription(fn (): string => BikeModelVariant::query()->exists()
+                ? 'Attach variants and set each rate to define which bikes this package offers.'
+                : 'Create a bike model variant first. Then return here to add it to this package and set its rate.')
+            ->emptyStateActions(BikeModelVariant::query()->exists()
+                ? []
+                : [
+                    Action::make('createBikeModelVariant')
+                        ->label('Create a bike model variant')
+                        ->url(app(ShopSetupReadiness::class)->continuationUrl(ShopSetupReadiness::BookOffer)),
+                ])
             ->headerActions([
+                Action::make('createBikeModelVariant')
+                    ->label('Add bike model variants first')
+                    ->url(app(ShopSetupReadiness::class)->continuationUrl(ShopSetupReadiness::BookOffer))
+                    ->visible(fn (): bool => ! BikeModelVariant::query()->exists()),
                 AttachAction::make()
+                    ->visible(fn (): bool => BikeModelVariant::query()->exists())
                     ->preloadRecordSelect()
                     ->schema(fn (AttachAction $action): array => [
                         $action->getRecordSelect(),

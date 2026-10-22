@@ -2,12 +2,14 @@
 
 namespace App\Filament\Shop\Resources\Locations;
 
+use App\Filament\Shop\Concerns\HasShopSetupBadge;
 use App\Filament\Shop\Resources\Locations\Pages\EditLocation;
 use App\Filament\Shop\Resources\Locations\Pages\ListLocations;
 use App\Filament\Shop\Resources\Locations\RelationManagers\ClosedDatesRelationManager;
 use App\Filament\Shop\Resources\Locations\RelationManagers\HoursRelationManager;
 use App\Filament\Shop\Resources\Locations\Schemas\LocationForm;
 use App\Filament\Shop\Resources\Locations\Tables\LocationsTable;
+use App\Filament\Shop\Support\ShopSetupReadiness;
 use App\Models\Location;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -18,6 +20,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class LocationResource extends Resource
 {
+    use HasShopSetupBadge;
+
+    protected static function shopSetupBadgeStep(): string
+    {
+        return ShopSetupReadiness::LocationHours;
+    }
+
     protected static ?string $model = Location::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedMapPin;

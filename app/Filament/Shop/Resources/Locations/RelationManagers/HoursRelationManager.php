@@ -49,6 +49,12 @@ class HoursRelationManager extends RelationManager
                 IconColumn::make('closes_next_day')
                     ->boolean(),
             ])
+            ->emptyStateHeading('Opening hours are not set up')
+            ->emptyStateDescription('Add the intervals when customers can start and finish rentals. Book cannot accept reservations until opening hours are configured.')
+            ->emptyStateActions([
+                CreateAction::make('createHourFromEmptyState')
+                    ->label('Add opening hours'),
+            ])
             ->headerActions([
                 CreateAction::make(),
             ])

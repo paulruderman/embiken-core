@@ -3,6 +3,8 @@
 namespace Embiken\BikeFleet\Filament\Resources\BikeCategories;
 
 use App\Filament\Concerns\RequiresTenantModule;
+use App\Filament\Shop\Concerns\HasShopSetupBadge;
+use App\Filament\Shop\Support\ShopSetupReadiness;
 use BackedEnum;
 use Embiken\BikeFleet\Filament\Resources\BikeCategories\Pages\CreateBikeCategory;
 use Embiken\BikeFleet\Filament\Resources\BikeCategories\Pages\EditBikeCategory;
@@ -17,7 +19,13 @@ use Filament\Tables\Table;
 
 class BikeCategoryResource extends Resource
 {
+    use HasShopSetupBadge;
     use RequiresTenantModule;
+
+    protected static function shopSetupBadgeStep(): string
+    {
+        return ShopSetupReadiness::BikeCategories;
+    }
 
     public static function tenantModuleId(): string
     {

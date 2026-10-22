@@ -2,6 +2,7 @@
 
 namespace Embiken\BikeFleet\Filament\Resources\Bikes\Tables;
 
+use App\Filament\Shop\Support\ShopSetupReadiness;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
@@ -12,7 +13,7 @@ class BikesTable
 {
     public static function configure(Table $table): Table
     {
-        return $table
+        $table = $table
             ->columns([
                 TextColumn::make('bid')
                     ->searchable()
@@ -33,5 +34,11 @@ class BikesTable
                 DeleteAction::make(),
             ])
             ->toolbarActions([]);
+
+        return app(ShopSetupReadiness::class)->configureEmptyState(
+            $table,
+            ShopSetupReadiness::Bikes,
+            'No bikes in your fleet yet',
+        );
     }
 }

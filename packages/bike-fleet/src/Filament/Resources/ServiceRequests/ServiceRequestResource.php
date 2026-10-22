@@ -3,6 +3,8 @@
 namespace Embiken\BikeFleet\Filament\Resources\ServiceRequests;
 
 use App\Filament\Concerns\RequiresTenantModule;
+use App\Filament\Shop\Concerns\HasShopSetupBadge;
+use App\Filament\Shop\Support\ShopSetupReadiness;
 use BackedEnum;
 use Embiken\BikeFleet\Filament\Resources\ServiceRequests\Pages\CreateServiceRequest;
 use Embiken\BikeFleet\Filament\Resources\ServiceRequests\Pages\EditServiceRequest;
@@ -18,7 +20,13 @@ use Filament\Tables\Table;
 
 class ServiceRequestResource extends Resource
 {
+    use HasShopSetupBadge;
     use RequiresTenantModule;
+
+    protected static function shopSetupBadgeStep(): string
+    {
+        return ShopSetupReadiness::ServiceRequests;
+    }
 
     public static function tenantModuleId(): string
     {

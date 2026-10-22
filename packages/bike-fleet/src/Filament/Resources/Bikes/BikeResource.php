@@ -3,6 +3,9 @@
 namespace Embiken\BikeFleet\Filament\Resources\Bikes;
 
 use App\Filament\Concerns\RequiresTenantModule;
+use App\Filament\Shop\Concerns\HasShopSetupBadge;
+use App\Filament\Shop\Support\ShopSetupReadiness;
+use App\Support\ModuleRegistry;
 use BackedEnum;
 use Embiken\BikeFleet\Filament\Resources\Bikes\Pages\CreateBike;
 use Embiken\BikeFleet\Filament\Resources\Bikes\Pages\EditBike;
@@ -17,7 +20,15 @@ use Filament\Tables\Table;
 
 class BikeResource extends Resource
 {
+    use HasShopSetupBadge;
     use RequiresTenantModule;
+
+    protected static function shopSetupBadgeStep(): string
+    {
+        return app(ModuleRegistry::class)->isEnabled('embiken/bike-rentals')
+            ? ShopSetupReadiness::BookableFleet
+            : ShopSetupReadiness::Bikes;
+    }
 
     public static function tenantModuleId(): string
     {

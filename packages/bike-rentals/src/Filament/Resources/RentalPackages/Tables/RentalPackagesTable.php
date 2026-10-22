@@ -2,6 +2,7 @@
 
 namespace Embiken\BikeRentals\Filament\Resources\RentalPackages\Tables;
 
+use App\Filament\Shop\Support\ShopSetupReadiness;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
@@ -12,7 +13,7 @@ class RentalPackagesTable
 {
     public static function configure(Table $table): Table
     {
-        return $table
+        $table = $table
             ->defaultSort('sort_order')
             ->columns([
                 TextColumn::make('name')
@@ -32,5 +33,11 @@ class RentalPackagesTable
                 DeleteAction::make(),
             ])
             ->toolbarActions([]);
+
+        return app(ShopSetupReadiness::class)->configureEmptyState(
+            $table,
+            ShopSetupReadiness::RentalPackages,
+            'No rental packages yet',
+        );
     }
 }

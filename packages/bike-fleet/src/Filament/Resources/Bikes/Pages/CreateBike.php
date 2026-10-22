@@ -2,6 +2,8 @@
 
 namespace Embiken\BikeFleet\Filament\Resources\Bikes\Pages;
 
+use App\Filament\Shop\Concerns\RequiresShopSetup;
+use App\Filament\Shop\Support\ShopSetupReadiness;
 use Embiken\BikeFleet\Enums\BikeSituation;
 use Embiken\BikeFleet\Filament\Resources\Bikes\BikeResource;
 use Embiken\BikeFleet\Models\Bike;
@@ -12,7 +14,14 @@ use Illuminate\Support\Facades\DB;
 
 class CreateBike extends CreateRecord
 {
+    use RequiresShopSetup;
+
     protected static string $resource = BikeResource::class;
+
+    protected static function shopSetupRequirement(): string
+    {
+        return ShopSetupReadiness::Bikes;
+    }
 
     /**
      * @param  array<string, mixed>  $data

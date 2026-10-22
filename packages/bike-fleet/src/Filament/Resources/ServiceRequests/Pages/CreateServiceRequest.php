@@ -2,34 +2,25 @@
 
 namespace Embiken\BikeFleet\Filament\Resources\ServiceRequests\Pages;
 
+use App\Filament\Shop\Concerns\RequiresShopSetup;
+use App\Filament\Shop\Support\ShopSetupReadiness;
 use Embiken\BikeFleet\Filament\Resources\ServiceRequests\ServiceRequestResource;
 use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeFleet\Models\ServiceRequest;
 use Embiken\BikeFleet\Services\FleetMutationLock;
-use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
 class CreateServiceRequest extends CreateRecord
 {
+    use RequiresShopSetup;
+
     protected static string $resource = ServiceRequestResource::class;
 
-    public function mount(): void
+    protected static function shopSetupRequirement(): string
     {
-        if (! Bike::query()->exists()) {
-            Notification::make()
-                ->title('Add a bike first')
-                ->body('Add a bike to your fleet before creating a service request.')
-                ->warning()
-                ->send();
-
-            $this->redirect(ServiceRequestResource::getUrl('index'));
-
-            return;
-        }
-
-        parent::mount();
+        return ShopSetupReadiness::ServiceRequests;
     }
 
     /**

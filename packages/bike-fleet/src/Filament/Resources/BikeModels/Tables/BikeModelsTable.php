@@ -2,6 +2,7 @@
 
 namespace Embiken\BikeFleet\Filament\Resources\BikeModels\Tables;
 
+use App\Filament\Shop\Support\ShopSetupReadiness;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
@@ -11,7 +12,7 @@ class BikeModelsTable
 {
     public static function configure(Table $table): Table
     {
-        return $table
+        $table = $table
             ->columns([
                 TextColumn::make('name')
                     ->searchable()
@@ -26,5 +27,11 @@ class BikeModelsTable
                 DeleteAction::make(),
             ])
             ->toolbarActions([]);
+
+        return app(ShopSetupReadiness::class)->configureEmptyState(
+            $table,
+            ShopSetupReadiness::BikeModels,
+            'No bike models yet',
+        );
     }
 }

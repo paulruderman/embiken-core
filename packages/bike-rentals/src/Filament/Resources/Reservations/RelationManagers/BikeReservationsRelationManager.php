@@ -3,6 +3,7 @@
 namespace Embiken\BikeRentals\Filament\Resources\Reservations\RelationManagers;
 
 use Embiken\BikeFleet\Enums\BikeSituation;
+use Embiken\BikeFleet\Filament\Resources\BikeModelVariants\BikeModelVariantResource;
 use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeFleet\Models\BikeModelVariant;
 use Embiken\BikeRentals\Actions\AllocateLineAction;
@@ -91,8 +92,23 @@ class BikeReservationsRelationManager extends RelationManager
                 TextColumn::make('rider_name')
                     ->placeholder('—'),
             ])
+            ->emptyStateHeading('No reservation lines yet')
+            ->emptyStateDescription(fn (): string => BikeModelVariant::query()->exists()
+                ? 'Add a variant to this Reservation to reserve a bike for the party.'
+                : 'Create a bike model variant before adding reservation lines.')
+            ->emptyStateActions([
+                Action::make('createBikeModelVariantFromEmptyState')
+                    ->label('Create a bike model variant')
+                    ->url(BikeModelVariantResource::getUrl('create'))
+                    ->visible(fn (): bool => ! BikeModelVariant::query()->exists()),
+            ])
             ->headerActions([
+                Action::make('createBikeModelVariant')
+                    ->label('Add bike model variants first')
+                    ->url(BikeModelVariantResource::getUrl('create'))
+                    ->visible(fn (): bool => ! BikeModelVariant::query()->exists()),
                 CreateAction::make()
+                    ->visible(fn (): bool => BikeModelVariant::query()->exists())
                     ->using(function (array $data, RelationManager $livewire): BikeReservation {
                         /** @var Reservation $reservation */
                         $reservation = $livewire->getOwnerRecord();

@@ -36,7 +36,10 @@
         "paths": {
             /* Specify a set of entries that re-map imports to additional lookup locations. */ "@/*": [
                 "./resources/js/*"
-            ]
+            ],
+            "@bike-fleet/*": ["./packages/bike-fleet/resources/js/*"],
+            "@bike-rentals/*": ["./packages/bike-rentals/resources/js/*"],
+            "@weather/*": ["./packages/weather/resources/js/*"]
         },
         // "rootDirs": [],                                   /* Allow multiple folders to be treated as one when resolving modules. */
         // "typeRoots": [],                                  /* Specify multiple folders that act like './node_modules/@types'. */
@@ -122,6 +125,10 @@
         "resources/js/**/*.ts",
         "resources/js/**/*.d.ts",
         "resources/js/**/*.tsx",
-        "resources/js/**/*.vue"
-    ]
+        "resources/js/**/*.vue",
+        "packages/*/resources/js/**/*.ts",
+        "packages/*/resources/js/**/*.vue"
+    ],
+    // Filament owns these routes; Wayfinder 0.1.21 cannot build barrels for numeric domain segments.
+    "exclude": ["resources/js/routes/filament/**"]
 }

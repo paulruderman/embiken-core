@@ -22,8 +22,7 @@ Route::middleware([
         ->middleware('signed')
         ->name('staff.impersonate');
 
-    Route::get('/terminal/login', SignInAction::class)->name('staff.login');
-    Route::post('/terminal/login', SignInAction::class)->name('staff.login.store');
+    Route::match(['get', 'post'], '/terminal/login', SignInAction::class)->name('staff.login');
 
     Route::post('/shop/branding', UpdateShopBrandingAction::class)
         ->middleware('auth:staff')

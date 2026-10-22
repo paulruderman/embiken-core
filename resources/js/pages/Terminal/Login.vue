@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
-import { store } from '@/routes/staff/login';
+import { login } from '@/routes/staff';
 </script>
 
 <template>
-    <div class="flex min-h-screen items-center justify-center bg-zinc-950 p-6 text-zinc-100">
+    <div
+        class="flex min-h-screen items-center justify-center bg-zinc-950 p-6 text-zinc-100"
+    >
         <Head title="Terminal sign in" />
         <Form
-            v-bind="store.form()"
+            v-bind="login.form.post()"
             class="w-full max-w-md space-y-4 rounded-3xl bg-zinc-900 p-8"
             #default="{ errors, processing }"
         >
@@ -22,7 +24,9 @@ import { store } from '@/routes/staff/login';
                     class="mt-1 h-14 w-full rounded-2xl bg-zinc-800 px-4"
                 />
             </label>
-            <p v-if="errors.email" class="text-sm text-rose-400">{{ errors.email }}</p>
+            <p v-if="errors.email" class="text-sm text-rose-400">
+                {{ errors.email }}
+            </p>
             <label class="block text-sm">
                 Password
                 <input

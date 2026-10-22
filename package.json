@@ -6,8 +6,8 @@
         "build": "vp build",
         "build:ssr": "vp build && vp build --ssr",
         "dev": "vp dev",
-        "check": "vp check",
-        "check:fix": "vp check --fix",
+        "check": "vp check resources/js packages/*/resources/js vite.config.ts",
+        "check:fix": "vp check --fix resources/js packages/*/resources/js vite.config.ts",
         "types:check": "vue-tsc --noEmit"
     },
     "dependencies": {

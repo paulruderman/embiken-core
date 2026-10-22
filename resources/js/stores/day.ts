@@ -31,7 +31,7 @@ export type DayLine = {
 
 export type DayReservation = {
     id: number;
-    stage: ReservationStage | string;
+    stage: ReservationStage;
     starts_at: string;
     ends_at: string;
     owed: number;
@@ -47,7 +47,7 @@ export type DaySnapshot = {
     location_id: number;
     timezone: string;
     currency: string;
-    return_situation: ReturnSituation | string;
+    return_situation: ReturnSituation;
     bikes: DayBike[];
     reservations: DayReservation[];
 };

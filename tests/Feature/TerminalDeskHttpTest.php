@@ -330,3 +330,37 @@ test('staff cannot drop the last reservation line through HTTP', function () {
         expect(BikeReservation::query()->find($lineId))->not->toBeNull();
     });
 });
+
+test('line commands reject missing input without prompting in non-interactive mode', function (string $command, string $message) {
+    $shop = provisionDeskShop('desk-command-input.localhost');
+    $this->deskTenant = $shop['tenant'];
+
+    $this->artisan($command, ['--tenant' => $shop['tenant']->id, '--no-interaction' => true])
+        ->expectsOutputToContain($message)
+        ->assertFailed();
+})->with([
+    'unassign' => ['reservations:unassign', 'A line id is required.'],
+    'allocate' => ['reservations:allocate-line', 'A reservation and a variant or bike are required.'],
+]);
+
+test('guests can open the terminal sign-in page', function () {
+    $shop = provisionDeskShop('desk-login-page.localhost');
+    $this->deskTenant = $shop['tenant'];
+
+    $this->withoutVite()
+        ->get('http://desk-login-page.localhost/terminal/login')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->component('Terminal/Login'));
+});
+
+test('staff can sign in through the combined terminal login route', function () {
+    $shop = provisionDeskShop('desk-login-submit.localhost');
+    $this->deskTenant = $shop['tenant'];
+
+    $this->post('http://desk-login-submit.localhost/terminal/login', [
+        'email' => $shop['staff']->email,
+        'password' => 'password',
+    ])->assertRedirect('/terminal');
+
+    $this->assertAuthenticatedAs($shop['staff'], 'staff');
+});

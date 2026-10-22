@@ -51,12 +51,6 @@ class Availability
             $line->rider_height_cm = $riderHeightCm;
             $line->save();
 
-            if ($bike !== null) {
-                $bike->bike_situation_state = BikeSituation::Prepping;
-                $bike->bike_situation_reservation_id = $reservation->id;
-                $bike->save();
-            }
-
             $this->bumpExpiresAt($reservation);
 
             return $line;
@@ -66,7 +60,15 @@ class Availability
     public function unassign(BikeReservation $line): BikeReservation
     {
         return DB::transaction(function () use ($line): BikeReservation {
-            $line->refresh()->load(['reservation', 'bike']);
+            $line->loadMissing('reservation');
+            $lines = $this->lockReservationLines($line->reservation);
+            $line = $lines->firstWhere('id', $line->getKey());
+
+            if ($line === null) {
+                throw new OccupancyUnavailable('That reservation line no longer exists.');
+            }
+
+            $line->load(['reservation', 'bike']);
 
             if ($line->status !== BikeReservationStatus::Assigned) {
                 throw new OccupancyUnavailable('Only an Assigned line can be unassigned.', $line->id);
@@ -91,7 +93,7 @@ class Availability
             $this->bumpExpiresAt($reservation);
 
             return $line->refresh();
-        });
+        }, attempts: 5);
     }
 
     public function release(BikeReservation $line): void

@@ -292,3 +292,41 @@ test('staff can add a bike and unassign without swapping', function () {
     $this->deleteJson("http://desk-grow.localhost/lines/{$firstLineId}")
         ->assertOk();
 });
+
+test('guests cannot unassign a reservation line', function () {
+    $shop = provisionDeskShop('desk-unassign-guest.localhost');
+    $this->deskTenant = $shop['tenant'];
+    $lineId = null;
+    $shop['tenant']->run(function () use ($shop, &$lineId): void {
+        $bike = Bike::factory()->recycle($shop['location'])->create();
+        $reservation = Reservation::factory()->confirmed()->terminal()->recycle($shop['location'])->create();
+        $lineId = app(AllocateLineAction::class)($reservation, $bike->variant, $bike)->id;
+    });
+
+    $this->postJson("http://desk-unassign-guest.localhost/lines/{$lineId}/unassign")
+        ->assertUnauthorized();
+
+    $shop['tenant']->run(function () use ($lineId): void {
+        expect(BikeReservation::query()->findOrFail($lineId)->bike_id)->not->toBeNull();
+    });
+});
+
+test('staff cannot drop the last reservation line through HTTP', function () {
+    $shop = provisionDeskShop('desk-drop-last.localhost');
+    $this->deskTenant = $shop['tenant'];
+    $lineId = null;
+    $shop['tenant']->run(function () use ($shop, &$lineId): void {
+        $bike = Bike::factory()->recycle($shop['location'])->create();
+        $reservation = Reservation::factory()->confirmed()->terminal()->recycle($shop['location'])->create();
+        $lineId = app(AllocateLineAction::class)($reservation, $bike->variant, $bike)->id;
+    });
+
+    $this->actingAs($shop['staff'], 'staff')
+        ->deleteJson("http://desk-drop-last.localhost/lines/{$lineId}")
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('line');
+
+    $shop['tenant']->run(function () use ($lineId): void {
+        expect(BikeReservation::query()->find($lineId))->not->toBeNull();
+    });
+});

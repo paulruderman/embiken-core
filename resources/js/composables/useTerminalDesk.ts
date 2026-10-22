@@ -16,14 +16,18 @@ import { useDayStore, type DayPatch } from '@/stores/day';
 import type { Line, Reservation } from '@bike-rentals/Terminal/prototype/mock';
 
 function apply(day: ReturnType<typeof useDayStore>, payload: unknown): void {
-    const patch = (payload as { data?: DayPatch })?.data ?? (payload as DayPatch);
+    const patch =
+        (payload as { data?: DayPatch })?.data ?? (payload as DayPatch);
 
     day.applyPatch(patch);
 }
 
 export function useTerminalDesk() {
     const day = useDayStore();
-    const http = useHttp<Record<string, unknown>, DayPatch>({});
+    const http = useHttp<
+        Record<string, string | number | boolean | null>,
+        DayPatch
+    >({});
 
     function request(
         method: 'post' | 'delete',
@@ -35,7 +39,8 @@ export function useTerminalDesk() {
             onSuccess: (response) => {
                 apply(day, response);
                 const patch =
-                    (response as { data?: DayPatch })?.data ?? (response as DayPatch);
+                    (response as { data?: DayPatch })?.data ??
+                    (response as DayPatch);
                 onSuccess?.(patch);
             },
         });
@@ -68,7 +73,10 @@ export function useTerminalDesk() {
             post(PutAwayAction.url(bikeId));
         },
         takeCash(reservation: Reservation): void {
-            const outstanding = Math.max(reservation.owed - reservation.paid, 0);
+            const outstanding = Math.max(
+                reservation.owed - reservation.paid,
+                0,
+            );
 
             if (outstanding <= 0) {
                 return;
@@ -93,7 +101,11 @@ export function useTerminalDesk() {
         swapAsset(line: Line, bikeId: number): void {
             post(SwapAssetAction.url({ line: line.id }), { bike_id: bikeId });
         },
-        allocateLine(reservation: Reservation, productId: number, bikeId?: number): void {
+        allocateLine(
+            reservation: Reservation,
+            productId: number,
+            bikeId?: number,
+        ): void {
             const body: Record<string, unknown> = {};
 
             if (bikeId !== undefined) {

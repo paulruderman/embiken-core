@@ -28,6 +28,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Http/Resources/** | .ai/rules/resources.md |
 | routes/** | .ai/rules/routes.md |
 | app/Services/** | .ai/rules/services.md |
+| packages/bike-rentals/src/Services/Availability.php | .ai/rules/src-services.md |
 | app/Support/TenantMigrationPaths.php | .ai/rules/support.md |
 | database/migrations/tenant/** | .ai/rules/tenant.md |
 | resources/js/pages/Terminal/** | .ai/rules/terminal.md |

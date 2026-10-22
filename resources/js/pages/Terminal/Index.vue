@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { Head } from '@inertiajs/vue3';
+import AllocateLineAction from '@/actions/Embiken/BikeRentals/Actions/AllocateLineAction';
+import AssignBikeAction from '@/actions/Embiken/BikeRentals/Actions/AssignBikeAction';
+import ReleaseLineAction from '@/actions/Embiken/BikeRentals/Actions/ReleaseLineAction';
+import SwapAssetAction from '@/actions/Embiken/BikeRentals/Actions/SwapAssetAction';
+import UnassignBikeAction from '@/actions/Embiken/BikeRentals/Actions/UnassignBikeAction';
 import PickupAction from '@/actions/Embiken/BikeRentals/Actions/PickupAction';
 import TerminalLayout from '@/layouts/TerminalLayout.vue';
 import { getEnumLabel, getStatusBadgeClasses } from '@/lib/enums';
@@ -29,7 +34,51 @@ const search = ref('');
 const selectedReservationId = ref<number | null>(null);
 const pendingLineId = ref<number | null>(null);
 const pickupError = ref('');
-const pickupRequest = useHttp<{}, DayPatchResponse>({});
+const pickupRequest = useHttp<
+    Record<string, string | number | boolean | null>,
+    DayPatchResponse
+>({});
+const picker = ref<{
+    mode: 'assign' | 'swap' | 'bike' | 'size';
+    lineId?: number;
+} | null>(null);
+const droppingLineId = ref<number | null>(null);
+
+const editable = computed(
+    () => selectedReservation.value?.stage !== ReservationStage.Cancelled,
+);
+const pickerBikes = computed(() => {
+    const reservation = selectedReservation.value;
+    if (!reservation || !picker.value) {
+        return [];
+    }
+    const line = reservation.lines.find(
+        (row) => row.id === picker.value?.lineId,
+    );
+    const taken = new Set(reservation.lines.map((row) => row.bike_id));
+    return day.bikeList
+        .filter(
+            (bike) =>
+                bike.in_service &&
+                !taken.has(bike.id) &&
+                (picker.value?.mode !== 'assign' ||
+                    bike.product_id === line?.product_id),
+        )
+        .sort(
+            (left, right) =>
+                Number(right.product_id === line?.product_id) -
+                    Number(left.product_id === line?.product_id) ||
+                left.bid.localeCompare(right.bid),
+        );
+});
+const pickerVariants = computed(() => [
+    ...new Map(
+        pickerBikes.value.map((bike) => [
+            bike.product_id,
+            { id: bike.product_id, label: `${bike.model} · ${bike.variant}` },
+        ]),
+    ).values(),
+]);
 
 const selectedReservation = computed(() =>
     selectedReservationId.value === null
@@ -49,13 +98,17 @@ const visibleReservations = computed(() => {
             const searchable = [
                 reservation.customer.name,
                 ...reservation.lines.flatMap((line) => {
-                    const bike = line.bike_id ? day.bikeById(line.bike_id) : undefined;
+                    const bike = line.bike_id
+                        ? day.bikeById(line.bike_id)
+                        : undefined;
 
                     return [line.product_label, bike?.bid ?? ''];
                 }),
             ];
 
-            return searchable.some((value) => value.toLocaleLowerCase().includes(query));
+            return searchable.some((value) =>
+                value.toLocaleLowerCase().includes(query),
+            );
         })
         .sort((left, right) => left.starts_at.localeCompare(right.starts_at));
 });
@@ -134,40 +187,132 @@ function canPickUp(reservation: DayReservation, line: DayLine): boolean {
 function openReservation(reservation: DayReservation): void {
     selectedReservationId.value = reservation.id;
     pickupError.value = '';
+    picker.value = null;
+    droppingLineId.value = null;
 }
 
 function backToQueue(): void {
     selectedReservationId.value = null;
     pickupError.value = '';
+    picker.value = null;
+    droppingLineId.value = null;
 }
 
 function pickUpLine(line: DayLine): void {
     const reservation = selectedReservation.value;
 
-    if (!reservation || !canPickUp(reservation, line) || pendingLineId.value !== null) {
+    if (
+        !reservation ||
+        !canPickUp(reservation, line) ||
+        pendingLineId.value !== null
+    ) {
         return;
     }
 
     pendingLineId.value = line.id;
     pickupError.value = '';
 
-    pickupRequest.post(PickupAction.url({ line: line.id }), {
-        onSuccess: (response) => {
-            day.applyPatch(response.data ?? response);
-        },
-        onError: (errors) => {
-            pickupError.value = Object.values(errors).join(' ');
-        },
-        onHttpException: () => {
-            pickupError.value = 'Pickup could not be recorded. Try again.';
-        },
-        onNetworkError: () => {
-            pickupError.value = 'Connection lost. Check the bike status before trying again.';
-        },
-        onFinish: () => {
-            pendingLineId.value = null;
-        },
-    });
+    pickupRequest
+        .transform(() => ({}))
+        .post(PickupAction.url({ line: line.id }), {
+            onSuccess: (response) => {
+                day.applyPatch(response.data ?? response);
+            },
+            onError: (errors) => {
+                pickupError.value = Object.values(errors).join(' ');
+            },
+            onHttpException: () => {
+                pickupError.value = 'Pickup could not be recorded. Try again.';
+            },
+            onNetworkError: () => {
+                pickupError.value =
+                    'Connection lost. Check the bike status before trying again.';
+            },
+            onFinish: () => {
+                pendingLineId.value = null;
+            },
+        });
+}
+function openPicker(
+    mode: 'assign' | 'swap' | 'bike' | 'size',
+    lineId?: number,
+): void {
+    picker.value = { mode, lineId };
+    droppingLineId.value = null;
+    pickupError.value = '';
+}
+
+function changeLine(
+    method: 'post' | 'delete',
+    url: string,
+    body: Record<string, unknown> = {},
+): void {
+    if (pendingLineId.value !== null) {
+        return;
+    }
+    pendingLineId.value = picker.value?.lineId ?? 0;
+    pickupError.value = '';
+    pickupRequest
+        .transform(() => body)
+        [method](url, {
+            onSuccess: (response) => {
+                day.applyPatch(response.data ?? response);
+                picker.value = null;
+                droppingLineId.value = null;
+            },
+            onError: (errors) => {
+                pickupError.value = Object.values(errors).join(' ');
+            },
+            onHttpException: () => {
+                pickupError.value =
+                    'The change could not be recorded. Check the line and try again.';
+            },
+            onNetworkError: () => {
+                pickupError.value =
+                    'Connection lost. Check the line before trying again.';
+            },
+            onFinish: () => {
+                pendingLineId.value = null;
+            },
+        });
+}
+
+function chooseBike(bike: DayBike): void {
+    const reservation = selectedReservation.value;
+    const selection = picker.value;
+    if (!reservation || !selection) {
+        return;
+    }
+    if (selection.mode === 'bike') {
+        changeLine('post', AllocateLineAction.url(reservation.id), {
+            bike_id: bike.id,
+        });
+    } else if (selection.lineId !== undefined) {
+        const action =
+            selection.mode === 'assign' ? AssignBikeAction : SwapAssetAction;
+        changeLine('post', action.url({ line: selection.lineId }), {
+            bike_id: bike.id,
+        });
+    }
+}
+
+function chooseVariant(productId: number): void {
+    if (selectedReservation.value) {
+        changeLine(
+            'post',
+            AllocateLineAction.url(selectedReservation.value.id),
+            { product_id: productId },
+        );
+    }
+}
+
+function dropLine(line: DayLine): void {
+    if (droppingLineId.value !== line.id) {
+        droppingLineId.value = line.id;
+        picker.value = null;
+        return;
+    }
+    changeLine('delete', ReleaseLineAction.url({ line: line.id }));
 }
 </script>
 
@@ -175,7 +320,9 @@ function pickUpLine(line: DayLine): void {
     <div class="flex min-h-screen flex-col bg-zinc-950 text-zinc-100">
         <Head title="Terminal" />
 
-        <header class="flex min-h-20 items-center gap-4 border-b border-zinc-800 bg-zinc-900 px-4 py-3 sm:px-6">
+        <header
+            class="flex min-h-20 items-center gap-4 border-b border-zinc-800 bg-zinc-900 px-4 py-3 sm:px-6"
+        >
             <button
                 v-if="selectedReservation"
                 type="button"
@@ -185,15 +332,29 @@ function pickUpLine(line: DayLine): void {
                 Back
             </button>
             <div>
-                <h1 class="text-2xl font-bold">{{ selectedReservation ? 'Reservation' : 'Terminal' }}</h1>
-                <p class="text-sm text-zinc-400">{{ selectedReservation ? todayLabel : `Today · ${todayLabel}` }}</p>
+                <h1 class="text-2xl font-bold">
+                    {{ selectedReservation ? 'Reservation' : 'Terminal' }}
+                </h1>
+                <p class="text-sm text-zinc-400">
+                    {{
+                        selectedReservation
+                            ? todayLabel
+                            : `Today · ${todayLabel}`
+                    }}
+                </p>
             </div>
-            <div v-if="!selectedReservation" class="ml-auto hidden text-sm text-zinc-400 sm:block">
+            <div
+                v-if="!selectedReservation"
+                class="ml-auto hidden text-sm text-zinc-400 sm:block"
+            >
                 {{ visibleReservations.length }} reservations
             </div>
         </header>
 
-        <main v-if="!selectedReservation" class="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 p-4 sm:p-6">
+        <main
+            v-if="!selectedReservation"
+            class="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 p-4 sm:p-6"
+        >
             <label class="block">
                 <span class="sr-only">Search reservations</span>
                 <input
@@ -204,7 +365,10 @@ function pickUpLine(line: DayLine): void {
                 />
             </label>
 
-            <section v-if="visibleReservations.length > 0" class="flex flex-col gap-3">
+            <section
+                v-if="visibleReservations.length > 0"
+                class="flex flex-col gap-3"
+            >
                 <button
                     v-for="reservation in visibleReservations"
                     :key="reservation.id"
@@ -213,14 +377,28 @@ function pickUpLine(line: DayLine): void {
                     @click="openReservation(reservation)"
                 >
                     <div class="flex w-full flex-wrap items-center gap-3">
-                        <span class="min-w-0 flex-1 text-xl font-bold">{{ reservation.customer.name }}</span>
+                        <span class="min-w-0 flex-1 text-xl font-bold">{{
+                            reservation.customer.name
+                        }}</span>
                         <span
                             class="rounded-full px-3 py-1 text-sm font-semibold"
-                            :class="getStatusBadgeClasses('reservationStage', reservation.stage)"
+                            :class="
+                                getStatusBadgeClasses(
+                                    'reservationStage',
+                                    reservation.stage,
+                                )
+                            "
                         >
-                            {{ getEnumLabel('reservationStage', reservation.stage) }}
+                            {{
+                                getEnumLabel(
+                                    'reservationStage',
+                                    reservation.stage,
+                                )
+                            }}
                         </span>
-                        <span class="font-mono text-lg">{{ formatTime(reservation.starts_at) }}</span>
+                        <span class="font-mono text-lg">{{
+                            formatTime(reservation.starts_at)
+                        }}</span>
                     </div>
                     <ul class="flex w-full flex-wrap gap-2">
                         <li
@@ -228,51 +406,99 @@ function pickUpLine(line: DayLine): void {
                             :key="line.id"
                             class="rounded-lg bg-zinc-800 px-3 py-2 text-sm"
                         >
-                            {{ line.product_label }} · {{ line.bike_id ? bikeFor(line)?.bid : 'Unassigned' }}
+                            {{ line.product_label }} ·
+                            {{
+                                line.bike_id ? bikeFor(line)?.bid : 'Unassigned'
+                            }}
                         </li>
                     </ul>
-                    <p v-if="reservation.owed !== reservation.paid" class="text-sm font-semibold text-amber-300">
+                    <p
+                        v-if="reservation.owed !== reservation.paid"
+                        class="text-sm font-semibold text-amber-300"
+                    >
                         {{ balanceMessage(reservation) }}
                     </p>
                 </button>
             </section>
 
-            <section v-else class="flex flex-1 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-zinc-700 bg-zinc-900/60 px-6 py-12 text-center">
-                <h2 class="text-2xl font-bold">{{ search ? 'No matching reservations' : 'No reservations on the board' }}</h2>
-                <p v-if="search" class="max-w-xl text-zinc-400">Try a different customer name, bike bid, or model.</p>
+            <section
+                v-else
+                class="flex flex-1 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-zinc-700 bg-zinc-900/60 px-6 py-12 text-center"
+            >
+                <h2 class="text-2xl font-bold">
+                    {{
+                        search
+                            ? 'No matching reservations'
+                            : 'No reservations on the board'
+                    }}
+                </h2>
+                <p v-if="search" class="max-w-xl text-zinc-400">
+                    Try a different customer name, bike bid, or model.
+                </p>
                 <template v-else>
-                    <p v-if="day.bikeList.length === 0" class="max-w-xl text-zinc-400">
-                        This shop has no bikes yet. Add a category, model, variant, and bike in Manage, then create a reservation with an assigned bike.
+                    <p
+                        v-if="day.bikeList.length === 0"
+                        class="max-w-xl text-zinc-400"
+                    >
+                        This shop has no bikes yet. Add a category, model,
+                        variant, and bike in Manage, then create a reservation
+                        with an assigned bike.
                     </p>
                     <p v-else class="max-w-xl text-zinc-400">
-                        Reservations appear here when they overlap today or have a bike away from Home. Package rates are needed to quote package rentals; pickup itself does not require a price.
+                        Reservations appear here when they overlap today or have
+                        a bike away from Home. Package rates are needed to quote
+                        package rentals; pickup itself does not require a price.
                     </p>
                 </template>
             </section>
         </main>
 
-        <main v-else class="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 p-4 sm:p-6">
+        <main
+            v-else
+            class="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 p-4 sm:p-6"
+        >
             <section class="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
                 <div class="flex flex-wrap items-start gap-3">
                     <div class="min-w-0 flex-1">
-                        <h2 class="text-2xl font-bold">{{ selectedReservation.customer.name }}</h2>
+                        <h2 class="text-2xl font-bold">
+                            {{ selectedReservation.customer.name }}
+                        </h2>
                         <p class="mt-1 text-zinc-400">
-                            {{ formatTime(selectedReservation.starts_at) }}–{{ formatTime(selectedReservation.ends_at) }}
+                            {{ formatTime(selectedReservation.starts_at) }}–{{
+                                formatTime(selectedReservation.ends_at)
+                            }}
                         </p>
                     </div>
                     <span
                         class="rounded-full px-3 py-1 text-sm font-semibold"
-                        :class="getStatusBadgeClasses('reservationStage', selectedReservation.stage)"
+                        :class="
+                            getStatusBadgeClasses(
+                                'reservationStage',
+                                selectedReservation.stage,
+                            )
+                        "
                     >
-                        {{ getEnumLabel('reservationStage', selectedReservation.stage) }}
+                        {{
+                            getEnumLabel(
+                                'reservationStage',
+                                selectedReservation.stage,
+                            )
+                        }}
                     </span>
                 </div>
-                <p v-if="selectedReservation.owed !== selectedReservation.paid" class="mt-4 rounded-xl bg-amber-950/60 p-3 text-lg font-semibold text-amber-200">
+                <p
+                    v-if="selectedReservation.owed !== selectedReservation.paid"
+                    class="mt-4 rounded-xl bg-amber-950/60 p-3 text-lg font-semibold text-amber-200"
+                >
                     {{ balanceMessage(selectedReservation) }}
                 </p>
             </section>
 
-            <div v-if="pickupError" role="alert" class="rounded-xl border border-rose-700 bg-rose-950 p-4 text-rose-100">
+            <div
+                v-if="pickupError"
+                role="alert"
+                class="rounded-xl border border-rose-700 bg-rose-950 p-4 text-rose-100"
+            >
                 {{ pickupError }}
             </div>
 
@@ -280,45 +506,320 @@ function pickUpLine(line: DayLine): void {
                 <article
                     v-for="line in selectedReservation.lines"
                     :key="line.id"
-                    class="flex flex-col gap-4 rounded-2xl border border-zinc-800 bg-zinc-900 p-4 sm:flex-row sm:items-center sm:p-5"
+                    class="flex flex-col gap-4 rounded-2xl border border-zinc-800 bg-zinc-900 p-4 sm:p-5"
                 >
                     <div class="min-w-0 flex-1">
-                        <h3 class="text-lg font-bold">{{ line.product_label }}</h3>
+                        <h3 class="text-lg font-bold">
+                            {{ line.product_label }}
+                        </h3>
                         <div class="mt-2 flex flex-wrap items-center gap-2">
-                            <span class="rounded-lg bg-zinc-800 px-3 py-2 font-mono text-lg font-bold">
+                            <span
+                                class="rounded-lg bg-zinc-800 px-3 py-2 font-mono text-lg font-bold"
+                            >
                                 {{ bikeFor(line)?.bid ?? 'Unassigned' }}
                             </span>
                             <span
                                 class="rounded-full px-3 py-1 text-sm font-semibold"
-                                :class="getStatusBadgeClasses('bikeReservationStatus', line.status)"
+                                :class="
+                                    getStatusBadgeClasses(
+                                        'bikeReservationStatus',
+                                        line.status,
+                                    )
+                                "
                             >
-                                {{ getEnumLabel('bikeReservationStatus', line.status) }}
+                                {{
+                                    getEnumLabel(
+                                        'bikeReservationStatus',
+                                        line.status,
+                                    )
+                                }}
                             </span>
-                            <span v-if="bikeFor(line)" class="rounded-full px-3 py-1 text-sm font-semibold" :class="getStatusBadgeClasses('bikeSituation', bikeFor(line)?.bike_situation_state)">
-                                {{ getEnumLabel('bikeSituation', bikeFor(line)?.bike_situation_state) }}
-                                <template v-if="occupyingReservation(bikeFor(line)!)">
-                                    · {{ occupyingReservation(bikeFor(line)!)?.customer.name }}
+                            <span
+                                v-if="bikeFor(line)"
+                                class="rounded-full px-3 py-1 text-sm font-semibold"
+                                :class="
+                                    getStatusBadgeClasses(
+                                        'bikeSituation',
+                                        bikeFor(line)?.bike_situation_state,
+                                    )
+                                "
+                            >
+                                {{
+                                    getEnumLabel(
+                                        'bikeSituation',
+                                        bikeFor(line)?.bike_situation_state,
+                                    )
+                                }}
+                                <template
+                                    v-if="occupyingReservation(bikeFor(line)!)"
+                                >
+                                    ·
+                                    {{
+                                        occupyingReservation(bikeFor(line)!)
+                                            ?.customer.name
+                                    }}
                                 </template>
                             </span>
                         </div>
-                        <p v-if="bikeFor(line) && bikeFor(line)?.bike_situation_reservation_id !== null && bikeFor(line)?.bike_situation_reservation_id !== selectedReservation.id" class="mt-2 text-sm font-semibold text-amber-300">
-                            Wrong place: this bike is occupied by another reservation.
+                        <p
+                            v-if="
+                                bikeFor(line) &&
+                                bikeFor(line)?.bike_situation_reservation_id !==
+                                    null &&
+                                bikeFor(line)?.bike_situation_reservation_id !==
+                                    selectedReservation.id
+                            "
+                            class="mt-2 text-sm font-semibold text-amber-300"
+                        >
+                            Wrong place: this bike is occupied by another
+                            reservation.
                         </p>
-                        <p v-else-if="bikeFor(line) && bikeFor(line)?.bike_situation_state !== BikeSituation.Home && !occupyingReservation(bikeFor(line)!)" class="mt-2 text-sm text-amber-300">
-                            No occupying reservation is recorded for this bike situation.
+                        <p
+                            v-else-if="
+                                bikeFor(line) &&
+                                bikeFor(line)?.bike_situation_state !==
+                                    BikeSituation.Home &&
+                                !occupyingReservation(bikeFor(line)!)
+                            "
+                            class="mt-2 text-sm text-amber-300"
+                        >
+                            No occupying reservation is recorded for this bike
+                            situation.
                         </p>
                     </div>
 
+                    <div v-if="editable" class="flex flex-wrap gap-2">
+                        <button
+                            v-if="
+                                line.status ===
+                                    BikeReservationStatus.Assigned &&
+                                line.bike_id === null
+                            "
+                            type="button"
+                            class="min-h-16 rounded-xl bg-amber-400 px-5 font-bold text-zinc-950 disabled:opacity-50"
+                            :disabled="pendingLineId !== null"
+                            @click="openPicker('assign', line.id)"
+                        >
+                            Assign
+                        </button>
+                        <button
+                            v-if="
+                                line.status ===
+                                    BikeReservationStatus.Assigned &&
+                                line.bike_id !== null
+                            "
+                            type="button"
+                            class="min-h-16 rounded-xl bg-zinc-700 px-5 font-bold disabled:opacity-50"
+                            :disabled="pendingLineId !== null"
+                            @click="
+                                changeLine(
+                                    'post',
+                                    UnassignBikeAction.url({ line: line.id }),
+                                )
+                            "
+                        >
+                            Unassign
+                        </button>
+                        <button
+                            v-if="
+                                line.bike_id !== null &&
+                                line.status !== BikeReservationStatus.In
+                            "
+                            type="button"
+                            class="min-h-16 rounded-xl bg-violet-700 px-5 font-bold disabled:opacity-50"
+                            :disabled="pendingLineId !== null"
+                            @click="openPicker('swap', line.id)"
+                        >
+                            Swap
+                        </button>
+                        <button
+                            v-if="
+                                line.status ===
+                                    BikeReservationStatus.Assigned &&
+                                selectedReservation.lines.length > 1
+                            "
+                            type="button"
+                            class="min-h-16 rounded-xl px-5 font-bold disabled:opacity-50"
+                            :class="
+                                droppingLineId === line.id
+                                    ? 'bg-red-700'
+                                    : 'bg-zinc-800'
+                            "
+                            :disabled="pendingLineId !== null"
+                            @click="dropLine(line)"
+                        >
+                            {{
+                                droppingLineId === line.id
+                                    ? 'Confirm drop line'
+                                    : 'Drop line'
+                            }}
+                        </button>
+                    </div>
+                    <div
+                        v-if="picker?.lineId === line.id"
+                        class="flex flex-wrap gap-2 border-t border-zinc-700 pt-3"
+                    >
+                        <button
+                            v-for="bike in pickerBikes"
+                            :key="bike.id"
+                            type="button"
+                            class="min-h-20 min-w-32 rounded-xl bg-zinc-800 p-4 text-left disabled:opacity-50"
+                            :disabled="pendingLineId !== null"
+                            @click="chooseBike(bike)"
+                        >
+                            <span class="block text-lg font-bold">{{
+                                bike.bid
+                            }}</span>
+                            <span class="block"
+                                >{{ bike.model }} · {{ bike.variant }}</span
+                            >
+                            <span class="block text-sm text-zinc-400"
+                                >{{
+                                    getEnumLabel(
+                                        'bikeSituation',
+                                        bike.bike_situation_state,
+                                    )
+                                }}<template v-if="occupyingReservation(bike)">
+                                    ·
+                                    {{
+                                        occupyingReservation(bike)?.customer
+                                            .name
+                                    }}</template
+                                ></span
+                            >
+                        </button>
+                        <p
+                            v-if="pickerBikes.length === 0"
+                            class="p-4 text-zinc-400"
+                        >
+                            No candidate bikes.
+                        </p>
+                        <button
+                            type="button"
+                            class="min-h-16 rounded-xl bg-zinc-700 px-5 font-bold"
+                            @click="picker = null"
+                        >
+                            Close picker
+                        </button>
+                    </div>
                     <button
                         type="button"
                         class="min-h-16 w-full shrink-0 rounded-xl px-6 text-lg font-bold sm:w-48"
-                        :class="canPickUp(selectedReservation, line) ? 'bg-emerald-400 text-zinc-950' : 'bg-zinc-800 text-zinc-500'"
-                        :disabled="!canPickUp(selectedReservation, line) || pendingLineId !== null"
+                        :class="
+                            canPickUp(selectedReservation, line)
+                                ? 'bg-emerald-400 text-zinc-950'
+                                : 'bg-zinc-800 text-zinc-500'
+                        "
+                        :disabled="
+                            !canPickUp(selectedReservation, line) ||
+                            pendingLineId !== null
+                        "
                         @click="pickUpLine(line)"
                     >
-                        {{ pendingLineId === line.id ? 'Recording…' : line.status === BikeReservationStatus.Out ? 'Picked up' : line.status === BikeReservationStatus.In ? 'Returned' : line.bike_id ? 'Pick up this bike' : 'Assign a bike first' }}
+                        {{
+                            pendingLineId === line.id
+                                ? 'Recording…'
+                                : line.status === BikeReservationStatus.Out
+                                  ? 'Picked up'
+                                  : line.status === BikeReservationStatus.In
+                                    ? 'Returned'
+                                    : line.bike_id
+                                      ? 'Pick up this bike'
+                                      : 'Assign a bike first'
+                        }}
                     </button>
                 </article>
+            </section>
+            <section
+                v-if="editable"
+                class="space-y-3 rounded-2xl border border-dashed border-zinc-700 p-4"
+            >
+                <h2 class="text-lg font-bold">Another rider</h2>
+                <div class="flex flex-wrap gap-3">
+                    <button
+                        type="button"
+                        class="min-h-16 rounded-xl bg-zinc-800 px-6 font-bold"
+                        :disabled="pendingLineId !== null"
+                        @click="openPicker('bike')"
+                    >
+                        Add bike
+                    </button>
+                    <button
+                        type="button"
+                        class="min-h-16 rounded-xl bg-zinc-800 px-6 font-bold"
+                        :disabled="pendingLineId !== null"
+                        @click="openPicker('size')"
+                    >
+                        Add size
+                    </button>
+                </div>
+                <p v-if="picker?.mode === 'swap'" class="text-zinc-400">
+                    Swap keeps the current amount owed.
+                </p>
+                <div
+                    v-if="picker?.mode === 'bike'"
+                    class="flex flex-wrap gap-2"
+                >
+                    <button
+                        v-for="bike in pickerBikes"
+                        :key="bike.id"
+                        type="button"
+                        class="min-h-20 min-w-32 rounded-xl bg-zinc-800 p-4 text-left disabled:opacity-50"
+                        :disabled="pendingLineId !== null"
+                        @click="chooseBike(bike)"
+                    >
+                        <span class="block text-lg font-bold">{{
+                            bike.bid
+                        }}</span>
+                        <span class="block"
+                            >{{ bike.model }} · {{ bike.variant }}</span
+                        >
+                        <span class="block text-sm text-zinc-400"
+                            >{{
+                                getEnumLabel(
+                                    'bikeSituation',
+                                    bike.bike_situation_state,
+                                )
+                            }}<template v-if="occupyingReservation(bike)">
+                                ·
+                                {{
+                                    occupyingReservation(bike)?.customer.name
+                                }}</template
+                            ></span
+                        >
+                    </button>
+                </div>
+                <div
+                    v-if="picker?.mode === 'size'"
+                    class="flex flex-wrap gap-2"
+                >
+                    <button
+                        v-for="variant in pickerVariants"
+                        :key="variant.id"
+                        type="button"
+                        class="min-h-20 rounded-xl bg-zinc-800 p-4 text-left font-bold disabled:opacity-50"
+                        :disabled="pendingLineId !== null"
+                        @click="chooseVariant(variant.id)"
+                    >
+                        {{ variant.label }}
+                    </button>
+                </div>
+                <template v-if="picker && picker.lineId === undefined">
+                    <p class="text-sm text-zinc-400">
+                        Availability and package membership are checked when you
+                        choose.
+                    </p>
+                    <p v-if="pickerBikes.length === 0" class="text-zinc-400">
+                        No in-service bikes to add.
+                    </p>
+                    <button
+                        type="button"
+                        class="min-h-16 rounded-xl bg-zinc-700 px-5 font-bold"
+                        @click="picker = null"
+                    >
+                        Close picker
+                    </button>
+                </template>
             </section>
         </main>
     </div>

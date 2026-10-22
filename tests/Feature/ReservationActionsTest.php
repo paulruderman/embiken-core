@@ -105,14 +105,14 @@ test('a second allocated line does not replace the first bike', function () {
         ->and($reservation->fresh()->bikeReservations)->toHaveCount(2);
 });
 
-test('allocating with a bike sets prepping on that bike', function () {
+test('allocating a bike leaves preparation explicit', function () {
     $bike = Bike::factory()->create();
     $reservation = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create();
 
     app(AllocateLineAction::class)($reservation, $bike->variant, $bike);
 
-    expect($bike->fresh()->bike_situation_state)->toBe(BikeSituation::Prepping)
-        ->and($bike->fresh()->bike_situation_reservation_id)->toBe($reservation->id);
+    expect($bike->fresh()->bike_situation_state)->toBe(BikeSituation::Home)
+        ->and($bike->fresh()->bike_situation_reservation_id)->toBeNull();
 });
 
 test('allocate infers the variant from a bike when product is omitted', function () {
@@ -129,6 +129,11 @@ test('unassign clears the bike and keeps the line', function () {
     $bike = Bike::factory()->create();
     $reservation = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create();
     $line = app(AllocateLineAction::class)($reservation, $bike->variant, $bike);
+
+    $bike->update([
+        'bike_situation_state' => BikeSituation::Prepping,
+        'bike_situation_reservation_id' => $reservation->id,
+    ]);
 
     $unassigned = app(UnassignBikeAction::class)($line);
 
@@ -220,4 +225,45 @@ test('swapAsset refuses a variant that is not on the package', function () {
 
     expect(fn () => app(Availability::class)->swapAsset($line, $other, ReservationChannel::Terminal))
         ->toThrow(OccupancyUnavailable::class);
+});
+
+test('release checks the remaining lines even when the reservation relation is stale', function () {
+    $bike = Bike::factory()->create();
+    $reservation = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create();
+    $first = app(AllocateLineAction::class)($reservation, $bike->variant);
+    Bike::factory()->recycle($bike->location)->recycle($bike->variant)->create();
+    $second = app(AllocateLineAction::class)($reservation, $bike->variant);
+    $second->load('reservation.bikeReservations');
+
+    app(ReleaseLineAction::class)($first);
+
+    expect(fn () => app(ReleaseLineAction::class)($second))
+        ->toThrow(OccupancyUnavailable::class, 'A reservation must keep at least one line.')
+        ->and($second->fresh())->not->toBeNull();
+});
+
+test('unassign refreshes the line status before changing a bike', function () {
+    $bike = Bike::factory()->create();
+    $reservation = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create();
+    $line = app(AllocateLineAction::class)($reservation, $bike->variant, $bike);
+    app(PickupAction::class)($line->fresh());
+
+    expect(fn () => app(UnassignBikeAction::class)($line))
+        ->toThrow(OccupancyUnavailable::class)
+        ->and($line->fresh()->bike_id)->toBe($bike->id)
+        ->and($bike->fresh()->bike_situation_state)->toBe(BikeSituation::RentedOut);
+});
+
+test('unassign leaves another reservations physical bike state alone', function () {
+    $bike = Bike::factory()->create();
+    $reservation = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create();
+    $line = app(AllocateLineAction::class)($reservation, $bike->variant, $bike);
+    $other = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create();
+    $bike->update(['bike_situation_state' => BikeSituation::Staged, 'bike_situation_reservation_id' => $other->id]);
+
+    app(UnassignBikeAction::class)($line);
+
+    expect($line->fresh()->bike_id)->toBeNull()
+        ->and($bike->fresh()->bike_situation_state)->toBe(BikeSituation::Staged)
+        ->and($bike->fresh()->bike_situation_reservation_id)->toBe($other->id);
 });

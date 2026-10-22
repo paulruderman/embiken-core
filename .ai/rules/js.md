@@ -45,5 +45,3 @@ Do not call useEcho during SSR. useEcho instantiates Pusher in setup (not onMoun
 ## Shared enum meta for SPA badges
 Inertia shares enums.* lookup tables. Use getEnumLabel / getStatusBadgeClasses from @/lib/enums and value consts from @/types/domain for comparisons. Do not hardcode production situation/stage labels or colors in Vue.
 
-## Bike day-store DTO has product_id
-Day-store bike DTO includes product_id (the variant id), matching Line.product_id. Do not dump bike_model_variant_id.

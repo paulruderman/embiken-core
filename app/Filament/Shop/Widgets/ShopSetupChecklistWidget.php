@@ -30,17 +30,9 @@ class ShopSetupChecklistWidget extends Widget
         $steps = app(ShopSetupReadiness::class)->checklist();
         $completedCount = count(array_filter($steps, fn (array $step): bool => $step['complete']));
         $totalCount = count($steps);
-        $sections = [
-            'fleet' => [
-                'label' => 'Build your fleet',
-                'description' => 'Set up the catalog and add the bikes your shop rents or services.',
-                'steps' => [],
-            ],
-            'rentals' => [
-                'label' => 'Configure rentals',
-                'description' => 'Set your opening hours, rental pricing, and which bikes Book can offer.',
-                'steps' => [],
-            ],
+        $sectionSteps = [
+            'fleet' => [],
+            'rentals' => [],
         ];
 
         $essentialsComplete = $totalCount > 0 && $completedCount === $totalCount;
@@ -50,10 +42,21 @@ class ShopSetupChecklistWidget extends Widget
                 continue;
             }
 
-            $sections[$step['section']]['steps'][] = $step;
+            $sectionSteps[$step['section']][] = $step;
         }
 
-        $sections = array_values(array_filter($sections, fn (array $section): bool => $section['steps'] !== []));
+        $sections = array_values(array_filter([
+            [
+                'label' => 'Build your fleet',
+                'description' => 'Set up the catalog and add the bikes your shop rents or services.',
+                'steps' => $sectionSteps['fleet'],
+            ],
+            [
+                'label' => 'Configure rentals',
+                'description' => 'Set your opening hours, rental pricing, and which bikes Book can offer.',
+                'steps' => $sectionSteps['rentals'],
+            ],
+        ], fn (array $section): bool => $section['steps'] !== []));
 
         return [
             'sections' => $sections,

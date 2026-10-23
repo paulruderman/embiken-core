@@ -4,7 +4,6 @@ namespace App\Filament\Shop\Concerns;
 
 use App\Filament\Shop\Support\ShopSetupReadiness;
 use Filament\Notifications\Notification;
-use Filament\Resources\Pages\CreateRecord;
 
 trait RequiresShopSetup
 {
@@ -75,7 +74,6 @@ trait RequiresShopSetup
 
     private function redirectToMissingSetup(): bool
     {
-        /** @var CreateRecord $this */
         $readiness = app(ShopSetupReadiness::class);
         $requestedTarget = request()->query('setup_target');
 

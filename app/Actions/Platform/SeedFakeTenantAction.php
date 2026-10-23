@@ -107,12 +107,12 @@ class SeedFakeTenantAction extends Action
     public function asCommand(Command $command): int
     {
         $tenant = $this->handle(
-            (string) $command->option('domain'),
-            (string) $command->option('name'),
-            (string) $command->option('timezone'),
+            $this->requiredStringInput($command, $command->option('domain'), 'Domain', 'demo.localhost'),
+            $this->requiredStringInput($command, $command->option('name'), 'Name', 'Harbor Demo Bikes'),
+            $this->requiredStringInput($command, $command->option('timezone'), 'Timezone', 'America/New_York'),
         );
 
-        $command->info("Fake tenant {$tenant->id} at {$command->option('domain')}");
+        $command->info("Fake tenant {$tenant->id} at {$tenant->domains->first()?->domain}");
         $command->info('Platform User: test@example.com / password');
         $command->info('Shop Manager: manager@example.com / password');
         $command->info('Shop Counter: counter@example.com / password');

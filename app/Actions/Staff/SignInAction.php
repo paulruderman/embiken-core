@@ -71,8 +71,8 @@ class SignInAction extends Action
     {
         $this->initializeTenancyFromCommand($command);
         $this->handle(
-            (string) ($command->option('email') ?: \Laravel\Prompts\text('Email')),
-            (string) ($command->option('password') ?: \Laravel\Prompts\password('Password')),
+            $this->requiredStringInput($command, $command->option('email'), 'Email'),
+            $this->requiredStringInput($command, $command->option('password'), 'Password', secret: true),
         );
         $command->info('Signed in.');
 

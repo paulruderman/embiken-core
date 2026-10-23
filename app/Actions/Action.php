@@ -6,6 +6,7 @@ use App\Models\Tenant;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 use Lorisleiva\Actions\Concerns\AsAction;
 use RuntimeException;
@@ -31,6 +32,49 @@ abstract class Action
         }
 
         return $query->whereKey($id)->firstOrFail();
+    }
+
+    protected function requiredStringInput(
+        Command $command,
+        mixed $value,
+        string $label,
+        ?string $default = null,
+        bool $secret = false,
+    ): string {
+        if (is_string($value) && $value !== '') {
+            return $value;
+        }
+
+        if ($value !== null && ! is_string($value)) {
+            throw ValidationException::withMessages([$label => "The {$label} value must be a string."]);
+        }
+
+        if ($default !== null) {
+            return $default;
+        }
+
+        if ($command->option('no-interaction')) {
+            throw ValidationException::withMessages([$label => "The {$label} value is required."]);
+        }
+
+        $promptedValue = $secret
+            ? \Laravel\Prompts\password($label)
+            : \Laravel\Prompts\text($label);
+
+        if ($promptedValue === '') {
+            throw ValidationException::withMessages([$label => "The {$label} value is required."]);
+        }
+
+        return $promptedValue;
+    }
+
+    protected function optionalStringValue(mixed $value, string $attribute): ?string
+    {
+        if ($value === null || is_string($value)) {
+            return $value;
+        }
+
+        throw ValidationException::withMessages([$attribute => "The {$attribute} value must be a string."]);
     }
 
     protected function resolveTenant(string $tenant): Tenant

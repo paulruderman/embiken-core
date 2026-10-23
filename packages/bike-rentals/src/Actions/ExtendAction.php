@@ -80,7 +80,7 @@ class ExtendAction extends Action
         $owed = $command->option('owed');
         $this->handle(
             $this->findOneOrFail(Reservation::query(), $command->argument('reservation') ?: \Laravel\Prompts\text('Reservation id')),
-            Carbon::parse((string) ($command->argument('ends-at') ?: \Laravel\Prompts\text('ends_at'))),
+            Carbon::parse($this->requiredStringInput($command, $command->argument('ends-at'), 'Ends at')),
             is_string($owed) && $owed !== '' ? (int) $owed : null,
         );
         $command->info('Extended.');

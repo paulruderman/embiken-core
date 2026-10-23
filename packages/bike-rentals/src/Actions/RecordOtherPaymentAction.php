@@ -70,7 +70,7 @@ class RecordOtherPaymentAction extends Action
         $transaction = $this->handle(
             $this->findOneOrFail(Reservation::query(), $command->argument('reservation') ?: \Laravel\Prompts\text('Reservation id')),
             (int) ($command->argument('amount') ?: \Laravel\Prompts\text('Amount cents')),
-            $command->option('note') ?: null,
+            $this->optionalStringValue($command->option('note') ?: null, 'Note'),
         );
         $command->info("Other {$transaction->id}");
 

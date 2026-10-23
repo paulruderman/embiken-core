@@ -130,9 +130,9 @@ class CreateWalkInReservationAction extends Action
     {
         $this->initializeTenancyFromCommand($command);
         $reservation = $this->handle(
-            (string) ($command->option('name') ?: 'Walk-in'),
-            (string) ($command->option('email') ?: 'walk-in-'.Str::lower(Str::random(8)).'@desk.local'),
-            (string) ($command->option('phone') ?: '0000000000'),
+            $this->requiredStringInput($command, $command->option('name'), 'Name', 'Walk-in'),
+            $this->requiredStringInput($command, $command->option('email'), 'Email', 'walk-in-'.Str::lower(Str::random(8)).'@desk.local'),
+            $this->requiredStringInput($command, $command->option('phone'), 'Phone', '0000000000'),
             $command->option('bike') ? $this->findOneOrFail(Bike::query(), $command->option('bike')) : null,
         );
         $command->info("Walk-in {$reservation->id}");

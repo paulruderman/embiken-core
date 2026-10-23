@@ -75,7 +75,12 @@ class UpdateShopBrandingAction extends Action
             ),
         ];
 
-        $branding = array_map(static fn (mixed $value): ?string => filled($value) ? (string) $value : null, $options);
+        $branding = [];
+
+        foreach ($options as $attribute => $value) {
+            $stringValue = $this->optionalStringValue($value, $attribute);
+            $branding[$attribute] = filled($stringValue) ? $stringValue : null;
+        }
         validator($branding, $this->rules())->validate();
         $this->handle($branding);
 

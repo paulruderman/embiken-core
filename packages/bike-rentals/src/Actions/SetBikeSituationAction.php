@@ -104,7 +104,7 @@ class SetBikeSituationAction extends Action
             : null;
         $bike = $this->handle(
             $this->findOneOrFail(Bike::query(), $command->argument('bike') ?: \Laravel\Prompts\text('Bike id')),
-            BikeSituation::from((string) ($command->argument('situation') ?: \Laravel\Prompts\text('Situation'))),
+            BikeSituation::from($this->requiredStringInput($command, $command->argument('situation'), 'Situation')),
             $reservation,
         );
         $command->info("Bike {$bike->bid} is {$bike->bike_situation_state->value}");

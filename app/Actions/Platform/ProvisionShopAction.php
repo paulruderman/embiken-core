@@ -82,11 +82,11 @@ class ProvisionShopAction extends Action
         $this->initializeTenancyFromCommand($command);
 
         $this->handle(
-            (string) ($command->option('shop-name') ?: \Laravel\Prompts\text('Shop name')),
-            (string) $command->option('timezone'),
-            (string) $command->option('currency'),
-            (string) ($command->option('manager-name') ?: \Laravel\Prompts\text('Manager name')),
-            (string) ($command->option('manager-email') ?: \Laravel\Prompts\text('Manager email')),
+            $this->requiredStringInput($command, $command->option('shop-name'), 'Shop name'),
+            $this->requiredStringInput($command, $command->option('timezone'), 'Timezone', 'America/New_York'),
+            $this->requiredStringInput($command, $command->option('currency'), 'Currency', 'usd'),
+            $this->requiredStringInput($command, $command->option('manager-name'), 'Manager name'),
+            $this->requiredStringInput($command, $command->option('manager-email'), 'Manager email'),
         );
 
         $command->info('Shop provisioned.');

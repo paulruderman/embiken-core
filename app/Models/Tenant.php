@@ -82,7 +82,7 @@ class Tenant extends BaseTenant implements TenantWithDatabase
             return ModuleRegistry::defaultTenantModuleIds();
         }
 
-        return array_values(array_filter($modules, fn (mixed $id): bool => is_string($id)));
+        return $modules;
     }
 
     public function isSuspended(): bool

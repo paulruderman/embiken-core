@@ -35,7 +35,11 @@ class ServiceRequestForm
                 DateTimePicker::make('ends_at'),
                 Select::make('created_by')
                     ->options(fn (): array => Staff::query()->orderBy('name')->pluck('name', 'id')->all())
-                    ->default(fn (): ?int => Auth::guard('staff')->id()),
+                    ->default(function (): ?int {
+                        $id = Auth::guard('staff')->id();
+
+                        return is_int($id) ? $id : (is_string($id) && ctype_digit($id) ? (int) $id : null);
+                    }),
                 Select::make('assigned_to')
                     ->options(fn (): array => Staff::query()->orderBy('name')->pluck('name', 'id')->all()),
             ]);

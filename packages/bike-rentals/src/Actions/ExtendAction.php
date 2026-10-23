@@ -4,6 +4,7 @@ namespace Embiken\BikeRentals\Actions;
 
 use App\Actions\Action;
 use App\Actions\Concerns\AuthorizesStaff;
+use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Embiken\BikeRentals\Enums\ReservationChannel;
 use Embiken\BikeRentals\Enums\ReservationStage;
@@ -39,7 +40,7 @@ class ExtendAction extends Action
                 throw new InvalidArgumentException('Do not extend Provisional.');
             }
 
-            $reservation->ends_at = $endsAt;
+            $reservation->ends_at = CarbonImmutable::instance($endsAt);
 
             if ($owed !== null) {
                 $reservation->owed = $owed;

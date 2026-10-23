@@ -72,7 +72,7 @@ class WeatherDashboard extends Page
             return [];
         }
 
-        return $site->periods()->orderBy('starts_at')->limit(48)->get()->all();
+        return array_values($site->periods()->orderBy('starts_at')->limit(48)->get()->all());
     }
 
     /**

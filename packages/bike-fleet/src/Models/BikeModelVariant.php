@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -73,16 +72,5 @@ class BikeModelVariant extends Model
     public function bikes(): HasMany
     {
         return $this->hasMany(Bike::class);
-    }
-
-    /**
-     * @return BelongsToMany<RentalPackage, $this, RentalPackageProduct>
-     */
-    public function rentalPackages(): BelongsToMany
-    {
-        return $this->belongsToMany(RentalPackage::class, 'rental_package_product', 'product_id')
-            ->using(RentalPackageProduct::class)
-            ->withPivot('rate_cents')
-            ->withTimestamps();
     }
 }

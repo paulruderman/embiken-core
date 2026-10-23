@@ -9,6 +9,7 @@ use App\Enums\Weekday;
 use App\Support\ModuleRegistry;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
+use LogicException;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -65,6 +66,10 @@ class HandleInertiaRequests extends Middleware
 
         foreach (app(ModuleRegistry::class)->resolvedEnabledModules() as $module) {
             foreach ($module->frontendEnums() as $enumClass) {
+                if (! method_exists($enumClass, 'getFrontendLookupTable')) {
+                    throw new LogicException("Frontend enum [{$enumClass}] must define getFrontendLookupTable().");
+                }
+
                 $key = lcfirst(class_basename($enumClass));
                 $enums[$key] = $enumClass::getFrontendLookupTable();
             }

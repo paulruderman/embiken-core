@@ -30,7 +30,7 @@ class ShopPanelProvider extends PanelProvider
         $panel
             ->id('shop')
             ->path('manage')
-            ->brandName(fn (): string => $this->shopSetting()?->brand_name ?: (tenant()?->name ?? (string) config('app.name')))
+            ->brandName(fn (): string => $this->shopSetting()?->brand_name ?: (tenant()->name ?? (string) config('app.name')))
             ->brandLogo(function (): ?string {
                 $logoPath = $this->shopSetting()?->logo_path;
 

@@ -84,7 +84,7 @@ class EditReservation extends EditRecord
                     app(ExtendAction::class)(
                         $reservation,
                         Carbon::parse($data['ends_at']),
-                        isset($data['owed']) && $data['owed'] !== '' && $data['owed'] !== null
+                        isset($data['owed']) && $data['owed'] !== ''
                             ? (int) $data['owed']
                             : null,
                     );

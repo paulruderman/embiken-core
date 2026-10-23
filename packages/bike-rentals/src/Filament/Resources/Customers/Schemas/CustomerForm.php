@@ -2,10 +2,10 @@
 
 namespace Embiken\BikeRentals\Filament\Resources\Customers\Schemas;
 
+use Embiken\BikeRentals\Models\Customer;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
-use Illuminate\Database\Eloquent\Model;
 
 class CustomerForm
 {
@@ -23,7 +23,7 @@ class CustomerForm
                     ->required(),
                 Placeholder::make('owed_paid')
                     ->label('Owed / paid')
-                    ->content(function (?Model $record): string {
+                    ->content(function (?Customer $record): string {
                         if ($record === null) {
                             return '—';
                         }

@@ -35,7 +35,7 @@ class DayPatchResource extends JsonResource
         }
 
         return [
-            'reservation' => isset($patch['reservation']) && $patch['reservation'] !== null
+            'reservation' => isset($patch['reservation'])
                 ? LocationReservationResource::make($patch['reservation'])->resolve()
                 : null,
             'bikes' => LocationBikeResource::collection($bikes)->resolve(),

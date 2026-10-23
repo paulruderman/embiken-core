@@ -72,7 +72,7 @@ class TickReservationLifecycleAction extends Action
 
         foreach ($reservationIds as $reservationId) {
             $wasExpired = DB::transaction(function () use ($reservationId, $now): bool {
-                $candidate = Reservation::query()->find($reservationId);
+                $candidate = Reservation::query()->whereKey($reservationId)->first();
 
                 if ($candidate === null) {
                     return false;
@@ -116,7 +116,7 @@ class TickReservationLifecycleAction extends Action
 
         foreach ($reservationIds as $reservationId) {
             $wasMarkedNoShow = DB::transaction(function () use ($reservationId, $now): bool {
-                $candidate = Reservation::query()->find($reservationId);
+                $candidate = Reservation::query()->whereKey($reservationId)->first();
 
                 if ($candidate === null) {
                     return false;
@@ -180,7 +180,7 @@ class TickReservationLifecycleAction extends Action
 
         foreach ($reservationIds as $reservationId) {
             $wasCompleted = DB::transaction(function () use ($reservationId, $now): bool {
-                $candidate = Reservation::query()->find($reservationId);
+                $candidate = Reservation::query()->whereKey($reservationId)->first();
 
                 if ($candidate === null) {
                     return false;
@@ -222,7 +222,7 @@ class TickReservationLifecycleAction extends Action
 
         foreach ($productIds as $productId) {
             $healed += DB::transaction(function () use ($productId, $now): int {
-                $product = BikeModelVariant::query()->find($productId);
+                $product = BikeModelVariant::query()->whereKey($productId)->first();
 
                 if ($product === null) {
                     return 0;

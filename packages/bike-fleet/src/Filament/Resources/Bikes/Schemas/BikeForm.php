@@ -49,7 +49,7 @@ class BikeForm
                     ->default(true),
                 Placeholder::make('bike_situation_state')
                     ->label('Situation')
-                    ->content(fn (?Bike $record): string => ($record?->bike_situation_state ?? BikeSituation::Home)->getLabel()),
+                    ->content(fn (?Bike $record): string => ($record->bike_situation_state ?? BikeSituation::Home)->getLabel()),
                 FileUpload::make('photo')
                     ->image()
                     ->directory('bikes'),

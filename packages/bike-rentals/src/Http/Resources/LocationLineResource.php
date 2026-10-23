@@ -18,8 +18,8 @@ class LocationLineResource extends JsonResource
     {
         $this->resource->loadMissing('product.bikeModel');
 
-        $model = $this->product?->bikeModel?->name ?? '';
-        $size = $this->product?->size ?? '';
+        $model = $this->product->bikeModel->name;
+        $size = $this->product->size;
 
         return [
             'id' => $this->id,

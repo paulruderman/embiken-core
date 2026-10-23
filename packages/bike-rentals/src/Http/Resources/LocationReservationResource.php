@@ -27,7 +27,7 @@ class LocationReservationResource extends JsonResource
             'paid' => $this->paid,
             'customer' => [
                 'id' => $this->customer_id,
-                'name' => $this->customer?->name ?? '',
+                'name' => $this->customer->name,
             ],
             'waiver_accepted_at' => $this->waiver_accepted_at?->toIso8601String(),
             'myrental_token' => $this->myrental_token,

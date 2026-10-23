@@ -23,7 +23,7 @@ class EditBike extends EditRecord
             DeleteAction::make()->using(function (Model $record): bool {
                 return DB::transaction(function () use ($record): bool {
                     $bike = app(FleetMutationLock::class)
-                        ->lockBikeForMutation(Bike::query()->findOrFail($record->getKey()));
+                        ->lockBikeForMutation(Bike::query()->whereKey($record->getKey())->firstOrFail());
 
                     return (bool) $bike->delete();
                 }, attempts: 5);

@@ -24,7 +24,7 @@ class WeatherReader
             $query->where('code', $code);
         }
 
-        $sites = $query->get()->map(fn (WeatherSite $site): array => $this->sitePayload($site))->values()->all();
+        $sites = array_values($query->get()->map(fn (WeatherSite $site): array => $this->sitePayload($site))->all());
 
         $settings = WeatherSettings::current();
 
@@ -62,11 +62,11 @@ class WeatherReader
             return [];
         }
 
-        return $site->periods()
+        return array_values($site->periods()
             ->orderBy('starts_at')
             ->get()
             ->map(fn (WeatherPeriod $period): array => $this->periodPayload($period))
-            ->all();
+            ->all());
     }
 
     /**

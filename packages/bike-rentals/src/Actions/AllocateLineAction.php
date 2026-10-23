@@ -81,7 +81,7 @@ class AllocateLineAction extends Action
             $this->findOneOrFail(Reservation::query(), $command->argument('reservation') ?: \Laravel\Prompts\text('Reservation id')),
             $this->findOneOrFail(BikeModelVariant::query(), $command->argument('product') ?: \Laravel\Prompts\text('Variant id')),
             $command->option('bike') ? $this->findOneOrFail(Bike::query(), $command->option('bike')) : null,
-            $command->option('rider-name') ?: null,
+            $this->optionalStringValue($command->option('rider-name'), 'rider-name'),
             $command->option('rider-height') !== null ? (int) $command->option('rider-height') : null,
         );
         $command->info("Allocated line {$line->id}");

@@ -25,7 +25,11 @@ class EntriesRelationManager extends RelationManager
             ->components([
                 Select::make('staff_id')
                     ->relationship('staff', 'name')
-                    ->default(fn (): ?int => Auth::guard('staff')->id()),
+                    ->default(function (): ?int {
+                        $id = Auth::guard('staff')->id();
+
+                        return is_int($id) ? $id : (is_string($id) && ctype_digit($id) ? (int) $id : null);
+                    }),
                 Textarea::make('notes'),
                 TextInput::make('labor_minutes')
                     ->numeric()

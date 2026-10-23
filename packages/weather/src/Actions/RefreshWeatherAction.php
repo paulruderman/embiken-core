@@ -121,6 +121,10 @@ class RefreshWeatherAction extends Action
         $registry = app(ModuleRegistry::class);
 
         foreach (Tenant::query()->get() as $tenant) {
+            if (! $tenant instanceof Tenant) {
+                continue;
+            }
+
             if (! $registry->isEnabled(WeatherModule::ID, $tenant)) {
                 continue;
             }

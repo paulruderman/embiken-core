@@ -4,7 +4,9 @@ namespace App\Models;
 
 use App\Support\ModuleRegistry;
 use Database\Factories\TenantFactory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\Concerns\HasDatabase;
@@ -23,6 +25,7 @@ use Stancl\Tenancy\Database\Models\Tenant as BaseTenant;
  * @property list<string>|null $modules
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property-read Collection<int, Domain> $domains
  */
 class Tenant extends BaseTenant implements TenantWithDatabase
 {
@@ -58,6 +61,14 @@ class Tenant extends BaseTenant implements TenantWithDatabase
             'transfers_active' => 'boolean',
             'modules' => 'array',
         ];
+    }
+
+    /**
+     * @return HasMany<Domain, $this>
+     */
+    public function domains(): HasMany
+    {
+        return $this->hasMany(Domain::class, 'tenant_id');
     }
 
     /**

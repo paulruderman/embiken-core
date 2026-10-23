@@ -15,6 +15,7 @@ use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeFleet\Models\BikeCategory;
 use Embiken\BikeFleet\Models\BikeModel;
 use Embiken\BikeFleet\Models\BikeModelVariant;
+use Embiken\BikeFleet\Models\ServiceRequest;
 use Embiken\BikeRentals\Filament\Resources\RentalPackages\RentalPackageResource;
 use Embiken\BikeRentals\Models\RentalPackage;
 use Filament\Actions\Action;
@@ -201,7 +202,7 @@ class ShopSetupReadiness
                 self::BikeCategories => [
                     'section' => 'fleet',
                     'label' => 'Bike categories',
-                    'description' => 'Categories organize the kinds of bikes in your catalog.',
+                    'description' => BikeCategory::SETUP_DESCRIPTION,
                     'action_label' => 'Add a bike category',
                     'action_url' => fn (): string => BikeCategoryResource::getUrl('create'),
                     'is_complete' => fn (): bool => BikeCategory::query()->exists(),
@@ -210,7 +211,7 @@ class ShopSetupReadiness
                 self::BikeModels => [
                     'section' => 'fleet',
                     'label' => 'Bike models',
-                    'description' => 'Models group the variants that share a bike design.',
+                    'description' => BikeModel::SETUP_DESCRIPTION,
                     'action_label' => 'Add a bike model',
                     'action_url' => fn (): string => BikeModelResource::getUrl('create'),
                     'is_complete' => fn (): bool => BikeModel::query()->exists(),
@@ -219,7 +220,7 @@ class ShopSetupReadiness
                 self::BikeModelVariants => [
                     'section' => 'fleet',
                     'label' => 'Bike model variants',
-                    'description' => 'Variants define the sizes or classes you can offer.',
+                    'description' => BikeModelVariant::SETUP_DESCRIPTION,
                     'action_label' => 'Add a bike model variant',
                     'action_url' => fn (): string => BikeModelVariantResource::getUrl('create'),
                     'is_complete' => fn (): bool => BikeModelVariant::query()->exists(),
@@ -228,7 +229,7 @@ class ShopSetupReadiness
                 self::Bikes => [
                     'section' => 'fleet',
                     'label' => 'Bikes',
-                    'description' => 'A bike needs a model variant before it can be added.',
+                    'description' => Bike::SETUP_DESCRIPTION,
                     'action_label' => 'Add a bike',
                     'action_url' => fn (): string => BikeResource::getUrl('create'),
                     'is_complete' => fn (): bool => Bike::query()->exists(),
@@ -237,7 +238,7 @@ class ShopSetupReadiness
                 self::ServiceRequests => [
                     'section' => 'fleet',
                     'label' => 'Service requests',
-                    'description' => 'Service requests are attached to a bike in your fleet.',
+                    'description' => ServiceRequest::SETUP_DESCRIPTION,
                     'action_label' => 'Add a bike',
                     'action_url' => fn (): string => BikeResource::getUrl('create'),
                     'is_complete' => fn (): bool => Bike::query()->exists(),
@@ -253,7 +254,7 @@ class ShopSetupReadiness
             $steps[self::LocationHours] = [
                 'section' => 'rentals',
                 'label' => 'Opening hours',
-                'description' => 'Book needs opening hours for customers to choose a rental interval.',
+                'description' => Location::SETUP_DESCRIPTION,
                 'action_label' => 'Set opening hours',
                 'action_url' => fn (): string => LocationResource::getUrl('edit', [
                     'record' => $location->getKey(),
@@ -267,7 +268,7 @@ class ShopSetupReadiness
             $steps[self::RentalPackages] = [
                 'section' => 'rentals',
                 'label' => 'Rental packages',
-                'description' => 'Packages define rental pricing and Book payment requirements.',
+                'description' => RentalPackage::SETUP_DESCRIPTION,
                 'action_label' => 'Add a rental package',
                 'action_url' => fn (): string => RentalPackageResource::getUrl('create'),
                 'is_complete' => fn (): bool => RentalPackage::query()->exists(),

@@ -42,6 +42,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[ObservedBy(BikeObserver::class)]
 class Bike extends Model
 {
+    public const string SETUP_DESCRIPTION = 'A bike needs a model variant before it can be added.';
+
     /** @use HasFactory<BikeFactory> */
     use HasFactory;
 

@@ -15,13 +15,12 @@ class ListServiceRequests extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        $actions = [CreateAction::make()];
         $continueSetupAction = $this->continueBookSetupAction();
 
         if ($continueSetupAction !== null) {
-            $actions[] = $continueSetupAction;
+            return [$continueSetupAction];
         }
 
-        return $actions;
+        return [CreateAction::make()];
     }
 }

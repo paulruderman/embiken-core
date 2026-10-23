@@ -42,6 +42,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 ])]
 class ServiceRequest extends Model
 {
+    public const string SETUP_DESCRIPTION = 'Service requests are attached to a bike in your fleet.';
+
     /** @use HasFactory<ServiceRequestFactory> */
     use HasFactory;
 

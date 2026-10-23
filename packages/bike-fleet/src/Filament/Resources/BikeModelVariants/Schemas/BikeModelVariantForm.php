@@ -4,6 +4,7 @@ namespace Embiken\BikeFleet\Filament\Resources\BikeModelVariants\Schemas;
 
 use App\Filament\Shop\Forms\Components\BrandColorDropdown;
 use Embiken\BikeFleet\Models\BikeModel;
+use Embiken\BikeFleet\Models\BikeModelVariant;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -22,6 +23,7 @@ class BikeModelVariantForm
                     ->searchable(),
                 TextInput::make('size')
                     ->required()
+                    ->helperText(BikeModelVariant::SETUP_DESCRIPTION)
                     ->maxLength(255),
                 TextInput::make('color_name')
                     ->maxLength(255),

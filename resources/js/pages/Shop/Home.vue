@@ -51,7 +51,7 @@ defineProps<{
             <Link
                 :href="book.url()"
                 :style="{ backgroundColor: primaryColor }"
-                            class="inline-flex min-h-11 items-center justify-center rounded-full bg-emerald-800 px-5 text-sm font-semibold text-white transition hover:brightness-110"
+                class="inline-flex min-h-11 items-center justify-center rounded-full bg-emerald-800 px-5 text-sm font-semibold text-white transition hover:brightness-110"
             >
                 Book a bike
             </Link>
@@ -72,14 +72,20 @@ defineProps<{
                     <p
                         v-if="layoutData.eyebrow"
                         class="text-sm font-semibold tracking-wide uppercase"
-                        :class="theme === 'dark' ? 'text-emerald-300' : 'text-emerald-700'"
+                        :class="
+                            theme === 'dark'
+                                ? 'text-emerald-300'
+                                : 'text-emerald-700'
+                        "
                     >
                         {{ layoutData.eyebrow }}
                     </p>
                     <p
                         v-if="!isConfigured"
                         class="mb-4 text-sm font-medium"
-                        :class="theme === 'dark' ? 'text-zinc-400' : 'text-zinc-500'"
+                        :class="
+                            theme === 'dark' ? 'text-zinc-400' : 'text-zinc-500'
+                        "
                     >
                         This shop is setting up its home page.
                     </p>
@@ -91,7 +97,9 @@ defineProps<{
                     <p
                         v-if="layoutData.description"
                         class="mt-6 max-w-2xl text-lg leading-8"
-                        :class="theme === 'dark' ? 'text-zinc-300' : 'text-zinc-600'"
+                        :class="
+                            theme === 'dark' ? 'text-zinc-300' : 'text-zinc-600'
+                        "
                     >
                         {{ layoutData.description }}
                     </p>
@@ -103,7 +111,11 @@ defineProps<{
                         <span
                             v-if="layoutData.story_byline"
                             class="mt-2 block text-sm not-italic"
-                            :class="theme === 'dark' ? 'text-zinc-400' : 'text-zinc-500'"
+                            :class="
+                                theme === 'dark'
+                                    ? 'text-zinc-400'
+                                    : 'text-zinc-500'
+                            "
                         >
                             {{ layoutData.story_byline }}
                         </span>
@@ -138,7 +150,9 @@ defineProps<{
                 <div
                     v-else-if="layout === 'hero'"
                     class="hidden min-h-72 rounded-[2rem] lg:block"
-                    :class="theme === 'dark' ? 'bg-emerald-900' : 'bg-emerald-50'"
+                    :class="
+                        theme === 'dark' ? 'bg-emerald-900' : 'bg-emerald-50'
+                    "
                     aria-hidden="true"
                 />
             </section>
@@ -157,7 +171,11 @@ defineProps<{
 
         <footer
             class="border-t px-6 py-6 text-center text-sm"
-            :class="theme === 'dark' ? 'border-white/10 text-zinc-400' : 'border-black/10 text-zinc-500'"
+            :class="
+                theme === 'dark'
+                    ? 'border-white/10 text-zinc-400'
+                    : 'border-black/10 text-zinc-500'
+            "
         >
             {{ shopName }}
         </footer>

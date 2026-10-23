@@ -4,6 +4,7 @@ namespace App\Filament\Shop\Resources\Locations\Schemas;
 
 use App\Enums\BikeAssignmentPolicy;
 use App\Enums\ReturnSituation;
+use App\Models\Location;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
@@ -16,6 +17,7 @@ class LocationForm
             ->components([
                 TextInput::make('name')
                     ->required()
+                    ->helperText(Location::SETUP_DESCRIPTION)
                     ->maxLength(255),
                 TextInput::make('timezone')
                     ->required(),

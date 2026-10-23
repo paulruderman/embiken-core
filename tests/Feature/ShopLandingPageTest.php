@@ -78,6 +78,38 @@ test('the tenant root renders the configured shop home page', function () {
             ->where('isConfigured', true));
 });
 
+test('the tenant home renders rich editor custom blocks as safe html', function () {
+    $shop = makeShopLandingTenant('landing-block.localhost');
+    $this->landingTenant = $shop['tenant'];
+
+    $shop['tenant']->run(function (): void {
+        ShopLandingPage::factory()->create([
+            'custom_content' => [
+                'type' => 'doc',
+                'content' => [[
+                    'type' => 'customBlock',
+                    'attrs' => [
+                        'id' => 'shop_callout',
+                        'config' => [
+                            'heading' => 'Ride update',
+                            'message' => 'Book early. <script>alert("x")</script>',
+                            'tone' => 'info',
+                        ],
+                    ],
+                ]],
+            ],
+        ]);
+    });
+
+    $this->withoutVite()
+        ->get('http://landing-block.localhost')
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Shop/Home')
+            ->where('contentHtml', fn (mixed $html): bool => is_string($html)
+                && str_contains($html, 'Ride update')
+                && ! str_contains($html, '<script>')));
+});
+
 test('the booking page renders tenant booking notices', function () {
     $shop = makeShopLandingTenant('landing-book.localhost');
     $this->landingTenant = $shop['tenant'];
@@ -137,6 +169,28 @@ test('a counter receives 403 when saving shop page content', function () {
             'theme' => 'light',
         ])
         ->assertForbidden();
+});
+
+test('a page cannot save slots that do not belong to its selected layout', function () {
+    $shop = makeShopLandingTenant('landing-slots.localhost');
+    $this->landingTenant = $shop['tenant'];
+
+    $this->actingAs($shop['staff'], 'staff')
+        ->postJson('http://landing-slots.localhost/shop/landing-page', [
+            'layout' => 'hero',
+            'layout_data' => [
+                'headline' => 'Rent by the river',
+                'description' => 'Bikes for a quiet day out.',
+                'button_label' => 'Book now',
+                'story_quote' => 'This belongs to Story.',
+            ],
+            'theme' => 'light',
+        ])
+        ->assertUnprocessable();
+
+    $shop['tenant']->run(function (): void {
+        expect(ShopLandingPage::current())->toBeNull();
+    });
 });
 
 test('a manager can choose a layout and save booking messages', function () {

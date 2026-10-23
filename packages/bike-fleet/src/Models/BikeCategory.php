@@ -20,6 +20,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable(['name', 'description', 'interface_color'])]
 class BikeCategory extends Model
 {
+    public const string SETUP_DESCRIPTION = 'Categories organize the kinds of bikes in your catalog.';
+
     /** @use HasFactory<BikeCategoryFactory> */
     use HasFactory;
 

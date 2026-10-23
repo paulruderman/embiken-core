@@ -5,6 +5,7 @@ namespace Embiken\BikeRentals\Filament\Resources\RentalPackages\Schemas;
 use App\Models\Location;
 use Embiken\BikeRentals\Enums\ConfirmThreshold;
 use Embiken\BikeRentals\Enums\PackageMeter;
+use Embiken\BikeRentals\Models\RentalPackage;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -23,6 +24,7 @@ class RentalPackageForm
                     ->default(fn (): ?int => Location::query()->value('id')),
                 TextInput::make('name')
                     ->required()
+                    ->helperText(RentalPackage::SETUP_DESCRIPTION)
                     ->maxLength(255),
                 TextInput::make('tagline')
                     ->maxLength(255),

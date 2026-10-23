@@ -41,6 +41,7 @@ class BikeForm
                     ->searchable(),
                 TextInput::make('bid')
                     ->required()
+                    ->helperText(Bike::SETUP_DESCRIPTION)
                     ->unique(ignoreRecord: true)
                     ->maxLength(255),
                 Toggle::make('in_service')

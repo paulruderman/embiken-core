@@ -50,6 +50,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 ])]
 class RentalPackage extends Model
 {
+    public const string SETUP_DESCRIPTION = 'Packages define rental pricing and Book payment requirements.';
+
     /** @use HasFactory<RentalPackageFactory> */
     use HasFactory;
 

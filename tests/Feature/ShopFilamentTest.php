@@ -223,9 +223,15 @@ test('reservations remain available and point managers to incomplete Book setup'
         ->toContain('Online Book setup is incomplete. Next: ')
         ->toContain('href="'.BikeCategoryResource::getUrl('create').'?setup_target=bike_categories"')
         ->toContain('>Add a bike category</a>')
-        ->and($serviceRequestHeaderActions)->toHaveCount(2)
-        ->and($serviceRequestHeaderActions[0]->getName())->toBe('create')
-        ->and($serviceRequestHeaderActions[1]->getUrl())->toContain('setup_target=bike_categories');
+        ->and($serviceRequestHeaderActions)->toHaveCount(1)
+        ->and($serviceRequestHeaderActions[0]->getName())->toBe('continueSetup')
+        ->and($serviceRequestHeaderActions[0]->getUrl())->toContain('setup_target=bike_categories');
+
+    Livewire::test(ListServiceRequests::class)
+        ->assertOk()
+        ->assertSee('Online Book setup is incomplete. Next:')
+        ->assertSee('Add a bike category')
+        ->assertSee('Continue setup');
 });
 
 test('reservations stop showing the Book setup cue when the checklist is complete', function () {
@@ -264,6 +270,10 @@ test('reservations stop showing the Book setup cue when the checklist is complet
         ->and($serviceRequestPage->getSubheading())->toBeNull()
         ->and($serviceRequestHeaderActions)->toHaveCount(1)
         ->and($serviceRequestHeaderActions[0]->getName())->toBe('create');
+
+    Livewire::test(ListServiceRequests::class)
+        ->assertOk()
+        ->assertDontSee('Online Book setup is incomplete');
 });
 
 test('shop filament cannot edit or delete the platform manager', function () {

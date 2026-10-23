@@ -37,6 +37,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 ])]
 class BikeModelVariant extends Model
 {
+    public const string SETUP_DESCRIPTION = 'Variants define the sizes or classes you can offer.';
+
     /** @use HasFactory<BikeModelVariantFactory> */
     use HasFactory;
 

@@ -24,6 +24,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable(['bike_category_id', 'name', 'manufacturer', 'description', 'padding_minutes', 'photo'])]
 class BikeModel extends Model
 {
+    public const string SETUP_DESCRIPTION = 'Models group the variants that share a bike design.';
+
     /** @use HasFactory<BikeModelFactory> */
     use HasFactory;
 

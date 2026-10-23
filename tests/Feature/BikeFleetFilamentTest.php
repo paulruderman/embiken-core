@@ -9,10 +9,13 @@ use Embiken\BikeFleet\Filament\Resources\BikeCategories\BikeCategoryResource;
 use Embiken\BikeFleet\Filament\Resources\BikeCategories\Pages\CreateBikeCategory;
 use Embiken\BikeFleet\Filament\Resources\BikeModels\BikeModelResource;
 use Embiken\BikeFleet\Filament\Resources\BikeModels\Pages\CreateBikeModel;
+use Embiken\BikeFleet\Filament\Resources\BikeModels\Pages\ListBikeModels;
 use Embiken\BikeFleet\Filament\Resources\BikeModelVariants\BikeModelVariantResource;
 use Embiken\BikeFleet\Filament\Resources\BikeModelVariants\Pages\CreateBikeModelVariant;
+use Embiken\BikeFleet\Filament\Resources\BikeModelVariants\Pages\ListBikeModelVariants;
 use Embiken\BikeFleet\Filament\Resources\Bikes\BikeResource;
 use Embiken\BikeFleet\Filament\Resources\Bikes\Pages\CreateBike;
+use Embiken\BikeFleet\Filament\Resources\Bikes\Pages\ListBikes;
 use Embiken\BikeFleet\Filament\Resources\ServiceRequests\Pages\CreateServiceRequest;
 use Embiken\BikeFleet\Filament\Resources\ServiceRequests\ServiceRequestResource;
 use Embiken\BikeFleet\Models\Bike;
@@ -218,6 +221,39 @@ it('shows the setup checklist and marks incomplete navigation resources', functi
         ->toBe(ShopSetupReadiness::BikeCategories)
         ->and(app(ShopSetupReadiness::class)->step(ShopSetupReadiness::BookOffer)['action_url'])
         ->toContain('setup_target=book_offer');
+});
+
+it('replaces blocked catalog create actions with the next prerequisite', function () {
+    $headerActionsFor = fn (string $pageClass): array => (new ReflectionMethod($pageClass, 'getHeaderActions'))
+        ->invoke(new $pageClass);
+
+    $bikeModelsActions = $headerActionsFor(ListBikeModels::class);
+
+    expect($bikeModelsActions)->toHaveCount(1)
+        ->and($bikeModelsActions[0]->getName())->toBe('continueSetup')
+        ->and($bikeModelsActions[0]->getUrl())->toContain('setup_target=bike_models');
+
+    Livewire::test(ListBikeModels::class)
+        ->assertOk()
+        ->assertSee('Online Book setup is incomplete. Next:')
+        ->assertSee('Add a bike category')
+        ->assertSee('Continue setup');
+
+    $category = BikeCategory::factory()->create();
+
+    expect($headerActionsFor(ListBikeModels::class)[0]->getName())->toBe('create')
+        ->and($headerActionsFor(ListBikeModelVariants::class)[0]->getName())->toBe('continueSetup')
+        ->and($headerActionsFor(ListBikeModelVariants::class)[0]->getUrl())->toContain('setup_target=bike_model_variants');
+
+    $model = BikeModel::factory()->for($category, 'bikeCategory')->create();
+
+    expect($headerActionsFor(ListBikeModelVariants::class)[0]->getName())->toBe('create')
+        ->and($headerActionsFor(ListBikes::class)[0]->getName())->toBe('continueSetup')
+        ->and($headerActionsFor(ListBikes::class)[0]->getUrl())->toContain('setup_target=bikes');
+
+    $variant = BikeModelVariant::factory()->for($model, 'bikeModel')->create();
+
+    expect($headerActionsFor(ListBikes::class)[0]->getName())->toBe('create');
 });
 
 it('acknowledges completed essentials and presents optional catalog improvements separately', function () {

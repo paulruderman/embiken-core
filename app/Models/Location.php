@@ -35,6 +35,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 ])]
 class Location extends Model
 {
+    public const string SETUP_DESCRIPTION = 'Book needs opening hours for customers to choose a rental interval.';
+
     /** @use HasFactory<LocationFactory> */
     use HasFactory;
 

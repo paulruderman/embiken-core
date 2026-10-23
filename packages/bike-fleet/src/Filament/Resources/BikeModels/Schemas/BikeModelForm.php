@@ -3,6 +3,7 @@
 namespace Embiken\BikeFleet\Filament\Resources\BikeModels\Schemas;
 
 use Embiken\BikeFleet\Models\BikeCategory;
+use Embiken\BikeFleet\Models\BikeModel;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -22,6 +23,7 @@ class BikeModelForm
                     ->searchable(),
                 TextInput::make('name')
                     ->required()
+                    ->helperText(BikeModel::SETUP_DESCRIPTION)
                     ->maxLength(255),
                 TextInput::make('manufacturer')
                     ->maxLength(255),

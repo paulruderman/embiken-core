@@ -5,6 +5,7 @@ namespace Embiken\BikeFleet\Filament\Resources\ServiceRequests\Schemas;
 use App\Models\Staff;
 use Embiken\BikeFleet\Enums\ServiceStage;
 use Embiken\BikeFleet\Models\Bike;
+use Embiken\BikeFleet\Models\ServiceRequest;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -24,6 +25,7 @@ class ServiceRequestForm
                     ->required()
                     ->searchable(),
                 Textarea::make('description')
+                    ->helperText(ServiceRequest::SETUP_DESCRIPTION)
                     ->required(),
                 Select::make('stage')
                     ->options(ServiceStage::class)

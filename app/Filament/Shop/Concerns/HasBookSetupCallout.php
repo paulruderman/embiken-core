@@ -11,7 +11,7 @@ trait HasBookSetupCallout
 {
     public function getSubheading(): string|Htmlable|null
     {
-        $step = app(ShopSetupReadiness::class)->nextIncompleteSetupStep();
+        $step = $this->bookSetupCalloutStep();
 
         if ($step === null) {
             return null;
@@ -31,7 +31,7 @@ trait HasBookSetupCallout
 
     protected function continueBookSetupAction(): ?Action
     {
-        $step = app(ShopSetupReadiness::class)->nextIncompleteSetupStep();
+        $step = $this->bookSetupCalloutStep();
 
         if ($step === null || $step['action_url'] === null) {
             return null;
@@ -42,5 +42,13 @@ trait HasBookSetupCallout
             ->color('warning')
             ->icon('heroicon-m-arrow-right')
             ->url($step['action_url']);
+    }
+
+    /**
+     * @return array{key: string, label: string, description: string, complete: bool, blocked: bool, status: string, action_label: string, action_url: string|null, next_step: string|null, tooltip: string, section: string}|null
+     */
+    protected function bookSetupCalloutStep(): ?array
+    {
+        return app(ShopSetupReadiness::class)->nextIncompleteSetupStep();
     }
 }

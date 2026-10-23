@@ -7,6 +7,7 @@ use Carbon\CarbonImmutable;
 use Database\Factories\TenantFactory;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\Concerns\HasDatabase;
@@ -16,6 +17,7 @@ use Stancl\Tenancy\Database\Models\Tenant as BaseTenant;
 /**
  * @property string $id
  * @property string $name
+ * @property string|null $billing_plan_id
  * @property string|null $manager_name
  * @property string|null $manager_email
  * @property CarbonImmutable|null $suspended_at
@@ -40,6 +42,7 @@ class Tenant extends BaseTenant implements TenantWithDatabase
         return [
             'id',
             'name',
+            'billing_plan_id',
             'manager_name',
             'manager_email',
             'suspended_at',
@@ -69,6 +72,11 @@ class Tenant extends BaseTenant implements TenantWithDatabase
     public function domains(): HasMany
     {
         return $this->hasMany(Domain::class, 'tenant_id');
+    }
+
+    public function billingPlan(): BelongsTo
+    {
+        return $this->belongsTo(BillingPlan::class, 'billing_plan_id', 'slug');
     }
 
     /**

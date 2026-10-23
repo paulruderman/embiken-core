@@ -51,7 +51,8 @@ class ShopSetupReadiness
      *     action_label: string,
      *     action_url: string|null,
      *     next_step: string|null,
-     *     tooltip: string
+     *     tooltip: string,
+     *     section: string
      * }>
      */
     public function checklist(): array
@@ -80,7 +81,8 @@ class ShopSetupReadiness
      *     action_label: string,
      *     action_url: string|null,
      *     next_step: string|null,
-     *     tooltip: string
+     *     tooltip: string,
+     *     section: string
      * }
      */
     public function step(string $key): array
@@ -120,7 +122,7 @@ class ShopSetupReadiness
     /**
      * Return the earliest missing prerequisite for a step, or null if its prerequisites are met.
      *
-     * @return array{key: string, label: string, description: string, complete: bool, blocked: bool, status: string, action_label: string, action_url: string|null, next_step: string|null, tooltip: string}|null
+     * @return array{key: string, label: string, description: string, complete: bool, blocked: bool, status: string, action_label: string, action_url: string|null, next_step: string|null, tooltip: string, section: string}|null
      */
     public function firstMissingPrerequisite(string $key): ?array
     {
@@ -172,7 +174,8 @@ class ShopSetupReadiness
      *     action_url: Closure,
      *     is_complete: Closure,
      *     prerequisites: list<string>,
-     *     show_in_checklist?: bool
+     *     show_in_checklist?: bool,
+     *     section: string
      * }>
      */
     private function definitions(): array
@@ -182,6 +185,7 @@ class ShopSetupReadiness
         if (app(ModuleRegistry::class)->isEnabled('embiken/bike-fleet')) {
             $steps += [
                 self::BikeCategories => [
+                    'section' => 'fleet',
                     'label' => 'Bike categories',
                     'description' => 'Categories organize the kinds of bikes in your catalog.',
                     'action_label' => 'Add a bike category',
@@ -190,6 +194,7 @@ class ShopSetupReadiness
                     'prerequisites' => [],
                 ],
                 self::BikeModels => [
+                    'section' => 'fleet',
                     'label' => 'Bike models',
                     'description' => 'Models group the variants that share a bike design.',
                     'action_label' => 'Add a bike model',
@@ -198,6 +203,7 @@ class ShopSetupReadiness
                     'prerequisites' => [self::BikeCategories],
                 ],
                 self::BikeModelVariants => [
+                    'section' => 'fleet',
                     'label' => 'Bike model variants',
                     'description' => 'Variants define the sizes or classes you can offer.',
                     'action_label' => 'Add a bike model variant',
@@ -206,6 +212,7 @@ class ShopSetupReadiness
                     'prerequisites' => [self::BikeModels],
                 ],
                 self::Bikes => [
+                    'section' => 'fleet',
                     'label' => 'Bikes',
                     'description' => 'A bike needs a model variant before it can be added.',
                     'action_label' => 'Add a bike',
@@ -214,6 +221,7 @@ class ShopSetupReadiness
                     'prerequisites' => [self::BikeModelVariants],
                 ],
                 self::ServiceRequests => [
+                    'section' => 'fleet',
                     'label' => 'Service requests',
                     'description' => 'Service requests are attached to a bike in your fleet.',
                     'action_label' => 'Add a bike',
@@ -229,6 +237,7 @@ class ShopSetupReadiness
 
         if ($location !== null) {
             $steps[self::LocationHours] = [
+                'section' => 'rentals',
                 'label' => 'Opening hours',
                 'description' => 'Book needs opening hours for customers to choose a rental interval.',
                 'action_label' => 'Set opening hours',
@@ -242,6 +251,7 @@ class ShopSetupReadiness
 
         if (app(ModuleRegistry::class)->isEnabled('embiken/bike-rentals')) {
             $steps[self::RentalPackages] = [
+                'section' => 'rentals',
                 'label' => 'Rental packages',
                 'description' => 'Packages define rental pricing and Book payment requirements.',
                 'action_label' => 'Add a rental package',
@@ -250,6 +260,7 @@ class ShopSetupReadiness
                 'prerequisites' => [],
             ];
             $steps[self::BookOffer] = [
+                'section' => 'rentals',
                 'label' => 'Book offer',
                 'description' => 'A Book-visible package needs at least one variant and rate to offer bikes.',
                 'action_label' => fn (): string => $this->bookOfferActionLabel(),
@@ -265,6 +276,7 @@ class ShopSetupReadiness
 
             if (array_key_exists(self::Bikes, $steps)) {
                 $steps[self::BookableFleet] = [
+                    'section' => 'rentals',
                     'label' => 'Bookable bike',
                     'description' => 'Book can offer bikes that are in service and self-bookable.',
                     'action_label' => 'Review bikes',
@@ -282,8 +294,32 @@ class ShopSetupReadiness
     }
 
     /**
-     * @param  array{label: string, description: string, action_label: string|Closure, action_url: Closure, is_complete: Closure, prerequisites: list<string>, show_in_checklist?: bool}  $definition
-     * @return array{key: string, label: string, description: string, complete: bool, blocked: bool, status: string, action_label: string, action_url: string|null, next_step: string|null, tooltip: string}
+     * @return list<array{label: string, description: string, actions: list<array{label: string, url: string}>}>
+     */
+    public function recommendations(): array
+    {
+        $steps = $this->checklist();
+
+        if ($steps === []
+            || count(array_filter($steps, fn (array $step): bool => ! $step['complete'])) > 0
+            || ! app(ModuleRegistry::class)->isEnabled('embiken/bike-fleet')) {
+            return [];
+        }
+
+        return [[
+            'label' => 'Add catalog photos',
+            'description' => 'Photos help customers recognize your bikes. Add them to bikes, variants, or models; bike photos take precedence when displaying an image.',
+            'actions' => [
+                ['label' => 'Bikes', 'url' => BikeResource::getUrl('index')],
+                ['label' => 'Variants', 'url' => BikeModelVariantResource::getUrl('index')],
+                ['label' => 'Models', 'url' => BikeModelResource::getUrl('index')],
+            ],
+        ]];
+    }
+
+    /**
+     * @param  array{label: string, description: string, action_label: string|Closure, action_url: Closure, is_complete: Closure, prerequisites: list<string>, show_in_checklist?: bool, section: string}  $definition
+     * @return array{key: string, label: string, description: string, complete: bool, blocked: bool, status: string, action_label: string, action_url: string|null, next_step: string|null, tooltip: string, section: string}
      */
     private function present(string $key, array $definition): array
     {
@@ -306,7 +342,7 @@ class ShopSetupReadiness
                 ? $definition['action_label']
                 : $definition['action_label']();
             $status = 'Ready to set up';
-            $tooltip = $definition['description'];
+            $tooltip = 'Ready to set up. '.$definition['description'];
         }
 
         if (! $complete && $actionUrl !== null) {
@@ -324,6 +360,7 @@ class ShopSetupReadiness
             'action_url' => $actionUrl,
             'next_step' => $blocker['key'] ?? null,
             'tooltip' => $tooltip,
+            'section' => $definition['section'],
         ];
     }
 

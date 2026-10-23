@@ -4,8 +4,10 @@ namespace Embiken\BikeRentals\Filament\Resources\Reservations\Tables;
 
 use App\Models\Location;
 use Carbon\CarbonImmutable;
+use Embiken\BikeRentals\Enums\ReservationStage;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\Select;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
@@ -34,6 +36,16 @@ class ReservationsTable
                     ->label('Paid'),
             ])
             ->filters([
+                Filter::make('stage')
+                    ->form([
+                        Select::make('value')
+                            ->label('Stage')
+                            ->options(ReservationStage::class),
+                    ])
+                    ->query(fn (Builder $query, array $data): Builder => $query->when(
+                        $data['value'] ?? null,
+                        fn (Builder $query, string $stage): Builder => $query->where('stage', $stage),
+                    )),
                 Filter::make('today')
                     ->label('Today')
                     ->toggle()

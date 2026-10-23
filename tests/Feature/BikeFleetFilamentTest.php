@@ -7,6 +7,7 @@ use App\Models\LocationHour;
 use App\Models\Staff;
 use Embiken\BikeFleet\Filament\Resources\BikeCategories\BikeCategoryResource;
 use Embiken\BikeFleet\Filament\Resources\BikeCategories\Pages\CreateBikeCategory;
+use Embiken\BikeFleet\Filament\Resources\BikeCategories\Pages\ListBikeCategories;
 use Embiken\BikeFleet\Filament\Resources\BikeModels\BikeModelResource;
 use Embiken\BikeFleet\Filament\Resources\BikeModels\Pages\CreateBikeModel;
 use Embiken\BikeFleet\Filament\Resources\BikeModels\Pages\ListBikeModels;
@@ -301,4 +302,49 @@ it('acknowledges completed essentials and presents optional catalog improvements
         ->assertSee('Variants')
         ->assertSee('Models');
 
+});
+
+it('filters fleet bikes by model, category, service status, and situation', function () {
+    $location = Location::query()->firstOrFail();
+    $category = BikeCategory::factory()->create(['name' => 'City']);
+    $otherCategory = BikeCategory::factory()->create(['name' => 'Mountain']);
+    $model = BikeModel::factory()->for($category, 'bikeCategory')->create(['name' => 'Commuter']);
+    $otherModel = BikeModel::factory()->for($otherCategory, 'bikeCategory')->create(['name' => 'Trail']);
+    $variant = BikeModelVariant::factory()->for($model, 'bikeModel')->create(['size' => 'M']);
+    $otherVariant = BikeModelVariant::factory()->for($otherModel, 'bikeModel')->create(['size' => 'L']);
+
+    $matchingBike = Bike::factory()
+        ->for($location)
+        ->for($variant, 'variant')
+        ->create(['bid' => 'C-101']);
+    $outOfServiceBike = Bike::factory()
+        ->for($location)
+        ->for($otherVariant, 'variant')
+        ->outOfService()
+        ->create(['bid' => 'M-201']);
+
+    Livewire::test(ListBikes::class)
+        ->filterTable('model', ['value' => $model->getKey()])
+        ->assertCanSeeTableRecords([$matchingBike])
+        ->assertCanNotSeeTableRecords([$outOfServiceBike]);
+
+    Livewire::test(ListBikes::class)
+        ->filterTable('category', ['value' => $category->getKey()])
+        ->assertCanSeeTableRecords([$matchingBike])
+        ->assertCanNotSeeTableRecords([$outOfServiceBike]);
+
+    Livewire::test(ListBikes::class)
+        ->filterTable('out_of_service', true)
+        ->assertCanSeeTableRecords([$outOfServiceBike])
+        ->assertCanNotSeeTableRecords([$matchingBike]);
+});
+
+it('renders category colors in the catalog table', function () {
+    BikeCategory::factory()->create([
+        'name' => 'City',
+        'interface_color' => 'blue',
+    ]);
+
+    Livewire::test(ListBikeCategories::class)
+        ->assertSee('City');
 });

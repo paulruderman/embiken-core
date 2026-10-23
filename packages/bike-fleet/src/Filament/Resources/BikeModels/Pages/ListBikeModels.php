@@ -3,6 +3,7 @@
 namespace Embiken\BikeFleet\Filament\Resources\BikeModels\Pages;
 
 use App\Filament\Shop\Concerns\HasBookSetupCallout;
+use App\Filament\Shop\Concerns\HasPendingSetupTitle;
 use App\Filament\Shop\Support\ShopSetupReadiness;
 use Embiken\BikeFleet\Filament\Resources\BikeModels\BikeModelResource;
 use Filament\Actions\CreateAction;
@@ -11,6 +12,7 @@ use Filament\Resources\Pages\ListRecords;
 class ListBikeModels extends ListRecords
 {
     use HasBookSetupCallout;
+    use HasPendingSetupTitle;
 
     protected static string $resource = BikeModelResource::class;
 

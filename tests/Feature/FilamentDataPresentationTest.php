@@ -5,6 +5,7 @@ use App\Models\Staff;
 use Embiken\BikeFleet\Filament\Resources\ServiceRequests\Pages\ListServiceRequests;
 use Embiken\BikeFleet\Models\ServiceEntry;
 use Embiken\BikeFleet\Models\ServiceRequest;
+use Embiken\BikeRentals\Enums\ReservationStage;
 use Embiken\BikeRentals\Filament\Resources\Reservations\Pages\ListReservations;
 use Embiken\BikeRentals\Filament\Resources\Reservations\Pages\ViewReservation;
 use Embiken\BikeRentals\Filament\Resources\Reservations\RelationManagers\TransactionsRelationManager;
@@ -55,6 +56,16 @@ it('filters reservations by the shop calendar day', function () {
         ->filterTable('past', true)
         ->assertCanSeeTableRecords([$priorDay])
         ->assertCanNotSeeTableRecords([$today, $upcoming]);
+});
+
+it('filters reservations by their current stage', function () {
+    $provisional = Reservation::factory()->create(['stage' => ReservationStage::Provisional]);
+    $confirmed = Reservation::factory()->confirmed()->create();
+
+    Livewire::test(ListReservations::class)
+        ->filterTable('stage', ['value' => ReservationStage::Confirmed->value])
+        ->assertCanSeeTableRecords([$confirmed])
+        ->assertCanNotSeeTableRecords([$provisional]);
 });
 
 it('shows the latest service work entry and its date in the service request list', function () {

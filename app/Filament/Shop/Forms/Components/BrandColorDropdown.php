@@ -5,6 +5,7 @@ namespace App\Filament\Shop\Forms\Components;
 use App\Support\BrandColor;
 use Closure;
 use Filament\Forms\Components\TextInput;
+use Illuminate\Validation\ClosureValidationRule;
 
 class BrandColorDropdown extends TextInput
 {
@@ -14,10 +15,10 @@ class BrandColorDropdown extends TextInput
     {
         parent::setUp();
 
-        $this->rule(static function (string $attribute, mixed $value, Closure $fail): void {
+        $this->rule(new ClosureValidationRule(static function (string $attribute, mixed $value, Closure $fail): void {
             if (! BrandColor::isValid($value)) {
                 $fail('Enter a Tailwind color family name or a six-digit HEX value.');
             }
-        });
+        }));
     }
 }

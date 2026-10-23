@@ -133,7 +133,7 @@ test('shop branding rejects an invalid primary color without changing settings',
 
     expect(fn () => app(UpdateShopBrandingAction::class)([
         'brand_name' => null,
-        'primary_color' => 'blue',
+        'primary_color' => 'chartreuse',
         'brand_gray_color' => ShopSetting::DEFAULT_GRAY_COLOR,
         'logo_path' => null,
         'favicon_path' => null,

@@ -246,4 +246,5 @@ it('acknowledges completed essentials and presents optional catalog improvements
         ->assertSee('Add catalog photos')
         ->assertSee('Variants')
         ->assertSee('Models');
+
 });

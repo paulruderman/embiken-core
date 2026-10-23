@@ -40,6 +40,11 @@ test('a platform user can open the tenant list', function () {
         ->assertOk();
 });
 
+test('the impersonation endpoint is not captured by the marketing page route', function () {
+    $this->get('http://localhost/platform/tenants/4465a6a7-31a2-4ea8-b927-1a333539dbad/impersonate')
+        ->assertRedirect('http://localhost/platform/login');
+});
+
 test('a disabled user cannot access the platform panel', function () {
     $user = User::factory()->disabled()->create();
 

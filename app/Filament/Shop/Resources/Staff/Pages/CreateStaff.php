@@ -4,9 +4,9 @@ namespace App\Filament\Shop\Resources\Staff\Pages;
 
 use App\Actions\Staff\InviteStaffAction;
 use App\Enums\StaffRole;
+use App\Filament\Resources\Pages\CreateRecord;
 use App\Filament\Shop\Resources\Staff\StaffResource;
 use App\Models\Location;
-use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
 
 class CreateStaff extends CreateRecord

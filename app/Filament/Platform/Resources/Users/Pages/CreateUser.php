@@ -4,7 +4,7 @@ namespace App\Filament\Platform\Resources\Users\Pages;
 
 use App\Actions\Platform\InviteUserAction;
 use App\Filament\Platform\Resources\Users\UserResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
 
 class CreateUser extends CreateRecord

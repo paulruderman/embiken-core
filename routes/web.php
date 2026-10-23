@@ -18,7 +18,7 @@ Route::domain($centralDomains[0] ?? 'localhost')->group(function (): void {
     Route::get('/blog', [MarketingPageController::class, 'blogIndex'])->name('marketing.blog');
     Route::get('/blog/{slug}', [MarketingPageController::class, 'blogArticle'])->name('marketing.blog.show');
     Route::get('/sitemap.xml', [MarketingPageController::class, 'sitemap'])->name('marketing.sitemap');
-    Route::get('/{slug}', [MarketingPageController::class, 'show'])->where('slug', '^(?!platform$|signup$|checkout$|blog$).+')->name('marketing.page');
+    Route::get('/{slug}', [MarketingPageController::class, 'show'])->where('slug', '^(?!platform$|signup$|checkout$|blog$)[^/]+$')->name('marketing.page');
     Route::get('/signup/{billingPlan}', [MarketingPageController::class, 'signup'])->name('marketing.signup');
     Route::post('/signup', PublicSignupAction::class)->middleware('throttle:5,1')->name('marketing.signup.store');
     Route::get('/checkout/placeholder', [MarketingPageController::class, 'checkoutPlaceholder'])->name('marketing.checkout.placeholder');
@@ -36,7 +36,7 @@ foreach (array_slice($centralDomains, 1) as $domain) {
         Route::get('/blog', [MarketingPageController::class, 'blogIndex'])->name('marketing.blog.'.str_replace('.', '_', $domain));
         Route::get('/blog/{slug}', [MarketingPageController::class, 'blogArticle'])->name('marketing.blog.show.'.str_replace('.', '_', $domain));
         Route::get('/sitemap.xml', [MarketingPageController::class, 'sitemap'])->name('marketing.sitemap.'.str_replace('.', '_', $domain));
-        Route::get('/{slug}', [MarketingPageController::class, 'show'])->where('slug', '^(?!platform$|signup$|checkout$|blog$).+')->name('marketing.page.'.str_replace('.', '_', $domain));
+        Route::get('/{slug}', [MarketingPageController::class, 'show'])->where('slug', '^(?!platform$|signup$|checkout$|blog$)[^/]+$')->name('marketing.page.'.str_replace('.', '_', $domain));
         Route::get('/signup/{billingPlan}', [MarketingPageController::class, 'signup'])->name('marketing.signup.'.str_replace('.', '_', $domain));
         Route::post('/signup', PublicSignupAction::class)->middleware('throttle:5,1')->name('marketing.signup.store.'.str_replace('.', '_', $domain));
         Route::get('/checkout/placeholder', [MarketingPageController::class, 'checkoutPlaceholder'])->name('marketing.checkout.placeholder.'.str_replace('.', '_', $domain));

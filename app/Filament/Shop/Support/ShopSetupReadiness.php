@@ -71,6 +71,20 @@ class ShopSetupReadiness
     }
 
     /**
+     * @return array{key: string, label: string, description: string, complete: bool, blocked: bool, status: string, action_label: string, action_url: string|null, next_step: string|null, tooltip: string, section: string}|null
+     */
+    public function nextIncompleteSetupStep(): ?array
+    {
+        foreach ($this->checklist() as $step) {
+            if (! $step['complete']) {
+                return $step;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * @return array{
      *     key: string,
      *     label: string,

@@ -8,11 +8,18 @@ use App\Filament\Shop\Resources\Locations\LocationResource;
 use App\Filament\Shop\Resources\Locations\Pages\ListLocations;
 use App\Filament\Shop\Resources\Staff\StaffResource;
 use App\Models\Location;
+use App\Models\LocationHour;
 use App\Models\ShopSetting;
 use App\Models\Staff;
 use App\Notifications\SetPasswordNotification;
+use Embiken\BikeFleet\Models\Bike;
+use Embiken\BikeFleet\Models\BikeCategory;
+use Embiken\BikeFleet\Models\BikeModel;
+use Embiken\BikeFleet\Models\BikeModelVariant;
 use Embiken\BikeRentals\Filament\Resources\Reservations\Pages\EditReservation;
+use Embiken\BikeRentals\Filament\Resources\Reservations\Pages\ListReservations;
 use Embiken\BikeRentals\Filament\Resources\Reservations\ReservationResource;
+use Embiken\BikeRentals\Models\RentalPackage;
 use Embiken\BikeRentals\Models\Reservation;
 use Filament\Facades\Filament;
 use Filament\Support\Colors\Color;
@@ -173,6 +180,54 @@ test('shop filament does not create or delete reservations', function () {
 
     expect(ReservationResource::canCreate())->toBeFalse()
         ->and(ReservationResource::canDelete($reservation))->toBeFalse();
+});
+
+test('reservations remain available and point managers to incomplete Book setup', function () {
+    $staff = Staff::factory()->create();
+
+    $this->actingAs($staff, 'staff');
+
+    expect(ReservationResource::canCreate())->toBeFalse()
+        ->and(ReservationResource::getNavigationBadge())->toBe('Book setup')
+        ->and(ReservationResource::getNavigationBadgeColor())->toBe('info')
+        ->and(ReservationResource::getNavigationBadgeTooltip())->toContain('Bike categories');
+
+    $page = new ListReservations;
+    $headerActions = (new ReflectionMethod(ListReservations::class, 'getHeaderActions'))
+        ->invoke($page);
+
+    expect($page->getSubheading())
+        ->toBe('Online Book setup is incomplete. Next: Add a bike category.')
+        ->and($headerActions)->toHaveCount(1)
+        ->and($headerActions[0]->getUrl())->toContain('setup_target=bike_categories');
+});
+
+test('reservations stop showing the Book setup cue when the checklist is complete', function () {
+    $staff = Staff::factory()->create();
+    $location = $staff->location;
+    $category = BikeCategory::factory()->create();
+    $model = BikeModel::factory()->for($category, 'bikeCategory')->create();
+    $variant = BikeModelVariant::factory()->for($model, 'bikeModel')->create();
+
+    Bike::factory()
+        ->for($location)
+        ->for($variant, 'variant')
+        ->create();
+    LocationHour::factory()->for($location)->create();
+
+    $package = RentalPackage::factory()->for($location)->create();
+    $package->variants()->attach($variant, ['rate_cents' => 1000]);
+
+    $this->actingAs($staff, 'staff');
+
+    $page = new ListReservations;
+    $headerActions = (new ReflectionMethod(ListReservations::class, 'getHeaderActions'))
+        ->invoke($page);
+
+    expect(ReservationResource::getNavigationBadge())->toBeNull()
+        ->and(ReservationResource::getNavigationBadgeTooltip())->toBeNull()
+        ->and($page->getSubheading())->toBeNull()
+        ->and($headerActions)->toBeEmpty();
 });
 
 test('shop filament cannot edit or delete the platform manager', function () {

@@ -2,8 +2,8 @@
 
 namespace App\Filament\Shop\Resources\Locations\Pages;
 
+use App\Filament\Resources\Pages\CreateRecord;
 use App\Filament\Shop\Resources\Locations\LocationResource;
-use Filament\Resources\Pages\CreateRecord;
 
 class CreateLocation extends CreateRecord
 {

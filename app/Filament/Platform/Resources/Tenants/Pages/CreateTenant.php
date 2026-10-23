@@ -4,7 +4,7 @@ namespace App\Filament\Platform\Resources\Tenants\Pages;
 
 use App\Actions\Platform\CreateTenantAction;
 use App\Filament\Platform\Resources\Tenants\TenantResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
 
 class CreateTenant extends CreateRecord

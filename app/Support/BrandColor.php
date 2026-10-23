@@ -39,6 +39,15 @@ class BrandColor
         return static::resolvePalette($value) ?? Color::hex($default);
     }
 
+    public static function swatch(?string $value, string $default): string
+    {
+        if (is_string($value) && preg_match('/\A#[0-9A-Fa-f]{6}\z/', trim($value)) === 1) {
+            return trim($value);
+        }
+
+        return Color::convertToHex(static::palette($value, $default)[500]);
+    }
+
     public static function isValid(mixed $value): bool
     {
         return $value === null || (is_string($value) && static::resolvePalette($value) !== null);

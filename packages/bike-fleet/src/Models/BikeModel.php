@@ -15,12 +15,13 @@ use Illuminate\Support\Carbon;
  * @property int $bike_category_id
  * @property string $name
  * @property string|null $description
+ * @property string|null $manufacturer
  * @property int|null $padding_minutes
  * @property string|null $photo
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['bike_category_id', 'name', 'description', 'padding_minutes', 'photo'])]
+#[Fillable(['bike_category_id', 'name', 'manufacturer', 'description', 'padding_minutes', 'photo'])]
 class BikeModel extends Model
 {
     /** @use HasFactory<BikeModelFactory> */

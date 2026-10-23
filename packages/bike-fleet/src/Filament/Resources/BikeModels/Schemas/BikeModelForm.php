@@ -23,6 +23,8 @@ class BikeModelForm
                 TextInput::make('name')
                     ->required()
                     ->maxLength(255),
+                TextInput::make('manufacturer')
+                    ->maxLength(255),
                 Textarea::make('description'),
                 TextInput::make('padding_minutes')
                     ->numeric()

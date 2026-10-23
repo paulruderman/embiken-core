@@ -34,7 +34,12 @@ class BikeReservationsRelationManager extends RelationManager
                         ->with('bikeModel')
                         ->get()
                         ->mapWithKeys(fn (BikeModelVariant $variant): array => [
-                            $variant->id => $variant->bikeModel->name.' '.$variant->size,
+                            $variant->id => collect([
+                                $variant->bikeModel->manufacturer,
+                                $variant->bikeModel->name,
+                                $variant->size,
+                                $variant->color_name,
+                            ])->filter()->implode(' '),
                         ])
                         ->all())
                     ->required()
@@ -59,6 +64,9 @@ class BikeReservationsRelationManager extends RelationManager
                     ->label('Model'),
                 TextColumn::make('product.size')
                     ->label('Size'),
+                TextColumn::make('product.color_name')
+                    ->label('Color')
+                    ->placeholder('—'),
                 TextColumn::make('bike.bid')
                     ->label('Bid')
                     ->placeholder('unassigned'),

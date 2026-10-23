@@ -19,6 +19,8 @@ class RentalPackagesTable
                 TextColumn::make('name')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('tagline')
+                    ->toggleable(),
                 TextColumn::make('meter')
                     ->badge(),
                 TextColumn::make('confirm_threshold')

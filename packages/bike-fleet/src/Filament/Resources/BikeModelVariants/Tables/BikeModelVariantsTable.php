@@ -3,8 +3,10 @@
 namespace Embiken\BikeFleet\Filament\Resources\BikeModelVariants\Tables;
 
 use App\Filament\Shop\Support\ShopSetupReadiness;
+use App\Support\BrandColor;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
+use Filament\Tables\Columns\ColorColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -20,6 +22,14 @@ class BikeModelVariantsTable
                 TextColumn::make('size')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('color_name')
+                    ->label('Color')
+                    ->toggleable(),
+                ColorColumn::make('color_value')
+                    ->label('Swatch')
+                    ->getStateUsing(static fn (?string $state): ?string => $state === null
+                        ? null
+                        : BrandColor::swatch($state, '#000000')),
             ])
             ->recordActions([
                 EditAction::make(),

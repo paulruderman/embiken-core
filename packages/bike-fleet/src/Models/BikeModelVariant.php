@@ -15,6 +15,8 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property int $bike_model_id
  * @property string $size
+ * @property string|null $color_name
+ * @property string|null $color_value
  * @property int|null $min_ideal_rider_height
  * @property int|null $max_ideal_rider_height
  * @property int|null $min_extended_rider_height
@@ -26,6 +28,8 @@ use Illuminate\Support\Carbon;
 #[Fillable([
     'bike_model_id',
     'size',
+    'color_name',
+    'color_value',
     'min_ideal_rider_height',
     'max_ideal_rider_height',
     'min_extended_rider_height',

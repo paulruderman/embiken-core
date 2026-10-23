@@ -37,6 +37,9 @@ class VariantsRelationManager extends RelationManager
                 TextColumn::make('bikeModel.name')
                     ->label('Model'),
                 TextColumn::make('size'),
+                TextColumn::make('color_name')
+                    ->label('Color')
+                    ->placeholder('—'),
                 TextColumn::make('rate_cents')
                     ->label('Rate (cents)'),
             ])

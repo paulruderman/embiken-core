@@ -62,6 +62,8 @@ it('continues the requested task as each catalog prerequisite is created', funct
     $model = BikeModel::query()->firstOrFail();
 
     Livewire::test(CreateBikeModelVariant::class)
+        ->assertSee('Choose a Tailwind color family')
+        ->assertSee('emerald color family')
         ->fillForm([
             'bike_model_id' => $model->getKey(),
             'size' => 'Medium',
@@ -81,6 +83,18 @@ it('continues the requested task as each catalog prerequisite is created', funct
 
     Livewire::test(CreateServiceRequest::class)
         ->assertOk();
+});
+
+it('rejects catalog colors outside the Tailwind families and six-digit HEX format', function () {
+    Livewire::test(CreateBikeCategory::class)
+        ->fillForm([
+            'name' => 'Invalid color category',
+            'interface_color' => 'chartreuse',
+        ])
+        ->call('create')
+        ->assertHasFormErrors(['interface_color']);
+
+    expect(BikeCategory::query()->where('name', 'Invalid color category')->exists())->toBeFalse();
 });
 
 it('continues Book offer setup through catalog prerequisites and into package setup', function () {
@@ -112,6 +126,64 @@ it('continues Book offer setup through catalog prerequisites and into package se
 
     Livewire::test(CreateRentalPackage::class)
         ->assertOk();
+});
+
+it('saves catalog display attributes and package copy from shop Filament', function () {
+    Livewire::test(CreateBikeCategory::class)
+        ->assertSee('Choose a Tailwind color family')
+        ->assertSee('red color family')
+        ->fillForm([
+            'name' => 'City Bikes',
+            'interface_color' => 'blue',
+        ])
+        ->call('create')
+        ->assertHasNoErrors();
+
+    $category = BikeCategory::query()->firstOrFail();
+
+    Livewire::test(CreateBikeModel::class)
+        ->fillForm([
+            'bike_category_id' => $category->getKey(),
+            'name' => 'Commuter',
+            'manufacturer' => 'Example Cycles',
+        ])
+        ->call('create')
+        ->assertHasNoErrors();
+
+    $model = BikeModel::query()->firstOrFail();
+
+    Livewire::test(CreateBikeModelVariant::class)
+        ->fillForm([
+            'bike_model_id' => $model->getKey(),
+            'size' => 'Medium',
+            'color_name' => 'Ocean blue',
+            'color_value' => '#225577',
+        ])
+        ->call('create')
+        ->assertHasNoErrors();
+
+    Livewire::test(CreateRentalPackage::class)
+        ->fillForm([
+            'name' => 'City day rental',
+            'tagline' => 'A bike for the whole day',
+            'blurb' => 'Explore the city at your own pace.',
+            'meter' => 'per_calendar_day',
+            'confirm_threshold' => 'full',
+            'book_visible' => true,
+            'sort_order' => 0,
+        ])
+        ->call('create')
+        ->assertHasNoErrors();
+
+    expect($category->fresh()->interface_color)->toBe('blue')
+        ->and($model->fresh()->manufacturer)->toBe('Example Cycles')
+        ->and(BikeModelVariant::query()->firstOrFail()->only(['color_name', 'color_value']))
+        ->toBe(['color_name' => 'Ocean blue', 'color_value' => '#225577'])
+        ->and(RentalPackage::query()->firstOrFail()->only(['tagline', 'blurb']))
+        ->toBe([
+            'tagline' => 'A bike for the whole day',
+            'blurb' => 'Explore the city at your own pace.',
+        ]);
 });
 
 it('shows the setup checklist and marks incomplete navigation resources', function () {

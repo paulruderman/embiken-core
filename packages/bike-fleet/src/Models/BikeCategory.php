@@ -13,10 +13,11 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property string $name
  * @property string|null $description
+ * @property string|null $interface_color
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'description'])]
+#[Fillable(['name', 'description', 'interface_color'])]
 class BikeCategory extends Model
 {
     /** @use HasFactory<BikeCategoryFactory> */

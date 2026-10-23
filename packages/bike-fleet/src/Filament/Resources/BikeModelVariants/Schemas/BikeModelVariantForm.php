@@ -2,6 +2,7 @@
 
 namespace Embiken\BikeFleet\Filament\Resources\BikeModelVariants\Schemas;
 
+use App\Filament\Shop\Forms\Components\BrandColorDropdown;
 use Embiken\BikeFleet\Models\BikeModel;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
@@ -22,6 +23,13 @@ class BikeModelVariantForm
                 TextInput::make('size')
                     ->required()
                     ->maxLength(255),
+                TextInput::make('color_name')
+                    ->maxLength(255),
+                BrandColorDropdown::make('color_value')
+                    ->label('Color')
+                    ->placeholder('blue or #336699')
+                    ->helperText('Choose a Tailwind color family or enter a six-digit HEX value.')
+                    ->maxLength(32),
                 TextInput::make('min_ideal_rider_height')
                     ->numeric()
                     ->minValue(0),

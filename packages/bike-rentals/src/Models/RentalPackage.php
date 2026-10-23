@@ -20,6 +20,8 @@ use Illuminate\Support\Carbon;
  * @property int $location_id
  * @property string $name
  * @property string|null $description
+ * @property string|null $tagline
+ * @property string|null $blurb
  * @property PackageMeter $meter
  * @property ConfirmThreshold $confirm_threshold
  * @property int|null $deposit_cents
@@ -35,6 +37,8 @@ use Illuminate\Support\Carbon;
     'location_id',
     'name',
     'description',
+    'tagline',
+    'blurb',
     'meter',
     'confirm_threshold',
     'deposit_cents',

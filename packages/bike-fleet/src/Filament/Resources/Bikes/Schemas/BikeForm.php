@@ -29,7 +29,12 @@ class BikeForm
                         ->with('bikeModel')
                         ->get()
                         ->mapWithKeys(fn (BikeModelVariant $variant): array => [
-                            $variant->id => $variant->bikeModel->name.' '.$variant->size,
+                            $variant->id => collect([
+                                $variant->bikeModel->manufacturer,
+                                $variant->bikeModel->name,
+                                $variant->size,
+                                $variant->color_name,
+                            ])->filter()->implode(' '),
                         ])
                         ->all())
                     ->required()

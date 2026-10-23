@@ -3,8 +3,10 @@
 namespace Embiken\BikeFleet\Filament\Resources\BikeCategories\Tables;
 
 use App\Filament\Shop\Support\ShopSetupReadiness;
+use App\Support\BrandColor;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
+use Filament\Tables\Columns\ColorColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -19,6 +21,11 @@ class BikeCategoriesTable
                     ->sortable(),
                 TextColumn::make('description')
                     ->limit(40),
+                ColorColumn::make('interface_color')
+                    ->label('Interface color')
+                    ->getStateUsing(static fn (?string $state): ?string => $state === null
+                        ? null
+                        : BrandColor::swatch($state, '#000000')),
             ])
             ->recordActions([
                 EditAction::make(),

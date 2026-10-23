@@ -24,6 +24,9 @@ class RentalPackageForm
                 TextInput::make('name')
                     ->required()
                     ->maxLength(255),
+                TextInput::make('tagline')
+                    ->maxLength(255),
+                Textarea::make('blurb'),
                 Textarea::make('description'),
                 Select::make('meter')
                     ->options(PackageMeter::class)

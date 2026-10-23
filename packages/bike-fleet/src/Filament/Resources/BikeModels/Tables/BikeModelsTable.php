@@ -17,6 +17,9 @@ class BikeModelsTable
                 TextColumn::make('name')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('manufacturer')
+                    ->searchable()
+                    ->toggleable(),
                 TextColumn::make('bikeCategory.name')
                     ->label('Category'),
                 TextColumn::make('padding_minutes')

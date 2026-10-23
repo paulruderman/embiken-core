@@ -5,6 +5,7 @@ namespace App\Filament\Shop\Pages;
 use App\Actions\Shop\SaveShopLandingPageAction;
 use App\Enums\StaffRole;
 use App\Filament\Forms\Components\RichEditor\RichContentCustomBlocks\ShopCalloutBlock;
+use App\Filament\Forms\Components\RichEditor\RichContentCustomBlocks\ShopFeatureBlock;
 use App\Models\ShopLandingPage;
 use App\Models\Staff;
 use Filament\Facades\Filament;
@@ -122,7 +123,8 @@ class ShopLandingPageEditor extends Page
                     ->schema([
                         RichEditor::make('custom_content')
                             ->label('Page sections')
-                            ->customBlocks([ShopCalloutBlock::class])
+                            ->json()
+                            ->customBlocks([ShopCalloutBlock::class, ShopFeatureBlock::class])
                             ->toolbarButtons([
                                 ['bold', 'italic', 'link'],
                                 ['h2', 'h3'],

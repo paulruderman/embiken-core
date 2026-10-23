@@ -16,7 +16,7 @@ trait HasShopSetupBadge
             return null;
         }
 
-        return $step['blocked'] ? 'Waiting' : 'Ready';
+        return $step['blocked'] ? 'Waiting' : 'Set up now →';
     }
 
     public static function getNavigationBadgeTooltip(): ?string

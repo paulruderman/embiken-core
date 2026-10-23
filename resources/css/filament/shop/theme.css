@@ -2,6 +2,7 @@
 
 @source '../../../../app/Filament/Shop/**/*';
 @source '../../../../resources/views/filament/shop/**/*';
+@source '../../../../packages/bike-rentals/src/Filament/Resources/Reservations/**/*';
 @source inline('{bg-,text-,border-}brand-primary-{50,{100..900..100},950}');
 @source inline('{bg-,text-,border-}brand-gray-{50,{100..900..100},950}');
 

@@ -3,7 +3,7 @@
 namespace Embiken\BikeRentals\Filament\Resources\Reservations;
 
 use App\Filament\Concerns\RequiresTenantModule;
-use App\Filament\Shop\Support\ShopSetupReadiness;
+use App\Filament\Shop\Concerns\HasIncompleteBookSetupBadge;
 use BackedEnum;
 use Embiken\BikeRentals\Filament\Resources\Reservations\Pages\EditReservation;
 use Embiken\BikeRentals\Filament\Resources\Reservations\Pages\ListReservations;
@@ -22,6 +22,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class ReservationResource extends Resource
 {
+    use HasIncompleteBookSetupBadge;
     use RequiresTenantModule;
 
     public static function tenantModuleId(): string
@@ -68,27 +69,6 @@ class ReservationResource extends Resource
     public static function canDelete(Model $record): bool
     {
         return false;
-    }
-
-    public static function getNavigationBadge(): ?string
-    {
-        return app(ShopSetupReadiness::class)->nextIncompleteSetupStep() === null
-            ? null
-            : 'Book setup';
-    }
-
-    public static function getNavigationBadgeTooltip(): ?string
-    {
-        $step = app(ShopSetupReadiness::class)->nextIncompleteSetupStep();
-
-        return $step === null
-            ? null
-            : 'Online Book setup is incomplete. Next: '.$step['label'].'. '.$step['tooltip'];
-    }
-
-    public static function getNavigationBadgeColor(): string|array|null
-    {
-        return 'info';
     }
 
     public static function getPages(): array

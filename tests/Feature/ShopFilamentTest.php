@@ -12,6 +12,9 @@ use App\Models\LocationHour;
 use App\Models\ShopSetting;
 use App\Models\Staff;
 use App\Notifications\SetPasswordNotification;
+use Embiken\BikeFleet\Filament\Resources\BikeCategories\BikeCategoryResource;
+use Embiken\BikeFleet\Filament\Resources\ServiceRequests\Pages\ListServiceRequests;
+use Embiken\BikeFleet\Filament\Resources\ServiceRequests\ServiceRequestResource;
 use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeFleet\Models\BikeCategory;
 use Embiken\BikeFleet\Models\BikeModel;
@@ -26,6 +29,7 @@ use Filament\Support\Colors\Color;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\HtmlString;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Tests\Concerns\MigratesTenantSchema;
@@ -188,18 +192,40 @@ test('reservations remain available and point managers to incomplete Book setup'
     $this->actingAs($staff, 'staff');
 
     expect(ReservationResource::canCreate())->toBeFalse()
-        ->and(ReservationResource::getNavigationBadge())->toBe('Book setup')
-        ->and(ReservationResource::getNavigationBadgeColor())->toBe('info')
+        ->and(ReservationResource::getNavigationBadge())->toBe('⚠️ Setup incomplete')
+        ->and(ReservationResource::getNavigationBadgeColor())->toBe('warning')
         ->and(ReservationResource::getNavigationBadgeTooltip())->toContain('Bike categories');
 
     $page = new ListReservations;
     $headerActions = (new ReflectionMethod(ListReservations::class, 'getHeaderActions'))
         ->invoke($page);
+    $subheading = $page->getSubheading();
 
-    expect($page->getSubheading())
-        ->toBe('Online Book setup is incomplete. Next: Add a bike category.')
+    expect($subheading)
+        ->toBeInstanceOf(HtmlString::class)
+        ->and($subheading->toHtml())
+        ->toContain('Online Book setup is incomplete. Next: ')
+        ->toContain('href="'.BikeCategoryResource::getUrl('create').'?setup_target=bike_categories"')
+        ->toContain('>Add a bike category</a>')
         ->and($headerActions)->toHaveCount(1)
         ->and($headerActions[0]->getUrl())->toContain('setup_target=bike_categories');
+
+    $serviceRequestPage = new ListServiceRequests;
+    $serviceRequestHeaderActions = (new ReflectionMethod(ListServiceRequests::class, 'getHeaderActions'))
+        ->invoke($serviceRequestPage);
+    $serviceRequestSubheading = $serviceRequestPage->getSubheading();
+
+    expect(ServiceRequestResource::getNavigationBadge())->toBe('⚠️ Setup incomplete')
+        ->and(ServiceRequestResource::getNavigationBadgeColor())->toBe('warning')
+        ->and(ServiceRequestResource::getNavigationBadgeTooltip())->toContain('Bike categories')
+        ->and($serviceRequestSubheading)->toBeInstanceOf(HtmlString::class)
+        ->and($serviceRequestSubheading->toHtml())
+        ->toContain('Online Book setup is incomplete. Next: ')
+        ->toContain('href="'.BikeCategoryResource::getUrl('create').'?setup_target=bike_categories"')
+        ->toContain('>Add a bike category</a>')
+        ->and($serviceRequestHeaderActions)->toHaveCount(2)
+        ->and($serviceRequestHeaderActions[0]->getName())->toBe('create')
+        ->and($serviceRequestHeaderActions[1]->getUrl())->toContain('setup_target=bike_categories');
 });
 
 test('reservations stop showing the Book setup cue when the checklist is complete', function () {
@@ -223,11 +249,21 @@ test('reservations stop showing the Book setup cue when the checklist is complet
     $page = new ListReservations;
     $headerActions = (new ReflectionMethod(ListReservations::class, 'getHeaderActions'))
         ->invoke($page);
+    $serviceRequestPage = new ListServiceRequests;
+    $serviceRequestHeaderActions = (new ReflectionMethod(ListServiceRequests::class, 'getHeaderActions'))
+        ->invoke($serviceRequestPage);
 
     expect(ReservationResource::getNavigationBadge())->toBeNull()
+        ->and(ReservationResource::getNavigationBadgeColor())->toBeNull()
         ->and(ReservationResource::getNavigationBadgeTooltip())->toBeNull()
         ->and($page->getSubheading())->toBeNull()
-        ->and($headerActions)->toBeEmpty();
+        ->and($headerActions)->toBeEmpty()
+        ->and(ServiceRequestResource::getNavigationBadge())->toBeNull()
+        ->and(ServiceRequestResource::getNavigationBadgeColor())->toBeNull()
+        ->and(ServiceRequestResource::getNavigationBadgeTooltip())->toBeNull()
+        ->and($serviceRequestPage->getSubheading())->toBeNull()
+        ->and($serviceRequestHeaderActions)->toHaveCount(1)
+        ->and($serviceRequestHeaderActions[0]->getName())->toBe('create');
 });
 
 test('shop filament cannot edit or delete the platform manager', function () {

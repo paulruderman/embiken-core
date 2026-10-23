@@ -209,7 +209,7 @@ it('shows the setup checklist and marks incomplete navigation resources', functi
         ->assertDontSee('Bookable bike')
         ->assertSee('0 of 8 complete');
 
-    expect(BikeCategoryResource::getNavigationBadge())->toBe('Ready')
+    expect(BikeCategoryResource::getNavigationBadge())->toBe('Set up now →')
         ->and(BikeModelResource::getNavigationBadge())->toBe('Waiting')
         ->and(BikeCategoryResource::getNavigationBadgeColor())->toBe('warning')
         ->and(BikeModelResource::getNavigationBadgeColor())->toBe('info')

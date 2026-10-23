@@ -2,12 +2,17 @@
 import { Head } from '@inertiajs/vue3';
 
 defineProps<{
-    bookingNotices: Array<{ message: string; tone: 'info' | 'success' | 'warning' }>;
+    bookingNotices: Array<{
+        message: string;
+        tone: 'info' | 'success' | 'warning';
+    }>;
 }>();
 </script>
 
 <template>
-    <div class="flex min-h-screen flex-col items-center justify-center bg-zinc-50 p-6 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
+    <div
+        class="flex min-h-screen flex-col items-center justify-center bg-zinc-50 p-6 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100"
+    >
         <Head title="Book" />
         <main class="max-w-md text-center">
             <h1 class="text-2xl font-medium tracking-tight">Book</h1>
@@ -20,9 +25,12 @@ defineProps<{
                     :key="index"
                     class="rounded-xl border px-4 py-3 text-sm leading-6"
                     :class="{
-                        'border-sky-200 bg-sky-50 text-sky-950 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-100': notice.tone === 'info',
-                        'border-emerald-200 bg-emerald-50 text-emerald-950 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-100': notice.tone === 'success',
-                        'border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100': notice.tone === 'warning',
+                        'border-sky-200 bg-sky-50 text-sky-950 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-100':
+                            notice.tone === 'info',
+                        'border-emerald-200 bg-emerald-50 text-emerald-950 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-100':
+                            notice.tone === 'success',
+                        'border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100':
+                            notice.tone === 'warning',
                     }"
                 >
                     {{ notice.message }}

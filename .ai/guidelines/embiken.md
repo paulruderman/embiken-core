@@ -52,6 +52,10 @@ Auth: platform **Users** (central DB, one admin class). The first User is Artisa
 
 Never hand-edit `AGENTS.md`, `CLAUDE.md`, or `.ai/rules/boost/**`. Always-on law goes in `.ai/guidelines/embiken.md`, then `php artisan boost:update --no-discover --no-interaction`. Path-scoped law via Boost `record-rule`. Do not duplicate essays. `CONTEXT.md` is the glossary (what a word means, `_Avoid_`); this file is law (must / must-not). Open `CONTEXT.md` for names before using domain words. Do not paste the glossary here or put law in `CONTEXT.md`.
 
+## Verification after code changes
+
+After code changes, run the relevant tests and PHPStan before reporting completion. For changes that may affect broader behavior, run the full test suite. If a required command cannot run, report why and what remains unverified.
+
 ## Issues
 
 GitHub Issues on `paulruderman/embiken-core` via `gh`.

@@ -20,6 +20,7 @@ use Embiken\BikeRentals\Filament\Resources\RentalPackages\RentalPackageResource;
 use Embiken\BikeRentals\Models\RentalPackage;
 use Filament\Actions\Action;
 use Filament\Tables\Table;
+use Illuminate\Support\Str;
 
 class ShopSetupReadiness
 {
@@ -349,7 +350,10 @@ class ShopSetupReadiness
         } elseif ($blocker !== null) {
             $actionUrl = $blocker['action_url'];
             $actionLabel = $blocker['action_label'];
-            $status = 'Waiting on '.$blocker['label'];
+            $blockerLabel = $blocker['label'] === 'Opening hours'
+                ? 'opening hours'
+                : Str::lower(Str::singular($blocker['label']));
+            $status = 'Pending '.$blockerLabel.' setup';
             $tooltip = 'Set up '.$blocker['label'].' first.';
         } else {
             $actionUrl = $definition['action_url']();

@@ -38,12 +38,6 @@ class BikeModelVariantForm
                 TextInput::make('max_ideal_rider_height')
                     ->numeric()
                     ->minValue(0),
-                TextInput::make('min_extended_rider_height')
-                    ->numeric()
-                    ->minValue(0),
-                TextInput::make('max_extended_rider_height')
-                    ->numeric()
-                    ->minValue(0),
                 FileUpload::make('photo')
                     ->image()
                     ->directory('bike-variants'),

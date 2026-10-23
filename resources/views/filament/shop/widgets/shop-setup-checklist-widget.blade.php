@@ -60,7 +60,7 @@
                         wire:model.live="showOnlyReady"
                         class="rounded border-gray-300 text-primary-600 shadow-sm focus:ring-primary-600 dark:border-white/20 dark:bg-gray-900"
                     />
-                    <span>Show only steps ready to set up now</span>
+                    <span>Only show next setup steps</span>
                 </label>
 
                 @if ($sections === [])

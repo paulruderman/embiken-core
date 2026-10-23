@@ -6,11 +6,13 @@ use App\Filament\Shop\Support\ShopSetupReadiness;
 
 trait HasIncompleteBookSetupBadge
 {
+    use MutesSetupRequiredNavigation;
+
     public static function getNavigationBadge(): ?string
     {
         return app(ShopSetupReadiness::class)->nextIncompleteSetupStep() === null
             ? null
-            : '⚠️ Setup incomplete';
+            : '⚠️ Pending';
     }
 
     public static function getNavigationBadgeTooltip(): ?string

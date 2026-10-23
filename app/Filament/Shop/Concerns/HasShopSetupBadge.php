@@ -6,6 +6,8 @@ use App\Filament\Shop\Support\ShopSetupReadiness;
 
 trait HasShopSetupBadge
 {
+    use MutesSetupRequiredNavigation;
+
     abstract protected static function shopSetupBadgeStep(): string;
 
     public static function getNavigationBadge(): ?string
@@ -16,7 +18,7 @@ trait HasShopSetupBadge
             return null;
         }
 
-        return $step['blocked'] ? 'Waiting' : 'Set up now →';
+        return $step['blocked'] ? '⚠️ Pending' : 'Set up now →';
     }
 
     public static function getNavigationBadgeTooltip(): ?string
@@ -28,6 +30,6 @@ trait HasShopSetupBadge
     {
         $step = app(ShopSetupReadiness::class)->step(static::shopSetupBadgeStep());
 
-        return $step['blocked'] ? 'info' : 'warning';
+        return $step['blocked'] ? 'warning' : 'success';
     }
 }

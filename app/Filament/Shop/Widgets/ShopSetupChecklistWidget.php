@@ -7,7 +7,7 @@ use Filament\Widgets\Widget;
 
 class ShopSetupChecklistWidget extends Widget
 {
-    public bool $showOnlyReady = false;
+    public bool $showOnlyReady = true;
 
     protected static ?int $sort = -2;
 

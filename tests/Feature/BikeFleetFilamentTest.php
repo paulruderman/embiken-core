@@ -26,6 +26,7 @@ use Embiken\BikeRentals\Filament\Resources\RentalPackages\Pages\CreateRentalPack
 use Embiken\BikeRentals\Filament\Resources\RentalPackages\RentalPackageResource;
 use Embiken\BikeRentals\Models\RentalPackage;
 use Filament\Facades\Filament;
+use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
 use Tests\Concerns\MigratesTenantSchema;
 
@@ -131,7 +132,7 @@ it('continues Book offer setup through catalog prerequisites and into package se
         ->assertOk();
 });
 
-it('saves catalog display attributes and package copy from shop Filament', function () {
+it('keeps ideal rider height fields and removes the obsolete range from variants', function () {
     Livewire::test(CreateBikeCategory::class)
         ->assertSee('Choose a Tailwind color family')
         ->assertSee('red color family')
@@ -156,11 +157,14 @@ it('saves catalog display attributes and package copy from shop Filament', funct
     $model = BikeModel::query()->firstOrFail();
 
     Livewire::test(CreateBikeModelVariant::class)
+        ->assertDontSee('Extended Rider Height')
         ->fillForm([
             'bike_model_id' => $model->getKey(),
             'size' => 'Medium',
             'color_name' => 'Ocean blue',
             'color_value' => '#225577',
+            'min_ideal_rider_height' => 160,
+            'max_ideal_rider_height' => 180,
         ])
         ->call('create')
         ->assertHasNoErrors();
@@ -180,8 +184,22 @@ it('saves catalog display attributes and package copy from shop Filament', funct
 
     expect($category->fresh()->interface_color)->toBe('blue')
         ->and($model->fresh()->manufacturer)->toBe('Example Cycles')
-        ->and(BikeModelVariant::query()->firstOrFail()->only(['color_name', 'color_value']))
-        ->toBe(['color_name' => 'Ocean blue', 'color_value' => '#225577'])
+        ->and(BikeModelVariant::query()->firstOrFail()->only([
+            'color_name',
+            'color_value',
+            'min_ideal_rider_height',
+            'max_ideal_rider_height',
+        ]))
+        ->toBe([
+            'color_name' => 'Ocean blue',
+            'color_value' => '#225577',
+            'min_ideal_rider_height' => 160,
+            'max_ideal_rider_height' => 180,
+        ])
+        ->and(Schema::hasColumn('bike_model_variants', 'min_ideal_rider_height'))->toBeTrue()
+        ->and(Schema::hasColumn('bike_model_variants', 'max_ideal_rider_height'))->toBeTrue()
+        ->and(Schema::hasColumn('bike_model_variants', 'min_extended_rider_height'))->toBeFalse()
+        ->and(Schema::hasColumn('bike_model_variants', 'max_extended_rider_height'))->toBeFalse()
         ->and(RentalPackage::query()->firstOrFail()->only(['tagline', 'blurb']))
         ->toBe([
             'tagline' => 'A bike for the whole day',
@@ -198,7 +216,7 @@ it('shows the setup checklist and marks incomplete navigation resources', functi
         ->assertSee('Bike categories')
         ->assertSee('Add a bike category')
         ->assertSee('Opening hours')
-        ->assertSee('Show only steps ready to set up now')
+        ->assertSee('Only show next setup steps')
         ->assertSee('0 of 8 complete')
         ->assertDontSee('Optional improvements');
 
@@ -213,9 +231,9 @@ it('shows the setup checklist and marks incomplete navigation resources', functi
         ->assertSee('0 of 8 complete');
 
     expect(BikeCategoryResource::getNavigationBadge())->toBe('Set up now →')
-        ->and(BikeModelResource::getNavigationBadge())->toBe('Waiting')
-        ->and(BikeCategoryResource::getNavigationBadgeColor())->toBe('warning')
-        ->and(BikeModelResource::getNavigationBadgeColor())->toBe('info')
+        ->and(BikeModelResource::getNavigationBadge())->toBe('⚠️ Pending')
+        ->and(BikeCategoryResource::getNavigationBadgeColor())->toBe('success')
+        ->and(BikeModelResource::getNavigationBadgeColor())->toBe('warning')
         ->and(BikeModelResource::getNavigationBadgeTooltip())->toBe('Set up Bike categories first.')
         ->and(app(ShopSetupReadiness::class)->step(ShopSetupReadiness::BikeModels)['next_step'])
         ->toBe(ShopSetupReadiness::BikeCategories)

@@ -18,8 +18,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $color_value
  * @property int|null $min_ideal_rider_height
  * @property int|null $max_ideal_rider_height
- * @property int|null $min_extended_rider_height
- * @property int|null $max_extended_rider_height
  * @property string|null $photo
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
@@ -31,8 +29,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'color_value',
     'min_ideal_rider_height',
     'max_ideal_rider_height',
-    'min_extended_rider_height',
-    'max_extended_rider_height',
     'photo',
 ])]
 class BikeModelVariant extends Model
@@ -55,8 +51,6 @@ class BikeModelVariant extends Model
         return [
             'min_ideal_rider_height' => 'integer',
             'max_ideal_rider_height' => 'integer',
-            'min_extended_rider_height' => 'integer',
-            'max_extended_rider_height' => 'integer',
         ];
     }
 

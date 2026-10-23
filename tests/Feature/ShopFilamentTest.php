@@ -192,7 +192,7 @@ test('reservations remain available and point managers to incomplete Book setup'
     $this->actingAs($staff, 'staff');
 
     expect(ReservationResource::canCreate())->toBeFalse()
-        ->and(ReservationResource::getNavigationBadge())->toBe('⚠️ Setup incomplete')
+        ->and(ReservationResource::getNavigationBadge())->toBe('⚠️ Pending')
         ->and(ReservationResource::getNavigationBadgeColor())->toBe('warning')
         ->and(ReservationResource::getNavigationBadgeTooltip())->toContain('Bike categories');
 
@@ -215,7 +215,7 @@ test('reservations remain available and point managers to incomplete Book setup'
         ->invoke($serviceRequestPage);
     $serviceRequestSubheading = $serviceRequestPage->getSubheading();
 
-    expect(ServiceRequestResource::getNavigationBadge())->toBe('⚠️ Setup incomplete')
+    expect(ServiceRequestResource::getNavigationBadge())->toBe('⚠️ Pending')
         ->and(ServiceRequestResource::getNavigationBadgeColor())->toBe('warning')
         ->and(ServiceRequestResource::getNavigationBadgeTooltip())->toContain('Bike categories')
         ->and($serviceRequestSubheading)->toBeInstanceOf(HtmlString::class)

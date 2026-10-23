@@ -204,8 +204,6 @@ class SeedFakeTenantAction extends Action
                         'size' => $size,
                         'min_ideal_rider_height' => 140,
                         'max_ideal_rider_height' => 190,
-                        'min_extended_rider_height' => 130,
-                        'max_extended_rider_height' => 200,
                     ]);
 
                     $variants[] = $variant;

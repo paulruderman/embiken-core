@@ -6,6 +6,11 @@
 @source inline('{bg-,text-,border-}brand-primary-{50,{100..900..100},950}');
 @source inline('{bg-,text-,border-}brand-gray-{50,{100..900..100},950}');
 
+.setup-required-navigation-item > .fi-sidebar-item-btn > .fi-sidebar-item-icon,
+.setup-required-navigation-item > .fi-sidebar-item-btn > .fi-sidebar-item-label {
+    @apply opacity-20;
+}
+
 @theme inline {
     --color-brand-primary-50: var(--tenant-brand-primary-50);
     --color-brand-primary-100: var(--tenant-brand-primary-100);

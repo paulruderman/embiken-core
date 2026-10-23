@@ -21,6 +21,15 @@ class ServiceRequestsTable
                 TextColumn::make('description')
                     ->limit(40)
                     ->searchable(),
+                TextColumn::make('latestEntry.notes')
+                    ->label('Latest work')
+                    ->limit(40)
+                    ->placeholder('No work logged yet'),
+                TextColumn::make('latestEntry.created_at')
+                    ->label('Last worked')
+                    ->dateTime()
+                    ->placeholder('—')
+                    ->toggleable(),
                 TextColumn::make('stage')
                     ->badge(),
                 IconColumn::make('blocks_usage')

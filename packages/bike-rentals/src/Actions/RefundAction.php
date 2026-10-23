@@ -68,7 +68,7 @@ class RefundAction extends Action
     {
         $this->initializeTenancyFromCommand($command);
         $transaction = $this->handle(
-            Reservation::query()->findOrFail($command->argument('reservation') ?: \Laravel\Prompts\text('Reservation id')),
+            $this->findOneOrFail(Reservation::query(), $command->argument('reservation') ?: \Laravel\Prompts\text('Reservation id')),
             (int) ($command->argument('amount') ?: \Laravel\Prompts\text('Amount cents')),
             $command->option('note') ?: null,
         );

@@ -29,6 +29,9 @@ class ShowWeatherPrototypeAction extends Action
         return $this->reader->snapshot();
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function asController(): array
     {
         return $this->handle();

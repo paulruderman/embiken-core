@@ -42,7 +42,7 @@ class ReleaseLineAction extends Action
     public function asCommand(Command $command): int
     {
         $this->initializeTenancyFromCommand($command);
-        $this->handle(BikeReservation::query()->findOrFail($command->argument('line') ?: \Laravel\Prompts\text('Line id')));
+        $this->handle($this->findOneOrFail(BikeReservation::query(), $command->argument('line') ?: \Laravel\Prompts\text('Line id')));
         $command->info('Released.');
 
         return self::SUCCESS;

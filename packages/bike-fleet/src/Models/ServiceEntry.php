@@ -3,12 +3,12 @@
 namespace Embiken\BikeFleet\Models;
 
 use App\Models\Staff;
+use Carbon\CarbonImmutable;
 use Embiken\BikeFleet\Database\Factories\ServiceEntryFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -16,10 +16,10 @@ use Illuminate\Support\Carbon;
  * @property int|null $staff_id
  * @property string|null $notes
  * @property int|null $labor_minutes
- * @property Carbon|null $work_started_at
- * @property Carbon|null $work_completed_at
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property CarbonImmutable|null $work_started_at
+ * @property CarbonImmutable|null $work_completed_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
  */
 #[Fillable([
     'service_request_id',

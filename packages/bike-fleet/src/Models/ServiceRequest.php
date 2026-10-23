@@ -3,6 +3,7 @@
 namespace Embiken\BikeFleet\Models;
 
 use App\Models\Staff;
+use Carbon\CarbonImmutable;
 use Embiken\BikeFleet\Database\Factories\ServiceRequestFactory;
 use Embiken\BikeFleet\Enums\ServiceStage;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -11,7 +12,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -19,14 +19,14 @@ use Illuminate\Support\Carbon;
  * @property string $description
  * @property ServiceStage $stage
  * @property bool $blocks_usage
- * @property Carbon|null $starts_at
- * @property Carbon|null $ends_at
+ * @property CarbonImmutable|null $starts_at
+ * @property CarbonImmutable|null $ends_at
  * @property int|null $created_by
  * @property int|null $assigned_to
  * @property int|null $resolved_by
- * @property Carbon|null $resolved_at
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property CarbonImmutable|null $resolved_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
  */
 #[Fillable([
     'bike_id',

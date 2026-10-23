@@ -41,7 +41,7 @@ class AcceptWaiverAction extends Action
     public function asCommand(Command $command): int
     {
         $this->initializeTenancyFromCommand($command);
-        $this->handle(Reservation::query()->findOrFail($command->argument('reservation') ?: \Laravel\Prompts\text('Reservation id')));
+        $this->handle($this->findOneOrFail(Reservation::query(), $command->argument('reservation') ?: \Laravel\Prompts\text('Reservation id')));
         $command->info('Waiver accepted.');
 
         return self::SUCCESS;

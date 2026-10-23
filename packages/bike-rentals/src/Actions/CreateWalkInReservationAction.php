@@ -110,7 +110,7 @@ class CreateWalkInReservationAction extends Action
             $data['name'] ?? 'Walk-in',
             $data['email'] ?? 'walk-in-'.Str::lower(Str::random(8)).'@desk.local',
             $data['phone'] ?? '0000000000',
-            isset($data['bike_id']) ? Bike::query()->findOrFail($data['bike_id']) : null,
+            isset($data['bike_id']) ? $this->findOneOrFail(Bike::query(), $data['bike_id']) : null,
         );
 
         $bikes = $reservation->bikeReservations->pluck('bike')->filter();
@@ -133,7 +133,7 @@ class CreateWalkInReservationAction extends Action
             (string) ($command->option('name') ?: 'Walk-in'),
             (string) ($command->option('email') ?: 'walk-in-'.Str::lower(Str::random(8)).'@desk.local'),
             (string) ($command->option('phone') ?: '0000000000'),
-            $command->option('bike') ? Bike::query()->findOrFail($command->option('bike')) : null,
+            $command->option('bike') ? $this->findOneOrFail(Bike::query(), $command->option('bike')) : null,
         );
         $command->info("Walk-in {$reservation->id}");
 

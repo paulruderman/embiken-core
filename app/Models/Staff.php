@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\StaffRole;
+use Carbon\CarbonImmutable;
 use Database\Factories\StaffFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
@@ -12,7 +13,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -23,8 +23,8 @@ use Illuminate\Support\Carbon;
  * @property StaffRole $role
  * @property bool $is_platform_manager
  * @property string|null $remember_token
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
  */
 #[Fillable(['location_id', 'name', 'email', 'password', 'role', 'is_platform_manager'])]
 #[Hidden(['password', 'remember_token'])]

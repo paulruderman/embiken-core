@@ -4,6 +4,9 @@ namespace App\Actions;
 
 use App\Models\Tenant;
 use Illuminate\Console\Command;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use InvalidArgumentException;
 use Lorisleiva\Actions\Concerns\AsAction;
 use RuntimeException;
 
@@ -14,6 +17,21 @@ abstract class Action
     public const SUCCESS = Command::SUCCESS;
 
     public const FAILURE = Command::FAILURE;
+
+    /**
+     * @template TModel of Model
+     *
+     * @param  Builder<TModel>  $query
+     * @return TModel
+     */
+    protected function findOneOrFail(Builder $query, mixed $id): Model
+    {
+        if (! is_int($id) && ! is_string($id)) {
+            throw new InvalidArgumentException('A model key must be an integer or string.');
+        }
+
+        return $query->whereKey($id)->firstOrFail();
+    }
 
     protected function resolveTenant(string $tenant): Tenant
     {
@@ -47,11 +65,16 @@ abstract class Action
     {
         $tenants = Tenant::query()->with('domains')->orderBy('name')->get();
 
-        if ($tenants->isEmpty()) {
+        if (count($tenants) === 0) {
             throw new RuntimeException('No tenants exist.');
         }
 
-        $options = $tenants->mapWithKeys(function (Tenant $tenant): array {
+        $options = $tenants->mapWithKeys(function (Model $model): array {
+            if (! $model instanceof Tenant) {
+                throw new RuntimeException('The tenant query returned an unexpected model type.');
+            }
+
+            $tenant = $model;
             $domain = $tenant->domains->first()?->domain;
             $label = $domain === null ? $tenant->name : "{$tenant->name} ({$domain})";
 

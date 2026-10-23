@@ -93,7 +93,7 @@ class PickupAction extends Action
     public function asCommand(Command $command): int
     {
         $this->initializeTenancyFromCommand($command);
-        $line = $this->handle(BikeReservation::query()->findOrFail($command->argument('line') ?: \Laravel\Prompts\text('Line id')));
+        $line = $this->handle($this->findOneOrFail(BikeReservation::query(), $command->argument('line') ?: \Laravel\Prompts\text('Line id')));
         $command->info("Picked up line {$line->id}");
 
         return self::SUCCESS;

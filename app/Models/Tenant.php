@@ -3,11 +3,11 @@
 namespace App\Models;
 
 use App\Support\ModuleRegistry;
+use Carbon\CarbonImmutable;
 use Database\Factories\TenantFactory;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Carbon;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\Concerns\HasDatabase;
 use Stancl\Tenancy\Database\Concerns\HasDomains;
@@ -18,13 +18,13 @@ use Stancl\Tenancy\Database\Models\Tenant as BaseTenant;
  * @property string $name
  * @property string|null $manager_name
  * @property string|null $manager_email
- * @property Carbon|null $suspended_at
+ * @property CarbonImmutable|null $suspended_at
  * @property string|null $stripe_connect_account_id
  * @property bool $charges_enabled
  * @property bool $transfers_active
  * @property list<string>|null $modules
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
  * @property-read Collection<int, Domain> $domains
  */
 class Tenant extends BaseTenant implements TenantWithDatabase

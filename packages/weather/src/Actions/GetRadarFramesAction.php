@@ -30,6 +30,9 @@ class GetRadarFramesAction extends Action
         return $this->reader->radarFrames($source);
     }
 
+    /**
+     * @return array{source: string, frames: list<array{time: int, timeIso: string|null, path: string|null}>}
+     */
     public function asController(Request $request): array
     {
         $source = $request->query('source');
@@ -49,6 +52,9 @@ class GetRadarFramesAction extends Action
         ];
     }
 
+    /**
+     * @param  array{source: string, frames: list<array{time: int, timeIso: string|null, path: string|null}>}  $frames
+     */
     public function jsonResponse(array $frames): WeatherSnapshotResource
     {
         return new WeatherSnapshotResource($frames);

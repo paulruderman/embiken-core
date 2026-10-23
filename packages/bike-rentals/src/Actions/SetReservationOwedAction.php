@@ -50,7 +50,7 @@ class SetReservationOwedAction extends Action
     {
         $this->initializeTenancyFromCommand($command);
         $this->handle(
-            Reservation::query()->findOrFail($command->argument('reservation') ?: \Laravel\Prompts\text('Reservation id')),
+            $this->findOneOrFail(Reservation::query(), $command->argument('reservation') ?: \Laravel\Prompts\text('Reservation id')),
             (int) ($command->argument('owed') ?: \Laravel\Prompts\text('Owed cents')),
         );
         $command->info('Owed updated.');

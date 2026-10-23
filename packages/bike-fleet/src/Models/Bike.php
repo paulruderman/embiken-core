@@ -3,6 +3,7 @@
 namespace Embiken\BikeFleet\Models;
 
 use App\Models\Location;
+use Carbon\CarbonImmutable;
 use Embiken\BikeFleet\Database\Factories\BikeFactory;
 use Embiken\BikeFleet\Enums\BikeSituation;
 use Embiken\BikeFleet\Observers\BikeObserver;
@@ -12,7 +13,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -25,8 +25,8 @@ use Illuminate\Support\Carbon;
  * @property int|null $bike_situation_reservation_id
  * @property string|null $photo
  * @property string|null $damage_notes
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
  */
 #[Fillable([
     'location_id',

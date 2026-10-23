@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Embiken\Weather\Models;
 
+use Carbon\CarbonImmutable;
 use Embiken\Weather\Database\Factories\WeatherPeriodFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -15,8 +16,8 @@ use Illuminate\Support\Carbon;
 /**
  * @property int $id
  * @property int $weather_site_id
- * @property Carbon $starts_at
- * @property Carbon $ends_at
+ * @property CarbonImmutable $starts_at
+ * @property CarbonImmutable $ends_at
  * @property int|null $temperature_f
  * @property int|null $temperature_c
  * @property string|null $short_forecast
@@ -26,8 +27,8 @@ use Illuminate\Support\Carbon;
  * @property int|null $relative_humidity
  * @property string|null $icon
  * @property bool|null $is_daytime
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
  */
 #[Fillable([
     'weather_site_id',

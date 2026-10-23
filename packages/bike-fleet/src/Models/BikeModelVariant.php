@@ -2,6 +2,7 @@
 
 namespace Embiken\BikeFleet\Models;
 
+use Carbon\CarbonImmutable;
 use Embiken\BikeFleet\Database\Factories\BikeModelVariantFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -9,7 +10,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -22,8 +22,8 @@ use Illuminate\Support\Carbon;
  * @property int|null $min_extended_rider_height
  * @property int|null $max_extended_rider_height
  * @property string|null $photo
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
  */
 #[Fillable([
     'bike_model_id',

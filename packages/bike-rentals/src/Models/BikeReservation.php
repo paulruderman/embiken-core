@@ -2,6 +2,7 @@
 
 namespace Embiken\BikeRentals\Models;
 
+use Carbon\CarbonImmutable;
 use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeFleet\Models\BikeModelVariant;
 use Embiken\BikeRentals\Database\Factories\BikeReservationFactory;
@@ -11,7 +12,6 @@ use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\Pivot;
-use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -19,12 +19,12 @@ use Illuminate\Support\Carbon;
  * @property int $product_id
  * @property int|null $bike_id
  * @property BikeReservationStatus $status
- * @property Carbon|null $checked_out_at
- * @property Carbon|null $checked_in_at
+ * @property CarbonImmutable|null $checked_out_at
+ * @property CarbonImmutable|null $checked_in_at
  * @property int|null $rider_height_cm
  * @property string|null $rider_name
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
  */
 #[ObservedBy(BikeReservationObserver::class)]
 class BikeReservation extends Pivot

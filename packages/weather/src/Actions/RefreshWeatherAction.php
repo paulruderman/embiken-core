@@ -83,6 +83,9 @@ class RefreshWeatherAction extends Action
         return $this->handle($request->string('site')->toString() ?: null);
     }
 
+    /**
+     * @param  array{sites: list<array<string, mixed>>, settings: array{radar_source: string, stale_forecast_retention_minutes: int}}  $snapshot
+     */
     public function jsonResponse(array $snapshot): WeatherSnapshotResource
     {
         return new WeatherSnapshotResource($snapshot);

@@ -3,6 +3,7 @@
 namespace Embiken\BikeRentals\Models;
 
 use App\Models\Location;
+use Carbon\CarbonImmutable;
 use Embiken\BikeFleet\Models\BikeModelVariant;
 use Embiken\BikeRentals\Database\Factories\RentalPackageFactory;
 use Embiken\BikeRentals\Enums\ConfirmThreshold;
@@ -13,7 +14,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -30,8 +30,8 @@ use Illuminate\Support\Carbon;
  * @property int|null $max_duration_minutes
  * @property bool $book_visible
  * @property int $sort_order
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
  */
 #[Fillable([
     'location_id',

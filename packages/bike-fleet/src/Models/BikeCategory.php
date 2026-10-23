@@ -2,20 +2,20 @@
 
 namespace Embiken\BikeFleet\Models;
 
+use Carbon\CarbonImmutable;
 use Embiken\BikeFleet\Database\Factories\BikeCategoryFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
  * @property string $name
  * @property string|null $description
  * @property string|null $interface_color
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
  */
 #[Fillable(['name', 'description', 'interface_color'])]
 class BikeCategory extends Model

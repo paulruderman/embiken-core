@@ -52,8 +52,8 @@ class AllocateLineAction extends Action
         try {
             $line = $this->handle(
                 $reservation,
-                BikeModelVariant::query()->findOrFail($data['product_id']),
-                isset($data['bike_id']) ? Bike::query()->findOrFail($data['bike_id']) : null,
+                $this->findOneOrFail(BikeModelVariant::query(), $data['product_id']),
+                isset($data['bike_id']) ? $this->findOneOrFail(Bike::query(), $data['bike_id']) : null,
                 $data['rider_name'] ?? null,
                 isset($data['rider_height_cm']) ? (int) $data['rider_height_cm'] : null,
             );
@@ -78,9 +78,9 @@ class AllocateLineAction extends Action
     {
         $this->initializeTenancyFromCommand($command);
         $line = $this->handle(
-            Reservation::query()->findOrFail($command->argument('reservation') ?: \Laravel\Prompts\text('Reservation id')),
-            BikeModelVariant::query()->findOrFail($command->argument('product') ?: \Laravel\Prompts\text('Variant id')),
-            $command->option('bike') ? Bike::query()->findOrFail($command->option('bike')) : null,
+            $this->findOneOrFail(Reservation::query(), $command->argument('reservation') ?: \Laravel\Prompts\text('Reservation id')),
+            $this->findOneOrFail(BikeModelVariant::query(), $command->argument('product') ?: \Laravel\Prompts\text('Variant id')),
+            $command->option('bike') ? $this->findOneOrFail(Bike::query(), $command->option('bike')) : null,
             $command->option('rider-name') ?: null,
             $command->option('rider-height') !== null ? (int) $command->option('rider-height') : null,
         );

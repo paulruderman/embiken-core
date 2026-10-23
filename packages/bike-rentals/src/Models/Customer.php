@@ -2,13 +2,13 @@
 
 namespace Embiken\BikeRentals\Models;
 
+use Carbon\CarbonImmutable;
 use Embiken\BikeRentals\Database\Factories\CustomerFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -16,8 +16,8 @@ use Illuminate\Support\Carbon;
  * @property string $email
  * @property string $phone
  * @property string|null $remember_token
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
  */
 #[Fillable(['name', 'email', 'phone'])]
 #[Hidden(['remember_token'])]

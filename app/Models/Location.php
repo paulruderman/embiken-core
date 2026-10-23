@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\BikeAssignmentPolicy;
 use App\Enums\ReturnSituation;
+use Carbon\CarbonImmutable;
 use Database\Factories\LocationFactory;
 use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeRentals\Models\RentalPackage;
@@ -12,7 +13,6 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -22,8 +22,8 @@ use Illuminate\Support\Carbon;
  * @property int $minimum_turnaround_buffer_minutes
  * @property BikeAssignmentPolicy $bike_assignment_policy
  * @property ReturnSituation $return_situation
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
  */
 #[Fillable([
     'name',

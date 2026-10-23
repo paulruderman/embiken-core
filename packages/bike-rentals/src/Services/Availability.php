@@ -496,6 +496,7 @@ class Availability
      * Lock every line's availability rows in a stable order before a reservation
      * lifecycle transition writes to the reservation itself.
      *
+     * @param  list<Bike>  $additionalBikes
      * @return Collection<int, BikeReservation>
      */
     public function lockReservationLines(Reservation $reservation, array $additionalBikes = []): Collection

@@ -34,7 +34,7 @@ class ConsumeImpersonationAction extends Action
     public function asCommand(Command $command): int
     {
         $this->initializeTenancyFromCommand($command);
-        $this->handle(Staff::query()->findOrFail($command->argument('staff')));
+        $this->handle($this->findOneOrFail(Staff::query(), $command->argument('staff')));
         $command->info('Impersonation session started.');
 
         return self::SUCCESS;

@@ -59,7 +59,7 @@ class PutAwayAction extends Action
     public function asCommand(Command $command): int
     {
         $this->initializeTenancyFromCommand($command);
-        $bike = $this->handle(Bike::query()->findOrFail($command->argument('bike') ?: \Laravel\Prompts\text('Bike id')));
+        $bike = $this->handle($this->findOneOrFail(Bike::query(), $command->argument('bike') ?: \Laravel\Prompts\text('Bike id')));
         $command->info("Put away {$bike->bid}");
 
         return self::SUCCESS;

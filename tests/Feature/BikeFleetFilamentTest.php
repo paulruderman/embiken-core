@@ -5,6 +5,7 @@ use App\Filament\Shop\Widgets\ShopSetupChecklistWidget;
 use App\Models\Location;
 use App\Models\LocationHour;
 use App\Models\Staff;
+use Embiken\BikeFleet\Enums\ServiceStage;
 use Embiken\BikeFleet\Filament\Resources\BikeCategories\BikeCategoryResource;
 use Embiken\BikeFleet\Filament\Resources\BikeCategories\Pages\CreateBikeCategory;
 use Embiken\BikeFleet\Filament\Resources\BikeCategories\Pages\ListBikeCategories;
@@ -18,11 +19,13 @@ use Embiken\BikeFleet\Filament\Resources\Bikes\BikeResource;
 use Embiken\BikeFleet\Filament\Resources\Bikes\Pages\CreateBike;
 use Embiken\BikeFleet\Filament\Resources\Bikes\Pages\ListBikes;
 use Embiken\BikeFleet\Filament\Resources\ServiceRequests\Pages\CreateServiceRequest;
+use Embiken\BikeFleet\Filament\Resources\ServiceRequests\Pages\ListServiceRequests;
 use Embiken\BikeFleet\Filament\Resources\ServiceRequests\ServiceRequestResource;
 use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeFleet\Models\BikeCategory;
 use Embiken\BikeFleet\Models\BikeModel;
 use Embiken\BikeFleet\Models\BikeModelVariant;
+use Embiken\BikeFleet\Models\ServiceRequest;
 use Embiken\BikeRentals\Filament\Resources\RentalPackages\Pages\CreateRentalPackage;
 use Embiken\BikeRentals\Filament\Resources\RentalPackages\RentalPackageResource;
 use Embiken\BikeRentals\Models\RentalPackage;
@@ -100,6 +103,37 @@ it('rejects catalog colors outside the Tailwind families and six-digit HEX forma
         ->assertHasFormErrors(['interface_color']);
 
     expect(BikeCategory::query()->where('name', 'Invalid color category')->exists())->toBeFalse();
+});
+
+it('assigns an active service request to the signed-in Manager', function () {
+    $staff = Staff::factory()->create();
+    $this->actingAs($staff, 'staff');
+    $serviceRequest = ServiceRequest::factory()->create(['stage' => ServiceStage::InProgress]);
+
+    Livewire::test(ListServiceRequests::class)
+        ->callTableAction('assignToMe', $serviceRequest)
+        ->assertNotified('Service request assigned to you');
+
+    expect($serviceRequest->refresh()->assigned_to)->toBe($staff->getKey())
+        ->and($serviceRequest->stage)->toBe(ServiceStage::InProgress);
+});
+
+it('resolves selected active requests and records the resolving staff member', function () {
+    $staff = Staff::factory()->create();
+    $this->actingAs($staff, 'staff');
+    $active = ServiceRequest::factory()->create(['stage' => ServiceStage::Blocked]);
+    $cancelled = ServiceRequest::factory()->cancelled()->create();
+
+    Livewire::test(ListServiceRequests::class)
+        ->callTableBulkAction('resolveSelected', [$active, $cancelled])
+        ->assertNotified('1 service request(s) resolved');
+
+    expect($active->refresh()->stage)->toBe(ServiceStage::Resolved)
+        ->and($active->resolved_by)->toBe($staff->getKey())
+        ->and($active->resolved_at)->not->toBeNull()
+        ->and($cancelled->refresh()->stage)->toBe(ServiceStage::Cancelled)
+        ->and($active->bike->in_service)->toBeTrue()
+        ->and($active->entries()->count())->toBe(0);
 });
 
 it('continues Book offer setup through catalog prerequisites and into package setup', function () {

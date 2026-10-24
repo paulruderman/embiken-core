@@ -49,6 +49,19 @@ Route::middleware([
 
     Route::middleware([
         'auth:staff',
+        EnsureModuleEnabled::class.':embiken/bike-fleet',
+    ])->group(function (): void {
+        foreach (glob(base_path('packages/bike-fleet/src/Actions/*.php')) ?: [] as $file) {
+            $class = 'Embiken\\BikeFleet\\Actions\\'.basename($file, '.php');
+
+            if (is_callable([$class, 'routes'])) {
+                $class::routes(app('router'));
+            }
+        }
+    });
+
+    Route::middleware([
+        'auth:staff',
         EnsureModuleEnabled::class.':embiken/weather',
     ])->group(function (): void {
         foreach (glob(base_path('packages/weather/src/Actions/*.php')) ?: [] as $file) {

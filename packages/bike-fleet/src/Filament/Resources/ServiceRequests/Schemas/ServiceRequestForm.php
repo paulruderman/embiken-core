@@ -43,7 +43,11 @@ class ServiceRequestForm
                         return is_int($id) ? $id : (is_string($id) && ctype_digit($id) ? (int) $id : null);
                     }),
                 Select::make('assigned_to')
-                    ->options(fn (): array => Staff::query()->orderBy('name')->pluck('name', 'id')->all()),
+                    ->options(fn (): array => Staff::query()
+                        ->where('is_platform_manager', false)
+                        ->orderBy('name')
+                        ->pluck('name', 'id')
+                        ->all()),
             ]);
     }
 }

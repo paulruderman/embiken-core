@@ -22,12 +22,12 @@ class WeatherModule extends AbstractTenantModule
 
     public function label(): string
     {
-        return 'Weather';
+        return (string) __('app.modules.weather.label');
     }
 
     public function description(): string
     {
-        return 'Weather sites, NWS forecasts, and radar for shop displays.';
+        return (string) __('app.modules.weather.description');
     }
 
     public function viteAlias(): ?string
@@ -45,9 +45,9 @@ class WeatherModule extends AbstractTenantModule
         return [
             new SetupStepDefinition(
                 key: 'weather_sites',
-                label: 'Weather sites',
-                description: 'Add a weather site so Weather can display local forecasts and radar.',
-                actionLabel: 'Add a weather site',
+                label: (string) __('app.setup_steps.weather_sites.label'),
+                description: (string) __('app.setup_steps.weather_sites.description'),
+                actionLabel: (string) __('app.setup_steps.weather_sites.action'),
                 actionUrl: fn (): string => WeatherSiteResource::getUrl('create'),
                 isComplete: fn (): bool => WeatherSite::query()->enabled()->exists(),
             ),

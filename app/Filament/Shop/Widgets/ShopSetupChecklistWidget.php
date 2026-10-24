@@ -69,10 +69,12 @@ class ShopSetupChecklistWidget extends Widget
             'recommendations' => $completedCount === $totalCount && $totalCount > 0
                 ? $readiness->recommendations($this->moduleId)
                 : [],
-            'heading' => $module === null ? 'Set up your shop' : 'Set up '.$module->label(),
+            'heading' => $module === null
+                ? (string) __('app.setup_checklist.heading')
+                : (string) __('app.setup_checklist.module_heading', ['module' => $module->label()]),
             'description' => $module === null
-                ? 'Complete essential setup for all enabled modules.'
-                : 'Complete the essential setup for '.$module->label().'.',
+                ? (string) __('app.setup_checklist.description')
+                : (string) __('app.setup_checklist.module_description', ['module' => $module->label()]),
             'completedCount' => $completedCount,
             'totalCount' => $totalCount,
             'progressPercent' => $totalCount > 0 ? (int) round($completedCount / $totalCount * 100) : 0,

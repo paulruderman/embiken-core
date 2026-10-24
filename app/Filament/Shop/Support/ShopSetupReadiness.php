@@ -16,7 +16,6 @@ use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Tables\Table;
 use Illuminate\Support\HtmlString;
-use Illuminate\Support\Str;
 
 class ShopSetupReadiness
 {
@@ -174,10 +173,10 @@ class ShopSetupReadiness
             : $this->withSetupTarget($nextStep['action_url'], $setupTarget);
 
         return $notification
-            ->body('Next: '.$nextStep['label'].'.')
+            ->body((string) __('app.setup_checklist.next_step_notification', ['step' => $nextStep['label']]))
             ->actions([
                 Action::make('continueSetup')
-                    ->label('Continue setup')
+                    ->label((string) __('app.setup_checklist.continue'))
                     ->url($actionUrl),
             ]);
     }
@@ -238,7 +237,7 @@ class ShopSetupReadiness
                 ? []
                 : [
                     Action::make('continueSetup')
-                        ->label($step['blocked'] ? 'Continue setup' : $step['action_label'])
+                        ->label($step['blocked'] ? (string) __('app.setup_checklist.continue') : $step['action_label'])
                         ->url($step['action_url']),
                 ]);
     }
@@ -306,12 +305,12 @@ class ShopSetupReadiness
         }
 
         return [[
-            'label' => 'Add catalog photos',
-            'description' => 'Photos help customers recognize your bikes. Add them to bikes, variants, or models; bike photos take precedence when displaying an image.',
+            'label' => (string) __('app.setup_checklist.recommendations.catalog_photos.label'),
+            'description' => (string) __('app.setup_checklist.recommendations.catalog_photos.description'),
             'actions' => [
-                ['label' => 'Bikes', 'url' => BikeResource::getUrl('index')],
-                ['label' => 'Variants', 'url' => BikeModelVariantResource::getUrl('index')],
-                ['label' => 'Models', 'url' => BikeModelResource::getUrl('index')],
+                ['label' => (string) __('app.setup_checklist.recommendations.catalog_photos.bikes'), 'url' => BikeResource::getUrl('index')],
+                ['label' => (string) __('app.setup_checklist.recommendations.catalog_photos.variants'), 'url' => BikeModelVariantResource::getUrl('index')],
+                ['label' => (string) __('app.setup_checklist.recommendations.catalog_photos.models'), 'url' => BikeModelResource::getUrl('index')],
             ],
         ]];
     }
@@ -327,24 +326,22 @@ class ShopSetupReadiness
 
         if ($complete) {
             $actionUrl = null;
-            $actionLabel = 'Complete';
-            $status = 'Complete';
-            $tooltip = $definition['label'].' is set up.';
+            $actionLabel = (string) __('app.setup_checklist.complete_action');
+            $status = (string) __('app.setup_checklist.complete_status');
+            $tooltip = (string) __('app.setup_checklist.complete_tooltip', ['step' => $definition['label']]);
         } elseif ($blocker !== null) {
             $actionUrl = $blocker['action_url'];
             $actionLabel = $blocker['action_label'];
-            $blockerLabel = $blocker['label'] === 'Opening hours'
-                ? 'opening hours'
-                : Str::lower(Str::singular($blocker['label']));
-            $status = 'Pending '.$blockerLabel.' setup';
-            $tooltip = 'Set up '.$blocker['label'].' first.';
+            $blockerLabel = (string) __('app.setup_steps.'.$blocker['key'].'.short_label');
+            $status = (string) __('app.setup_checklist.pending_status', ['step' => $blockerLabel]);
+            $tooltip = (string) __('app.setup_checklist.pending_tooltip', ['step' => $blocker['label']]);
         } else {
             $actionUrl = $definition['action_url']();
             $actionLabel = is_string($definition['action_label'])
                 ? $definition['action_label']
                 : $definition['action_label']();
-            $status = 'Ready to set up';
-            $tooltip = 'Ready to set up. '.$definition['description'];
+            $status = (string) __('app.setup_checklist.ready_status');
+            $tooltip = (string) __('app.setup_checklist.ready_tooltip', ['description' => $definition['description']]);
         }
 
         if (! $complete && $actionUrl !== null) {

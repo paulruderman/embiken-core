@@ -30,12 +30,12 @@ class BikeFleetModule extends AbstractTenantModule
 
     public function label(): string
     {
-        return 'Fleet';
+        return (string) __('app.modules.bike_fleet.label');
     }
 
     public function description(): string
     {
-        return 'Catalog, bikes, and service.';
+        return (string) __('app.modules.bike_fleet.description');
     }
 
     public function viteAlias(): ?string
@@ -53,44 +53,44 @@ class BikeFleetModule extends AbstractTenantModule
         return [
             new SetupStepDefinition(
                 key: 'bike_categories',
-                label: 'Bike categories',
-                description: BikeCategory::SETUP_DESCRIPTION,
-                actionLabel: 'Add a bike category',
+                label: (string) __('app.setup_steps.bike_categories.label'),
+                description: (string) __('app.setup_steps.bike_categories.description'),
+                actionLabel: (string) __('app.setup_steps.bike_categories.action'),
                 actionUrl: fn (): string => BikeCategoryResource::getUrl('create'),
                 isComplete: fn (): bool => BikeCategory::query()->exists(),
             ),
             new SetupStepDefinition(
                 key: 'bike_models',
-                label: 'Bike models',
-                description: BikeModel::SETUP_DESCRIPTION,
-                actionLabel: 'Add a bike model',
+                label: (string) __('app.setup_steps.bike_models.label'),
+                description: (string) __('app.setup_steps.bike_models.description'),
+                actionLabel: (string) __('app.setup_steps.bike_models.action'),
                 actionUrl: fn (): string => BikeModelResource::getUrl('create'),
                 isComplete: fn (): bool => BikeModel::query()->exists(),
                 prerequisites: ['bike_categories'],
             ),
             new SetupStepDefinition(
                 key: 'bike_model_variants',
-                label: 'Bike model variants',
-                description: BikeModelVariant::SETUP_DESCRIPTION,
-                actionLabel: 'Add a bike model variant',
+                label: (string) __('app.setup_steps.bike_model_variants.label'),
+                description: (string) __('app.setup_steps.bike_model_variants.description'),
+                actionLabel: (string) __('app.setup_steps.bike_model_variants.action'),
                 actionUrl: fn (): string => BikeModelVariantResource::getUrl('create'),
                 isComplete: fn (): bool => BikeModelVariant::query()->exists(),
                 prerequisites: ['bike_models'],
             ),
             new SetupStepDefinition(
                 key: 'bikes',
-                label: 'Bikes',
-                description: Bike::SETUP_DESCRIPTION,
-                actionLabel: 'Add a bike',
+                label: (string) __('app.setup_steps.bikes.label'),
+                description: (string) __('app.setup_steps.bikes.description'),
+                actionLabel: (string) __('app.setup_steps.bikes.action'),
                 actionUrl: fn (): string => BikeResource::getUrl('create'),
                 isComplete: fn (): bool => Bike::query()->exists(),
                 prerequisites: ['bike_model_variants'],
             ),
             new SetupStepDefinition(
                 key: 'service_requests',
-                label: 'Service requests',
-                description: 'Create service requests to track maintenance work on bikes.',
-                actionLabel: 'Add a service request',
+                label: (string) __('app.setup_steps.service_requests.label'),
+                description: (string) __('app.setup_steps.service_requests.description'),
+                actionLabel: (string) __('app.setup_steps.service_requests.action'),
                 actionUrl: fn (): string => ServiceRequestResource::getUrl('create'),
                 isComplete: fn (): bool => Bike::query()->exists(),
                 prerequisites: ['bikes'],

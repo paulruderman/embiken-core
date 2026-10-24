@@ -69,11 +69,11 @@ class ShopPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Shop/Widgets'), for: 'App\Filament\Shop\Widgets')
             ->navigationGroups([
-                NavigationGroup::make()->label(fn (): string => __('app.navigation.fleet')),
-                NavigationGroup::make()->label(fn (): string => __('app.navigation.rentals')),
-                NavigationGroup::make()->label(fn (): string => __('app.navigation.online_book')),
-                NavigationGroup::make()->label(fn (): string => __('app.navigation.weather')),
-                NavigationGroup::make()->label(fn (): string => __('app.navigation.shop_settings')),
+                'Fleet' => NavigationGroup::make()->label(fn (): string => __('app.navigation.fleet')),
+                'Rentals' => NavigationGroup::make()->label(fn (): string => __('app.navigation.rentals')),
+                'Online Book' => NavigationGroup::make()->label(fn (): string => __('app.navigation.online_book')),
+                'Weather' => NavigationGroup::make()->label(fn (): string => __('app.navigation.weather')),
+                'Shop settings' => NavigationGroup::make()->label(fn (): string => __('app.navigation.shop_settings')),
             ])
             ->widgets([
                 AccountWidget::class,

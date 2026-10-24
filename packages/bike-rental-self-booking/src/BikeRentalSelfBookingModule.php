@@ -23,12 +23,12 @@ class BikeRentalSelfBookingModule extends AbstractTenantModule
 
     public function label(): string
     {
-        return 'Online Book';
+        return (string) __('app.modules.online_book.label');
     }
 
     public function description(): string
     {
-        return 'Online booking setup, Book-visible offers, and bookable bikes.';
+        return (string) __('app.modules.online_book.description');
     }
 
     public function dependencies(): array
@@ -49,8 +49,8 @@ class BikeRentalSelfBookingModule extends AbstractTenantModule
         return [
             new SetupStepDefinition(
                 key: 'book_offer',
-                label: 'Book offer',
-                description: 'A Book-visible package needs at least one variant and rate to offer bikes.',
+                label: (string) __('app.setup_steps.book_offer.label'),
+                description: (string) __('app.setup_steps.book_offer.description'),
                 actionLabel: fn (): string => $this->bookOfferActionLabel(),
                 actionUrl: fn (): string => $this->bookOfferActionUrl(),
                 isComplete: fn (): bool => RentalPackage::query()
@@ -61,8 +61,8 @@ class BikeRentalSelfBookingModule extends AbstractTenantModule
             ),
             new SetupStepDefinition(
                 key: 'bookable_fleet',
-                label: 'Bookable bike',
-                description: 'Book needs an in-service, self-bookable bike whose variant is included in a Book-visible package.',
+                label: (string) __('app.setup_steps.bookable_fleet.label'),
+                description: (string) __('app.setup_steps.bookable_fleet.description'),
                 actionLabel: fn (): string => $this->bookableFleetActionLabel(),
                 actionUrl: fn (): string => $this->bookableFleetActionUrl(),
                 isComplete: fn (): bool => RentalPackage::query()
@@ -81,12 +81,12 @@ class BikeRentalSelfBookingModule extends AbstractTenantModule
         $visiblePackage = RentalPackage::query()->where('book_visible', true)->first();
 
         if ($visiblePackage !== null) {
-            return 'Add package variants';
+            return (string) __('app.setup_steps.book_offer.actions.add_variants');
         }
 
         return RentalPackage::query()->exists()
-            ? 'Choose a Book-visible package'
-            : 'Create a rental package';
+            ? (string) __('app.setup_steps.book_offer.actions.choose_package')
+            : (string) __('app.setup_steps.book_offer.actions.create_package');
     }
 
     private function bookOfferActionUrl(): string
@@ -105,8 +105,8 @@ class BikeRentalSelfBookingModule extends AbstractTenantModule
     private function bookableFleetActionLabel(): string
     {
         return Bike::query()->where('in_service', true)->where('self_bookable', true)->exists()
-            ? 'Add bookable bike variants to a package'
-            : 'Review bikes';
+            ? (string) __('app.setup_steps.bookable_fleet.actions.add_variants')
+            : (string) __('app.setup_steps.bookable_fleet.actions.review_bikes');
     }
 
     private function bookableFleetActionUrl(): string

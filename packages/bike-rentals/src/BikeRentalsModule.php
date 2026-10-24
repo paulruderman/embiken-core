@@ -36,12 +36,12 @@ class BikeRentalsModule extends AbstractTenantModule
 
     public function label(): string
     {
-        return 'Rentals';
+        return (string) __('app.modules.bike_rentals.label');
     }
 
     public function description(): string
     {
-        return 'Reservations, packages, customers, and the Terminal floor.';
+        return (string) __('app.modules.bike_rentals.description');
     }
 
     public function registerApplication(): void
@@ -86,9 +86,9 @@ class BikeRentalsModule extends AbstractTenantModule
         if ($location !== null) {
             $steps[] = new SetupStepDefinition(
                 key: 'location_hours',
-                label: 'Opening hours',
-                description: Location::SETUP_DESCRIPTION,
-                actionLabel: 'Set opening hours',
+                label: (string) __('app.setup_steps.location_hours.label'),
+                description: (string) __('app.setup_steps.location_hours.description'),
+                actionLabel: (string) __('app.setup_steps.location_hours.action'),
                 actionUrl: fn (): string => LocationResource::getUrl('edit', ['record' => $location->getKey()]),
                 isComplete: fn (): bool => $location->hours()->exists(),
             );
@@ -96,9 +96,9 @@ class BikeRentalsModule extends AbstractTenantModule
 
         $steps[] = new SetupStepDefinition(
             key: 'rental_packages',
-            label: 'Rental packages',
-            description: RentalPackage::SETUP_DESCRIPTION,
-            actionLabel: 'Add a rental package',
+            label: (string) __('app.setup_steps.rental_packages.label'),
+            description: (string) __('app.setup_steps.rental_packages.description'),
+            actionLabel: (string) __('app.setup_steps.rental_packages.action'),
             actionUrl: fn (): string => RentalPackageResource::getUrl('create'),
             isComplete: fn (): bool => RentalPackage::query()->exists(),
         );

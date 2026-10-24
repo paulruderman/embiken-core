@@ -12,20 +12,20 @@
 
                 <div class="flex flex-col gap-1">
                     <p class="font-semibold text-success-950 dark:text-success-100">
-                        Your essential setup is complete
+                        {{ __('app.setup_checklist.success_heading') }}
                     </p>
                     <p class="text-sm text-success-800 dark:text-success-200">
-                        Your required shop configuration is complete. You can review the completed steps or continue with optional improvements below.
+                        {{ __('app.setup_checklist.success_description') }}
                     </p>
                     <p class="text-xs font-medium text-success-700 dark:text-success-300">
-                        {{ $completedCount }} of {{ $totalCount }} essential setup steps complete
+                        {{ __('app.setup_checklist.progress', ['completed' => $completedCount, 'total' => $totalCount]) }}
                     </p>
                 </div>
             </div>
 
             <details class="mt-4 rounded-xl border border-gray-200 dark:border-white/10">
                 <summary class="cursor-pointer px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-200">
-                    Review completed setup
+                    {{ __('app.setup_checklist.review_completed') }}
                 </summary>
 
                 <div class="flex flex-col gap-6 border-t border-gray-200 p-4 dark:border-white/10">
@@ -37,14 +37,14 @@
         @else
             <div class="mb-6 flex flex-col gap-2">
                 <div class="flex items-center justify-between gap-4 text-sm">
-                    <span class="font-medium text-gray-700 dark:text-gray-200">Required setup</span>
-                    <span class="text-gray-500 dark:text-gray-400">{{ $completedCount }} of {{ $totalCount }} complete</span>
+                    <span class="font-medium text-gray-700 dark:text-gray-200">{{ __('app.setup_checklist.required_setup') }}</span>
+                    <span class="text-gray-500 dark:text-gray-400">{{ __('app.setup_checklist.progress', ['completed' => $completedCount, 'total' => $totalCount]) }}</span>
                 </div>
 
                 <div
                     class="h-2 overflow-hidden rounded-full bg-gray-100 dark:bg-white/10"
                     role="progressbar"
-                    aria-label="Required shop setup progress"
+                    aria-label="{{ __('app.setup_checklist.progress_label') }}"
                     aria-valuemin="0"
                     aria-valuemax="{{ $totalCount }}"
                     aria-valuenow="{{ $completedCount }}"
@@ -60,12 +60,12 @@
                         wire:model.live="showOnlyReady"
                         class="rounded border-gray-300 text-primary-600 shadow-sm focus:ring-primary-600 dark:border-white/20 dark:bg-gray-900"
                     />
-                    <span>Only show next setup steps</span>
+                    <span>{{ __('app.setup_checklist.only_next_steps') }}</span>
                 </label>
 
                 @if ($sections === [])
                     <p class="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600 dark:border-white/10 dark:bg-white/5 dark:text-gray-300">
-                        No setup steps are ready right now. Complete a waiting step to unlock the next ones.
+                        {{ __('app.setup_checklist.empty_state') }}
                     </p>
                 @else
                     @foreach ($sections as $section)
@@ -78,8 +78,8 @@
         @if ($recommendations !== [])
             <div class="mt-6 border-t border-gray-200 pt-5 dark:border-white/10">
                 <div class="mb-4 flex flex-col gap-1">
-                    <h3 class="text-sm font-semibold text-gray-950 dark:text-white">Optional improvements</h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">These can help polish your customer experience, but they do not block your setup.</p>
+                    <h3 class="text-sm font-semibold text-gray-950 dark:text-white">{{ __('app.setup_checklist.optional_heading') }}</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('app.setup_checklist.optional_description') }}</p>
                 </div>
 
                 <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -87,7 +87,7 @@
                         <article class="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 dark:border-white/10 dark:bg-gray-900">
                             <div class="flex items-start justify-between gap-3">
                                 <h4 class="text-sm font-semibold text-gray-950 dark:text-white">{{ $recommendation['label'] }}</h4>
-                                <span class="shrink-0 rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600 dark:bg-white/5 dark:text-gray-300">Optional</span>
+                                <span class="shrink-0 rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600 dark:bg-white/5 dark:text-gray-300">{{ __('app.setup_checklist.optional_badge') }}</span>
                             </div>
 
                             <p class="text-sm text-gray-600 dark:text-gray-400">{{ $recommendation['description'] }}</p>

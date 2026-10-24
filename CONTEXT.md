@@ -89,6 +89,18 @@ _Avoid_: Reservation, rental, booking
 The work state of a service request: open, in progress, blocked, resolved, or cancelled. Blocked means work cannot proceed, not that the bike is occupied.
 _Avoid_: Workflow, mixing stage with `blocks_usage`
 
+**Service entry**:
+A record of work performed for one ServiceRequest.
+_Avoid_: maintenance schedule
+
+**Part**:
+A tenant-wide workshop catalog record selected when recording a part used on a service entry; each usage keeps a name, quantity, and unit snapshot.
+_Avoid_: installed component, inventory item
+
+**Installed component**:
+A particular item fitted to a Bike whose installation and removal history may matter, such as a battery or motor.
+_Avoid_: Part (the workshop catalog record)
+
 **Module**:
 An installed Composer tenant plugin under `packages/` (`embiken/*`). Enablement is per Tenant.
 _Avoid_: package as a RentalPackage, addon, Laravel package in general

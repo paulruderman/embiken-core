@@ -75,7 +75,7 @@ return [
         ],
         'reservation_stages' => [
             'provisional' => 'Provisional', 'confirmed' => 'Confirmed', 'cancelled' => 'Cancelled', 'out' => 'Out',
-            'returned' => 'Returned', 'completed' => 'Completed', 'no_show' => 'No show',
+            'returned' => 'Returned', 'completed' => 'Completed', 'no_show' => 'No Show',
         ],
         'reservation_stage_descriptions' => [
             'provisional' => 'Short checkout hold; not yet confirmed.', 'confirmed' => 'Confirmed and holding occupancy.',
@@ -126,12 +126,15 @@ return [
         'pending_badge' => 'Pending',
         'ready_badge' => 'Set up now →',
         'prerequisite_notification' => 'Complete this step before setting up :step.',
+        'prerequisite_callout' => 'Before continuing setup for :item, complete this step: :action.',
+        'incomplete_book_callout' => 'Online Book setup is incomplete. Next: :step.',
         'incomplete_book_tooltip' => 'Online Book setup is incomplete. Next: :step. :description',
         'pending_tooltip' => 'Set up :step first.',
         'ready_status' => 'Ready to set up',
         'ready_tooltip' => 'Ready to set up. :description',
         'continue' => 'Continue setup',
         'next_step_notification' => 'Next: :step.',
+        'next_step_link' => ' Next: :action.',
         'recommendations' => [
             'catalog_photos' => [
                 'label' => 'Add catalog photos',
@@ -220,7 +223,7 @@ return [
             'resolved_count' => '{1} :count service request resolved|[2,*] :count service requests resolved',
         ],
         'situations' => [
-            'home' => 'Home', 'prepping' => 'Prepping', 'staged' => 'Staged', 'rented_out' => 'Rented out', 'back' => 'Back',
+            'home' => 'Home', 'prepping' => 'Prepping', 'staged' => 'Staged', 'rented_out' => 'Rented Out', 'back' => 'Back',
         ],
         'situation_descriptions' => [
             'home' => 'At home base and available.', 'prepping' => 'Being prepped for a reservation.',

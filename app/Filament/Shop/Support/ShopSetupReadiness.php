@@ -224,9 +224,13 @@ class ShopSetupReadiness
         if ($step['blocked'] && $step['action_url'] !== null) {
             $description = new HtmlString(
                 e($description)
-                    .' Next: <a href="'.e($step['action_url']).'" wire:navigate class="font-medium text-primary-600 underline decoration-primary-300 underline-offset-2 hover:text-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 dark:text-primary-400 dark:hover:text-primary-300">'
-                    .e($step['action_label'])
-                    .'</a>.',
+                    .str_replace(
+                        ':action',
+                        '<a href="'.e($step['action_url']).'" wire:navigate class="font-medium text-primary-600 underline decoration-primary-300 underline-offset-2 hover:text-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 dark:text-primary-400 dark:hover:text-primary-300">'
+                            .e($step['action_label'])
+                            .'</a>',
+                        e((string) __('app.setup_checklist.next_step_link')),
+                    ),
             );
         }
 

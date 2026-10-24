@@ -126,12 +126,15 @@ return [
         'pending_badge' => 'En attente',
         'ready_badge' => 'Configurer →',
         'prerequisite_notification' => 'Terminez cette étape avant de configurer :step.',
+        'prerequisite_callout' => 'Avant de poursuivre la configuration des :item, terminez cette étape : :action.',
+        'incomplete_book_callout' => 'La configuration de la réservation en ligne est incomplète. Prochaine étape : :step.',
         'incomplete_book_tooltip' => 'La configuration de réservation en ligne est incomplète. Prochaine étape : :step. :description',
         'pending_tooltip' => 'Configurez d’abord :step.',
         'ready_status' => 'Prêt à configurer',
         'ready_tooltip' => 'Prêt à configurer. :description',
         'continue' => 'Continuer la configuration',
         'next_step_notification' => 'Prochaine étape : :step.',
+        'next_step_link' => ' Prochaine étape : :action.',
         'recommendations' => [
             'catalog_photos' => [
                 'label' => 'Ajouter des photos au catalogue',

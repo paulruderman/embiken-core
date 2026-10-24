@@ -164,7 +164,7 @@ it('resolves selected active requests and records the resolving staff member', f
 
     Livewire::test(ListServiceRequests::class)
         ->callTableBulkAction('resolveSelected', [$active, $cancelled])
-        ->assertNotified('1 service request(s) resolved');
+        ->assertNotified(trans_choice('app.fleet.notifications.resolved_count', 1, ['count' => 1]));
 
     expect($active->refresh()->stage)->toBe(ServiceStage::Resolved)
         ->and($active->resolved_by)->toBe($staff->getKey())
@@ -391,6 +391,31 @@ it('shows the setup checklist and marks incomplete navigation resources', functi
         ->toContain('setup_target=book_offer');
 });
 
+it('marks Bikes ready when the fleet is configured even if Book is incomplete', function () {
+    $location = Location::query()->firstOrFail();
+    $category = BikeCategory::factory()->create();
+    $model = BikeModel::factory()->for($category, 'bikeCategory')->create();
+    $variant = BikeModelVariant::factory()->for($model, 'bikeModel')->create();
+
+    Bike::factory()
+        ->for($location)
+        ->for($variant, 'variant')
+        ->create();
+
+    expect(app(ShopSetupReadiness::class)->step(ShopSetupReadiness::Bikes)['complete'])
+        ->toBeTrue()
+        ->and(app(ShopSetupReadiness::class)->step(ShopSetupReadiness::BookableFleet)['complete'])
+        ->toBeFalse()
+        ->and(BikeResource::getNavigationBadge())
+        ->toBeNull()
+        ->and(BikeResource::getNavigationBadgeColor())
+        ->toBeNull()
+        ->and(ReservationResource::getNavigationBadge())
+        ->toBe('⚠️ Pending')
+        ->and(ReservationResource::getNavigationBadgeColor())
+        ->toBe('warning');
+});
+
 it('shows missing customer-facing translations as an actionable setup step', function () {
     BikeCategory::factory()->create(['name' => 'City bikes', 'description' => null]);
 
@@ -537,7 +562,7 @@ it('acknowledges completed essentials and presents optional catalog improvements
 
     Livewire::test(ShopSetupChecklistWidget::class)
         ->assertSee('Your essential setup is complete')
-        ->assertSee('8 of 8 essential setup steps complete')
+        ->assertSee('8 of 8 complete')
         ->assertSee('Review completed setup')
         ->assertSee('Optional improvements')
         ->assertSee('Add catalog photos')

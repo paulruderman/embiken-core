@@ -25,9 +25,7 @@ class BikeResource extends Resource
 
     protected static function shopSetupBadgeStep(): string
     {
-        return app(ModuleRegistry::class)->isEnabled('embiken/bike-rental-self-booking')
-            ? ShopSetupReadiness::BookableFleet
-            : ShopSetupReadiness::Bikes;
+        return ShopSetupReadiness::Bikes;
     }
 
     public static function tenantModuleId(): string

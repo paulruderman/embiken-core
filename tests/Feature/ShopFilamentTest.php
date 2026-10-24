@@ -13,6 +13,7 @@ use App\Models\ShopSetting;
 use App\Models\Staff;
 use App\Notifications\SetPasswordNotification;
 use Embiken\BikeFleet\Filament\Resources\BikeCategories\BikeCategoryResource;
+use Embiken\BikeFleet\Filament\Resources\BikeModels\Pages\ListBikeModels;
 use Embiken\BikeFleet\Filament\Resources\ServiceRequests\Pages\ListServiceRequests;
 use Embiken\BikeFleet\Filament\Resources\ServiceRequests\ServiceRequestResource;
 use Embiken\BikeFleet\Models\Bike;
@@ -236,7 +237,7 @@ test('reservation and service request pages link to their relevant incomplete se
         ->and(ServiceRequestResource::getNavigationBadgeTooltip())->toContain('Bike categories')
         ->and($serviceRequestSubheading)->toBeInstanceOf(HtmlString::class)
         ->and($serviceRequestSubheading->toHtml())
-        ->toContain('Before adding service requests, complete this step: ')
+        ->toContain('Before continuing setup for service requests, complete this step: ')
         ->toContain('href="'.BikeCategoryResource::getUrl('create').'?setup_target=service_requests"')
         ->toContain('>Add a bike category</a>')
         ->and($serviceRequestHeaderActions)->toHaveCount(1)
@@ -245,10 +246,50 @@ test('reservation and service request pages link to their relevant incomplete se
 
     Livewire::test(ListServiceRequests::class)
         ->assertOk()
-        ->assertSee('Before adding service requests, complete this step:')
+        ->assertSee('Before continuing setup for service requests, complete this step:')
         ->assertSeeHtml('href="'.BikeCategoryResource::getUrl('create').'?setup_target=service_requests"')
         ->assertSee('Add a bike category')
         ->assertSee('Continue setup');
+});
+
+test('setup callouts and actions use the active locale', function () {
+    $staff = Staff::factory()->create();
+
+    $this->actingAs($staff, 'staff');
+    app()->setLocale('es');
+
+    $reservationPage = new ListReservations;
+    $reservationAction = (new ReflectionMethod(ListReservations::class, 'getHeaderActions'))
+        ->invoke($reservationPage)[0];
+    $serviceRequestPage = new ListServiceRequests;
+    $serviceRequestAction = (new ReflectionMethod(ListServiceRequests::class, 'getHeaderActions'))
+        ->invoke($serviceRequestPage)[0];
+
+    expect($reservationPage->getSubheading()->toHtml())
+        ->toContain('La configuración de Reservas en línea está incompleta. Siguiente paso: ')
+        ->toContain('>Añadir una categoría</a>')
+        ->and($reservationAction->getLabel())
+        ->toBe('Continuar configuración')
+        ->and($serviceRequestPage->getSubheading()->toHtml())
+        ->toContain('Antes de continuar con la configuración de solicitudes de servicio, completa este paso: ')
+        ->toContain('>Añadir una categoría</a>')
+        ->and($serviceRequestAction->getLabel())
+        ->toBe('Continuar configuración');
+
+    Livewire::test(ListBikeModels::class)
+        ->assertOk()
+        ->assertSee('Antes de continuar con la configuración de modelos de bicicleta, completa este paso:')
+        ->assertSee('Siguiente paso:')
+        ->assertSee('Añadir una categoría')
+        ->assertSee('Continuar configuración');
+
+    app()->setLocale('fr');
+
+    expect($reservationPage->getSubheading()->toHtml())
+        ->toContain('La configuration de la réservation en ligne est incomplète. Prochaine étape : ')
+        ->toContain('>Ajouter une catégorie</a>')
+        ->and($serviceRequestPage->getSubheading()->toHtml())
+        ->toContain('Avant de poursuivre la configuration des demandes de service, terminez cette étape : ');
 });
 
 test('service requests are available once a bike exists even when online booking setup is incomplete', function () {

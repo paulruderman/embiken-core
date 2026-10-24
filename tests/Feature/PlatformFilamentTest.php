@@ -52,7 +52,7 @@ test('a platform user can save a tenant with selected modules that include disab
     Livewire::test(EditTenant::class, ['record' => $tenant->getRouteKey()])
         ->assertSee('Prerequisites are selected automatically. Turn off dependent modules first to disable a required module.')
         ->assertSee('Online booking setup, Book-visible offers, and bookable bikes.')
-        ->assertSee('Required:')
+        ->assertSee('Requires:')
         ->assertSee('Rentals')
         ->fillForm([
             'name' => $tenant->name,

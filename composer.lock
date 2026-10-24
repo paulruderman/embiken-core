@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "6e646e06d172caf267d6d654379243a7",
+    "content-hash": "add817ed77db8ce47d68c6cf5cddafce",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -1453,6 +1453,41 @@
                 "proprietary"
             ],
             "description": "BRM importer for Embiken",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
+            "name": "embiken/maintenance",
+            "version": "dev-main",
+            "dist": {
+                "type": "path",
+                "url": "packages/maintenance",
+                "reference": "3f66c0c459884c362828aef2ee6e5972348bff48"
+            },
+            "require": {
+                "embiken/bike-fleet": "@dev",
+                "php": "^8.3"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Embiken\\Maintenance\\MaintenanceServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Embiken\\Maintenance\\": "src/",
+                    "Embiken\\Maintenance\\Database\\Factories\\": "database/factories/"
+                }
+            },
+            "license": [
+                "proprietary"
+            ],
+            "description": "Bike maintenance schedules and checklists for Embiken",
             "transport-options": {
                 "symlink": true,
                 "relative": true
@@ -14414,6 +14449,7 @@
         "embiken/bike-rental-self-booking": 20,
         "embiken/bike-rentals": 20,
         "embiken/brm": 20,
+        "embiken/maintenance": 20,
         "embiken/platform-landing-page": 20,
         "embiken/stripe-connect": 20,
         "embiken/weather": 20

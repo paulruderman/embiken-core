@@ -7,6 +7,7 @@ use Embiken\BikeFleet\Enums\BikeSituation;
 use Embiken\BikeFleet\Filament\Resources\Bikes\BikeResource;
 use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeFleet\Models\BikeCategory;
+use Embiken\BikeFleet\Models\BikeSpecification;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
@@ -27,6 +28,11 @@ class BikesTable
                 TextColumn::make('bid')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('serial_number')
+                    ->label('Serial number')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->placeholder('—'),
                 TextColumn::make('variant.bikeModel.name')
                     ->label('Model'),
                 TextColumn::make('variant.size')
@@ -40,6 +46,14 @@ class BikesTable
                     ->boolean(),
                 TextColumn::make('bike_situation_state')
                     ->badge(),
+                TextColumn::make('specifications_summary')
+                    ->label('Specifications')
+                    ->getStateUsing(fn (Bike $record): ?string => $record->specifications
+                        ->map(fn (BikeSpecification $specification): string => "{$specification->name}: {$specification->value}")
+                        ->implode(' · ') ?: null)
+                    ->limit(80)
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->placeholder('—'),
                 ...($showOccupyingReservation ? [
                     TextColumn::make('occupying_reservation')
                         ->label('Occupying reservation')
@@ -116,9 +130,13 @@ class BikesTable
             ])
             ->toolbarActions([]);
 
+        $relationships = ['specifications'];
+
         if ($showOccupyingReservation) {
-            $table->modifyQueryUsing(fn (Builder $query): Builder => $query->with('situationReservation.customer'));
+            $relationships[] = 'situationReservation.customer';
         }
+
+        $table->modifyQueryUsing(fn (Builder $query): Builder => $query->with($relationships));
 
         return app(ShopSetupReadiness::class)->configureEmptyState(
             $table,

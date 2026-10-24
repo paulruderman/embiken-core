@@ -10,7 +10,7 @@ afterEach(function () {
     tenancy()->end();
 });
 
-test('creating a tenant enables fleet and rentals', function () {
+test('creating a tenant enables the core shop modules', function () {
     Notification::fake();
 
     $tenant = app(CreateTenantAction::class)(

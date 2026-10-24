@@ -1,0 +1,23 @@
+{
+    "name": "embiken/maintenance",
+    "description": "Bike maintenance schedules and checklists for Embiken",
+    "type": "library",
+    "license": "proprietary",
+    "require": {
+        "php": "^8.3",
+        "embiken/bike-fleet": "@dev"
+    },
+    "autoload": {
+        "psr-4": {
+            "Embiken\\Maintenance\\": "src/",
+            "Embiken\\Maintenance\\Database\\Factories\\": "database/factories/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Embiken\\Maintenance\\MaintenanceServiceProvider"
+            ]
+        }
+    }
+}

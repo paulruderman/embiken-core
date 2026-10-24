@@ -9,6 +9,7 @@ use App\Models\Location;
 use App\Support\AbstractTenantModule;
 use App\Support\SetupStepDefinition;
 use Embiken\BikeFleet\Models\Bike;
+use Embiken\BikeFleet\Models\BikeModelVariant;
 use Embiken\BikeRentals\DayStore\RentalsDayStoreContributor;
 use Embiken\BikeRentals\Enums\BikeReservationStatus;
 use Embiken\BikeRentals\Enums\ConfirmThreshold;
@@ -19,8 +20,10 @@ use Embiken\BikeRentals\Enums\TransactionKind;
 use Embiken\BikeRentals\Enums\TransactionStatus;
 use Embiken\BikeRentals\Filament\Resources\RentalPackages\RentalPackageResource;
 use Embiken\BikeRentals\Models\RentalPackage;
+use Embiken\BikeRentals\Models\RentalPackageProduct;
 use Embiken\BikeRentals\Models\Reservation;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class BikeRentalsModule extends AbstractTenantModule
 {
@@ -45,6 +48,13 @@ class BikeRentalsModule extends AbstractTenantModule
     {
         Bike::resolveRelationUsing('situationReservation', function (Bike $bike): BelongsTo {
             return $bike->belongsTo(Reservation::class, 'bike_situation_reservation_id');
+        });
+
+        BikeModelVariant::resolveRelationUsing('rentalPackages', function (BikeModelVariant $variant): BelongsToMany {
+            return $variant->belongsToMany(RentalPackage::class, 'rental_package_product', 'product_id', 'rental_package_id')
+                ->using(RentalPackageProduct::class)
+                ->withPivot('rate_cents')
+                ->withTimestamps();
         });
     }
 

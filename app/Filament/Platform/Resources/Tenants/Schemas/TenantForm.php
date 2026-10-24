@@ -53,6 +53,10 @@ class TenantForm
                     ->options(fn (): array => collect(app(ModuleRegistry::class)->installedTenantModules())
                         ->mapWithKeys(fn ($module): array => [$module->id() => $module->label()])
                         ->all())
+                    ->in(fn (): array => array_map(
+                        fn ($module): string => $module->id(),
+                        app(ModuleRegistry::class)->installedTenantModules(),
+                    ))
                     ->descriptions(fn (Get $get): array => app(ModuleRegistry::class)->moduleOptionDescriptions(
                         self::selectedModuleIds($get('modules')),
                     ))

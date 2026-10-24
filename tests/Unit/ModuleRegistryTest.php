@@ -8,6 +8,15 @@ test('normalize module ids adds rental fleet dependency', function () {
     expect($normalized)->toContain('embiken/bike-fleet', 'embiken/bike-rentals');
 });
 
+test('maintenance includes its fleet prerequisite and is enabled by default', function () {
+    $registry = app(ModuleRegistry::class);
+
+    expect($registry->normalizeModuleIds(['embiken/maintenance']))
+        ->toBe(['embiken/bike-fleet', 'embiken/maintenance'])
+        ->and(ModuleRegistry::defaultTenantModuleIds())
+        ->toContain('embiken/maintenance');
+});
+
 test('module selection explains and enforces direct and transitive prerequisites', function () {
     $registry = app(ModuleRegistry::class);
     $selectedIds = $registry->normalizeModuleIds(['embiken/bike-rental-self-booking']);
@@ -24,8 +33,8 @@ test('module selection explains and enforces direct and transitive prerequisites
         ->and($descriptions['embiken/bike-fleet'])->toContain('Required by Online Book, Rentals');
 });
 
-test('installed modules include fleet and rentals', function () {
+test('installed module packages include maintenance', function () {
     $ids = collect(app(ModuleRegistry::class)->installedModules())->map->id()->all();
 
-    expect($ids)->toContain('embiken/bike-fleet', 'embiken/bike-rentals', 'embiken/weather');
+    expect($ids)->toContain('embiken/bike-fleet', 'embiken/bike-rentals', 'embiken/maintenance', 'embiken/weather');
 });

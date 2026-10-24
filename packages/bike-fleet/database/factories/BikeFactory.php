@@ -24,6 +24,7 @@ class BikeFactory extends Factory
             'location_id' => Location::factory(),
             'bike_model_variant_id' => BikeModelVariant::factory(),
             'bid' => fake()->unique()->bothify('??-###'),
+            'serial_number' => null,
             'in_service' => true,
             'self_bookable' => true,
             'bike_situation_state' => BikeSituation::Home,

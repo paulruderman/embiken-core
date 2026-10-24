@@ -28,14 +28,19 @@ use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeFleet\Models\BikeCategory;
 use Embiken\BikeFleet\Models\BikeModel;
 use Embiken\BikeFleet\Models\BikeModelVariant;
+use Embiken\BikeFleet\Models\BikeSpecification;
 use Embiken\BikeFleet\Models\ServiceRequest;
 use Embiken\BikeRentals\Filament\Pages\RentalsDashboard;
+use Embiken\BikeRentals\Filament\Resources\Customers\CustomerResource;
 use Embiken\BikeRentals\Filament\Resources\RentalPackages\Pages\CreateRentalPackage;
 use Embiken\BikeRentals\Filament\Resources\RentalPackages\RentalPackageResource;
+use Embiken\BikeRentals\Filament\Resources\Reservations\ReservationResource;
 use Embiken\BikeRentals\Models\Customer;
 use Embiken\BikeRentals\Models\RentalPackage;
 use Embiken\BikeRentals\Models\Reservation;
 use Embiken\BikeRentalSelfBooking\Filament\Pages\OnlineBookDashboard;
+use Embiken\Weather\Filament\Pages\WeatherDashboard;
+use Embiken\Weather\Filament\Resources\WeatherSites\WeatherSiteResource;
 use Filament\Facades\Filament;
 use Filament\Notifications\NotificationMailbox;
 use Illuminate\Support\Facades\Schema;
@@ -88,6 +93,14 @@ it('continues the requested task as each catalog prerequisite is created', funct
         ->assertRedirect(BikeResource::getUrl('create').'?setup_target=service_requests');
 
     $variant = BikeModelVariant::query()->firstOrFail();
+    $existingBike = Bike::factory()
+        ->for(Staff::query()->firstOrFail()->location)
+        ->for($variant, 'variant')
+        ->create(['bid' => 'REF-001']);
+    BikeSpecification::factory()->for($existingBike)->create([
+        'name' => 'Wheel size',
+        'value' => '29 in',
+    ]);
 
     Livewire::test(CreateBike::class)
         ->assertSee('Add one physical bike to your fleet.')
@@ -95,9 +108,23 @@ it('continues the requested task as each catalog prerequisite is created', funct
         ->fillForm([
             'bike_model_variant_id' => $variant->getKey(),
             'bid' => 'A-101',
+            'serial_number' => 'SN-501',
+            'specifications' => [
+                ['name' => 'Wheel size', 'value' => '29 in'],
+            ],
         ])
         ->call('create')
         ->assertRedirect(ServiceRequestResource::getUrl('create').'?setup_target=service_requests');
+
+    $bike = Bike::query()->where('bid', 'A-101')->firstOrFail();
+
+    expect($bike->serial_number)->toBe('SN-501')
+        ->and($bike->specifications()->firstOrFail()->only(['name', 'value']))
+        ->toBe(['name' => 'Wheel size', 'value' => '29 in']);
+
+    Livewire::test(ListBikes::class)
+        ->assertTableColumnStateSet('serial_number', 'SN-501', $bike)
+        ->assertTableColumnStateSet('specifications_summary', 'Wheel size: 29 in', $bike);
 
     Livewire::test(CreateServiceRequest::class)
         ->assertOk();
@@ -390,6 +417,25 @@ it('scopes setup steps to each module dashboard', function () {
         ->toBe(['moduleId' => 'embiken/bike-rentals'])
         ->and((new OnlineBookDashboard)->getWidgetData())
         ->toBe(['moduleId' => 'embiken/bike-rental-self-booking']);
+});
+
+it('places each module dashboard before its resources in the navigation group', function () {
+    $sort = fn (string $class): int => $class::getNavigationItems()[0]->getSort();
+
+    expect($sort(FleetDashboard::class))
+        ->toBeLessThan($sort(BikeCategoryResource::class))
+        ->toBeLessThan($sort(BikeModelResource::class))
+        ->toBeLessThan($sort(BikeModelVariantResource::class))
+        ->toBeLessThan($sort(BikeResource::class))
+        ->toBeLessThan($sort(ServiceRequestResource::class))
+        ->and($sort(RentalsDashboard::class))
+        ->toBeLessThan($sort(CustomerResource::class))
+        ->toBeLessThan($sort(RentalPackageResource::class))
+        ->toBeLessThan($sort(ReservationResource::class))
+        ->and($sort(WeatherDashboard::class))
+        ->toBeLessThan($sort(WeatherSiteResource::class))
+        ->and($sort(OnlineBookDashboard::class))
+        ->toBe(-2);
 });
 
 it('replaces blocked catalog create actions with the next prerequisite', function () {

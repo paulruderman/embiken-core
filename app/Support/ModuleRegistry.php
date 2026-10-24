@@ -27,6 +27,7 @@ class ModuleRegistry
     {
         return [
             'embiken/bike-fleet',
+            'embiken/maintenance',
             'embiken/bike-rentals',
             'embiken/bike-rental-self-booking',
         ];

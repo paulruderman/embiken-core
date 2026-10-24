@@ -6,9 +6,11 @@ use App\Models\Location;
 use Embiken\BikeFleet\Enums\BikeSituation;
 use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeFleet\Models\BikeModelVariant;
+use Embiken\BikeFleet\Models\BikeSpecification;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -48,6 +50,9 @@ class BikeForm
                     ->required()
                     ->unique(ignoreRecord: true)
                     ->maxLength(255),
+                TextInput::make('serial_number')
+                    ->label('Manufacturer serial number')
+                    ->maxLength(255),
                 Toggle::make('in_service')
                     ->default(true),
                 Toggle::make('self_bookable')
@@ -58,7 +63,46 @@ class BikeForm
                 FileUpload::make('photo')
                     ->image()
                     ->directory('bikes'),
+                Repeater::make('specifications')
+                    ->relationship()
+                    ->label('Specifications')
+                    ->schema([
+                        Select::make('name')
+                            ->label('Specification')
+                            ->options(fn (): array => BikeSpecification::query()
+                                ->select('name')
+                                ->distinct()
+                                ->orderBy('name')
+                                ->pluck('name', 'name')
+                                ->all())
+                            ->searchable()
+                            ->preload()
+                            ->disableOptionsWhenSelectedInSiblingRepeaterItems()
+                            ->createOptionForm([
+                                TextInput::make('name')
+                                    ->required()
+                                    ->maxLength(255),
+                            ])
+                            ->createOptionUsing(fn (array $data): string => self::existingOrNewSpecificationName($data['name']))
+                            ->required(),
+                        TextInput::make('value')
+                            ->label('Value')
+                            ->required()
+                            ->maxLength(1000),
+                    ])
+                    ->columns(2)
+                    ->addActionLabel('Add specification')
+                    ->columnSpanFull(),
                 Textarea::make('damage_notes'),
             ]);
+    }
+
+    private static function existingOrNewSpecificationName(string $name): string
+    {
+        $name = trim($name);
+
+        return BikeSpecification::query()
+            ->whereRaw('LOWER(name) = ?', [mb_strtolower($name)])
+            ->value('name') ?? $name;
     }
 }

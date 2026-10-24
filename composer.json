@@ -12,6 +12,7 @@
         "embiken/bike-rental-self-booking": "@dev",
         "embiken/bike-rentals": "@dev",
         "embiken/brm": "@dev",
+        "embiken/maintenance": "@dev",
         "embiken/platform-landing-page": "@dev",
         "embiken/stripe-connect": "@dev",
         "embiken/weather": "@dev",

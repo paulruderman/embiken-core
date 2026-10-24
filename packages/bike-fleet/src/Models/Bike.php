@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $location_id
  * @property int $bike_model_variant_id
  * @property string $bid
+ * @property string|null $serial_number
  * @property bool $in_service
  * @property bool $self_bookable
  * @property BikeSituation $bike_situation_state
@@ -32,6 +33,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'location_id',
     'bike_model_variant_id',
     'bid',
+    'serial_number',
     'in_service',
     'self_bookable',
     'bike_situation_state',
@@ -86,5 +88,13 @@ class Bike extends Model
     public function serviceRequests(): HasMany
     {
         return $this->hasMany(ServiceRequest::class);
+    }
+
+    /**
+     * @return HasMany<BikeSpecification, $this>
+     */
+    public function specifications(): HasMany
+    {
+        return $this->hasMany(BikeSpecification::class);
     }
 }

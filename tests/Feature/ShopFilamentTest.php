@@ -21,6 +21,8 @@ use Embiken\BikeFleet\Models\BikeModel;
 use Embiken\BikeFleet\Models\BikeModelVariant;
 use Embiken\BikeRentals\Filament\Resources\Customers\Pages\EditCustomer;
 use Embiken\BikeRentals\Filament\Resources\Customers\RelationManagers\ReservationsRelationManager;
+use Embiken\BikeRentals\Filament\Resources\RentalPackages\Pages\EditRentalPackage;
+use Embiken\BikeRentals\Filament\Resources\RentalPackages\RelationManagers\VariantsRelationManager;
 use Embiken\BikeRentals\Filament\Resources\Reservations\Pages\EditReservation;
 use Embiken\BikeRentals\Filament\Resources\Reservations\Pages\ListReservations;
 use Embiken\BikeRentals\Filament\Resources\Reservations\ReservationResource;
@@ -338,6 +340,21 @@ test('reservations stop showing the Book setup cue when the checklist is complet
     Livewire::test(ListServiceRequests::class)
         ->assertOk()
         ->assertDontSee('Online Book setup is incomplete');
+});
+
+test('a manager can open the attach variants action for a rental package', function () {
+    $staff = Staff::factory()->create();
+    $package = RentalPackage::factory()->for($staff->location)->create();
+    BikeModelVariant::factory()->create();
+
+    $this->actingAs($staff, 'staff');
+
+    Livewire::test(VariantsRelationManager::class, [
+        'ownerRecord' => $package,
+        'pageClass' => EditRentalPackage::class,
+    ])
+        ->mountTableAction('attach')
+        ->assertActionMounted();
 });
 
 test('shop filament cannot edit or delete the platform manager', function () {

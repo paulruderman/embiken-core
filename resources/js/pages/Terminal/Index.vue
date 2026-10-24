@@ -1,10 +1,16 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { Head } from '@inertiajs/vue3';
+import { Head, usePage } from '@inertiajs/vue3';
 import CreateWalkInReservationAction from '@/actions/Embiken/BikeRentals/Actions/CreateWalkInReservationAction';
 import PickupAction from '@/actions/Embiken/BikeRentals/Actions/PickupAction';
 import TerminalLayout from '@/layouts/TerminalLayout.vue';
 import { getEnumLabel, getStatusBadgeClasses } from '@/lib/enums';
+import {
+    currencyExponent,
+    currencyLabel,
+    formatMoney,
+    parseMoneyInput,
+} from '@/lib/money';
 import {
     useDayStore,
     type DayBike,
@@ -28,11 +34,12 @@ type WalkInForm = {
     email: string;
     phone: string;
     bike_ids: number[];
-    owed_cents: number;
+    owed_minor_units: number;
 };
 type PickupForm = { bike_id?: number };
 
 const props = defineProps<DaySnapshot>();
+const locale = usePage().props.locale;
 const day = useDayStore();
 const search = ref('');
 const selectedReservationId = ref<number | null>(null);
@@ -48,7 +55,7 @@ const walkInRequest = useHttp<WalkInForm, DayPatchResponse>({
     email: '',
     phone: '',
     bike_ids: [],
-    owed_cents: 0,
+    owed_minor_units: 0,
 });
 
 const selectedReservation = computed(() =>
@@ -69,19 +76,23 @@ const visibleReservations = computed(() => {
             const searchable = [
                 reservation.customer.name,
                 ...reservation.lines.flatMap((line) => {
-                    const bike = line.bike_id ? day.bikeById(line.bike_id) : undefined;
+                    const bike = line.bike_id
+                        ? day.bikeById(line.bike_id)
+                        : undefined;
 
                     return [line.product_label, bike?.bid ?? ''];
                 }),
             ];
 
-            return searchable.some((value) => value.toLocaleLowerCase().includes(query));
+            return searchable.some((value) =>
+                value.toLocaleLowerCase().includes(query),
+            );
         })
         .sort((left, right) => left.starts_at.localeCompare(right.starts_at));
 });
 
 const todayLabel = computed(() =>
-    new Intl.DateTimeFormat(undefined, {
+    new Intl.DateTimeFormat(locale, {
         weekday: 'long',
         month: 'long',
         day: 'numeric',
@@ -90,28 +101,22 @@ const todayLabel = computed(() =>
 );
 
 function formatTime(value: string): string {
-    return new Intl.DateTimeFormat(undefined, {
+    return new Intl.DateTimeFormat(locale, {
         hour: 'numeric',
         minute: '2-digit',
         timeZone: day.timezone,
     }).format(new Date(value));
 }
 
-function formatMoney(cents: number): string {
-    return new Intl.NumberFormat(undefined, {
-        style: 'currency',
-        currency: day.currency,
-    }).format(cents / 100);
-}
-
 function balanceMessage(reservation: DayReservation): string {
-    const difference = reservation.owed - reservation.paid;
+    const difference =
+        reservation.owed_minor_units - reservation.paid_minor_units;
 
     if (difference > 0) {
-        return `Balance due ${formatMoney(difference)}`;
+        return `Balance due ${formatMoney(difference, reservation.currency, locale)}`;
     }
 
-    return `Refund or credit ${formatMoney(Math.abs(difference))}`;
+    return `Refund or credit ${formatMoney(Math.abs(difference), reservation.currency, locale)}`;
 }
 
 function bikeFor(line: DayLine): DayBike | undefined {
@@ -133,7 +138,8 @@ function canPickUp(reservation: DayReservation, line: DayLine): boolean {
     }
 
     const selectedBikeId = line.bike_id ?? pickupBikeByLineId.value[line.id];
-    const bike = selectedBikeId === undefined ? undefined : day.bikeById(selectedBikeId);
+    const bike =
+        selectedBikeId === undefined ? undefined : day.bikeById(selectedBikeId);
 
     if (line.bike_id === null) {
         return Boolean(bike?.in_service && bike.variant_id === line.product_id);
@@ -172,7 +178,11 @@ function pickUpLine(line: DayLine): void {
     const reservation = selectedReservation.value;
     const bikeId = line.bike_id ?? pickupBikeByLineId.value[line.id];
 
-    if (!reservation || !canPickUp(reservation, line) || pendingLineId.value !== null) {
+    if (
+        !reservation ||
+        !canPickUp(reservation, line) ||
+        pendingLineId.value !== null
+    ) {
         return;
     }
 
@@ -182,22 +192,23 @@ function pickUpLine(line: DayLine): void {
     pickupRequest
         .transform(() => (bikeId === undefined ? {} : { bike_id: bikeId }))
         .post(PickupAction.url({ line: line.id }), {
-        onSuccess: (response) => {
-            day.applyPatch(response.data ?? response);
-            delete pickupBikeByLineId.value[line.id];
-        },
-        onError: (errors) => {
-            pickupError.value = Object.values(errors).join(' ');
-        },
-        onHttpException: () => {
-            pickupError.value = 'Pickup could not be recorded. Try again.';
-        },
-        onNetworkError: () => {
-            pickupError.value = 'Connection lost. Check the bike status before trying again.';
-        },
-        onFinish: () => {
-            pendingLineId.value = null;
-        },
+            onSuccess: (response) => {
+                day.applyPatch(response.data ?? response);
+                delete pickupBikeByLineId.value[line.id];
+            },
+            onError: (errors) => {
+                pickupError.value = Object.values(errors).join(' ');
+            },
+            onHttpException: () => {
+                pickupError.value = 'Pickup could not be recorded. Try again.';
+            },
+            onNetworkError: () => {
+                pickupError.value =
+                    'Connection lost. Check the bike status before trying again.';
+            },
+            onFinish: () => {
+                pendingLineId.value = null;
+            },
         });
 }
 
@@ -214,24 +225,31 @@ function startWalkIn(): void {
 }
 
 function submitWalkIn(): void {
-    const amount = Number(walkInOwed.value);
-
-    if (!Number.isFinite(amount) || amount < 0 || !/^\d+(\.\d{1,2})?$/.test(walkInOwed.value)) {
-        walkInError.value = 'Enter the rental total with up to two decimal places.';
+    const selectedBikes = [...walkInRequest.bike_ids];
+    let owedMinorUnits: number;
+    try {
+        owedMinorUnits = parseMoneyInput(
+            walkInOwed.value,
+            day.currency,
+            locale,
+        );
+    } catch (error) {
+        walkInError.value =
+            error instanceof Error ? error.message : 'Enter a valid amount.';
         return;
     }
 
-    const selectedBikes = [...walkInRequest.bike_ids];
-    const owedCents = Math.round((amount + Number.EPSILON) * 100);
-
-    walkInRequest.transform((data) => ({ ...data, owed_cents: owedCents })).post(
-        CreateWalkInReservationAction.url(),
-        {
+    walkInRequest
+        .transform((data) => ({ ...data, owed_minor_units: owedMinorUnits }))
+        .post(CreateWalkInReservationAction.url(), {
             onSuccess: (response) => {
                 const patch = response.data ?? response;
                 day.applyPatch(patch);
 
-                if (props.bike_assignment_policy === 'pickup_only' && patch.reservation) {
+                if (
+                    props.bike_assignment_policy === 'pickup_only' &&
+                    patch.reservation
+                ) {
                     patch.reservation.lines.forEach((line, index) => {
                         const bikeId = selectedBikes[index];
 
@@ -260,10 +278,10 @@ function submitWalkIn(): void {
                 walkInError.value = 'Walk-in could not be created. Try again.';
             },
             onNetworkError: () => {
-                walkInError.value = 'Connection lost. Check the reservation list before trying again.';
+                walkInError.value =
+                    'Connection lost. Check the reservation list before trying again.';
             },
-        },
-    );
+        });
 }
 
 const walkInBikes = computed(() =>
@@ -274,7 +292,9 @@ const walkInBikes = computed(() =>
 
 function bikesForLine(line: DayLine): DayBike[] {
     return day.bikeList
-        .filter((bike) => bike.in_service && bike.variant_id === line.product_id)
+        .filter(
+            (bike) => bike.in_service && bike.variant_id === line.product_id,
+        )
         .sort((left, right) => left.bid.localeCompare(right.bid));
 }
 </script>
@@ -283,7 +303,9 @@ function bikesForLine(line: DayLine): DayBike[] {
     <div class="flex min-h-screen flex-col bg-zinc-950 text-zinc-100">
         <Head title="Terminal" />
 
-        <header class="flex min-h-20 items-center gap-4 border-b border-zinc-800 bg-zinc-900 px-4 py-3 sm:px-6">
+        <header
+            class="flex min-h-20 items-center gap-4 border-b border-zinc-800 bg-zinc-900 px-4 py-3 sm:px-6"
+        >
             <button
                 v-if="selectedReservation || walkInOpen"
                 type="button"
@@ -293,8 +315,22 @@ function bikesForLine(line: DayLine): DayBike[] {
                 Back
             </button>
             <div>
-                <h1 class="text-2xl font-bold">{{ selectedReservation ? 'Reservation' : walkInOpen ? 'New walk-in' : 'Terminal' }}</h1>
-                <p class="text-sm text-zinc-400">{{ selectedReservation || walkInOpen ? todayLabel : `Today · ${todayLabel}` }}</p>
+                <h1 class="text-2xl font-bold">
+                    {{
+                        selectedReservation
+                            ? 'Reservation'
+                            : walkInOpen
+                              ? 'New walk-in'
+                              : 'Terminal'
+                    }}
+                </h1>
+                <p class="text-sm text-zinc-400">
+                    {{
+                        selectedReservation || walkInOpen
+                            ? todayLabel
+                            : `Today · ${todayLabel}`
+                    }}
+                </p>
             </div>
             <button
                 v-if="!selectedReservation && !walkInOpen"
@@ -304,17 +340,27 @@ function bikesForLine(line: DayLine): DayBike[] {
             >
                 New walk-in
             </button>
-            <div v-if="!selectedReservation && !walkInOpen" class="hidden text-sm text-zinc-400 sm:block">
+            <div
+                v-if="!selectedReservation && !walkInOpen"
+                class="hidden text-sm text-zinc-400 sm:block"
+            >
                 {{ visibleReservations.length }} reservations
             </div>
         </header>
 
-        <main v-if="walkInOpen" class="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 p-4 sm:p-6">
+        <main
+            v-if="walkInOpen"
+            class="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 p-4 sm:p-6"
+        >
             <form class="flex flex-col gap-4" @submit.prevent="submitWalkIn">
-                <section class="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+                <section
+                    class="rounded-2xl border border-zinc-800 bg-zinc-900 p-5"
+                >
                     <h2 class="text-xl font-bold">Customer contact</h2>
                     <div class="mt-4 grid gap-4 sm:grid-cols-2">
-                        <label class="flex flex-col gap-2 text-sm font-semibold sm:col-span-2">
+                        <label
+                            class="flex flex-col gap-2 text-sm font-semibold sm:col-span-2"
+                        >
                             Name
                             <input
                                 v-model="walkInRequest.name"
@@ -323,7 +369,9 @@ function bikesForLine(line: DayLine): DayBike[] {
                                 class="h-14 rounded-xl border border-zinc-700 bg-zinc-950 px-4 text-lg text-white focus:border-emerald-400 focus:outline-none"
                             />
                         </label>
-                        <label class="flex flex-col gap-2 text-sm font-semibold">
+                        <label
+                            class="flex flex-col gap-2 text-sm font-semibold"
+                        >
                             Email
                             <input
                                 v-model="walkInRequest.email"
@@ -333,7 +381,9 @@ function bikesForLine(line: DayLine): DayBike[] {
                                 class="h-14 rounded-xl border border-zinc-700 bg-zinc-950 px-4 text-lg text-white focus:border-emerald-400 focus:outline-none"
                             />
                         </label>
-                        <label class="flex flex-col gap-2 text-sm font-semibold">
+                        <label
+                            class="flex flex-col gap-2 text-sm font-semibold"
+                        >
                             Phone
                             <input
                                 v-model="walkInRequest.phone"
@@ -346,13 +396,23 @@ function bikesForLine(line: DayLine): DayBike[] {
                     </div>
                 </section>
 
-                <section class="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+                <section
+                    class="rounded-2xl border border-zinc-800 bg-zinc-900 p-5"
+                >
                     <h2 class="text-xl font-bold">Bikes</h2>
-                    <p class="mt-1 text-zinc-400">Choose one bike for each person in the party.</p>
-                    <p v-if="props.bike_assignment_policy === 'pickup_only'" class="mt-2 text-sm text-zinc-300">
+                    <p class="mt-1 text-zinc-400">
+                        Choose one bike for each person in the party.
+                    </p>
+                    <p
+                        v-if="props.bike_assignment_policy === 'pickup_only'"
+                        class="mt-2 text-sm text-zinc-300"
+                    >
                         Bikes stay unassigned until pickup.
                     </p>
-                    <div v-if="walkInBikes.length > 0" class="mt-4 grid gap-3 sm:grid-cols-2">
+                    <div
+                        v-if="walkInBikes.length > 0"
+                        class="mt-4 grid gap-3 sm:grid-cols-2"
+                    >
                         <label
                             v-for="bike in walkInBikes"
                             :key="bike.id"
@@ -365,56 +425,104 @@ function bikesForLine(line: DayLine): DayBike[] {
                                 class="size-6 accent-emerald-400"
                             />
                             <span class="min-w-0 flex-1">
-                                <span class="block text-lg font-bold">{{ bike.bid }} · {{ bike.model }} · {{ bike.variant }}</span>
+                                <span class="block text-lg font-bold"
+                                    >{{ bike.bid }} · {{ bike.model }} ·
+                                    {{ bike.variant }}</span
+                                >
                                 <span class="block text-sm text-zinc-400">
-                                    {{ getEnumLabel('bikeSituation', bike.bike_situation_state) }}
+                                    {{
+                                        getEnumLabel(
+                                            'bikeSituation',
+                                            bike.bike_situation_state,
+                                        )
+                                    }}
                                     <template v-if="occupyingReservation(bike)">
-                                        · {{ occupyingReservation(bike)?.customer.name }}’s reservation
+                                        ·
+                                        {{
+                                            occupyingReservation(bike)?.customer
+                                                .name
+                                        }}’s reservation
                                     </template>
-                                    <template v-else-if="bike.bike_situation_state !== BikeSituation.Home">
+                                    <template
+                                        v-else-if="
+                                            bike.bike_situation_state !==
+                                            BikeSituation.Home
+                                        "
+                                    >
                                         · no occupying reservation is linked
                                     </template>
                                 </span>
                             </span>
                         </label>
                     </div>
-                    <p v-else class="mt-4 rounded-xl border border-dashed border-zinc-700 p-4 text-zinc-400">
+                    <p
+                        v-else
+                        class="mt-4 rounded-xl border border-dashed border-zinc-700 p-4 text-zinc-400"
+                    >
                         No in-service bikes are configured for walk-ins yet.
                     </p>
                 </section>
 
-                <section class="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
-                    <label class="flex max-w-sm flex-col gap-2 text-sm font-semibold">
-                        Total owed ({{ day.currency.toUpperCase() }})
+                <section
+                    class="rounded-2xl border border-zinc-800 bg-zinc-900 p-5"
+                >
+                    <label
+                        class="flex max-w-sm flex-col gap-2 text-sm font-semibold"
+                    >
+                        Total owed ({{ currencyLabel(day.currency, locale) }})
                         <input
                             v-model="walkInOwed"
                             required
-                            type="number"
-                            min="0"
-                            step="0.01"
+                            type="text"
                             inputmode="decimal"
-                            placeholder="0.00"
+                            :placeholder="
+                                currencyExponent(day.currency) === 0
+                                    ? '12'
+                                    : new Intl.NumberFormat(locale, {
+                                          minimumFractionDigits:
+                                              currencyExponent(day.currency),
+                                          maximumFractionDigits:
+                                              currencyExponent(day.currency),
+                                      }).format(12)
+                            "
                             class="h-14 rounded-xl border border-zinc-700 bg-zinc-950 px-4 text-lg text-white focus:border-emerald-400 focus:outline-none"
                         />
                     </label>
-                    <p class="mt-2 text-sm text-zinc-400">This is a hand-entered Terminal quote.</p>
+                    <p class="mt-2 text-sm text-zinc-400">
+                        This is a hand-entered Terminal quote.
+                    </p>
                 </section>
 
-                <div v-if="walkInError" role="alert" class="rounded-xl border border-rose-700 bg-rose-950 p-4 text-rose-100">
+                <div
+                    v-if="walkInError"
+                    role="alert"
+                    class="rounded-xl border border-rose-700 bg-rose-950 p-4 text-rose-100"
+                >
                     {{ walkInError }}
                 </div>
 
                 <button
                     type="submit"
                     class="min-h-16 rounded-xl bg-emerald-400 px-6 text-xl font-bold text-zinc-950 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
-                    :disabled="walkInRequest.processing || walkInRequest.bike_ids.length === 0 || walkInBikes.length === 0"
+                    :disabled="
+                        walkInRequest.processing ||
+                        walkInRequest.bike_ids.length === 0 ||
+                        walkInBikes.length === 0
+                    "
                 >
-                    {{ walkInRequest.processing ? 'Creating reservation…' : 'Create walk-in reservation' }}
+                    {{
+                        walkInRequest.processing
+                            ? 'Creating reservation…'
+                            : 'Create walk-in reservation'
+                    }}
                 </button>
             </form>
         </main>
 
-        <main v-else-if="!selectedReservation" class="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 p-4 sm:p-6">
+        <main
+            v-else-if="!selectedReservation"
+            class="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 p-4 sm:p-6"
+        >
             <label class="block">
                 <span class="sr-only">Search reservations</span>
                 <input
@@ -425,7 +533,10 @@ function bikesForLine(line: DayLine): DayBike[] {
                 />
             </label>
 
-            <section v-if="visibleReservations.length > 0" class="flex flex-col gap-3">
+            <section
+                v-if="visibleReservations.length > 0"
+                class="flex flex-col gap-3"
+            >
                 <button
                     v-for="reservation in visibleReservations"
                     :key="reservation.id"
@@ -434,14 +545,28 @@ function bikesForLine(line: DayLine): DayBike[] {
                     @click="openReservation(reservation)"
                 >
                     <div class="flex w-full flex-wrap items-center gap-3">
-                        <span class="min-w-0 flex-1 text-xl font-bold">{{ reservation.customer.name }}</span>
+                        <span class="min-w-0 flex-1 text-xl font-bold">{{
+                            reservation.customer.name
+                        }}</span>
                         <span
                             class="rounded-full px-3 py-1 text-sm font-semibold"
-                            :class="getStatusBadgeClasses('reservationStage', reservation.stage)"
+                            :class="
+                                getStatusBadgeClasses(
+                                    'reservationStage',
+                                    reservation.stage,
+                                )
+                            "
                         >
-                            {{ getEnumLabel('reservationStage', reservation.stage) }}
+                            {{
+                                getEnumLabel(
+                                    'reservationStage',
+                                    reservation.stage,
+                                )
+                            }}
                         </span>
-                        <span class="font-mono text-lg">{{ formatTime(reservation.starts_at) }}</span>
+                        <span class="font-mono text-lg">{{
+                            formatTime(reservation.starts_at)
+                        }}</span>
                     </div>
                     <ul class="flex w-full flex-wrap gap-2">
                         <li
@@ -449,51 +574,104 @@ function bikesForLine(line: DayLine): DayBike[] {
                             :key="line.id"
                             class="rounded-lg bg-zinc-800 px-3 py-2 text-sm"
                         >
-                            {{ line.product_label }} · {{ line.bike_id ? bikeFor(line)?.bid : 'Unassigned' }}
+                            {{ line.product_label }} ·
+                            {{
+                                line.bike_id ? bikeFor(line)?.bid : 'Unassigned'
+                            }}
                         </li>
                     </ul>
-                    <p v-if="reservation.owed !== reservation.paid" class="text-sm font-semibold text-amber-300">
+                    <p
+                        v-if="
+                            reservation.owed_minor_units !==
+                            reservation.paid_minor_units
+                        "
+                        class="text-sm font-semibold text-amber-300"
+                    >
                         {{ balanceMessage(reservation) }}
                     </p>
                 </button>
             </section>
 
-            <section v-else class="flex flex-1 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-zinc-700 bg-zinc-900/60 px-6 py-12 text-center">
-                <h2 class="text-2xl font-bold">{{ search ? 'No matching reservations' : 'No reservations on the board' }}</h2>
-                <p v-if="search" class="max-w-xl text-zinc-400">Try a different customer name, bike bid, or model.</p>
+            <section
+                v-else
+                class="flex flex-1 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-zinc-700 bg-zinc-900/60 px-6 py-12 text-center"
+            >
+                <h2 class="text-2xl font-bold">
+                    {{
+                        search
+                            ? 'No matching reservations'
+                            : 'No reservations on the board'
+                    }}
+                </h2>
+                <p v-if="search" class="max-w-xl text-zinc-400">
+                    Try a different customer name, bike bid, or model.
+                </p>
                 <template v-else>
-                    <p v-if="day.bikeList.length === 0" class="max-w-xl text-zinc-400">
-                        This shop has no bikes yet. Add a category, model, variant, and bike in Manage before starting a walk-in.
+                    <p
+                        v-if="day.bikeList.length === 0"
+                        class="max-w-xl text-zinc-400"
+                    >
+                        This shop has no bikes yet. Add a category, model,
+                        variant, and bike in Manage before starting a walk-in.
                     </p>
                     <p v-else class="max-w-xl text-zinc-400">
-                        Reservations appear here when they overlap today or have a bike away from Home. Select New walk-in to create an immediate hand-quoted reservation.
+                        Reservations appear here when they overlap today or have
+                        a bike away from Home. Select New walk-in to create an
+                        immediate hand-quoted reservation.
                     </p>
                 </template>
             </section>
         </main>
 
-        <main v-else class="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 p-4 sm:p-6">
+        <main
+            v-else
+            class="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 p-4 sm:p-6"
+        >
             <section class="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
                 <div class="flex flex-wrap items-start gap-3">
                     <div class="min-w-0 flex-1">
-                        <h2 class="text-2xl font-bold">{{ selectedReservation.customer.name }}</h2>
+                        <h2 class="text-2xl font-bold">
+                            {{ selectedReservation.customer.name }}
+                        </h2>
                         <p class="mt-1 text-zinc-400">
-                            {{ formatTime(selectedReservation.starts_at) }}–{{ formatTime(selectedReservation.ends_at) }}
+                            {{ formatTime(selectedReservation.starts_at) }}–{{
+                                formatTime(selectedReservation.ends_at)
+                            }}
                         </p>
                     </div>
                     <span
                         class="rounded-full px-3 py-1 text-sm font-semibold"
-                        :class="getStatusBadgeClasses('reservationStage', selectedReservation.stage)"
+                        :class="
+                            getStatusBadgeClasses(
+                                'reservationStage',
+                                selectedReservation.stage,
+                            )
+                        "
                     >
-                        {{ getEnumLabel('reservationStage', selectedReservation.stage) }}
+                        {{
+                            getEnumLabel(
+                                'reservationStage',
+                                selectedReservation.stage,
+                            )
+                        }}
                     </span>
                 </div>
-                <p v-if="selectedReservation.owed !== selectedReservation.paid" class="mt-4 rounded-xl bg-amber-950/60 p-3 text-lg font-semibold text-amber-200">
+                <p
+                    v-if="
+                        selectedReservation.owed_minor_units !==
+                        selectedReservation.paid_minor_units
+                    "
+                    class="mt-4 rounded-xl bg-amber-950/60 p-3 text-lg font-semibold text-amber-200"
+                >
                     {{ balanceMessage(selectedReservation) }}
                 </p>
             </section>
 
-            <div v-if="pickupError" role="alert" class="rounded-xl border border-rose-700 bg-rose-950 p-4 text-rose-100">
+            <div
+                v-if="pickupError"
+                role="alert"
+                class="rounded-xl border border-rose-700 bg-rose-950 p-4 text-rose-100"
+            >
                 {{ pickupError }}
             </div>
 
@@ -504,53 +682,148 @@ function bikesForLine(line: DayLine): DayBike[] {
                     class="flex flex-col gap-4 rounded-2xl border border-zinc-800 bg-zinc-900 p-4 sm:flex-row sm:items-center sm:p-5"
                 >
                     <div class="min-w-0 flex-1">
-                        <h3 class="text-lg font-bold">{{ line.product_label }}</h3>
+                        <h3 class="text-lg font-bold">
+                            {{ line.product_label }}
+                        </h3>
                         <div class="mt-2 flex flex-wrap items-center gap-2">
-                            <span class="rounded-lg bg-zinc-800 px-3 py-2 font-mono text-lg font-bold">
+                            <span
+                                class="rounded-lg bg-zinc-800 px-3 py-2 font-mono text-lg font-bold"
+                            >
                                 {{ bikeFor(line)?.bid ?? 'Unassigned' }}
                             </span>
                             <span
                                 class="rounded-full px-3 py-1 text-sm font-semibold"
-                                :class="getStatusBadgeClasses('bikeReservationStatus', line.status)"
+                                :class="
+                                    getStatusBadgeClasses(
+                                        'bikeReservationStatus',
+                                        line.status,
+                                    )
+                                "
                             >
-                                {{ getEnumLabel('bikeReservationStatus', line.status) }}
+                                {{
+                                    getEnumLabel(
+                                        'bikeReservationStatus',
+                                        line.status,
+                                    )
+                                }}
                             </span>
-                            <span v-if="bikeFor(line)" class="rounded-full px-3 py-1 text-sm font-semibold" :class="getStatusBadgeClasses('bikeSituation', bikeFor(line)?.bike_situation_state)">
-                                {{ getEnumLabel('bikeSituation', bikeFor(line)?.bike_situation_state) }}
-                                <template v-if="occupyingReservation(bikeFor(line)!)">
-                                    · {{ occupyingReservation(bikeFor(line)!)?.customer.name }}
+                            <span
+                                v-if="bikeFor(line)"
+                                class="rounded-full px-3 py-1 text-sm font-semibold"
+                                :class="
+                                    getStatusBadgeClasses(
+                                        'bikeSituation',
+                                        bikeFor(line)?.bike_situation_state,
+                                    )
+                                "
+                            >
+                                {{
+                                    getEnumLabel(
+                                        'bikeSituation',
+                                        bikeFor(line)?.bike_situation_state,
+                                    )
+                                }}
+                                <template
+                                    v-if="occupyingReservation(bikeFor(line)!)"
+                                >
+                                    ·
+                                    {{
+                                        occupyingReservation(bikeFor(line)!)
+                                            ?.customer.name
+                                    }}
                                 </template>
                             </span>
                         </div>
-                        <p v-if="bikeFor(line) && bikeFor(line)?.bike_situation_reservation_id !== null && bikeFor(line)?.bike_situation_reservation_id !== selectedReservation.id" class="mt-2 text-sm font-semibold text-amber-300">
-                            Wrong place: this bike is occupied by another reservation.
+                        <p
+                            v-if="
+                                bikeFor(line) &&
+                                bikeFor(line)?.bike_situation_reservation_id !==
+                                    null &&
+                                bikeFor(line)?.bike_situation_reservation_id !==
+                                    selectedReservation.id
+                            "
+                            class="mt-2 text-sm font-semibold text-amber-300"
+                        >
+                            Wrong place: this bike is occupied by another
+                            reservation.
                         </p>
-                        <p v-else-if="bikeFor(line) && bikeFor(line)?.bike_situation_state !== BikeSituation.Home && !occupyingReservation(bikeFor(line)!)" class="mt-2 text-sm text-amber-300">
-                            No occupying reservation is recorded for this bike situation.
+                        <p
+                            v-else-if="
+                                bikeFor(line) &&
+                                bikeFor(line)?.bike_situation_state !==
+                                    BikeSituation.Home &&
+                                !occupyingReservation(bikeFor(line)!)
+                            "
+                            class="mt-2 text-sm text-amber-300"
+                        >
+                            No occupying reservation is recorded for this bike
+                            situation.
                         </p>
                     </div>
 
-                            <label v-if="line.bike_id === null && line.status === BikeReservationStatus.Assigned" class="flex min-h-14 w-full flex-col gap-2 text-sm font-semibold sm:w-80">
-                                Bike for pickup
-                                <select
-                                    v-model="pickupBikeByLineId[line.id]"
-                                    class="h-14 rounded-xl border border-zinc-700 bg-zinc-950 px-4 text-base text-white focus:border-emerald-400 focus:outline-none"
+                    <label
+                        v-if="
+                            line.bike_id === null &&
+                            line.status === BikeReservationStatus.Assigned
+                        "
+                        class="flex min-h-14 w-full flex-col gap-2 text-sm font-semibold sm:w-80"
+                    >
+                        Bike for pickup
+                        <select
+                            v-model="pickupBikeByLineId[line.id]"
+                            class="h-14 rounded-xl border border-zinc-700 bg-zinc-950 px-4 text-base text-white focus:border-emerald-400 focus:outline-none"
+                        >
+                            <option :value="undefined">Choose a bike</option>
+                            <option
+                                v-for="bike in bikesForLine(line)"
+                                :key="bike.id"
+                                :value="bike.id"
+                            >
+                                {{ bike.bid }} · {{ bike.model }} ·
+                                {{ bike.variant }} ·
+                                {{
+                                    getEnumLabel(
+                                        'bikeSituation',
+                                        bike.bike_situation_state,
+                                    )
+                                }}
+                                <template v-if="occupyingReservation(bike)">
+                                    ·
+                                    {{
+                                        occupyingReservation(bike)?.customer
+                                            .name
+                                    }}</template
                                 >
-                                    <option :value="undefined">Choose a bike</option>
-                                    <option v-for="bike in bikesForLine(line)" :key="bike.id" :value="bike.id">
-                                        {{ bike.bid }} · {{ bike.model }} · {{ bike.variant }} · {{ getEnumLabel('bikeSituation', bike.bike_situation_state) }}
-                                        <template v-if="occupyingReservation(bike)"> · {{ occupyingReservation(bike)?.customer.name }}</template>
-                                    </option>
-                                </select>
-                            </label>
-                            <button
+                            </option>
+                        </select>
+                    </label>
+                    <button
                         type="button"
                         class="min-h-16 w-full shrink-0 rounded-xl px-6 text-lg font-bold sm:w-48"
-                        :class="canPickUp(selectedReservation, line) ? 'bg-emerald-400 text-zinc-950' : 'bg-zinc-800 text-zinc-500'"
-                        :disabled="!canPickUp(selectedReservation, line) || pendingLineId !== null"
+                        :class="
+                            canPickUp(selectedReservation, line)
+                                ? 'bg-emerald-400 text-zinc-950'
+                                : 'bg-zinc-800 text-zinc-500'
+                        "
+                        :disabled="
+                            !canPickUp(selectedReservation, line) ||
+                            pendingLineId !== null
+                        "
                         @click="pickUpLine(line)"
                     >
-                                {{ pendingLineId === line.id ? 'Recording…' : line.status === BikeReservationStatus.Out ? 'Picked up' : line.status === BikeReservationStatus.In ? 'Returned' : line.bike_id ? 'Pick up this bike' : pickupBikeByLineId[line.id] ? 'Pick up selected bike' : 'Choose a bike to pick up' }}
+                        {{
+                            pendingLineId === line.id
+                                ? 'Recording…'
+                                : line.status === BikeReservationStatus.Out
+                                  ? 'Picked up'
+                                  : line.status === BikeReservationStatus.In
+                                    ? 'Returned'
+                                    : line.bike_id
+                                      ? 'Pick up this bike'
+                                      : pickupBikeByLineId[line.id]
+                                        ? 'Pick up selected bike'
+                                        : 'Choose a bike to pick up'
+                        }}
                     </button>
                 </article>
             </section>

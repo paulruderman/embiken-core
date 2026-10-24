@@ -200,45 +200,24 @@ class ModuleRegistry
     }
 
     /**
-     * @param  list<string>  $selectedIds
-     * @return array<string, string>
+     * @return array<string, list<string>>
      */
-    public function moduleOptionDescriptions(array $selectedIds): array
+    public function modulePrerequisites(): array
     {
-        $descriptions = [];
+        $prerequisites = [];
 
         foreach ($this->installedTenantModules() as $module) {
-            $sentences = [];
             $dependencies = array_map(
                 fn (string $dependencyId): string => $this->find($dependencyId)?->label() ?? $dependencyId,
                 $this->dependencyIds($module),
             );
 
             if ($dependencies !== []) {
-                $sentences[] = 'Requires '.implode(', ', $dependencies).'; prerequisites are selected automatically.';
-            }
-
-            $dependents = [];
-
-            foreach ($this->installedTenantModules() as $candidate) {
-                if (in_array($candidate->id(), $selectedIds, true)
-                    && in_array($module->id(), $this->dependencyIds($candidate), true)) {
-                    $dependents[] = $candidate->label();
-                }
-            }
-
-            sort($dependents, SORT_NATURAL | SORT_FLAG_CASE);
-
-            if ($dependents !== []) {
-                $sentences[] = 'Required by '.implode(', ', $dependents).'; turn those off first to disable this module.';
-            }
-
-            if ($sentences !== []) {
-                $descriptions[$module->id()] = implode(' ', $sentences);
+                $prerequisites[$module->id()] = $dependencies;
             }
         }
 
-        return $descriptions;
+        return $prerequisites;
     }
 
     public function applyFilamentDiscoveries(Panel $panel): Panel

@@ -40,7 +40,7 @@ enum ConfirmThreshold: string implements HasColor, HasDescription, HasIcon, HasL
     {
         return match ($this) {
             self::None => 'Book may confirm with no payment.',
-            self::Deposit => 'Book captures a deposit (cents or percent of owed).',
+            self::Deposit => 'Book captures a deposit (minor units or percent of owed).',
             self::Full => 'Book captures the full owed amount.',
         };
     }

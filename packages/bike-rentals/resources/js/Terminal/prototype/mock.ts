@@ -2,6 +2,7 @@
  * Prototype view-model over the Pinia day store. Display helpers only.
  */
 import { reactive, watch } from 'vue';
+import { formatMoney } from '@/lib/money';
 import { useDayStore, type DayBike, type DayReservation } from '@/stores/day';
 
 export type Situation = 'home' | 'prepping' | 'staged' | 'rented_out' | 'back';
@@ -33,6 +34,7 @@ export type Reservation = {
     endsAtIso: string;
     owed: number;
     paid: number;
+    currency: string;
     waiver: boolean;
     myrental: string;
     lines: Line[];
@@ -43,12 +45,14 @@ export type Shop = {
     reservations: Reservation[];
 };
 
-export function money(cents: number): string {
-    return `$${(cents / 100).toFixed(0)}`;
+export function money(minorUnits: number): string {
+    return formatMoney(minorUnits, useDayStore().currency);
 }
 
 function stageLabel(stage: string): string {
-    return stage.replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
+    return stage
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function clock(iso: string, timezone: string): string {
@@ -71,7 +75,10 @@ function mapBike(bike: DayBike): Bike {
     };
 }
 
-function mapReservation(reservation: DayReservation, timezone: string): Reservation {
+function mapReservation(
+    reservation: DayReservation,
+    timezone: string,
+): Reservation {
     return {
         id: reservation.id,
         customer: reservation.customer.name,
@@ -80,8 +87,9 @@ function mapReservation(reservation: DayReservation, timezone: string): Reservat
         ends: clock(reservation.ends_at, timezone),
         startsAtIso: reservation.starts_at,
         endsAtIso: reservation.ends_at,
-        owed: reservation.owed,
-        paid: reservation.paid,
+        owed: reservation.owed_minor_units,
+        paid: reservation.paid_minor_units,
+        currency: reservation.currency,
         waiver: reservation.waiver_accepted_at !== null,
         myrental: reservation.myrental_token ?? '',
         lines: reservation.lines.map((line) => ({
@@ -114,7 +122,10 @@ export function bikeFor(shop: Shop, id: number | null): Bike | undefined {
     return shop.bikes.find((bike) => bike.id === id);
 }
 
-export function reservationForBike(shop: Shop, bikeId: number): Reservation | undefined {
+export function reservationForBike(
+    shop: Shop,
+    bikeId: number,
+): Reservation | undefined {
     return shop.reservations.find(
         (reservation) =>
             reservation.stage !== 'Cancelled' &&
@@ -123,7 +134,9 @@ export function reservationForBike(shop: Shop, bikeId: number): Reservation | un
 }
 
 export function openReservations(shop: Shop): Reservation[] {
-    return shop.reservations.filter((reservation) => reservation.stage !== 'Cancelled');
+    return shop.reservations.filter(
+        (reservation) => reservation.stage !== 'Cancelled',
+    );
 }
 
 export function situationLabel(situation: Situation): string {
@@ -159,7 +172,9 @@ export type PartyLine = {
 export function partyLines(shop: Shop, reservation: Reservation): PartyLine[] {
     return reservation.lines.map((line) => {
         const bike = bikeFor(shop, line.bike_id);
-        const occupying = line.bike_id ? reservationForBike(shop, line.bike_id) : undefined;
+        const occupying = line.bike_id
+            ? reservationForBike(shop, line.bike_id)
+            : undefined;
 
         return {
             line,
@@ -170,7 +185,9 @@ export function partyLines(shop: Shop, reservation: Reservation): PartyLine[] {
     });
 }
 
-export function moneyLane(reservation: Reservation): 'unpaid' | 'partial' | 'settled' {
+export function moneyLane(
+    reservation: Reservation,
+): 'unpaid' | 'partial' | 'settled' {
     if (reservation.paid <= 0) {
         return 'unpaid';
     }
@@ -203,14 +220,20 @@ export function exceptionFlags(shop: Shop, reservation: Reservation): string[] {
         flags.push('unassigned');
     }
 
-    if (partyLines(shop, reservation).some((row) => row.bike && !row.onThisTicket)) {
+    if (
+        partyLines(shop, reservation).some(
+            (row) => row.bike && !row.onThisTicket,
+        )
+    ) {
         flags.push('wrong bike');
     }
 
     const lateOut = reservation.lines.some((line) => {
         const bike = bikeFor(shop, line.bike_id);
 
-        return bike?.situation === 'rented_out' && hourOf(reservation.ends) <= 12;
+        return (
+            bike?.situation === 'rented_out' && hourOf(reservation.ends) <= 12
+        );
     });
 
     if (lateOut) {
@@ -234,7 +257,12 @@ function rankForLine(line: Line, bike: Bike): number {
     return 2;
 }
 
-export function candidateBikes(shop: Shop, reservation: Reservation, line: Line, mode: 'assign' | 'swap'): Bike[] {
+export function candidateBikes(
+    shop: Shop,
+    reservation: Reservation,
+    line: Line,
+    mode: 'assign' | 'swap',
+): Bike[] {
     const taken = new Set(
         reservation.lines
             .filter((item) => item.id !== line.id && item.bike_id !== null)
@@ -253,7 +281,11 @@ export function candidateBikes(shop: Shop, reservation: Reservation, line: Line,
 
             return bike.id !== line.bike_id;
         })
-        .sort((left, right) => rankForLine(line, left) - rankForLine(line, right) || left.bid.localeCompare(right.bid));
+        .sort(
+            (left, right) =>
+                rankForLine(line, left) - rankForLine(line, right) ||
+                left.bid.localeCompare(right.bid),
+        );
 }
 
 export function hourOf(stamp: string): number {
@@ -267,10 +299,16 @@ export function hourOf(stamp: string): number {
 }
 
 export function overlapsHour(reservation: Reservation, hour: number): boolean {
-    return hourOf(reservation.starts) <= hour && hourOf(reservation.ends) > hour;
+    return (
+        hourOf(reservation.starts) <= hour && hourOf(reservation.ends) > hour
+    );
 }
 
-export function busyAt(shop: Shop, bikeId: number, hour: number): Reservation | undefined {
+export function busyAt(
+    shop: Shop,
+    bikeId: number,
+    hour: number,
+): Reservation | undefined {
     return openReservations(shop).find(
         (reservation) =>
             overlapsHour(reservation, hour) &&

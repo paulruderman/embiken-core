@@ -2,6 +2,7 @@
 
 namespace Embiken\BikeRentals\Filament\Resources\Reservations\RelationManagers;
 
+use App\Support\Money;
 use Embiken\BikeRentals\Filament\Resources\Reservations\Schemas\TransactionInfolist;
 use Embiken\BikeRentals\Models\Transaction;
 use Filament\Actions\ViewAction;
@@ -23,12 +24,9 @@ class TransactionsRelationManager extends RelationManager
                     ->badge(),
                 TextColumn::make('status')
                     ->badge(),
-                TextColumn::make('amount_cents')
+                TextColumn::make('amount_minor_units')
                     ->label('Amount')
-                    ->formatStateUsing(fn (?int $state, Transaction $record): string => strtoupper($record->currency).' '.number_format(($state ?? 0) / 100, 2)),
-                TextColumn::make('currency')
-                    ->label('Currency')
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->formatStateUsing(fn (?int $state, Transaction $record): string => Money::format($state ?? 0, $record->currency)),
                 TextColumn::make('note')
                     ->placeholder('—'),
                 TextColumn::make('captured_at')

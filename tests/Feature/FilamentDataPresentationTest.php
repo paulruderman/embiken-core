@@ -92,7 +92,7 @@ it('shows Connect transaction details in a read-only transaction view', function
     $transaction = Transaction::factory()->connectPending()->create([
         'reservation_id' => $reservation->getKey(),
         'currency' => 'usd',
-        'amount_cents' => 2500,
+        'amount_minor_units' => 2500,
         'payment_intent_id' => 'pi_example_connect',
         'charge_id' => 'ch_example_connect',
     ]);
@@ -103,7 +103,7 @@ it('shows Connect transaction details in a read-only transaction view', function
     ])
         ->mountTableAction('view', $transaction)
         ->assertActionMounted()
-        ->assertSee('USD 25.00');
+        ->assertSee("USD\u{00A0}$25.00");
 
     expect($transactionTable->instance()->getMountedTableActionForm())->not->toBeNull();
 });

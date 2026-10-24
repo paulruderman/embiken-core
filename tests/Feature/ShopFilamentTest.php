@@ -314,7 +314,7 @@ test('reservations stop showing the Book setup cue when the checklist is complet
     LocationHour::factory()->for($location)->create();
 
     $package = RentalPackage::factory()->for($location)->create();
-    $package->variants()->attach($variant, ['rate_cents' => 1000]);
+    $package->variants()->attach($variant, ['rate_minor_units' => 1000]);
 
     $this->actingAs($staff, 'staff');
 
@@ -357,6 +357,22 @@ test('a manager can open the attach variants action for a rental package', funct
         ->assertActionMounted();
 });
 
+test('an invalid package currency does not crash the variant rate form', function () {
+    $staff = Staff::factory()->create();
+    $package = RentalPackage::factory()->for($staff->location)->create(['currency' => '1@!']);
+    $variant = BikeModelVariant::factory()->create();
+    $package->variants()->attach($variant, ['rate_minor_units' => 1000]);
+
+    $this->actingAs($staff, 'staff');
+
+    Livewire::test(VariantsRelationManager::class, [
+        'ownerRecord' => $package,
+        'pageClass' => EditRentalPackage::class,
+    ])
+        ->mountTableAction('attach')
+        ->assertActionMounted();
+});
+
 test('shop filament cannot edit or delete the platform manager', function () {
     $platform = Staff::factory()->platformManager()->create();
 
@@ -377,6 +393,40 @@ test('a manager can open the reservation editor', function () {
         ->assertActionExists('extend')
         ->assertActionExists('refund')
         ->assertActionExists('cancel');
+});
+
+test('a manager enters owed in the location currency rather than minor units', function () {
+    $staff = Staff::factory()->create();
+    $location = $staff->location;
+    $location->update(['currency' => 'jpy']);
+    $reservation = Reservation::factory()->recycle($location)->create([
+        'currency' => 'jpy',
+        'owed' => 0,
+    ]);
+
+    $this->actingAs($staff, 'staff');
+
+    Livewire::test(EditReservation::class, ['record' => $reservation->getKey()])
+        ->callAction('setOwed', data: ['owed' => '1250'])
+        ->assertHasNoFormErrors();
+
+    expect($reservation->fresh()->owed)->toBe(1250);
+});
+
+test('a manager can enter a reservation amount with the active locale decimal separator', function () {
+    $staff = Staff::factory()->create();
+    $reservation = Reservation::factory()->recycle($staff->location)->create([
+        'currency' => 'eur',
+        'owed' => 0,
+    ]);
+    app()->setLocale('de_DE');
+    $this->actingAs($staff, 'staff');
+
+    Livewire::test(EditReservation::class, ['record' => $reservation->getKey()])
+        ->callAction('setOwed', data: ['owed' => '12,50'])
+        ->assertHasNoFormErrors();
+
+    expect($reservation->fresh()->owed)->toBe(1250);
 });
 
 test('a customer page shows only that customer reservations with links to their details', function () {

@@ -27,7 +27,7 @@ class CreateWalkInReservationAction extends Action
 {
     use AuthorizesStaff;
 
-    public string $commandSignature = 'reservations:walk-in {--tenant=} {--name=} {--email=} {--phone=} {--bike=*} {--owed-cents=}';
+    public string $commandSignature = 'reservations:walk-in {--tenant=} {--name=} {--email=} {--phone=} {--bike=*} {--owed-minor-units=}';
 
     /**
      * @param  list<int>  $bikeIds
@@ -37,13 +37,13 @@ class CreateWalkInReservationAction extends Action
         string $email,
         string $phone,
         array $bikeIds,
-        int $owedCents,
+        int $owedMinorUnits,
     ): Reservation {
         $location = Location::query()->firstOrFail();
         $availability = app(AllocateLineAction::class);
         $pickupOnly = $location->bike_assignment_policy === BikeAssignmentPolicy::PickupOnly;
 
-        return DB::transaction(function () use ($location, $availability, $bikeIds, $name, $email, $phone, $owedCents, $pickupOnly): Reservation {
+        return DB::transaction(function () use ($location, $availability, $bikeIds, $name, $email, $phone, $owedMinorUnits, $pickupOnly): Reservation {
             $customer = Customer::query()->create([
                 'name' => $name,
                 'email' => $email,
@@ -60,8 +60,9 @@ class CreateWalkInReservationAction extends Action
                 'starts_at' => $startsAt,
                 'ends_at' => $endsAt,
                 'stage' => ReservationStage::Confirmed,
-                'owed' => $owedCents,
+                'owed' => $owedMinorUnits,
                 'paid' => 0,
+                'currency' => $location->currency,
                 'expires_at' => null,
                 'myrental_token' => Str::random(40),
             ]);
@@ -101,13 +102,13 @@ class CreateWalkInReservationAction extends Action
             'phone' => ['required', 'string', 'max:32'],
             'bike_ids' => ['required', 'array', 'min:1'],
             'bike_ids.*' => ['required', 'integer', 'distinct', 'exists:bikes,id'],
-            'owed_cents' => ['required', 'integer', 'min:0'],
+            'owed_minor_units' => ['required', 'integer', 'min:0'],
         ];
     }
 
     public function asController(ActionRequest $request): DayPatchResource
     {
-        /** @var array{name: string, email: string, phone: string, bike_ids: list<int>, owed_cents: int} $data */
+        /** @var array{name: string, email: string, phone: string, bike_ids: list<int>, owed_minor_units: int} $data */
         $data = $request->validated();
 
         $reservation = $this->handle(
@@ -115,7 +116,7 @@ class CreateWalkInReservationAction extends Action
             $data['email'],
             $data['phone'],
             $data['bike_ids'],
-            $data['owed_cents'],
+            $data['owed_minor_units'],
         );
 
         $bikes = $reservation->bikeReservations->pluck('bike')->filter();
@@ -142,14 +143,14 @@ class CreateWalkInReservationAction extends Action
         $bikeIds = is_array($bikeInput)
             ? array_map('intval', $bikeInput)
             : array_map('intval', explode(',', $bikeInput));
-        $owedInput = $this->requiredStringInput($command, $command->option('owed-cents'), 'Owed cents');
+        $owedInput = $this->requiredStringInput($command, $command->option('owed-minor-units'), 'Owed minor units');
 
         $validated = Validator::make([
             'name' => $this->requiredStringInput($command, $command->option('name'), 'Name'),
             'email' => $this->requiredStringInput($command, $command->option('email'), 'Email'),
             'phone' => $this->requiredStringInput($command, $command->option('phone'), 'Phone'),
             'bike_ids' => $bikeIds,
-            'owed_cents' => $owedInput,
+            'owed_minor_units' => $owedInput,
         ], $this->rules())->validate();
 
         $reservation = $this->handle(
@@ -157,7 +158,7 @@ class CreateWalkInReservationAction extends Action
             $validated['email'],
             $validated['phone'],
             $validated['bike_ids'],
-            (int) $validated['owed_cents'],
+            (int) $validated['owed_minor_units'],
         );
         $command->info("Walk-in {$reservation->id}");
 

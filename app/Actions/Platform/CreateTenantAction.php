@@ -98,7 +98,7 @@ class CreateTenantAction extends Action
             'name' => ['required', 'string', 'max:255'],
             'domain' => ['required', 'string', 'max:255', 'unique:domains,domain'],
             'timezone' => ['required', 'timezone'],
-            'currency' => ['required', 'string', 'size:3'],
+            'currency' => ['required', 'string', 'regex:/^[A-Za-z]{3}$/'],
             'manager_name' => ['required', 'string', 'max:255'],
             'manager_email' => ['required', 'email'],
             'plan' => ['sometimes', 'required', 'string', 'exists:billing_plans,slug'],

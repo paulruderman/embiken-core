@@ -5,10 +5,12 @@ namespace App\Filament\Shop\Resources\Locations\Schemas;
 use App\Enums\BikeAssignmentPolicy;
 use App\Enums\ReturnSituation;
 use App\Models\Location;
+use Embiken\BikeRentals\Models\RentalPackage;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Text;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\Schema as SchemaFacade;
 
 class LocationForm
 {
@@ -27,7 +29,12 @@ class LocationForm
                 TextInput::make('currency')
                     ->required()
                     ->default('usd')
-                    ->length(3),
+                    ->length(3)
+                    ->regex('/^[A-Za-z]{3}$/')
+                    ->disabled(fn (): bool => self::currencyIsLocked())
+                    ->helperText(fn (): string => self::currencyIsLocked()
+                        ? 'Currency cannot be changed while packages exist. Repricing existing packages will be supported in a dedicated workflow.'
+                        : 'Set the shop currency before creating packages.'),
                 TextInput::make('minimum_turnaround_buffer_minutes')
                     ->numeric()
                     ->required()
@@ -40,5 +47,11 @@ class LocationForm
                     ->options(ReturnSituation::class)
                     ->required(),
             ]);
+    }
+
+    private static function currencyIsLocked(): bool
+    {
+        return SchemaFacade::hasTable('rental_packages')
+            && RentalPackage::query()->exists();
     }
 }

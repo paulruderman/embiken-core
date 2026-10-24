@@ -11,6 +11,7 @@ use Embiken\BikeRentals\Enums\BikeReservationStatus;
 use Embiken\BikeRentals\Enums\ReservationStage;
 use Embiken\BikeRentals\Exceptions\OutBikesNeedConfirmation;
 use Embiken\BikeRentals\Filament\Resources\Reservations\ReservationResource;
+use Embiken\BikeRentals\Filament\Support\MoneyInput;
 use Embiken\BikeRentals\Models\Reservation;
 use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
@@ -65,8 +66,7 @@ class EditReservation extends EditRecord
                 }),
             Action::make('setOwed')
                 ->schema([
-                    TextInput::make('owed')
-                        ->numeric()
+                    MoneyInput::make('owed', fn (): string => $reservation->currency)
                         ->required()
                         ->default(fn (): int => $reservation->owed),
                 ])
@@ -76,8 +76,7 @@ class EditReservation extends EditRecord
                     DateTimePicker::make('ends_at')
                         ->required()
                         ->default(fn (): mixed => $reservation->ends_at),
-                    TextInput::make('owed')
-                        ->numeric()
+                    MoneyInput::make('owed', fn (): string => $reservation->currency)
                         ->helperText('Leave blank to keep owed.'),
                 ])
                 ->action(function (array $data) use ($reservation): void {
@@ -91,15 +90,13 @@ class EditReservation extends EditRecord
                 }),
             Action::make('refund')
                 ->schema([
-                    TextInput::make('amount_cents')
-                        ->numeric()
-                        ->required()
-                        ->minValue(1),
+                    MoneyInput::make('amount_minor_units', fn (): string => $reservation->currency, minimumMinorUnits: 1)
+                        ->required(),
                     TextInput::make('note'),
                 ])
                 ->action(fn (array $data) => app(RefundAction::class)(
                     $reservation,
-                    (int) $data['amount_cents'],
+                    (int) $data['amount_minor_units'],
                     $data['note'] ?? null,
                 )),
             Action::make('cancel')

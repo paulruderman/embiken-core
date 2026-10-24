@@ -42,7 +42,7 @@ enum PackageMeter: string implements HasColor, HasDescription, HasIcon, HasLabel
     public function getDescription(): string
     {
         return match ($this) {
-            self::None => 'Membership only; rate_cents is 0.',
+            self::None => 'Membership only; rate_minor_units is 0.',
             self::PerHour => 'Rounds [starts_at, ends_at) up to 15-minute steps.',
             self::PerLine => 'Fixed amount per line for the whole interval.',
             self::PerCalendarDay => 'Distinct shop-timezone dates intersecting the interval.',

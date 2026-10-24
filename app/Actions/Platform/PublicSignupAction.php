@@ -103,7 +103,7 @@ class PublicSignupAction extends Action
             'name' => ['required', 'string', 'max:255'],
             'shop_slug' => ['required', 'string', 'min:2', 'max:60', 'regex:/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/'],
             'timezone' => ['required', 'timezone'],
-            'currency' => ['required', 'string', 'size:3'],
+            'currency' => ['required', 'string', 'regex:/^[A-Za-z]{3}$/'],
             'manager_name' => ['required', 'string', 'max:255'],
             'manager_email' => ['required', 'email', 'max:255'],
             'plan' => ['required', 'string', Rule::exists('billing_plans', 'slug')->where('is_public', true)->where('custom_pricing', false)],

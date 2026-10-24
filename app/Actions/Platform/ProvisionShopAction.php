@@ -63,7 +63,7 @@ class ProvisionShopAction extends Action
         $data = $request->validate([
             'shop_name' => ['required', 'string'],
             'timezone' => ['required', 'timezone'],
-            'currency' => ['required', 'string', 'size:3'],
+            'currency' => ['required', 'string', 'regex:/^[A-Za-z]{3}$/'],
             'manager_name' => ['required', 'string'],
             'manager_email' => ['required', 'email'],
         ]);

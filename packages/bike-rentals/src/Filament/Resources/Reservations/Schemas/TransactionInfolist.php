@@ -2,6 +2,7 @@
 
 namespace Embiken\BikeRentals\Filament\Resources\Reservations\Schemas;
 
+use App\Support\Money;
 use Embiken\BikeRentals\Models\Transaction;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
@@ -19,11 +20,11 @@ class TransactionInfolist
                             ->badge(),
                         TextEntry::make('status')
                             ->badge(),
-                        TextEntry::make('amount_cents')
+                        TextEntry::make('amount_minor_units')
                             ->label('Amount')
                             ->formatStateUsing(fn (?int $state, Transaction $record): ?string => $state === null
                                 ? null
-                                : strtoupper($record->currency).' '.number_format($state / 100, 2)),
+                                : Money::format($state, $record->currency)),
                         TextEntry::make('captured_at')
                             ->dateTime()
                             ->placeholder('Not captured'),

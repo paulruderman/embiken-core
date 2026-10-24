@@ -2,6 +2,7 @@
 
 namespace Embiken\BikeRentals\Filament\Resources\Customers\Schemas;
 
+use App\Support\Money;
 use Embiken\BikeRentals\Models\Customer;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\TextInput;
@@ -28,10 +29,13 @@ class CustomerForm
                             return '—';
                         }
 
-                        $owed = (int) $record->reservations()->sum('owed');
-                        $paid = (int) $record->reservations()->sum('paid');
-
-                        return "{$owed} owed / {$paid} paid (cents)";
+                        return $record->reservations()
+                            ->selectRaw('currency, SUM(owed) AS owed, SUM(paid) AS paid')
+                            ->groupBy('currency')
+                            ->get()
+                            ->map(fn (object $totals): string => Money::format((int) $totals->owed, $totals->currency)
+                                .' owed / '.Money::format((int) $totals->paid, $totals->currency).' paid')
+                            ->implode('; ');
                     }),
             ]);
     }

@@ -2,6 +2,7 @@
 
 namespace Embiken\BikeRentals\Filament\Resources\Customers\RelationManagers;
 
+use App\Support\Money;
 use Embiken\BikeRentals\Filament\Resources\Reservations\ReservationResource;
 use Embiken\BikeRentals\Models\Reservation;
 use Filament\Actions\Action;
@@ -29,9 +30,15 @@ class ReservationsRelationManager extends RelationManager
                 TextColumn::make('ends_at')
                     ->dateTime(),
                 TextColumn::make('owed')
-                    ->label('Owed (cents)'),
+                    ->label('Owed')
+                    ->formatStateUsing(fn (?int $state, Reservation $record): ?string => $state === null
+                        ? null
+                        : Money::format($state, $record->currency)),
                 TextColumn::make('paid')
-                    ->label('Paid (cents)'),
+                    ->label('Paid')
+                    ->formatStateUsing(fn (?int $state, Reservation $record): ?string => $state === null
+                        ? null
+                        : Money::format($state, $record->currency)),
             ])
             ->headerActions([])
             ->recordActions([

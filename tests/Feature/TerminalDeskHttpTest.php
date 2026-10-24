@@ -194,6 +194,7 @@ test('pickup return walk-in cash and waiver write through staff HTTP', function 
     $walkInBikeIds = [];
 
     $shop['tenant']->run(function () use ($shop, &$lineId, &$reservationId, &$walkInBikeIds): void {
+        $shop['location']->update(['currency' => 'jpy']);
         $bike = Bike::factory()->recycle($shop['location'])->create();
         $otherBike = Bike::factory()->recycle($shop['location'])->create();
         $walkInBikeIds = [$bike->id, $otherBike->id];
@@ -222,8 +223,10 @@ test('pickup return walk-in cash and waiver write through staff HTTP', function 
         ->assertJsonPath('bikes.0.bike_situation_state', BikeSituation::Home->value);
 
     $this->postJson("http://desk-writes.localhost/reservations/{$reservationId}/cash", [
-        'amount_cents' => 5000,
-    ])->assertOk()->assertJsonPath('reservation.paid', 5000);
+        'amount_minor_units' => 5000,
+    ])->assertOk()
+        ->assertJsonPath('reservation.paid_minor_units', 5000)
+        ->assertJsonPath('reservation.currency', 'jpy');
 
     $this->postJson("http://desk-writes.localhost/reservations/{$reservationId}/waiver")
         ->assertOk();
@@ -234,29 +237,65 @@ test('pickup return walk-in cash and waiver write through staff HTTP', function 
 
     $this->postJson('http://desk-writes.localhost/reservations/walk-in')
         ->assertUnprocessable()
-        ->assertJsonValidationErrors(['name', 'email', 'phone', 'bike_ids', 'owed_cents'])
+        ->assertJsonValidationErrors(['name', 'email', 'phone', 'bike_ids', 'owed_minor_units'])
         ->assertJsonPath('errors.name.0', 'The name field is required.')
         ->assertJsonPath('errors.email.0', 'The email field is required.')
         ->assertJsonPath('errors.phone.0', 'The phone field is required.')
         ->assertJsonPath('errors.bike_ids.0', 'The bike ids field is required.')
-        ->assertJsonPath('errors.owed_cents.0', 'The owed cents field is required.');
+        ->assertJsonPath('errors.owed_minor_units.0', 'The owed minor units field is required.');
 
     $this->postJson('http://desk-writes.localhost/reservations/walk-in', [
         'name' => 'Avery Rider',
         'email' => 'avery@example.test',
         'phone' => '+1 555 0100',
         'bike_ids' => $walkInBikeIds,
-        'owed_cents' => 7500,
+        'owed_minor_units' => 7500,
     ])
         ->assertOk()
         ->assertJsonPath('reservation.customer.name', 'Avery Rider')
-        ->assertJsonPath('reservation.owed', 7500)
+        ->assertJsonPath('reservation.owed_minor_units', 7500)
+        ->assertJsonPath('reservation.currency', 'jpy')
         ->assertJsonCount(2, 'reservation.lines');
 
     $shop['tenant']->run(function () use ($walkInBikeIds): void {
         expect(Bike::query()->whereIn('id', $walkInBikeIds)
             ->where('bike_situation_state', BikeSituation::Prepping)
             ->count())->toBe(2);
+    });
+});
+
+test('walk-in reservations and cash payments retain the configured currency', function () {
+    $shop = provisionDeskShop('desk-jpy.localhost');
+    $this->deskTenant = $shop['tenant'];
+    $bikeIds = [];
+
+    $shop['tenant']->run(function () use ($shop, &$bikeIds): void {
+        $shop['location']->update(['currency' => 'jpy']);
+        $bikeIds = [Bike::factory()->recycle($shop['location'])->create()->id];
+    });
+
+    $this->actingAs($shop['staff'], 'staff');
+
+    $response = $this->postJson('http://desk-jpy.localhost/reservations/walk-in', [
+        'name' => 'Casey Rider',
+        'email' => 'casey@example.test',
+        'phone' => '+81 90 1234 5678',
+        'bike_ids' => $bikeIds,
+        'owed_minor_units' => 1250,
+    ])->assertOk()
+        ->assertJsonPath('reservation.currency', 'jpy')
+        ->assertJsonPath('reservation.owed_minor_units', 1250);
+
+    $reservationId = $response->json('reservation.id');
+
+    $this->postJson("http://desk-jpy.localhost/reservations/{$reservationId}/cash", [
+        'amount_minor_units' => 1250,
+    ])->assertOk()
+        ->assertJsonPath('reservation.paid_minor_units', 1250);
+
+    $shop['tenant']->run(function () use ($reservationId): void {
+        expect(Reservation::query()->findOrFail($reservationId)->currency)->toBe('jpy')
+            ->and(Reservation::query()->findOrFail($reservationId)->transactions()->firstOrFail()->currency)->toBe('jpy');
     });
 });
 
@@ -331,11 +370,11 @@ test('pickup-only walk-ins keep bikes unassigned until pickup', function () {
             'email' => 'riley@example.test',
             'phone' => '+1 555 0101',
             'bike_ids' => $bikeIds,
-            'owed_cents' => 0,
+            'owed_minor_units' => 0,
         ])
         ->assertOk()
         ->assertJsonPath('reservation.stage', ReservationStage::Confirmed->value)
-        ->assertJsonPath('reservation.owed', 0)
+        ->assertJsonPath('reservation.owed_minor_units', 0)
         ->assertJsonPath('reservation.lines.0.bike_id', null)
         ->assertJsonPath('reservation.lines.1.bike_id', null);
 
@@ -357,7 +396,7 @@ test('swap refuses a variant that is not on the package', function () {
         $bike = Bike::factory()->recycle($shop['location'])->create();
         $other = Bike::factory()->recycle($shop['location'])->create();
         $package = RentalPackage::factory()->recycle($shop['location'])->create();
-        $package->variants()->attach($bike->bike_model_variant_id, ['rate_cents' => 1000]);
+        $package->variants()->attach($bike->bike_model_variant_id, ['rate_minor_units' => 1000]);
 
         $reservation = Reservation::factory()->confirmed()->recycle($shop['location'])->recycle($package)->create();
         $line = app(AllocateLineAction::class)($reservation, $bike->variant, $bike);

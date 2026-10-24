@@ -22,7 +22,7 @@ class RentalPackageProductFactory extends Factory
         return [
             'rental_package_id' => RentalPackage::factory(),
             'product_id' => BikeModelVariant::factory(),
-            'rate_cents' => 2500,
+            'rate_minor_units' => 2500,
         ];
     }
 }

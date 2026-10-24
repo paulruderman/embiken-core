@@ -29,6 +29,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ReservationStage $stage
  * @property int $owed
  * @property int $paid
+ * @property string $currency
  * @property CarbonImmutable|null $expires_at
  * @property CarbonImmutable|null $waiver_accepted_at
  * @property string|null $notes
@@ -47,6 +48,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'stage',
     'owed',
     'paid',
+    'currency',
     'expires_at',
     'waiver_accepted_at',
     'notes',
@@ -64,6 +66,23 @@ class Reservation extends Model
         return ReservationFactory::new();
     }
 
+    protected static function booted(): void
+    {
+        static::creating(function (Reservation $reservation): void {
+            if ($reservation->rental_package_id !== null) {
+                $reservation->currency = (string) RentalPackage::query()
+                    ->whereKey($reservation->rental_package_id)
+                    ->value('currency');
+            } elseif (blank($reservation->currency)) {
+                $reservation->currency = (string) Location::query()
+                    ->whereKey($reservation->location_id)
+                    ->value('currency') ?: 'usd';
+            }
+
+            $reservation->currency = strtolower($reservation->currency);
+        });
+    }
+
     /**
      * @return array<string, string>
      */
@@ -76,6 +95,7 @@ class Reservation extends Model
             'stage' => ReservationStage::class,
             'owed' => 'integer',
             'paid' => 'integer',
+            'currency' => 'string',
             'expires_at' => 'datetime',
             'waiver_accepted_at' => 'datetime',
         ];
@@ -129,8 +149,8 @@ class Reservation extends Model
 
         $this->paid = (int) $captured->sum(function (Transaction $transaction): int {
             return $transaction->kind === TransactionKind::Refund
-                ? -$transaction->amount_cents
-                : $transaction->amount_cents;
+                ? -$transaction->amount_minor_units
+                : $transaction->amount_minor_units;
         });
 
         $this->save();

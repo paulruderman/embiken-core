@@ -485,7 +485,7 @@ it('acknowledges completed essentials and presents optional catalog improvements
     LocationHour::factory()->for($location)->create();
 
     $package = RentalPackage::factory()->for($location)->create();
-    $package->variants()->attach($variant, ['rate_cents' => 1000]);
+    $package->variants()->attach($variant, ['rate_minor_units' => 1000]);
 
     expect(array_column(app(ShopSetupReadiness::class)->checklist(), 'complete'))
         ->toBe([true, true, true, true, true, true, true, true]);
@@ -583,7 +583,7 @@ it('requires a Book-visible package to include a bookable bike variant', functio
         ->create();
 
     $package = RentalPackage::factory()->for($location)->create();
-    $package->variants()->attach($offeredVariant, ['rate_cents' => 1000]);
+    $package->variants()->attach($offeredVariant, ['rate_minor_units' => 1000]);
 
     $step = app(ShopSetupReadiness::class)->step(ShopSetupReadiness::BookableFleet);
 
@@ -592,7 +592,7 @@ it('requires a Book-visible package to include a bookable bike variant', functio
         ->and($step['action_label'])->toBe('Add bookable bike variants to a package')
         ->and($step['action_url'])->toBe(RentalPackageResource::getUrl('edit', ['record' => $package->getKey()]).'?setup_target=bookable_fleet');
 
-    $package->variants()->attach($bikeVariant, ['rate_cents' => 1000]);
+    $package->variants()->attach($bikeVariant, ['rate_minor_units' => 1000]);
 
     expect(app(ShopSetupReadiness::class)->step(ShopSetupReadiness::BookableFleet)['complete'])->toBeTrue();
 });

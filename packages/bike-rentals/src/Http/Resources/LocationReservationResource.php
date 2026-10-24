@@ -23,8 +23,9 @@ class LocationReservationResource extends JsonResource
             'stage' => $this->stage->value,
             'starts_at' => $this->starts_at->toIso8601String(),
             'ends_at' => $this->ends_at->toIso8601String(),
-            'owed' => $this->owed,
-            'paid' => $this->paid,
+            'owed_minor_units' => $this->owed,
+            'paid_minor_units' => $this->paid,
+            'currency' => $this->currency,
             'customer' => [
                 'id' => $this->customer_id,
                 'name' => $this->customer->name,

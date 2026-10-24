@@ -50,6 +50,10 @@ test('a platform user can save a tenant with selected modules that include disab
     $this->actingAs($user);
 
     Livewire::test(EditTenant::class, ['record' => $tenant->getRouteKey()])
+        ->assertSee('Prerequisites are selected automatically. Turn off dependent modules first to disable a required module.')
+        ->assertSee('Online booking setup, Book-visible offers, and bookable bikes.')
+        ->assertSee('Required:')
+        ->assertSee('Rentals')
         ->fillForm([
             'name' => $tenant->name,
             'modules' => ['embiken/bike-fleet', 'embiken/maintenance', 'embiken/bike-rentals', 'embiken/bike-rental-self-booking'],

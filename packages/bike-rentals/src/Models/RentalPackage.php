@@ -18,13 +18,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * @property int $id
  * @property int $location_id
+ * @property string $currency
  * @property string $name
  * @property string|null $description
  * @property string|null $tagline
  * @property string|null $blurb
  * @property PackageMeter $meter
  * @property ConfirmThreshold $confirm_threshold
- * @property int|null $deposit_cents
+ * @property int|null $deposit_minor_units
  * @property int|null $deposit_percent
  * @property int|null $min_duration_minutes
  * @property int|null $max_duration_minutes
@@ -35,13 +36,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 #[Fillable([
     'location_id',
+    'currency',
     'name',
     'description',
     'tagline',
     'blurb',
     'meter',
     'confirm_threshold',
-    'deposit_cents',
+    'deposit_minor_units',
     'deposit_percent',
     'min_duration_minutes',
     'max_duration_minutes',
@@ -60,6 +62,19 @@ class RentalPackage extends Model
         return RentalPackageFactory::new();
     }
 
+    protected static function booted(): void
+    {
+        static::saving(function (RentalPackage $package): void {
+            if ($package->exists) {
+                $package->currency = (string) $package->getOriginal('currency');
+            } else {
+                $package->currency = (string) $package->location()->value('currency') ?: 'usd';
+            }
+
+            $package->currency = strtolower($package->currency);
+        });
+    }
+
     /**
      * @return array<string, string>
      */
@@ -68,12 +83,13 @@ class RentalPackage extends Model
         return [
             'meter' => PackageMeter::class,
             'confirm_threshold' => ConfirmThreshold::class,
-            'deposit_cents' => 'integer',
+            'deposit_minor_units' => 'integer',
             'deposit_percent' => 'integer',
             'min_duration_minutes' => 'integer',
             'max_duration_minutes' => 'integer',
             'book_visible' => 'boolean',
             'sort_order' => 'integer',
+            'currency' => 'string',
         ];
     }
 
@@ -92,7 +108,7 @@ class RentalPackage extends Model
     {
         return $this->belongsToMany(BikeModelVariant::class, 'rental_package_product', 'rental_package_id', 'product_id')
             ->using(RentalPackageProduct::class)
-            ->withPivot('rate_cents')
+            ->withPivot('rate_minor_units')
             ->withTimestamps();
     }
 

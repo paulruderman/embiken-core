@@ -20,12 +20,6 @@ class CustomersTable
                     ->searchable(),
                 TextColumn::make('phone')
                     ->searchable(),
-                TextColumn::make('reservations_sum_owed')
-                    ->label('Owed')
-                    ->sum('reservations', 'owed'),
-                TextColumn::make('reservations_sum_paid')
-                    ->label('Paid')
-                    ->sum('reservations', 'paid'),
             ])
             ->recordActions([
                 EditAction::make(),

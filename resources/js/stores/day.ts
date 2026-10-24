@@ -34,8 +34,9 @@ export type DayReservation = {
     stage: ReservationStage | string;
     starts_at: string;
     ends_at: string;
-    owed: number;
-    paid: number;
+    owed_minor_units: number;
+    paid_minor_units: number;
+    currency: string;
     customer: { id: number; name: string };
     waiver_accepted_at: string | null;
     myrental_token: string | null;

@@ -53,7 +53,7 @@ class BikeRentalsModule extends AbstractTenantModule
         BikeModelVariant::resolveRelationUsing('rentalPackages', function (BikeModelVariant $variant): BelongsToMany {
             return $variant->belongsToMany(RentalPackage::class, 'rental_package_product', 'product_id', 'rental_package_id')
                 ->using(RentalPackageProduct::class)
-                ->withPivot('rate_cents')
+                ->withPivot('rate_minor_units')
                 ->withTimestamps();
         });
     }

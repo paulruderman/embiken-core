@@ -21,20 +21,20 @@ class RecordOtherPaymentAction extends Action
 
     public string $commandSignature = 'reservations:other {reservation?} {amount?} {--tenant=} {--note=}';
 
-    public function handle(Reservation $reservation, int $amountCents, ?string $note = null): Transaction
+    public function handle(Reservation $reservation, int $amountMinorUnits, ?string $note = null): Transaction
     {
-        if ($amountCents <= 0) {
+        if ($amountMinorUnits <= 0) {
             throw new InvalidArgumentException('Amount must be positive.');
         }
 
-        return DB::transaction(function () use ($reservation, $amountCents, $note): Transaction {
+        return DB::transaction(function () use ($reservation, $amountMinorUnits, $note): Transaction {
             $reservation->loadMissing('location');
 
             $transaction = $reservation->transactions()->create([
                 'kind' => TransactionKind::Other,
                 'status' => TransactionStatus::Captured,
-                'amount_cents' => $amountCents,
-                'currency' => $reservation->location->currency,
+                'amount_minor_units' => $amountMinorUnits,
+                'currency' => $reservation->currency,
                 'note' => $note,
                 'captured_at' => now(),
             ]);
@@ -48,11 +48,11 @@ class RecordOtherPaymentAction extends Action
     public function asController(Request $request, Reservation $reservation): DayPatchResource
     {
         $data = $request->validate([
-            'amount_cents' => ['required', 'integer', 'min:1'],
+            'amount_minor_units' => ['required', 'integer', 'min:1'],
             'note' => ['nullable', 'string'],
         ]);
 
-        $this->handle($reservation, (int) $data['amount_cents'], $data['note'] ?? null);
+        $this->handle($reservation, (int) $data['amount_minor_units'], $data['note'] ?? null);
 
         return new DayPatchResource([
             'reservation' => $reservation->refresh()->load(['customer', 'bikeReservations.product.bikeModel']),
@@ -69,7 +69,7 @@ class RecordOtherPaymentAction extends Action
         $this->initializeTenancyFromCommand($command);
         $transaction = $this->handle(
             $this->findOneOrFail(Reservation::query(), $command->argument('reservation') ?: \Laravel\Prompts\text('Reservation id')),
-            (int) ($command->argument('amount') ?: \Laravel\Prompts\text('Amount cents')),
+            (int) ($command->argument('amount') ?: \Laravel\Prompts\text('Amount minor units')),
             $this->optionalStringValue($command->option('note') ?: null, 'Note'),
         );
         $command->info("Other {$transaction->id}");

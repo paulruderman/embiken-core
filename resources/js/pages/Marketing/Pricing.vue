@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, usePage } from '@inertiajs/vue3';
 import { signup } from '@/routes/marketing';
 import { localRouteUrl } from '@/lib/local-route-url';
 import MarketingLayout from '@/components/MarketingLayout.vue';
@@ -26,6 +26,7 @@ interface CmsPage {
 }
 
 const props = defineProps<{ plans: Plan[]; page: CmsPage }>();
+const locale = usePage().props.locale;
 
 const annual = ref(false);
 const selectedPlan = ref<Plan | null>(
@@ -40,11 +41,11 @@ const intervalLabel = computed(() =>
 function money(cents: number | null, currency: string): string {
     if (cents === null) return 'Custom';
 
-    return new Intl.NumberFormat('en-US', {
+    return `${currency.toUpperCase()}\u00a0${new Intl.NumberFormat(locale, {
         style: 'currency',
         currency,
         maximumFractionDigits: 0,
-    }).format(cents / 100);
+    }).format(cents / 100)}`;
 }
 
 function monthlyDisplayAmount(plan: Plan): number | null {
@@ -64,9 +65,11 @@ function percentage(basisPoints: number | null): string {
 }
 
 function planDetails(plan: Plan): string[] {
-    if (plan.customPricing) return ['Discuss custom terms and current availability'];
+    if (plan.customPricing)
+        return ['Discuss custom terms and current availability'];
     const rate = `${percentage(plan.processingRateBasisPoints)} combined rate when Embiken processes payment`;
-    if (plan.slug === 'starter') return ['No subscription fee', 'Create a shop workspace', rate];
+    if (plan.slug === 'starter')
+        return ['No subscription fee', 'Create a shop workspace', rate];
 
     return ['Subscription billing is not active yet', rate];
 }
@@ -75,11 +78,29 @@ function planDetails(plan: Plan): string[] {
 <template>
     <MarketingLayout>
         <Head :title="props.page.seoTitle">
-            <meta v-if="props.page.seoDescription" name="description" :content="props.page.seoDescription" head-key="description" />
+            <meta
+                v-if="props.page.seoDescription"
+                name="description"
+                :content="props.page.seoDescription"
+                head-key="description"
+            />
             <meta property="og:type" content="website" head-key="og:type" />
-            <meta property="og:title" :content="props.page.seoTitle" head-key="og:title" />
-            <meta v-if="props.page.seoDescription" property="og:description" :content="props.page.seoDescription" head-key="og:description" />
-            <link rel="canonical" :href="props.page.canonicalUrl" head-key="canonical" />
+            <meta
+                property="og:title"
+                :content="props.page.seoTitle"
+                head-key="og:title"
+            />
+            <meta
+                v-if="props.page.seoDescription"
+                property="og:description"
+                :content="props.page.seoDescription"
+                head-key="og:description"
+            />
+            <link
+                rel="canonical"
+                :href="props.page.canonicalUrl"
+                head-key="canonical"
+            />
         </Head>
         <main class="mx-auto max-w-7xl px-6 pt-12 pb-20 lg:px-10 lg:pt-16">
             <div class="mx-auto max-w-3xl text-center">
@@ -150,7 +171,7 @@ function planDetails(plan: Plan): string[] {
                             </h2>
                             <p class="mt-2 text-sm leading-6 text-zinc-500">
                                 {{
-                                plan.slug === 'starter'
+                                    plan.slug === 'starter'
                                         ? 'Start a shop workspace during early access.'
                                         : plan.slug === 'standard'
                                           ? 'A lower rate as your operation grows.'
@@ -299,7 +320,10 @@ function planDetails(plan: Plan): string[] {
                 </button>
             </div>
 
-            <article class="mx-auto mt-10 max-w-3xl rounded-3xl border border-zinc-200 bg-white p-6 text-sm leading-7 text-zinc-600 sm:p-8" v-html="props.page.contentHtml" />
+            <article
+                class="mx-auto mt-10 max-w-3xl rounded-3xl border border-zinc-200 bg-white p-6 text-sm leading-7 text-zinc-600 sm:p-8"
+                v-html="props.page.contentHtml"
+            />
         </main>
     </MarketingLayout>
 </template>

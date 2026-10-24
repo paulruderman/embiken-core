@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $reservation_id
  * @property TransactionKind $kind
  * @property TransactionStatus $status
- * @property int $amount_cents
+ * @property int $amount_minor_units
  * @property string $currency
  * @property string|null $note
  * @property string|null $payment_intent_id
@@ -31,7 +31,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'reservation_id',
     'kind',
     'status',
-    'amount_cents',
+    'amount_minor_units',
     'currency',
     'note',
     'payment_intent_id',
@@ -58,7 +58,7 @@ class Transaction extends Model
         return [
             'kind' => TransactionKind::class,
             'status' => TransactionStatus::class,
-            'amount_cents' => 'integer',
+            'amount_minor_units' => 'integer',
             'captured_at' => 'datetime',
             'failed_at' => 'datetime',
         ];

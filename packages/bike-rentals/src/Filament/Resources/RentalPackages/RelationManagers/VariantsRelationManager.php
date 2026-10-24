@@ -3,17 +3,19 @@
 namespace Embiken\BikeRentals\Filament\Resources\RentalPackages\RelationManagers;
 
 use App\Filament\Shop\Support\ShopSetupReadiness;
+use App\Support\Money;
 use Embiken\BikeFleet\Models\BikeModelVariant;
+use Embiken\BikeRentals\Filament\Support\MoneyInput;
 use Filament\Actions\Action;
 use Filament\Actions\AttachAction;
 use Filament\Actions\DetachAction;
 use Filament\Actions\EditAction;
-use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use InvalidArgumentException;
 
 class VariantsRelationManager extends RelationManager
 {
@@ -23,10 +25,8 @@ class VariantsRelationManager extends RelationManager
     {
         return $schema
             ->components([
-                TextInput::make('rate_cents')
-                    ->numeric()
-                    ->required()
-                    ->minValue(0),
+                MoneyInput::make('rate_minor_units', fn (): string => (string) $this->getOwnerRecord()->getAttribute('currency'))
+                    ->required(),
             ]);
     }
 
@@ -41,8 +41,18 @@ class VariantsRelationManager extends RelationManager
                 TextColumn::make('color_name')
                     ->label('Color')
                     ->placeholder('—'),
-                TextColumn::make('rate_cents')
-                    ->label('Rate (cents)'),
+                TextColumn::make('rate_minor_units')
+                    ->label('Rate')
+                    ->formatStateUsing(function (?int $state): string {
+                        try {
+                            return Money::format(
+                                $state ?? 0,
+                                (string) $this->getOwnerRecord()->getAttribute('currency'),
+                            );
+                        } catch (InvalidArgumentException) {
+                            return 'Invalid currency';
+                        }
+                    }),
             ])
             ->emptyStateHeading('No variants in this package yet')
             ->emptyStateDescription(fn (): string => BikeModelVariant::query()->exists()
@@ -76,10 +86,8 @@ class VariantsRelationManager extends RelationManager
                     })
                     ->schema(fn (AttachAction $action): array => [
                         $action->getRecordSelect(),
-                        TextInput::make('rate_cents')
-                            ->numeric()
-                            ->required()
-                            ->minValue(0),
+                        MoneyInput::make('rate_minor_units', fn (): string => (string) $this->getOwnerRecord()->getAttribute('currency'))
+                            ->required(),
                     ]),
             ])
             ->recordActions([

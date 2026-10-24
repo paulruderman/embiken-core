@@ -33,10 +33,10 @@ class CreateRentalPackage extends CreateRecord
      */
     public static function normalizeDeposit(array $data): array
     {
-        if (! empty($data['deposit_cents'])) {
+        if (! empty($data['deposit_minor_units'])) {
             $data['deposit_percent'] = null;
         } elseif (! empty($data['deposit_percent'])) {
-            $data['deposit_cents'] = null;
+            $data['deposit_minor_units'] = null;
         }
 
         return $data;

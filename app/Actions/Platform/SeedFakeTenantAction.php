@@ -260,7 +260,7 @@ class SeedFakeTenantAction extends Action
             };
 
             foreach ($variants as $variant) {
-                $package->variants()->attach($variant->id, ['rate_cents' => $rate]);
+                $package->variants()->attach($variant->id, ['rate_minor_units' => $rate]);
             }
         }
 
@@ -426,6 +426,7 @@ class SeedFakeTenantAction extends Action
             'stage' => $stage,
             'owed' => $package->meter === PackageMeter::None ? 0 : 5000,
             'paid' => $stage === ReservationStage::Confirmed ? 5000 : 0,
+            'currency' => $location->currency,
             'expires_at' => $stage === ReservationStage::Provisional
                 ? now()->addMinutes((int) config('embiken.provisional_ttl_minutes'))
                 : null,

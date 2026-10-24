@@ -69,14 +69,31 @@ test('resolved and cancelled service stages stop occupying', function () {
         ->and(ServiceStage::Cancelled->occupiesWhenBlocking())->toBeFalse();
 });
 
-test('a package variant pivot stores rate cents as offer membership', function () {
+test('a package variant pivot stores rate minor units as offer membership', function () {
     $pivot = RentalPackageProduct::factory()->create([
-        'rate_cents' => 1800,
+        'rate_minor_units' => 1800,
     ]);
 
     expect($pivot->product)->not->toBeNull()
         ->and($pivot->rentalPackage->variants->first()->id)->toBe($pivot->product_id)
-        ->and($pivot->rate_cents)->toBe(1800);
+        ->and($pivot->rate_minor_units)->toBe(1800);
+});
+
+test('packages and reservations retain their currency when the location default changes', function () {
+    $location = Location::factory()->create(['currency' => 'jpy']);
+    $package = RentalPackage::factory()->recycle($location)->create();
+    $customer = Customer::factory()->create();
+    $reservation = Reservation::factory()
+        ->recycle($location)
+        ->for($customer)
+        ->for($package)
+        ->create();
+
+    $location->update(['currency' => 'usd']);
+
+    expect($package->fresh()->currency)->toBe('jpy')
+        ->and($reservation->fresh()->currency)->toBe('jpy')
+        ->and(RentalPackage::factory()->recycle($location)->create()->currency)->toBe('usd');
 });
 
 test('staff include a platform manager with no password', function () {

@@ -3,8 +3,10 @@
 namespace Embiken\BikeRentals\Filament\Resources\Reservations\Tables;
 
 use App\Models\Location;
+use App\Support\Money;
 use Carbon\CarbonImmutable;
 use Embiken\BikeRentals\Enums\ReservationStage;
+use Embiken\BikeRentals\Models\Reservation;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Select;
@@ -31,9 +33,15 @@ class ReservationsTable
                 TextColumn::make('ends_at')
                     ->dateTime(),
                 TextColumn::make('owed')
-                    ->label('Owed'),
+                    ->label('Owed')
+                    ->formatStateUsing(fn (?int $state, Reservation $record): ?string => $state === null
+                        ? null
+                        : Money::format($state, $record->currency)),
                 TextColumn::make('paid')
-                    ->label('Paid'),
+                    ->label('Paid')
+                    ->formatStateUsing(fn (?int $state, Reservation $record): ?string => $state === null
+                        ? null
+                        : Money::format($state, $record->currency)),
             ])
             ->filters([
                 Filter::make('stage')

@@ -56,13 +56,13 @@ class ExtendAction extends Action
     {
         $data = $request->validate([
             'ends_at' => ['required', 'date'],
-            'owed' => ['nullable', 'integer', 'min:0'],
+            'owed_minor_units' => ['nullable', 'integer', 'min:0'],
         ]);
 
         $reservation = $this->handle(
             $reservation,
             Carbon::parse($data['ends_at']),
-            isset($data['owed']) ? (int) $data['owed'] : null,
+            isset($data['owed_minor_units']) ? (int) $data['owed_minor_units'] : null,
         );
 
         return new DayPatchResource([

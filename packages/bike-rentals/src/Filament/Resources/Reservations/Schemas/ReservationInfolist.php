@@ -2,6 +2,8 @@
 
 namespace Embiken\BikeRentals\Filament\Resources\Reservations\Schemas;
 
+use App\Support\Money;
+use Embiken\BikeRentals\Models\Reservation;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Schema;
 
@@ -20,9 +22,15 @@ class ReservationInfolist
                 TextEntry::make('ends_at')
                     ->dateTime(),
                 TextEntry::make('owed')
-                    ->label('Owed (cents)'),
+                    ->label('Owed')
+                    ->formatStateUsing(fn (?int $state, Reservation $record): ?string => $state === null
+                        ? null
+                        : Money::format($state, $record->currency)),
                 TextEntry::make('paid')
-                    ->label('Paid (cents)'),
+                    ->label('Paid')
+                    ->formatStateUsing(fn (?int $state, Reservation $record): ?string => $state === null
+                        ? null
+                        : Money::format($state, $record->currency)),
                 TextEntry::make('rentalPackage.name')
                     ->placeholder('—'),
                 TextEntry::make('notes')

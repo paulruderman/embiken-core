@@ -10,20 +10,24 @@ import RecordCashPaymentAction from '@/actions/Embiken/BikeRentals/Actions/Recor
 import ReturnAction from '@/actions/Embiken/BikeRentals/Actions/ReturnAction';
 import SwapAssetAction from '@/actions/Embiken/BikeRentals/Actions/SwapAssetAction';
 import { useDayStore, type DayPatch } from '@/stores/day';
-import type { Line, Reservation } from '../../../packages/bike-rentals/resources/js/Terminal/prototype/mock';
+import type {
+    Line,
+    Reservation,
+} from '../../../packages/bike-rentals/resources/js/Terminal/prototype/mock';
 
 type DeskRequest = {
-    amount_cents?: number;
+    amount_minor_units?: number;
     bike_id?: number;
     email?: string;
     ends_at?: string;
     name?: string;
-    owed?: number;
+    owed_minor_units?: number;
     phone?: string;
 };
 
 function apply(day: ReturnType<typeof useDayStore>, payload: unknown): void {
-    const patch = (payload as { data?: DayPatch })?.data ?? (payload as DayPatch);
+    const patch =
+        (payload as { data?: DayPatch })?.data ?? (payload as DayPatch);
 
     day.applyPatch(patch);
 }
@@ -41,7 +45,8 @@ export function useTerminalDesk() {
             onSuccess: (response) => {
                 apply(day, response);
                 const patch =
-                    (response as { data?: DayPatch })?.data ?? (response as DayPatch);
+                    (response as { data?: DayPatch })?.data ??
+                    (response as DayPatch);
                 onSuccess?.(patch);
             },
         });
@@ -66,14 +71,17 @@ export function useTerminalDesk() {
             post(PutAwayAction.url(bikeId));
         },
         takeCash(reservation: Reservation): void {
-            const outstanding = Math.max(reservation.owed - reservation.paid, 0);
+            const outstanding = Math.max(
+                reservation.owed - reservation.paid,
+                0,
+            );
 
             if (outstanding <= 0) {
                 return;
             }
 
             post(RecordCashPaymentAction.url(reservation.id), {
-                amount_cents: outstanding,
+                amount_minor_units: outstanding,
             });
         },
         acceptWaiver(reservation: Reservation): void {
@@ -96,7 +104,7 @@ export function useTerminalDesk() {
             };
 
             if (requote) {
-                body.owed = reservation.owed + 2000;
+                body.owed_minor_units = reservation.owed + 2000;
             }
 
             post(ExtendAction.url(reservation.id), body);
@@ -110,11 +118,15 @@ export function useTerminalDesk() {
                 return;
             }
 
-            post(CreateWalkInReservationAction.url(), { name, email, phone }, (patch) => {
-                if (patch.reservation) {
-                    onCreated?.(patch.reservation.id);
-                }
-            });
+            post(
+                CreateWalkInReservationAction.url(),
+                { name, email, phone },
+                (patch) => {
+                    if (patch.reservation) {
+                        onCreated?.(patch.reservation.id);
+                    }
+                },
+            );
         },
     };
 }

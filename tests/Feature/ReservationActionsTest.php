@@ -135,7 +135,7 @@ test('swapAsset refuses a variant that is not on the package', function () {
     $from = Bike::factory()->create();
     $other = Bike::factory()->recycle($from->location)->create();
     $package = RentalPackage::factory()->recycle($from->location)->create();
-    $package->variants()->attach($from->bike_model_variant_id, ['rate_cents' => 1000]);
+    $package->variants()->attach($from->bike_model_variant_id, ['rate_minor_units' => 1000]);
     $reservation = Reservation::factory()->confirmed()->recycle($from->location)->recycle($package)->create();
     $line = app(AllocateLineAction::class)($reservation, $from->variant, $from);
 

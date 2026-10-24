@@ -5,6 +5,7 @@ namespace Embiken\BikeRentals\Filament\Resources\RentalPackages\Schemas;
 use App\Models\Location;
 use Embiken\BikeRentals\Enums\ConfirmThreshold;
 use Embiken\BikeRentals\Enums\PackageMeter;
+use Embiken\BikeRentals\Filament\Support\MoneyInput;
 use Embiken\BikeRentals\Models\RentalPackage;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
@@ -26,6 +27,8 @@ class RentalPackageForm
                     ->columnSpanFull(),
                 Hidden::make('location_id')
                     ->default(fn (): ?int => Location::query()->value('id')),
+                Hidden::make('currency')
+                    ->default(fn (): string => strtolower(Location::query()->value('currency') ?? 'usd')),
                 TextInput::make('name')
                     ->required()
                     ->maxLength(255),
@@ -40,9 +43,7 @@ class RentalPackageForm
                     ->options(ConfirmThreshold::class)
                     ->required()
                     ->live(),
-                TextInput::make('deposit_cents')
-                    ->numeric()
-                    ->minValue(0)
+                MoneyInput::make('deposit_minor_units', fn (): string => Location::query()->value('currency') ?? 'usd')
                     ->visible(fn (Get $get): bool => $get('confirm_threshold') === ConfirmThreshold::Deposit->value)
                     ->required(fn (Get $get): bool => $get('confirm_threshold') === ConfirmThreshold::Deposit->value && blank($get('deposit_percent'))),
                 TextInput::make('deposit_percent')
@@ -50,7 +51,7 @@ class RentalPackageForm
                     ->minValue(0)
                     ->maxValue(100)
                     ->visible(fn (Get $get): bool => $get('confirm_threshold') === ConfirmThreshold::Deposit->value)
-                    ->required(fn (Get $get): bool => $get('confirm_threshold') === ConfirmThreshold::Deposit->value && blank($get('deposit_cents'))),
+                    ->required(fn (Get $get): bool => $get('confirm_threshold') === ConfirmThreshold::Deposit->value && blank($get('deposit_minor_units'))),
                 TextInput::make('min_duration_minutes')
                     ->numeric()
                     ->minValue(0),

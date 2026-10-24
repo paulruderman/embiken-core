@@ -21,20 +21,20 @@ class RecordCashPaymentAction extends Action
 
     public string $commandSignature = 'reservations:cash {reservation?} {amount?} {--tenant=}';
 
-    public function handle(Reservation $reservation, int $amountCents): Transaction
+    public function handle(Reservation $reservation, int $amountMinorUnits): Transaction
     {
-        if ($amountCents <= 0) {
+        if ($amountMinorUnits <= 0) {
             throw new InvalidArgumentException('Amount must be positive.');
         }
 
-        return DB::transaction(function () use ($reservation, $amountCents): Transaction {
+        return DB::transaction(function () use ($reservation, $amountMinorUnits): Transaction {
             $reservation->loadMissing('location');
 
             $transaction = $reservation->transactions()->create([
                 'kind' => TransactionKind::Cash,
                 'status' => TransactionStatus::Captured,
-                'amount_cents' => $amountCents,
-                'currency' => $reservation->location->currency,
+                'amount_minor_units' => $amountMinorUnits,
+                'currency' => $reservation->currency,
                 'captured_at' => now(),
             ]);
 
@@ -47,10 +47,10 @@ class RecordCashPaymentAction extends Action
     public function asController(Request $request, Reservation $reservation): DayPatchResource
     {
         $data = $request->validate([
-            'amount_cents' => ['required', 'integer', 'min:1'],
+            'amount_minor_units' => ['required', 'integer', 'min:1'],
         ]);
 
-        $this->handle($reservation, (int) $data['amount_cents']);
+        $this->handle($reservation, (int) $data['amount_minor_units']);
 
         return new DayPatchResource([
             'reservation' => $reservation->refresh()->load(['customer', 'bikeReservations.product.bikeModel']),
@@ -67,7 +67,7 @@ class RecordCashPaymentAction extends Action
         $this->initializeTenancyFromCommand($command);
         $transaction = $this->handle(
             $this->findOneOrFail(Reservation::query(), $command->argument('reservation') ?: \Laravel\Prompts\text('Reservation id')),
-            (int) ($command->argument('amount') ?: \Laravel\Prompts\text('Amount cents')),
+            (int) ($command->argument('amount') ?: \Laravel\Prompts\text('Amount minor units')),
         );
         $command->info("Cash {$transaction->id}");
 

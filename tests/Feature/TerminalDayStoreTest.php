@@ -70,8 +70,8 @@ test('the day store snapshot includes every bike and today plus occupying reserv
             'stage',
             'starts_at',
             'ends_at',
-            'owed',
-            'paid',
+            'owed_minor_units',
+            'paid_minor_units',
             'customer',
             'waiver_accepted_at',
             'myrental_token',
@@ -117,7 +117,7 @@ test('saving a reservation broadcasts the location reservation DTO', function ()
     Event::assertDispatched(LocationReservationPatched::class, function (LocationReservationPatched $event) use ($reservation): bool {
         return $event->action === 'updated'
             && $event->reservation['id'] === $reservation->id
-            && $event->reservation['owed'] === 9000
+            && $event->reservation['owed_minor_units'] === 9000
             && isset($event->reservation['customer']['name'])
             && is_array($event->reservation['lines']);
     });

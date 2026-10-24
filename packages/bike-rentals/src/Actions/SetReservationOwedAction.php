@@ -31,10 +31,10 @@ class SetReservationOwedAction extends Action
     public function asController(Request $request, Reservation $reservation): DayPatchResource
     {
         $data = $request->validate([
-            'owed' => ['required', 'integer', 'min:0'],
+            'owed_minor_units' => ['required', 'integer', 'min:0'],
         ]);
 
-        $reservation = $this->handle($reservation, (int) $data['owed']);
+        $reservation = $this->handle($reservation, (int) $data['owed_minor_units']);
 
         return new DayPatchResource([
             'reservation' => $reservation->refresh()->load(['customer', 'bikeReservations.product.bikeModel']),
@@ -51,7 +51,7 @@ class SetReservationOwedAction extends Action
         $this->initializeTenancyFromCommand($command);
         $this->handle(
             $this->findOneOrFail(Reservation::query(), $command->argument('reservation') ?: \Laravel\Prompts\text('Reservation id')),
-            (int) ($command->argument('owed') ?: \Laravel\Prompts\text('Owed cents')),
+            (int) ($command->argument('owed') ?: \Laravel\Prompts\text('Owed minor units')),
         );
         $command->info('Owed updated.');
 

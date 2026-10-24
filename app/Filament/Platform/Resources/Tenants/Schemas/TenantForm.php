@@ -10,6 +10,8 @@ use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\GridDirection;
+use Illuminate\Support\HtmlString;
 
 class TenantForm
 {
@@ -33,6 +35,7 @@ class TenantForm
                     ->required()
                     ->default('usd')
                     ->length(3)
+                    ->regex('/^[A-Za-z]{3}$/')
                     ->visibleOn('create'),
                 TextInput::make('manager_name')
                     ->required()
@@ -57,9 +60,26 @@ class TenantForm
                         fn ($module): string => $module->id(),
                         app(ModuleRegistry::class)->installedTenantModules(),
                     ))
-                    ->descriptions(fn (Get $get): array => app(ModuleRegistry::class)->moduleOptionDescriptions(
-                        self::selectedModuleIds($get('modules')),
-                    ))
+                    ->descriptions(function (): array {
+                        $registry = app(ModuleRegistry::class);
+                        $prerequisites = $registry->modulePrerequisites();
+
+                        return collect($registry->installedTenantModules())
+                            ->mapWithKeys(function ($module) use ($prerequisites): array {
+                                $description = '<p class="tenant-module-description">'.e($module->description()).'</p>';
+                                $modulePrerequisites = $prerequisites[$module->id()] ?? [];
+
+                                if ($modulePrerequisites !== []) {
+                                    $description .= '<div class="tenant-module-required"><span>Required:</span><ul>'.implode('', array_map(
+                                        fn (string $prerequisite): string => '<li>'.e($prerequisite).'</li>',
+                                        $modulePrerequisites,
+                                    )).'</ul></div>';
+                                }
+
+                                return [$module->id() => new HtmlString($description)];
+                            })
+                            ->all();
+                    })
                     ->formatStateUsing(fn (mixed $state): array => app(ModuleRegistry::class)->normalizeModuleIds(
                         self::selectedModuleIds($state),
                     ))
@@ -71,9 +91,11 @@ class TenantForm
                         $value,
                         self::selectedModuleIds($get('modules')),
                     ))
-                    ->helperText('Selecting a module selects its prerequisites automatically. Disable dependent modules first to turn off a prerequisite.')
+                    ->helperText('Prerequisites are selected automatically. Turn off dependent modules first to disable a required module.')
                     ->visibleOn('edit')
-                    ->columns(2),
+                    ->columns(['default' => 1, 'md' => 2, 'xl' => 3])
+                    ->gridDirection(GridDirection::Row)
+                    ->extraAttributes(['class' => 'tenant-module-cards']),
                 Placeholder::make('express_status')
                     ->label('Express')
                     ->visibleOn('edit')

@@ -57,12 +57,10 @@ test('the tenant root renders the configured shop home page', function () {
         ShopLandingPage::factory()->create([
             'layout' => 'story',
             'layout_data' => [
-                'eyebrow' => 'Locally owned',
-                'headline' => 'Ride the coast',
-                'description' => 'Bikes for a day by the water.',
-                'button_label' => 'Choose a bike',
-                'story_quote' => 'The best way to see town.',
-                'story_byline' => 'A happy rider',
+                'shared' => ['image_path' => null, 'image_position' => 'right'],
+                'en' => ['eyebrow' => 'Locally owned', 'headline' => 'Ride the coast', 'description' => 'Bikes for a day by the water.', 'button_label' => 'Choose a bike', 'story_quote' => 'The best way to see town.', 'story_byline' => 'A happy rider'],
+                'es' => ['eyebrow' => '', 'headline' => '', 'description' => '', 'button_label' => 'Reservar'],
+                'fr' => ['eyebrow' => '', 'headline' => '', 'description' => '', 'button_label' => 'Réserver'],
             ],
             'theme' => 'warm',
         ]);
@@ -76,6 +74,30 @@ test('the tenant root renders the configured shop home page', function () {
             ->where('theme', 'warm')
             ->where('layoutData.headline', 'Ride the coast')
             ->where('isConfigured', true));
+});
+
+test('the tenant root renders translated copy and falls back to English for missing fields', function () {
+    $shop = makeShopLandingTenant('landing-translated.localhost');
+    $this->landingTenant = $shop['tenant'];
+
+    $shop['tenant']->run(function (): void {
+        ShopLandingPage::factory()->create([
+            'layout_data' => [
+                'shared' => ['image_path' => null, 'image_position' => 'right'],
+                'en' => ['eyebrow' => 'Welcome', 'headline' => 'Ride the coast', 'description' => 'Bikes for a day by the water.', 'button_label' => 'Choose a bike'],
+                'es' => ['eyebrow' => 'Bienvenidos', 'headline' => 'Recorre la costa', 'description' => '', 'button_label' => 'Elige una bicicleta'],
+                'fr' => ['eyebrow' => '', 'headline' => '', 'description' => '', 'button_label' => 'Réserver'],
+            ],
+        ]);
+    });
+
+    $this->withoutVite()
+        ->get('http://landing-translated.localhost/?locale=es_419')
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Shop/Home')
+            ->where('locale', 'es')
+            ->where('layoutData.headline', 'Recorre la costa')
+            ->where('layoutData.description', 'Bikes for a day by the water.'));
 });
 
 test('the tenant home renders rich editor custom blocks as safe html', function () {
@@ -117,7 +139,7 @@ test('the booking page renders tenant booking notices', function () {
     $shop['tenant']->run(function (): void {
         ShopLandingPage::factory()->create([
             'booking_notices' => [
-                ['message' => 'Please arrive ten minutes early.', 'tone' => 'warning'],
+                ['message' => ['en' => 'Please arrive ten minutes early.'], 'tone' => 'warning'],
             ],
         ]);
     });
@@ -138,19 +160,20 @@ test('a manager can save shop page content over the tenant JSON route', function
         ->postJson('http://landing-save.localhost/shop/landing-page', [
             'layout' => 'hero',
             'layout_data' => [
-                'headline' => 'Rent by the river',
-                'description' => 'Bikes for a quiet day out.',
-                'button_label' => 'Book now',
+                'shared' => ['image_path' => null, 'image_position' => 'right'],
+                'en' => ['eyebrow' => '', 'headline' => 'Rent by the river', 'description' => 'Bikes for a quiet day out.', 'button_label' => 'Book now'],
+                'es' => ['eyebrow' => '', 'headline' => '', 'description' => '', 'button_label' => 'Reservar'],
+                'fr' => ['eyebrow' => '', 'headline' => '', 'description' => '', 'button_label' => 'Réserver'],
             ],
             'theme' => 'light',
             'custom_content' => null,
             'booking_notices' => [],
         ])
         ->assertOk()
-        ->assertJsonPath('layout_data.headline', 'Rent by the river');
+        ->assertJsonPath('layout_data.en.headline', 'Rent by the river');
 
     $shop['tenant']->run(function (): void {
-        expect(ShopLandingPage::current()?->layout_data['headline'])->toBe('Rent by the river');
+        expect(ShopLandingPage::current()?->layout_data['en']['headline'])->toBe('Rent by the river');
     });
 });
 
@@ -162,9 +185,10 @@ test('a counter receives 403 when saving shop page content', function () {
         ->postJson('http://landing-counter.localhost/shop/landing-page', [
             'layout' => 'hero',
             'layout_data' => [
-                'headline' => 'Ride the coast',
-                'description' => 'Bikes by the water.',
-                'button_label' => 'Book now',
+                'shared' => ['image_path' => null, 'image_position' => 'right'],
+                'en' => ['eyebrow' => '', 'headline' => 'Ride the coast', 'description' => 'Bikes by the water.', 'button_label' => 'Book now'],
+                'es' => ['eyebrow' => '', 'headline' => '', 'description' => '', 'button_label' => 'Reservar'],
+                'fr' => ['eyebrow' => '', 'headline' => '', 'description' => '', 'button_label' => 'Réserver'],
             ],
             'theme' => 'light',
         ])
@@ -179,10 +203,10 @@ test('a page cannot save slots that do not belong to its selected layout', funct
         ->postJson('http://landing-slots.localhost/shop/landing-page', [
             'layout' => 'hero',
             'layout_data' => [
-                'headline' => 'Rent by the river',
-                'description' => 'Bikes for a quiet day out.',
-                'button_label' => 'Book now',
-                'story_quote' => 'This belongs to Story.',
+                'shared' => ['image_path' => null, 'image_position' => 'right'],
+                'en' => ['eyebrow' => '', 'headline' => 'Rent by the river', 'description' => 'Bikes for a quiet day out.', 'button_label' => 'Book now', 'story_quote' => 'This belongs to Story.'],
+                'es' => ['eyebrow' => '', 'headline' => '', 'description' => '', 'button_label' => 'Reservar'],
+                'fr' => ['eyebrow' => '', 'headline' => '', 'description' => '', 'button_label' => 'Réserver'],
             ],
             'theme' => 'light',
         ])
@@ -197,12 +221,10 @@ test('a manager can choose a layout and save booking messages', function () {
     ShopLandingPage::factory()->create([
         'layout' => 'story',
         'layout_data' => [
-            'eyebrow' => 'Our story',
-            'headline' => 'A shop by the sea',
-            'description' => 'Locally owned.',
-            'button_label' => 'Book a bike',
-            'story_quote' => 'A great ride.',
-            'story_byline' => 'Pat',
+            'shared' => ['image_path' => null, 'image_position' => 'right'],
+            'en' => ['eyebrow' => 'Our story', 'headline' => 'A shop by the sea', 'description' => 'Locally owned.', 'button_label' => 'Book a bike', 'story_quote' => 'A great ride.', 'story_byline' => 'Pat'],
+            'es' => ['eyebrow' => '', 'headline' => '', 'description' => '', 'button_label' => 'Reservar'],
+            'fr' => ['eyebrow' => '', 'headline' => '', 'description' => '', 'button_label' => 'Réserver'],
         ],
     ]);
     $staff = Staff::factory()->create(['role' => StaffRole::Manager]);
@@ -211,14 +233,14 @@ test('a manager can choose a layout and save booking messages', function () {
 
     Livewire::test(ShopLandingPageEditor::class)
         ->set('data.layout', 'split')
-        ->set('data.layout_data.eyebrow', 'Guided rides')
-        ->set('data.layout_data.headline', 'See more by bike')
-        ->set('data.layout_data.description', 'Choose your route and ride.')
-        ->set('data.layout_data.button_label', 'Book now')
-        ->set('data.layout_data.image_position', 'left')
+        ->set('data.layout_data.en.eyebrow', 'Guided rides')
+        ->set('data.layout_data.en.headline', 'See more by bike')
+        ->set('data.layout_data.en.description', 'Choose your route and ride.')
+        ->set('data.layout_data.en.button_label', 'Book now')
+        ->set('data.layout_data.shared.image_position', 'left')
         ->set('data.theme', 'dark')
         ->set('data.booking_notices', [
-            ['message' => 'Closed on Monday.', 'tone' => 'info'],
+            ['message' => ['en' => 'Closed on Monday.'], 'tone' => 'info'],
         ])
         ->call('save')
         ->assertHasNoErrors();
@@ -226,11 +248,11 @@ test('a manager can choose a layout and save booking messages', function () {
     $page = ShopLandingPage::current();
 
     expect($page?->layout)->toBe('split')
-        ->and($page?->layout_data['headline'])->toBe('See more by bike')
-        ->and($page?->layout_data['image_position'])->toBe('left')
+        ->and($page?->layout_data['en']['headline'])->toBe('See more by bike')
+        ->and($page?->layout_data['shared']['image_position'])->toBe('left')
         ->and($page?->theme)->toBe('dark')
         ->and($page?->booking_notices)->toBe([
-            ['message' => 'Closed on Monday.', 'tone' => 'info'],
+            ['message' => ['en' => 'Closed on Monday.', 'es' => null, 'fr' => null], 'tone' => 'info'],
         ]);
 });
 

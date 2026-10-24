@@ -10,8 +10,22 @@
     border: 1px solid rgb(229 231 235);
     border-radius: 0.625rem;
     background-color: rgb(255 255 255);
-    padding: 0.75rem;
-    transition: border-color 150ms ease, background-color 150ms ease;
+    padding: 0.875rem;
+    transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+}
+
+.tenant-module-cards .fi-fo-checkbox-list-option-ctn:has(.fi-checkbox-input:checked) {
+    border-color: var(--primary-500);
+    background-color: color-mix(in srgb, var(--primary-500) 6%, white);
+}
+
+.tenant-module-cards .fi-fo-checkbox-list-option-ctn:has(.fi-checkbox-input:focus-visible) {
+    outline: 2px solid var(--primary-500);
+    outline-offset: 2px;
+}
+
+.tenant-module-cards .fi-fo-checkbox-list-option-ctn:has(.fi-checkbox-input:disabled) {
+    background-color: rgb(249 250 251);
 }
 
 .tenant-module-cards .fi-fo-checkbox-list-option {
@@ -44,6 +58,10 @@
 }
 
 .tenant-module-cards .tenant-module-required {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.375rem;
     color: var(--gray-600);
     font-size: 0.75rem;
     line-height: 1rem;
@@ -54,9 +72,40 @@
 }
 
 .tenant-module-cards .tenant-module-required ul {
-    list-style-type: disc;
-    margin-top: 0.125rem;
-    padding-inline-start: 0.875rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.tenant-module-cards .tenant-module-required li {
+    border: 1px solid rgb(229 231 235);
+    border-radius: 9999px;
+    padding: 0.125rem 0.5rem;
+    background-color: rgb(249 250 251);
+}
+
+.tenant-module-cards .tenant-module-required li.is-active {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    border-color: rgb(187 247 208);
+    background-color: rgb(240 253 244);
+    color: rgb(21 128 61);
+}
+
+.tenant-module-cards .tenant-module-required-check {
+    display: inline-grid;
+    width: 0.875rem;
+    height: 0.875rem;
+    place-items: center;
+    border: 1px solid currentColor;
+    border-radius: 0.2rem;
+    font-size: 0.625rem;
+    font-weight: 700;
+    line-height: 1;
 }
 
 .dark .tenant-module-cards .fi-fo-checkbox-list-option-ctn {
@@ -64,7 +113,27 @@
     background-color: rgb(17 24 39);
 }
 
+.dark .tenant-module-cards .fi-fo-checkbox-list-option-ctn:has(.fi-checkbox-input:checked) {
+    border-color: var(--primary-400);
+    background-color: color-mix(in srgb, var(--primary-400) 10%, rgb(17 24 39));
+}
+
+.dark .tenant-module-cards .fi-fo-checkbox-list-option-ctn:has(.fi-checkbox-input:disabled) {
+    background-color: rgb(31 41 55);
+}
+
 .dark .tenant-module-cards .fi-fo-checkbox-list-option-description,
 .dark .tenant-module-cards .tenant-module-required {
     color: var(--gray-400);
+}
+
+.dark .tenant-module-cards .tenant-module-required li {
+    border-color: rgb(255 255 255 / 12%);
+    background-color: rgb(31 41 55);
+}
+
+.dark .tenant-module-cards .tenant-module-required li.is-active {
+    border-color: rgb(22 101 52 / 70%);
+    background-color: rgb(20 83 45 / 35%);
+    color: rgb(134 239 172);
 }

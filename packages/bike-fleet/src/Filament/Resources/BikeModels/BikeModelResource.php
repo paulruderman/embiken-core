@@ -16,11 +16,13 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use LaraZeus\SpatieTranslatable\Resources\Concerns\Translatable;
 
 class BikeModelResource extends Resource
 {
     use HasShopSetupBadge;
     use RequiresTenantModule;
+    use Translatable;
 
     protected static function shopSetupBadgeStep(): string
     {

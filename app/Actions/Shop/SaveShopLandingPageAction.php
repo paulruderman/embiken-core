@@ -7,6 +7,7 @@ use App\Enums\StaffRole;
 use App\Http\Resources\ShopLandingPageResource;
 use App\Models\ShopLandingPage;
 use App\Models\Staff;
+use App\Support\Locales;
 use Illuminate\Console\Command;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -32,11 +33,11 @@ class SaveShopLandingPageAction extends Action
 
         validator($page, $this->rulesForPage($page))->validate();
 
-        $imagePath = $page['layout_data']['image_path'] ?? null;
+        $imagePath = $page['layout_data']['shared']['image_path'] ?? null;
 
         if (is_string($imagePath) && ! Storage::disk('public')->exists($imagePath)) {
             throw ValidationException::withMessages([
-                'layout_data.image_path' => 'The selected image could not be found.',
+                'layout_data.shared.image_path' => 'The selected image could not be found.',
             ]);
         }
 
@@ -71,10 +72,10 @@ class SaveShopLandingPageAction extends Action
         $default = $current?->only(['layout', 'layout_data', 'theme', 'custom_content', 'booking_notices']) ?? [
             'layout' => 'hero',
             'layout_data' => [
-                'eyebrow' => '',
-                'headline' => '',
-                'description' => '',
-                'button_label' => 'Book a bike',
+                'shared' => ['image_path' => null, 'image_position' => 'right'],
+                'en' => ['eyebrow' => '', 'headline' => '', 'description' => '', 'button_label' => 'Book a bike'],
+                'es' => ['eyebrow' => '', 'headline' => '', 'description' => '', 'button_label' => 'Reservar una bicicleta'],
+                'fr' => ['eyebrow' => '', 'headline' => '', 'description' => '', 'button_label' => 'Réserver un vélo'],
             ],
             'theme' => 'light',
             'custom_content' => null,
@@ -129,30 +130,43 @@ class SaveShopLandingPageAction extends Action
     private function rulesForPage(array $page): array
     {
         $layout = $page['layout'] ?? null;
-        $allowedLayoutKeys = match ($layout) {
-            'hero' => ['eyebrow', 'headline', 'description', 'button_label', 'image_path'],
-            'split' => ['eyebrow', 'headline', 'description', 'button_label', 'image_path', 'image_position'],
-            'story' => ['eyebrow', 'headline', 'description', 'button_label', 'image_path', 'story_quote', 'story_byline'],
+        $translatedKeys = match ($layout) {
+            'story' => ['eyebrow', 'headline', 'description', 'button_label', 'story_quote', 'story_byline'],
             default => ['eyebrow', 'headline', 'description', 'button_label'],
         };
-
-        return [
+        $rules = [
             'layout' => ['required', 'string', 'in:hero,split,story'],
-            'layout_data' => ['required', 'array:'.implode(',', $allowedLayoutKeys)],
-            'layout_data.eyebrow' => ['nullable', 'string', 'max:120'],
-            'layout_data.headline' => ['required', 'string', 'max:180'],
-            'layout_data.description' => ['required', 'string', 'max:1200'],
-            'layout_data.button_label' => ['required', 'string', 'max:80'],
-            'layout_data.image_path' => ['nullable', 'string', 'max:1024', 'regex:/\Alanding-pages\/[A-Za-z0-9][A-Za-z0-9._-]*\.(?:png|jpe?g|webp)\z/i'],
-            'layout_data.image_position' => ['required_if:layout,split', 'nullable', 'in:left,right'],
-            'layout_data.story_quote' => ['nullable', 'string', 'max:500'],
-            'layout_data.story_byline' => ['nullable', 'string', 'max:120'],
+            'layout_data' => ['required', 'array:shared,en,es,fr'],
+            'layout_data.shared' => ['required', 'array:image_path,image_position'],
+            'layout_data.shared.image_path' => ['nullable', 'string', 'max:1024', 'regex:/\Alanding-pages\/[A-Za-z0-9][A-Za-z0-9._-]*\.(?:png|jpe?g|webp)\z/i'],
+            'layout_data.shared.image_position' => ['required_if:layout,split', 'nullable', 'in:left,right'],
             'theme' => ['required', 'string', 'in:light,warm,dark'],
-            'custom_content' => ['nullable'],
+            'custom_content' => ['nullable', 'array:en,es,fr'],
             'booking_notices' => ['nullable', 'array', 'max:5'],
-            'booking_notices.*' => ['required', 'array:message,tone'],
-            'booking_notices.*.message' => ['required', 'string', 'max:240'],
             'booking_notices.*.tone' => ['required', 'string', 'in:info,success,warning'],
         ];
+
+        foreach (Locales::contentLocales() as $locale) {
+            $rules["layout_data.{$locale}"] = ['required', 'array:'.implode(',', $translatedKeys)];
+            foreach ($translatedKeys as $key) {
+                $required = $locale === 'en' && in_array($key, ['headline', 'description', 'button_label'], true);
+                $max = match ($key) {
+                    'eyebrow' => 120,
+                    'headline' => 180,
+                    'description' => 1200,
+                    'button_label' => 80,
+                    'story_quote' => 500,
+                    'story_byline' => 120,
+                };
+                $rules["layout_data.{$locale}.{$key}"] = [$required ? 'required' : 'nullable', 'string', "max:{$max}"];
+            }
+            $rules["custom_content.{$locale}"] = ['nullable'];
+            $rules["booking_notices.*.message.{$locale}"] = [$locale === 'en' ? 'required' : 'nullable', 'string', 'max:240'];
+        }
+
+        $rules['booking_notices.*'] = ['required', 'array:message,tone'];
+        $rules['booking_notices.*.message'] = ['required', 'array:en,es,fr'];
+
+        return $rules;
     }
 }

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
+import LocaleSwitcher from '@/components/LocaleSwitcher.vue';
 import { book } from '@/routes';
 
 interface LayoutData {
@@ -13,16 +14,25 @@ interface LayoutData {
     story_byline?: string;
 }
 
-defineProps<{
+const props = defineProps<{
     shopName: string;
     logoUrl: string | null;
     primaryColor: string;
+    locale: 'en' | 'es' | 'fr';
     layout: 'hero' | 'split' | 'story';
     layoutData: LayoutData;
     theme: 'light' | 'warm' | 'dark';
     contentHtml: string;
     isConfigured: boolean;
 }>();
+
+const copy = {
+    en: { title: 'Bike rentals', book: 'Book a bike', setup: 'This shop is setting up its home page.' },
+    es: { title: 'Alquiler de bicicletas', book: 'Reservar una bicicleta', setup: 'Esta tienda está configurando su página de inicio.' },
+    fr: { title: 'Location de vélos', book: 'Réserver un vélo', setup: 'Cette boutique prépare sa page d’accueil.' },
+};
+
+const text = copy[props.locale];
 </script>
 
 <template>
@@ -34,7 +44,7 @@ defineProps<{
             'bg-zinc-950 text-white': theme === 'dark',
         }"
     >
-        <Head :title="`${shopName} | Bike rentals`" />
+        <Head :title="`${shopName} | ${text.title}`" />
 
         <header
             class="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 lg:px-10"
@@ -53,8 +63,9 @@ defineProps<{
                 :style="{ backgroundColor: primaryColor }"
                 class="inline-flex min-h-11 items-center justify-center rounded-full bg-emerald-800 px-5 text-sm font-semibold text-white transition hover:brightness-110"
             >
-                Book a bike
+                {{ text.book }}
             </Link>
+            <LocaleSwitcher />
         </header>
 
         <main>
@@ -87,7 +98,7 @@ defineProps<{
                             theme === 'dark' ? 'text-zinc-400' : 'text-zinc-500'
                         "
                     >
-                        This shop is setting up its home page.
+                        {{ text.setup }}
                     </p>
                     <h1
                         class="mt-3 max-w-3xl text-4xl leading-tight font-semibold tracking-[-0.04em] sm:text-6xl"
@@ -126,7 +137,7 @@ defineProps<{
                             :style="{ backgroundColor: primaryColor }"
                             class="inline-flex min-h-12 items-center justify-center rounded-full bg-emerald-800 px-6 text-sm font-semibold text-white transition hover:brightness-110"
                         >
-                            {{ layoutData.button_label || 'Book a bike' }}
+                            {{ layoutData.button_label || text.book }}
                             <span class="ml-2" aria-hidden="true">→</span>
                         </Link>
                     </div>

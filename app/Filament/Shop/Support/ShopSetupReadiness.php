@@ -2,8 +2,11 @@
 
 namespace App\Filament\Shop\Support;
 
+use App\Filament\Shop\Pages\ShopLandingPageEditor;
 use App\Support\ModuleRegistry;
+use App\Support\TranslationCompleteness;
 use Closure;
+use Embiken\BikeFleet\BikeFleetModule;
 use Embiken\BikeFleet\Filament\Resources\BikeModels\BikeModelResource;
 use Embiken\BikeFleet\Filament\Resources\BikeModelVariants\BikeModelVariantResource;
 use Embiken\BikeFleet\Filament\Resources\Bikes\BikeResource;
@@ -35,6 +38,8 @@ class ShopSetupReadiness
 
     public const string BookableFleet = 'bookable_fleet';
 
+    public const string Translations = 'translations';
+
     /**
      * @return list<array{
      *     key: string,
@@ -60,7 +65,13 @@ class ShopSetupReadiness
                 continue;
             }
 
-            $steps[] = $this->present($key, $definition);
+            $presented = $this->present($key, $definition);
+
+            if ($key === self::Translations && $presented['complete']) {
+                continue;
+            }
+
+            $steps[] = $presented;
         }
 
         return $steps;
@@ -261,6 +272,20 @@ class ShopSetupReadiness
                     'show_in_checklist' => $step->showInChecklist,
                 ];
             }
+        }
+
+        if (app(ModuleRegistry::class)->isEnabled(BikeFleetModule::ID)) {
+            $steps[self::Translations] = [
+                'module_id' => BikeFleetModule::ID,
+                'label' => (string) __('app.translations.setup_step'),
+                'description' => (string) __('app.translations.setup_description'),
+                'action_label' => (string) __('app.translations.review'),
+                'action_url' => fn (): string => app(TranslationCompleteness::class)->firstMissingTranslationUrl()
+                    ?? ShopLandingPageEditor::getUrl(),
+                'is_complete' => fn (): bool => ! app(TranslationCompleteness::class)->hasMissingTranslations(),
+                'prerequisites' => [],
+                'show_in_checklist' => true,
+            ];
         }
 
         return $steps;

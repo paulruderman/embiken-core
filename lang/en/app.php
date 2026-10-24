@@ -1,0 +1,43 @@
+<?php
+
+return [
+    'navigation' => [
+        'fleet' => 'Fleet',
+        'rentals' => 'Rentals',
+        'online_book' => 'Online Book',
+        'weather' => 'Weather',
+        'shop_settings' => 'Shop settings',
+    ],
+    'shop_home' => [
+        'title' => 'Shop home page',
+        'home_page' => 'Home page',
+        'choose_layout' => 'Choose a layout, then fill in the fields for its slots.',
+        'page_style' => 'Page style',
+        'small_heading' => 'Small heading',
+        'main_heading' => 'Main heading',
+        'introduction' => 'Introduction',
+        'booking_button' => 'Booking button',
+        'image_position' => 'Image position',
+        'quote' => 'Quote',
+        'quote_attribution' => 'Quote attribution',
+        'extra_sections' => 'Extra page sections',
+        'extra_sections_description' => 'Add flexible sections below the selected layout with the rich editor blocks.',
+        'page_sections' => 'Page sections',
+        'booking_screen' => 'Messages on the booking screen',
+        'booking_screen_description' => 'Show up to five short notices at the top of /book.',
+        'booking_messages' => 'Booking messages',
+        'message' => 'Message',
+        'saved' => 'Home page saved',
+        'book_a_bike' => 'Book a bike',
+        'layouts' => ['hero' => 'Hero', 'split' => 'Split', 'story' => 'Story'],
+        'themes' => ['light' => 'Light', 'warm' => 'Warm', 'dark' => 'Dark'],
+        'positions' => ['left' => 'Left', 'right' => 'Right'],
+        'tones' => ['info' => 'Information', 'success' => 'Good news', 'warning' => 'Heads up'],
+        'page_image' => 'Page image',
+    ],
+    'translations' => [
+        'setup_step' => 'Customer-facing translations',
+        'setup_description' => 'Translate published shop and booking copy, bike catalog text, and rental package content into Spanish and French. Customers see English wherever a translation is still missing.',
+        'review' => 'Review translations',
+    ],
+];

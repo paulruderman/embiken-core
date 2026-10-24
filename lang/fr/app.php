@@ -1,0 +1,43 @@
+<?php
+
+return [
+    'navigation' => [
+        'fleet' => 'Flotte',
+        'rentals' => 'Locations',
+        'online_book' => 'Réservation en ligne',
+        'weather' => 'Météo',
+        'shop_settings' => 'Paramètres de la boutique',
+    ],
+    'shop_home' => [
+        'title' => 'Page d’accueil de la boutique',
+        'home_page' => 'Page d’accueil',
+        'choose_layout' => 'Choisissez une mise en page, puis remplissez les champs correspondants.',
+        'page_style' => 'Style de page',
+        'small_heading' => 'Petit titre',
+        'main_heading' => 'Titre principal',
+        'introduction' => 'Introduction',
+        'booking_button' => 'Bouton de réservation',
+        'image_position' => 'Position de l’image',
+        'quote' => 'Citation',
+        'quote_attribution' => 'Auteur de la citation',
+        'extra_sections' => 'Sections supplémentaires',
+        'extra_sections_description' => 'Ajoutez des sections sous la mise en page à l’aide des blocs de l’éditeur.',
+        'page_sections' => 'Sections de la page',
+        'booking_screen' => 'Messages sur l’écran de réservation',
+        'booking_screen_description' => 'Affichez jusqu’à cinq courts avis en haut de /book.',
+        'booking_messages' => 'Messages de réservation',
+        'message' => 'Message',
+        'saved' => 'Page d’accueil enregistrée',
+        'book_a_bike' => 'Réserver un vélo',
+        'layouts' => ['hero' => 'Bannière', 'split' => 'Deux colonnes', 'story' => 'Récit'],
+        'themes' => ['light' => 'Clair', 'warm' => 'Chaud', 'dark' => 'Sombre'],
+        'positions' => ['left' => 'Gauche', 'right' => 'Droite'],
+        'tones' => ['info' => 'Information', 'success' => 'Bonne nouvelle', 'warning' => 'À noter'],
+        'page_image' => 'Image de la page',
+    ],
+    'translations' => [
+        'setup_step' => 'Traductions destinées aux clients',
+        'setup_description' => 'Traduisez en espagnol et en français le contenu de la boutique et des réservations, le catalogue de vélos et les forfaits de location. Les clients verront l’anglais lorsqu’une traduction manque.',
+        'review' => 'Vérifier les traductions',
+    ],
+];

@@ -45,7 +45,7 @@ final class Money
         $exponent = self::exponent($currency);
         $amount = trim((string) $amount);
 
-        $formatter = new NumberFormatter($locale ?? app()->getLocale(), NumberFormatter::DECIMAL);
+        $formatter = new NumberFormatter($locale ?? Locales::currentIntlLocale(), NumberFormatter::DECIMAL);
         $decimalSeparator = $formatter->getSymbol(NumberFormatter::DECIMAL_SEPARATOR_SYMBOL);
         $groupingSeparator = $formatter->getSymbol(NumberFormatter::GROUPING_SEPARATOR_SYMBOL);
 
@@ -110,7 +110,7 @@ final class Money
     {
         $currency = self::normalizeCurrency($currency);
         $exponent = self::exponent($currency);
-        $formatter = new NumberFormatter($locale ?? app()->getLocale(), NumberFormatter::CURRENCY);
+        $formatter = new NumberFormatter($locale ?? Locales::currentIntlLocale(), NumberFormatter::CURRENCY);
         $formatter->setAttribute(NumberFormatter::MIN_FRACTION_DIGITS, $exponent);
         $formatter->setAttribute(NumberFormatter::MAX_FRACTION_DIGITS, $exponent);
 
@@ -127,7 +127,7 @@ final class Money
     public static function formatInput(int $minorUnits, string $currency, ?string $locale = null): string
     {
         $exponent = self::exponent($currency);
-        $formatter = new NumberFormatter($locale ?? app()->getLocale(), NumberFormatter::DECIMAL);
+        $formatter = new NumberFormatter($locale ?? Locales::currentIntlLocale(), NumberFormatter::DECIMAL);
         $formatter->setAttribute(NumberFormatter::MIN_FRACTION_DIGITS, $exponent);
         $formatter->setAttribute(NumberFormatter::MAX_FRACTION_DIGITS, $exponent);
         $amount = $minorUnits / (10 ** $exponent);
@@ -143,7 +143,7 @@ final class Money
     public static function currencyLabel(string $currency, ?string $locale = null): string
     {
         $currency = self::normalizeCurrency($currency);
-        $formatter = new NumberFormatter($locale ?? app()->getLocale(), NumberFormatter::CURRENCY);
+        $formatter = new NumberFormatter($locale ?? Locales::currentIntlLocale(), NumberFormatter::CURRENCY);
         $formatter->setTextAttribute(NumberFormatter::CURRENCY_CODE, strtoupper($currency));
         $symbol = $formatter->getSymbol(NumberFormatter::CURRENCY_SYMBOL);
 

@@ -17,7 +17,10 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -51,10 +54,10 @@ class ShopLandingPageEditor extends Page
         $this->landingPageForm()->fill($page?->attributesToArray() ?? [
             'layout' => 'hero',
             'layout_data' => [
-                'eyebrow' => '',
-                'headline' => '',
-                'description' => '',
-                'button_label' => 'Book a bike',
+                'shared' => ['image_path' => null, 'image_position' => 'right'],
+                'en' => ['eyebrow' => '', 'headline' => '', 'description' => '', 'button_label' => 'Book a bike'],
+                'es' => ['eyebrow' => '', 'headline' => '', 'description' => '', 'button_label' => 'Reservar una bicicleta'],
+                'fr' => ['eyebrow' => '', 'headline' => '', 'description' => '', 'button_label' => 'Réserver un vélo'],
             ],
             'theme' => 'light',
             'custom_content' => null,
@@ -66,86 +69,61 @@ class ShopLandingPageEditor extends Page
     {
         return $schema
             ->components([
-                Section::make('Home page')
-                    ->description('Choose a layout, then fill in the fields for its slots.')
+                Section::make(__('app.shop_home.home_page'))
+                    ->description(__('app.shop_home.choose_layout'))
                     ->columns(2)
                     ->schema([
                         Select::make('layout')
-                            ->options(['hero' => 'Hero', 'split' => 'Split', 'story' => 'Story'])
+                            ->options(__('app.shop_home.layouts'))
                             ->default('hero')
                             ->required()
                             ->live(),
                         Select::make('theme')
-                            ->label('Page style')
-                            ->options(['light' => 'Light', 'warm' => 'Warm', 'dark' => 'Dark'])
+                            ->label(__('app.shop_home.page_style'))
+                            ->options(__('app.shop_home.themes'))
                             ->default('light')
                             ->required(),
-                        TextInput::make('layout_data.eyebrow')
-                            ->label('Small heading')
-                            ->maxLength(120)
-                            ->visible(fn (Get $get): bool => in_array($get('layout'), ['split', 'story'], true)),
-                        TextInput::make('layout_data.headline')
-                            ->label('Main heading')
-                            ->required()
-                            ->maxLength(180)
+                        Tabs::make('Translations')
+                            ->tabs([
+                                Tab::make('English (US)')->schema(self::translatedLayoutFields('en', true)),
+                                Tab::make('Español (Latinoamérica)')->schema(self::translatedLayoutFields('es')),
+                                Tab::make('Français (Canada)')->schema(self::translatedLayoutFields('fr')),
+                            ])
                             ->columnSpanFull(),
-                        Textarea::make('layout_data.description')
-                            ->label('Introduction')
-                            ->rows(4)
-                            ->required()
-                            ->maxLength(1200)
-                            ->columnSpanFull(),
-                        TextInput::make('layout_data.button_label')
-                            ->label('Booking button')
-                            ->default('Book a bike')
-                            ->required()
-                            ->maxLength(80),
-                        self::imageUpload()
-                            ->visible(fn (Get $get): bool => in_array($get('layout'), ['hero', 'split', 'story'], true)),
-                        Select::make('layout_data.image_position')
-                            ->label('Image position')
-                            ->options(['left' => 'Left', 'right' => 'Right'])
+                        self::imageUpload(),
+                        Select::make('layout_data.shared.image_position')
+                            ->label(__('app.shop_home.image_position'))
+                            ->options(__('app.shop_home.positions'))
                             ->default('right')
                             ->required()
                             ->visible(fn (Get $get): bool => $get('layout') === 'split'),
-                        Textarea::make('layout_data.story_quote')
-                            ->label('Quote')
-                            ->rows(3)
-                            ->maxLength(500)
-                            ->visible(fn (Get $get): bool => $get('layout') === 'story'),
-                        TextInput::make('layout_data.story_byline')
-                            ->label('Quote attribution')
-                            ->maxLength(120)
-                            ->visible(fn (Get $get): bool => $get('layout') === 'story'),
                     ]),
-                Section::make('Extra page sections')
-                    ->description('Add flexible sections below the selected layout with the rich editor blocks.')
+                Section::make(__('app.shop_home.extra_sections'))
+                    ->description(__('app.shop_home.extra_sections_description'))
                     ->schema([
-                        RichEditor::make('custom_content')
-                            ->label('Page sections')
-                            ->json()
-                            ->customBlocks([ShopCalloutBlock::class, ShopFeatureBlock::class])
-                            ->toolbarButtons([
-                                ['bold', 'italic', 'link'],
-                                ['h2', 'h3'],
-                                ['bulletList', 'orderedList', 'blockquote'],
-                                ['undo', 'redo'],
+                        Tabs::make('Translations')
+                            ->tabs([
+                                Tab::make('English (US)')->schema([self::richContentField('en')]),
+                                Tab::make('Español (Latinoamérica)')->schema([self::richContentField('es')]),
+                                Tab::make('Français (Canada)')->schema([self::richContentField('fr')]),
                             ])
                             ->columnSpanFull(),
                     ]),
-                Section::make('Messages on the booking screen')
-                    ->description('Show up to five short notices at the top of /book.')
+                Section::make(__('app.shop_home.booking_screen'))
+                    ->description(__('app.shop_home.booking_screen_description'))
                     ->schema([
                         Repeater::make('booking_notices')
-                            ->label('Booking messages')
+                            ->label(__('app.shop_home.booking_messages'))
                             ->schema([
-                                Textarea::make('message')
-                                    ->required()
-                                    ->rows(2)
-                                    ->maxLength(240)
+                                Tabs::make('Translations')
+                                    ->tabs([
+                                        Tab::make('English (US)')->schema([self::noticeField('en', true)]),
+                                        Tab::make('Español (Latinoamérica)')->schema([self::noticeField('es')]),
+                                        Tab::make('Français (Canada)')->schema([self::noticeField('fr')]),
+                                    ])
                                     ->columnSpanFull(),
                                 Select::make('tone')
-                                    ->options(['info' => 'Information', 'success' => 'Good news', 'warning' => 'Heads up'])
+                                    ->options(__('app.shop_home.tones'))
                                     ->default('info')
                                     ->required(),
                             ])
@@ -165,7 +143,7 @@ class ShopLandingPageEditor extends Page
         app(SaveShopLandingPageAction::class)($page);
 
         Notification::make()
-            ->title('Home page saved')
+            ->title(__('app.shop_home.saved'))
             ->success()
             ->send();
 
@@ -179,8 +157,8 @@ class ShopLandingPageEditor extends Page
 
     private static function imageUpload(): FileUpload
     {
-        return FileUpload::make('layout_data.image_path')
-            ->label('Page image')
+        return FileUpload::make('layout_data.shared.image_path')
+            ->label(__('app.shop_home.page_image'))
             ->image()
             ->acceptedFileTypes(['image/png', 'image/jpeg', 'image/webp'])
             ->maxSize(5120)
@@ -201,6 +179,54 @@ class ShopLandingPageEditor extends Page
 
     public function getTitle(): string|Htmlable
     {
-        return 'Shop home page';
+        return __('app.shop_home.title');
+    }
+
+    /** @return array<int, Component> */
+    private static function translatedLayoutFields(string $locale, bool $required = false): array
+    {
+        $fields = [
+            TextInput::make("layout_data.{$locale}.eyebrow")
+                ->label(__('app.shop_home.small_heading'))
+                ->maxLength(120),
+            TextInput::make("layout_data.{$locale}.headline")
+                ->label(__('app.shop_home.main_heading'))
+                ->required($required)
+                ->maxLength(180),
+            Textarea::make("layout_data.{$locale}.description")
+                ->label(__('app.shop_home.introduction'))
+                ->required($required)
+                ->maxLength(1200),
+            TextInput::make("layout_data.{$locale}.button_label")
+                ->label(__('app.shop_home.booking_button'))
+                ->required($required)
+                ->maxLength(80),
+        ];
+
+        $fields[] = TextInput::make("layout_data.{$locale}.story_quote")
+            ->label(__('app.shop_home.quote'))
+            ->maxLength(500)
+            ->visible(fn (Get $get): bool => $get('layout') === 'story');
+        $fields[] = TextInput::make("layout_data.{$locale}.story_byline")
+            ->label(__('app.shop_home.quote_attribution'))
+            ->maxLength(120)
+            ->visible(fn (Get $get): bool => $get('layout') === 'story');
+
+        return $fields;
+    }
+
+    private static function richContentField(string $locale): RichEditor
+    {
+        return RichEditor::make("custom_content.{$locale}")
+            ->label(__('app.shop_home.page_sections'))
+            ->customBlocks([ShopCalloutBlock::class, ShopFeatureBlock::class]);
+    }
+
+    private static function noticeField(string $locale, bool $required = false): TextInput
+    {
+        return TextInput::make("message.{$locale}")
+            ->label(__('app.shop_home.message'))
+            ->required($required)
+            ->maxLength(240);
     }
 }

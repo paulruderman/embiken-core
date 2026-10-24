@@ -16,9 +16,13 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use InvalidArgumentException;
+use LaraZeus\SpatieTranslatable\Actions\LocaleSwitcher;
+use LaraZeus\SpatieTranslatable\Resources\RelationManagers\Concerns\Translatable;
 
 class VariantsRelationManager extends RelationManager
 {
+    use Translatable;
+
     protected static string $relationship = 'variants';
 
     public function form(Schema $schema): Schema
@@ -36,10 +40,12 @@ class VariantsRelationManager extends RelationManager
             ->recordTitleAttribute('size')
             ->columns([
                 TextColumn::make('bikeModel.name')
-                    ->label('Model'),
+                    ->label('Model')
+                    ->state(fn (BikeModelVariant $record): ?string => $record->bikeModel?->getTranslation('name', $this->activeLocale)),
                 TextColumn::make('size'),
                 TextColumn::make('color_name')
                     ->label('Color')
+                    ->state(fn (BikeModelVariant $record): ?string => $record->getTranslation('color_name', $this->activeLocale))
                     ->placeholder('—'),
                 TextColumn::make('rate_minor_units')
                     ->label('Rate')
@@ -66,6 +72,7 @@ class VariantsRelationManager extends RelationManager
                         ->url(app(ShopSetupReadiness::class)->continuationUrl(ShopSetupReadiness::BookOffer)),
                 ])
             ->headerActions([
+                LocaleSwitcher::make(),
                 Action::make('createBikeModelVariant')
                     ->label('Add bike model variants first')
                     ->url(app(ShopSetupReadiness::class)->continuationUrl(ShopSetupReadiness::BookOffer))

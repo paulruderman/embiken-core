@@ -2,6 +2,8 @@
 
 namespace App\Providers\Filament;
 
+use App\Http\Middleware\ApplyFilamentTranslationLocale;
+use App\Support\Locales;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -17,6 +19,7 @@ use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use LaraZeus\SpatieTranslatable\SpatieTranslatablePlugin;
 
 class PlatformPanelProvider extends PanelProvider
 {
@@ -35,6 +38,10 @@ class PlatformPanelProvider extends PanelProvider
                 'primary' => Color::Sky,
             ])
             ->viteTheme('resources/css/filament/platform/theme.css')
+            ->plugin(SpatieTranslatablePlugin::make()
+                ->defaultLocales(Locales::contentLocales())
+                ->getLocaleLabelUsing(fn (string $locale): ?string => Locales::contentLabels()[$locale] ?? null)
+                ->useFallbackLocale())
             ->discoverResources(in: app_path('Filament/Platform/Resources'), for: 'App\Filament\Platform\Resources')
             ->discoverPages(in: app_path('Filament/Platform/Pages'), for: 'App\Filament\Platform\Pages')
             ->pages([
@@ -54,6 +61,7 @@ class PlatformPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+                ApplyFilamentTranslationLocale::class,
             ])
             ->authMiddleware([
                 Authenticate::class,

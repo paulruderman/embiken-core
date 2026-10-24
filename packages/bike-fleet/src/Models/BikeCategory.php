@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\Translatable\HasTranslations;
 
 /**
  * @property int $id
@@ -24,6 +25,11 @@ class BikeCategory extends Model
 
     /** @use HasFactory<BikeCategoryFactory> */
     use HasFactory;
+
+    use HasTranslations;
+
+    /** @var list<string> */
+    public array $translatable = ['name', 'description'];
 
     protected static function newFactory(): BikeCategoryFactory
     {

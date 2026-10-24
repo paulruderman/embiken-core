@@ -19,6 +19,7 @@ declare module '@inertiajs/core' {
         sharedPageProps: {
             name: string;
             locale: string;
+            supportedLocales: Array<{ value: string; tag: string; label: string }>;
             auth: Auth;
             enums: SharedEnums;
             sidebarOpen: boolean;

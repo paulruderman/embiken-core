@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\Translatable\HasTranslations;
 
 /**
  * @property int $id
@@ -37,6 +38,11 @@ class BikeModelVariant extends Model
 
     /** @use HasFactory<BikeModelVariantFactory> */
     use HasFactory;
+
+    use HasTranslations;
+
+    /** @var list<string> */
+    public array $translatable = ['color_name'];
 
     protected static function newFactory(): BikeModelVariantFactory
     {

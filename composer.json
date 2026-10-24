@@ -8,6 +8,7 @@
     "require": {
         "php": "^8.3",
         "batistackapp/filament-map-picker": "^1.0",
+        "bezhansalleh/filament-language-switch": "^5.0",
         "embiken/bike-fleet": "@dev",
         "embiken/bike-rental-self-booking": "@dev",
         "embiken/bike-rentals": "@dev",
@@ -18,12 +19,14 @@
         "embiken/weather": "@dev",
         "filament/filament": "^5.0",
         "inertiajs/inertia-laravel": "^3.0",
+        "lara-zeus/spatie-translatable": "^2.0",
         "laravel/framework": "^13.17",
         "laravel/reverb": "^1.11",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^3.0",
         "laravel/wayfinder": "^0.1.14",
         "lorisleiva/laravel-actions": "^2.12",
+        "spatie/laravel-translatable": "^6.15",
         "stancl/tenancy": "^3.10"
     },
     "require-dev": {

@@ -6,16 +6,24 @@ use App\Filament\Shop\Concerns\RequiresShopSetup;
 use App\Filament\Shop\Support\ShopSetupReadiness;
 use Embiken\BikeRentals\Filament\Resources\RentalPackages\RentalPackageResource;
 use Filament\Resources\Pages\CreateRecord;
+use LaraZeus\SpatieTranslatable\Actions\LocaleSwitcher;
+use LaraZeus\SpatieTranslatable\Resources\Pages\CreateRecord\Concerns\Translatable;
 
 class CreateRentalPackage extends CreateRecord
 {
     use RequiresShopSetup;
+    use Translatable;
 
     protected static string $resource = RentalPackageResource::class;
 
     protected static function shopSetupRequirement(): string
     {
         return ShopSetupReadiness::RentalPackages;
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [LocaleSwitcher::make()];
     }
 
     /**

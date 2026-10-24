@@ -6,6 +6,7 @@ use App\Filament\Shop\Widgets\ShopSetupChecklistWidget;
 use App\Models\Location;
 use App\Models\LocationHour;
 use App\Models\Staff;
+use App\Support\TranslationCompleteness;
 use Embiken\BikeFleet\Enums\BikeSituation;
 use Embiken\BikeFleet\Enums\ServiceStage;
 use Embiken\BikeFleet\Filament\Pages\FleetDashboard;
@@ -390,6 +391,30 @@ it('shows the setup checklist and marks incomplete navigation resources', functi
         ->toContain('setup_target=book_offer');
 });
 
+it('shows missing customer-facing translations as an actionable setup step', function () {
+    BikeCategory::factory()->create(['name' => 'City bikes', 'description' => null]);
+
+    $completeness = app(TranslationCompleteness::class);
+
+    expect($completeness->hasMissingTranslations())->toBeTrue()
+        ->and($completeness->missingTranslationCount())->toBe(2)
+        ->and($completeness->firstMissingTranslationUrl())->toContain('/bike-categories/');
+
+    app()->setLocale('es');
+    expect(BikeCategory::query()->firstOrFail()->name)->toBe('City bikes');
+    app()->setLocale('en');
+
+    $checklist = Livewire::test(ShopSetupChecklistWidget::class)
+        ->assertSee('Customer-facing translations')
+        ->assertSee('Review translations')
+        ->assertSee('1 of 9 complete');
+
+    expect(Filament::getCurrentPanel()?->getWidgets())
+        ->toContain(ShopSetupChecklistWidget::class);
+
+    expect(app(ShopSetupReadiness::class)->step(ShopSetupReadiness::Translations)['complete'])->toBeFalse();
+});
+
 it('scopes setup steps to each module dashboard', function () {
     $readiness = app(ShopSetupReadiness::class);
 
@@ -444,9 +469,9 @@ it('replaces blocked catalog create actions with the next prerequisite', functio
 
     $bikeModelsActions = $headerActionsFor(ListBikeModels::class);
 
-    expect($bikeModelsActions)->toHaveCount(1)
-        ->and($bikeModelsActions[0]->getName())->toBe('continueSetup')
-        ->and($bikeModelsActions[0]->getUrl())->toContain('setup_target=bike_models');
+    expect($bikeModelsActions)->toHaveCount(2)
+        ->and($bikeModelsActions[1]->getName())->toBe('continueSetup')
+        ->and($bikeModelsActions[1]->getUrl())->toContain('setup_target=bike_models');
 
     Livewire::test(ListBikeModels::class)
         ->assertOk()
@@ -457,13 +482,13 @@ it('replaces blocked catalog create actions with the next prerequisite', functio
 
     $category = BikeCategory::factory()->create();
 
-    expect($headerActionsFor(ListBikeModels::class)[0]->getName())->toBe('create')
-        ->and($headerActionsFor(ListBikeModelVariants::class)[0]->getName())->toBe('continueSetup')
-        ->and($headerActionsFor(ListBikeModelVariants::class)[0]->getUrl())->toContain('setup_target=bike_model_variants');
+    expect($headerActionsFor(ListBikeModels::class)[1]->getName())->toBe('create')
+        ->and($headerActionsFor(ListBikeModelVariants::class)[1]->getName())->toBe('continueSetup')
+        ->and($headerActionsFor(ListBikeModelVariants::class)[1]->getUrl())->toContain('setup_target=bike_model_variants');
 
     $model = BikeModel::factory()->for($category, 'bikeCategory')->create();
 
-    expect($headerActionsFor(ListBikeModelVariants::class)[0]->getName())->toBe('create')
+    expect($headerActionsFor(ListBikeModelVariants::class)[1]->getName())->toBe('create')
         ->and($headerActionsFor(ListBikes::class)[0]->getName())->toBe('continueSetup')
         ->and($headerActionsFor(ListBikes::class)[0]->getUrl())->toContain('setup_target=bikes');
 
@@ -486,6 +511,26 @@ it('acknowledges completed essentials and presents optional catalog improvements
 
     $package = RentalPackage::factory()->for($location)->create();
     $package->variants()->attach($variant, ['rate_minor_units' => 1000]);
+
+    foreach ([
+        [$category, ['name', 'description']],
+        [$model, ['name', 'description']],
+        [$variant, ['color_name']],
+        [$package, ['name', 'description', 'tagline', 'blurb']],
+    ] as [$record, $attributes]) {
+        foreach ($attributes as $attribute) {
+            $english = $record->getTranslation($attribute, 'en', false);
+
+            if (! filled($english)) {
+                continue;
+            }
+
+            $record->setTranslation($attribute, 'es', $english.' ES');
+            $record->setTranslation($attribute, 'fr', $english.' FR');
+        }
+
+        $record->save();
+    }
 
     expect(array_column(app(ShopSetupReadiness::class)->checklist(), 'complete'))
         ->toBe([true, true, true, true, true, true, true, true]);

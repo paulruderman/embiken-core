@@ -2,8 +2,11 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Shop\Widgets\ShopSetupChecklistWidget;
+use App\Http\Middleware\ApplyFilamentTranslationLocale;
 use App\Models\ShopSetting;
 use App\Support\BrandColor;
+use App\Support\Locales;
 use App\Support\ModuleRegistry;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -21,6 +24,7 @@ use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use LaraZeus\SpatieTranslatable\SpatieTranslatablePlugin;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 
@@ -47,6 +51,10 @@ class ShopPanelProvider extends PanelProvider
             ->login()
             ->passwordReset()
             ->viteTheme('resources/css/filament/shop/theme.css')
+            ->plugin(SpatieTranslatablePlugin::make()
+                ->defaultLocales(Locales::contentLocales())
+                ->getLocaleLabelUsing(fn (string $locale): ?string => Locales::contentLabels()[$locale] ?? null)
+                ->useFallbackLocale())
             ->colors(fn (): array => $this->panelColors())
             ->renderHook(
                 PanelsRenderHook::STYLES_AFTER,
@@ -61,14 +69,15 @@ class ShopPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Shop/Widgets'), for: 'App\Filament\Shop\Widgets')
             ->navigationGroups([
-                NavigationGroup::make()->label('Fleet'),
-                NavigationGroup::make()->label('Rentals'),
-                NavigationGroup::make()->label('Online Book'),
-                NavigationGroup::make()->label('Weather'),
-                NavigationGroup::make()->label('Shop settings'),
+                NavigationGroup::make()->label(fn (): string => __('app.navigation.fleet')),
+                NavigationGroup::make()->label(fn (): string => __('app.navigation.rentals')),
+                NavigationGroup::make()->label(fn (): string => __('app.navigation.online_book')),
+                NavigationGroup::make()->label(fn (): string => __('app.navigation.weather')),
+                NavigationGroup::make()->label(fn (): string => __('app.navigation.shop_settings')),
             ])
             ->widgets([
                 AccountWidget::class,
+                ShopSetupChecklistWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -80,6 +89,7 @@ class ShopPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+                ApplyFilamentTranslationLocale::class,
                 InitializeTenancyByDomain::class,
                 PreventAccessFromCentralDomains::class,
             ])

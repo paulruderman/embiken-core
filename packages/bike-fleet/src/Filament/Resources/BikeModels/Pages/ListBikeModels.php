@@ -8,11 +8,14 @@ use App\Filament\Shop\Support\ShopSetupReadiness;
 use Embiken\BikeFleet\Filament\Resources\BikeModels\BikeModelResource;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
+use LaraZeus\SpatieTranslatable\Actions\LocaleSwitcher;
+use LaraZeus\SpatieTranslatable\Resources\Pages\ListRecords\Concerns\Translatable;
 
 class ListBikeModels extends ListRecords
 {
     use HasPendingSetupTitle;
     use HasSetupPrerequisiteCallout;
+    use Translatable;
 
     protected static string $resource = BikeModelResource::class;
 
@@ -25,6 +28,8 @@ class ListBikeModels extends ListRecords
     {
         $continueSetupAction = $this->continueSetupPrerequisiteAction();
 
-        return $continueSetupAction === null ? [CreateAction::make()] : [$continueSetupAction];
+        return $continueSetupAction === null
+            ? [LocaleSwitcher::make(), CreateAction::make()]
+            : [LocaleSwitcher::make(), $continueSetupAction];
     }
 }

@@ -6,6 +6,7 @@ use App\Enums\BikeAssignmentPolicy;
 use App\Enums\ReturnSituation;
 use App\Enums\StaffRole;
 use App\Enums\Weekday;
+use App\Support\Locales;
 use App\Support\ModuleRegistry;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -41,7 +42,15 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'name' => config('app.name'),
-            'locale' => str_replace('_', '-', app()->getLocale()),
+            'locale' => Locales::intlLocale($request->attributes->get('embiken.locale')),
+            'supportedLocales' => array_map(
+                static fn (string $locale): array => [
+                    'value' => $locale,
+                    'tag' => Locales::intlLocale($locale),
+                    'label' => Locales::labels()[$locale],
+                ],
+                Locales::all(),
+            ),
             'auth' => [
                 'user' => $request->user(),
             ],

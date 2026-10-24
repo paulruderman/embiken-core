@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property array<string, mixed> $layout_data
  * @property string $theme
  * @property array<string, mixed>|null $custom_content
- * @property list<array{message: string, tone: string}>|null $booking_notices
+ * @property list<array{message: array<string, string|null>|string, tone: string}>|null $booking_notices
  */
 #[Fillable(['layout', 'layout_data', 'theme', 'custom_content', 'booking_notices'])]
 class ShopLandingPage extends Model

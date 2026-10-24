@@ -61,18 +61,24 @@ class TenantForm
                         fn ($module): string => $module->id(),
                         app(ModuleRegistry::class)->installedTenantModules(),
                     ))
-                    ->descriptions(function (): array {
+                    ->descriptions(function (Get $get): array {
                         $registry = app(ModuleRegistry::class);
                         $prerequisites = $registry->modulePrerequisites();
+                        $selectedModuleIds = self::selectedModuleIds($get('modules'));
+                        $selectedModuleLabels = collect($registry->installedTenantModules())
+                            ->filter(fn ($module): bool => in_array($module->id(), $selectedModuleIds, true))
+                            ->map(fn ($module): string => $module->label())
+                            ->all();
 
                         return collect($registry->installedTenantModules())
-                            ->mapWithKeys(function ($module) use ($prerequisites): array {
+                            ->mapWithKeys(function ($module) use ($prerequisites, $selectedModuleLabels): array {
                                 $description = '<p class="tenant-module-description">'.e($module->description()).'</p>';
                                 $modulePrerequisites = $prerequisites[$module->id()] ?? [];
 
                                 if ($modulePrerequisites !== []) {
-                                    $description .= '<div class="tenant-module-required"><span>Required:</span><ul>'.implode('', array_map(
-                                        fn (string $prerequisite): string => '<li>'.e($prerequisite).'</li>',
+                                    $description .= '<div class="tenant-module-required"><span>Requires:</span><ul>'.implode('', array_map(
+                                        fn (string $prerequisite): string => '<li'.(in_array($prerequisite, $selectedModuleLabels, true) ? ' class="is-active"><span class="tenant-module-required-check" aria-hidden="true">✓</span>' : '>')
+                                            .e($prerequisite).'</li>',
                                         $modulePrerequisites,
                                     )).'</ul></div>';
                                 }
@@ -88,13 +94,14 @@ class TenantForm
                         'modules',
                         app(ModuleRegistry::class)->normalizeModuleIds(self::selectedModuleIds($state)),
                     ))
+                    ->live()
                     ->disableOptionWhen(fn (string $value, Get $get): bool => app(ModuleRegistry::class)->hasSelectedDependents(
                         $value,
                         self::selectedModuleIds($get('modules')),
                     ))
                     ->helperText('Prerequisites are selected automatically. Turn off dependent modules first to disable a required module.')
                     ->visibleOn('edit')
-                    ->columns(['default' => 1, 'md' => 2, 'xl' => 3])
+                    ->columns(['default' => 1, 'md' => 2])
                     ->gridDirection(GridDirection::Row)
                     ->extraAttributes(['class' => 'tenant-module-cards']),
                 Placeholder::make('express_status')

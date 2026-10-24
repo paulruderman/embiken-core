@@ -1,0 +1,43 @@
+<?php
+
+return [
+    'navigation' => [
+        'fleet' => 'Flota',
+        'rentals' => 'Alquileres',
+        'online_book' => 'Reservas en línea',
+        'weather' => 'Clima',
+        'shop_settings' => 'Configuración de la tienda',
+    ],
+    'shop_home' => [
+        'title' => 'Página de inicio de la tienda',
+        'home_page' => 'Página de inicio',
+        'choose_layout' => 'Elige un diseño y completa los campos correspondientes.',
+        'page_style' => 'Estilo de página',
+        'small_heading' => 'Encabezado pequeño',
+        'main_heading' => 'Encabezado principal',
+        'introduction' => 'Introducción',
+        'booking_button' => 'Botón de reserva',
+        'image_position' => 'Posición de la imagen',
+        'quote' => 'Cita',
+        'quote_attribution' => 'Autor de la cita',
+        'extra_sections' => 'Secciones adicionales',
+        'extra_sections_description' => 'Añade secciones flexibles debajo del diseño con los bloques del editor.',
+        'page_sections' => 'Secciones de la página',
+        'booking_screen' => 'Mensajes en la pantalla de reservas',
+        'booking_screen_description' => 'Muestra hasta cinco avisos breves en la parte superior de /book.',
+        'booking_messages' => 'Mensajes de reserva',
+        'message' => 'Mensaje',
+        'saved' => 'Página de inicio guardada',
+        'book_a_bike' => 'Reservar una bicicleta',
+        'layouts' => ['hero' => 'Portada', 'split' => 'Dividido', 'story' => 'Historia'],
+        'themes' => ['light' => 'Claro', 'warm' => 'Cálido', 'dark' => 'Oscuro'],
+        'positions' => ['left' => 'Izquierda', 'right' => 'Derecha'],
+        'tones' => ['info' => 'Información', 'success' => 'Buenas noticias', 'warning' => 'Aviso'],
+        'page_image' => 'Imagen de la página',
+    ],
+    'translations' => [
+        'setup_step' => 'Traducciones para clientes',
+        'setup_description' => 'Traduce al español y al francés el contenido de la tienda y las reservas, el catálogo de bicicletas y los paquetes de alquiler. Los clientes verán el inglés cuando falte una traducción.',
+        'review' => 'Revisar traducciones',
+    ],
+];

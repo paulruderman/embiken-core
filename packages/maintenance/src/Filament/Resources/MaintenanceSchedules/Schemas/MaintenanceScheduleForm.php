@@ -20,7 +20,7 @@ class MaintenanceScheduleForm
         return $schema
             ->components([
                 Select::make('bike_id')
-                    ->label('Bike')
+                    ->label(__('app.maintenance_ui.bike'))
                     ->options(fn (): array => Bike::query()->orderBy('bid')->pluck('bid', 'id')->all())
                     ->searchable()
                     ->preload()
@@ -29,18 +29,18 @@ class MaintenanceScheduleForm
                     ->required()
                     ->maxLength(255),
                 DatePicker::make('due_at')
-                    ->label('Due date')
+                    ->label(__('app.maintenance_ui.due_date'))
                     ->required(),
                 Select::make('status')
                     ->options([
-                        'scheduled' => 'Scheduled',
-                        'completed' => 'Completed',
-                        'cancelled' => 'Cancelled',
+                        'scheduled' => __('app.maintenance_ui.statuses.scheduled'),
+                        'completed' => __('app.maintenance_ui.statuses.completed'),
+                        'cancelled' => __('app.maintenance_ui.statuses.cancelled'),
                     ])
                     ->default('scheduled')
                     ->required(),
                 Select::make('maintenance_checklist_id')
-                    ->label('Checklist template')
+                    ->label(__('app.maintenance_ui.checklist_template'))
                     ->options(fn (): array => MaintenanceChecklist::query()->orderBy('name')->pluck('name', 'id')->all())
                     ->searchable()
                     ->preload()
@@ -54,15 +54,15 @@ class MaintenanceScheduleForm
                             'completed' => false,
                         ], $items));
                     })
-                    ->helperText('Items are copied to this schedule so later template edits do not change it.'),
+                    ->helperText(__('app.maintenance_ui.template_copy_help')),
                 Repeater::make('checklist_items')
-                    ->label('Scheduled checklist')
+                    ->label(__('app.maintenance_ui.scheduled_checklist'))
                     ->schema([
                         TextInput::make('label')->required()->maxLength(255),
                         Toggle::make('completed')->default(false),
                     ])
                     ->columns(2)
-                    ->addActionLabel('Add checklist item')
+                    ->addActionLabel(__('app.maintenance_ui.add_checklist_item'))
                     ->columnSpanFull(),
                 Textarea::make('notes')->rows(3)->columnSpanFull(),
             ]);

@@ -19,6 +19,9 @@ class WeatherDayStoreContributor implements DayStoreContributor
 
     public function snapshot(Location $location): array
     {
-        return $this->reader->snapshot();
+        return [
+            ...$this->reader->snapshot(),
+            'coverage_notice' => (string) __('app.weather_ui.coverage_notice'),
+        ];
     }
 }

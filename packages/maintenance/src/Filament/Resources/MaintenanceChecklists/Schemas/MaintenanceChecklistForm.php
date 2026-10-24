@@ -18,10 +18,10 @@ class MaintenanceChecklistForm
                     ->unique(ignoreRecord: true),
                 Repeater::make('items')
                     ->simple(TextInput::make('item')->required()->maxLength(255))
-                    ->label('Checklist items')
+                    ->label(__('app.maintenance_ui.checklist_items'))
                     ->required()
                     ->minItems(1)
-                    ->addActionLabel('Add checklist item')
+                    ->addActionLabel(__('app.maintenance_ui.add_checklist_item'))
                     ->columnSpanFull(),
             ]);
     }

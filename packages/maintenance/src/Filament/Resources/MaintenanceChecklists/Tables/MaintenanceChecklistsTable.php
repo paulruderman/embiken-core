@@ -15,7 +15,7 @@ class MaintenanceChecklistsTable
         return $table
             ->columns([
                 TextColumn::make('name')->searchable()->sortable(),
-                TextColumn::make('items')->label('Items')->getStateUsing(fn ($record): int => count($record->items ?? [])),
+                TextColumn::make('items')->label(__('app.maintenance_ui.items'))->getStateUsing(fn ($record): int => count($record->items ?? [])),
                 TextColumn::make('updated_at')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([

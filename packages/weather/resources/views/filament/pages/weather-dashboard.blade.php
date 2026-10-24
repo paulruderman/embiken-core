@@ -1,8 +1,9 @@
 <x-filament-panels::page>
     <div class="space-y-6">
+        <p class="text-sm text-gray-600 dark:text-gray-400">{{ __('app.weather_ui.coverage_notice') }}</p>
         <div class="flex flex-wrap items-center gap-3">
             @if (count($this->siteOptions()) > 0)
-                <label for="weather-site-select" class="text-sm font-medium">Site</label>
+                <label for="weather-site-select" class="text-sm font-medium">{{ __('app.weather_ui.site') }}</label>
                 <select
                     id="weather-site-select"
                     wire:model.live="selectedSiteCode"
@@ -13,7 +14,7 @@
                     @endforeach
                 </select>
             @else
-                <p class="text-sm text-gray-600 dark:text-gray-400">No weather sites yet. Add one under Weather → Sites.</p>
+                <p class="text-sm text-gray-600 dark:text-gray-400">{{ __('app.weather_ui.empty_sites') }}</p>
             @endif
         </div>
 
@@ -25,7 +26,7 @@
                         {{ $site['current']['temperature_f'] ?? '—' }}°F
                         <span class="text-lg text-gray-500">/ {{ $site['current']['temperature_c'] ?? '—' }}°C</span>
                     </p>
-                    <p class="mt-1 text-sm">{{ $site['current']['short_forecast'] ?? 'No forecast yet' }}</p>
+                    <p class="mt-1 text-sm">{{ $site['current']['short_forecast'] ?? __('app.weather_ui.no_forecast') }}</p>
                     <p class="mt-1 text-xs text-gray-500">
                         {{ $site['current']['wind_direction'] ?? '' }} {{ $site['current']['wind_speed'] ?? '' }}
                     </p>
@@ -36,11 +37,11 @@
         @if ($this->radarEmbedUrl())
             <div class="overflow-hidden rounded-xl ring-1 ring-gray-950/5 dark:ring-white/10">
                 <iframe
-                    title="Radar"
+                    title="{{ __('app.weather_ui.radar') }}"
                     src="{{ $this->radarEmbedUrl() }}"
                     class="h-96 w-full border-0"
                 ></iframe>
-                <p class="px-4 py-2 text-xs text-gray-500">Radar source: {{ $this->radarSource() }}</p>
+                <p class="px-4 py-2 text-xs text-gray-500">{{ __('app.weather_ui.radar_source') }} {{ $this->radarSource() }}</p>
             </div>
         @endif
 
@@ -49,10 +50,10 @@
                 <table class="w-full text-left text-sm">
                     <thead>
                         <tr class="border-b border-gray-200 dark:border-white/10">
-                            <th class="px-3 py-2">Start</th>
+                            <th class="px-3 py-2">{{ __('app.weather_ui.start') }}</th>
                             <th class="px-3 py-2">°F</th>
-                            <th class="px-3 py-2">Forecast</th>
-                            <th class="px-3 py-2">Wind</th>
+                            <th class="px-3 py-2">{{ __('app.weather_ui.forecast') }}</th>
+                            <th class="px-3 py-2">{{ __('app.weather_ui.wind') }}</th>
                         </tr>
                     </thead>
                     <tbody>

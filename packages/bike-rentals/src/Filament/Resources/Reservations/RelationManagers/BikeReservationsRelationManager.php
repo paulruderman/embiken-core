@@ -3,6 +3,7 @@
 namespace Embiken\BikeRentals\Filament\Resources\Reservations\RelationManagers;
 
 use Embiken\BikeFleet\Enums\BikeSituation;
+use Embiken\BikeFleet\Filament\Forms\Components\BikeModelVariantSelect;
 use Embiken\BikeFleet\Filament\Resources\BikeModelVariants\BikeModelVariantResource;
 use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeFleet\Models\BikeModelVariant;
@@ -28,22 +29,9 @@ class BikeReservationsRelationManager extends RelationManager
     {
         return $schema
             ->components([
-                Select::make('product_id')
+                BikeModelVariantSelect::make('product_id')
                     ->label(__('app.rentals_ui.fields.variant'))
-                    ->options(fn (): array => BikeModelVariant::query()
-                        ->with('bikeModel')
-                        ->get()
-                        ->mapWithKeys(fn (BikeModelVariant $variant): array => [
-                            $variant->id => collect([
-                                $variant->bikeModel->manufacturer,
-                                $variant->bikeModel->name,
-                                $variant->size,
-                                $variant->color_name,
-                            ])->filter()->implode(' '),
-                        ])
-                        ->all())
-                    ->required()
-                    ->searchable(),
+                    ->required(),
                 Select::make('bike_id')
                     ->label(__('app.rentals_ui.fields.bike'))
                     ->options(fn (): array => Bike::query()->orderBy('bid')->pluck('bid', 'id')->all())

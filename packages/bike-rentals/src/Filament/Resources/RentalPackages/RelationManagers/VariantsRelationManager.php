@@ -4,6 +4,7 @@ namespace Embiken\BikeRentals\Filament\Resources\RentalPackages\RelationManagers
 
 use App\Filament\Shop\Support\ShopSetupReadiness;
 use App\Support\Money;
+use Embiken\BikeFleet\Filament\Forms\Components\BikeModelVariantSelect;
 use Embiken\BikeFleet\Models\BikeModelVariant;
 use Embiken\BikeRentals\Filament\Support\MoneyInput;
 use Filament\Actions\Action;
@@ -15,6 +16,7 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use InvalidArgumentException;
 use LaraZeus\SpatieTranslatable\Actions\LocaleSwitcher;
 use LaraZeus\SpatieTranslatable\Resources\RelationManagers\Concerns\Translatable;
@@ -81,6 +83,9 @@ class VariantsRelationManager extends RelationManager
                 AttachAction::make()
                     ->visible(fn (): bool => BikeModelVariant::query()->exists())
                     ->preloadRecordSelect()
+                    ->recordTitle(fn (BikeModelVariant $record): string => BikeModelVariantSelect::labelFor($record))
+                    ->recordSelectOptionsQuery(fn (Builder $query): Builder => $query->with('bikeModel'))
+                    ->recordSelectSearchColumns(['size', 'color_name'])
                     ->successNotification(function (Notification $notification): Notification {
                         $readiness = app(ShopSetupReadiness::class);
 

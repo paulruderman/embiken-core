@@ -50,7 +50,7 @@ class WeatherSiteForm
                     ->numeric()
                     ->default(0),
                 Placeholder::make('nws_grid')
-                    ->label('NWS grid')
+                    ->label(__('app.weather_ui.nws_grid'))
                     ->content(fn (?WeatherSite $record): string => $record?->hasGrid()
                         ? "{$record->nws_office} {$record->nws_grid_x},{$record->nws_grid_y}"
                         : 'Resolved after save'),

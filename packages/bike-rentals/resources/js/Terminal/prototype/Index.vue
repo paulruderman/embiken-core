@@ -68,6 +68,7 @@ if (weatherModule?.sites) {
 }
 
 const weatherSites = computed(() => weather.sites);
+const weatherCoverageNotice = (weatherModule as { coverage_notice?: string } | undefined)?.coverage_notice ?? '';
 
 const current = computed(() => {
     const query = new URL(page.url, 'http://localhost').searchParams.get('variant');
@@ -88,7 +89,7 @@ function select(key: string): void {
     <div>
         <Head title="Terminal POS prototype" />
         <div v-if="weatherEnabled && weatherSites.length > 0" class="bg-neutral-950 p-3">
-            <WeatherStrip :sites="weatherSites" />
+            <WeatherStrip :sites="weatherSites" :coverage-notice="weatherCoverageNotice" />
         </div>
         <VariantAFloor v-if="current === 'A'" />
         <VariantBQueue v-else-if="current === 'B'" />

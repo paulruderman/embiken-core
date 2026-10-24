@@ -44,6 +44,7 @@ class ShowWeatherPrototypeAction extends Action
     {
         return Inertia::render('Weather/prototype/Index', [
             ...$snapshot,
+            'coverageNotice' => (string) __('app.weather_ui.coverage_notice'),
             'variant' => $request->query('variant', 'strip'),
         ]);
     }

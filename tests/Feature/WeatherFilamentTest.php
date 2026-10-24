@@ -53,6 +53,34 @@ test('managers can open weather filament when the module is enabled', function (
     });
 });
 
+test('weather dashboard empty state is translated', function () {
+    Notification::fake();
+
+    $tenant = Tenant::create([
+        'name' => 'Wx Empty',
+        'modules' => ['embiken/bike-fleet', 'embiken/bike-rentals', 'embiken/weather'],
+    ]);
+    $tenant->domains()->create(['domain' => 'wx-fil-empty.localhost']);
+    $this->weatherFilamentTenant = $tenant;
+
+    $staff = $tenant->run(function (): Staff {
+        $location = Location::factory()->create();
+
+        return Staff::factory()->recycle($location)->create();
+    });
+
+    $this->actingAs($staff, 'staff');
+    Filament::setCurrentPanel('shop');
+
+    $tenant->run(function (): void {
+        app()->setLocale('es');
+
+        Livewire::test(WeatherDashboard::class)
+            ->assertSuccessful()
+            ->assertSee('Todavía no hay sitios meteorológicos.');
+    });
+});
+
 test('weather filament is hidden when the module is off', function () {
     Notification::fake();
 

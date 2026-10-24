@@ -32,7 +32,7 @@
         <button
             type="button"
             class="absolute end-2 top-1/2 z-10 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-gray-500 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 dark:text-gray-400 dark:hover:bg-white/5"
-            aria-label="Choose a Tailwind color family"
+            aria-label="{{ __('app.branding_ui.choose_color_family') }}"
             x-on:click="open = ! open"
             x-bind:aria-expanded="open.toString()"
         >
@@ -45,7 +45,7 @@
             x-transition.origin.top
             class="absolute inset-x-0 z-50 mt-1 max-h-80 overflow-y-auto rounded-lg border border-gray-200 bg-white p-1 shadow-xl dark:border-white/10 dark:bg-gray-900"
             role="listbox"
-            aria-label="Tailwind color families"
+            aria-label="{{ __('app.branding_ui.color_families') }}"
         >
             @foreach ($families as $family)
                 @php
@@ -55,7 +55,7 @@
                 <button
                     type="button"
                     role="option"
-                    aria-label="{{ $family }} color family"
+                    aria-label="{{ __('app.branding_ui.color_family_option', ['family' => $family]) }}"
                     wire:click="$set('{{ $getStatePath() }}', '{{ $family }}')"
                     x-on:click="open = false"
                     class="flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-start text-sm text-gray-800 hover:bg-gray-50 focus-visible:bg-gray-50 focus-visible:outline-none dark:text-gray-100 dark:hover:bg-white/5 dark:focus-visible:bg-white/5"

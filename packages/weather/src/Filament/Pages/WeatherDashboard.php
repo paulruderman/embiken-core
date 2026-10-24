@@ -137,7 +137,7 @@ class WeatherDashboard extends Page
     {
         return [
             Action::make('useRainviewer')
-                ->label('RainViewer')
+                ->label(__('app.weather_ui.actions.rainviewer'))
                 ->visible(fn (): bool => WeatherSettings::current()->radar_source !== RadarSource::Rainviewer)
                 ->action(function (): void {
                     $settings = WeatherSettings::current();
@@ -145,7 +145,7 @@ class WeatherDashboard extends Page
                     $settings->save();
                 }),
             Action::make('useNoaa')
-                ->label('NOAA radar')
+                ->label(__('app.weather_ui.actions.noaa_radar'))
                 ->visible(fn (): bool => WeatherSettings::current()->radar_source !== RadarSource::Noaa)
                 ->action(function (): void {
                     $settings = WeatherSettings::current();
@@ -153,11 +153,11 @@ class WeatherDashboard extends Page
                     $settings->save();
                 }),
             Action::make('refresh')
-                ->label('Update weather')
+                ->label(__('app.weather_ui.actions.update'))
                 ->action(function (): void {
                     try {
                         app(RefreshWeatherAction::class)();
-                        Notification::make()->title('Weather updated')->success()->send();
+                        Notification::make()->title(__('app.weather_ui.notifications.updated'))->success()->send();
                     } catch (Throwable $exception) {
                         Notification::make()->title($exception->getMessage())->danger()->send();
                     }

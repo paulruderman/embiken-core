@@ -14,7 +14,7 @@ class MaintenanceSchedulesTable
     {
         return $table
             ->columns([
-                TextColumn::make('bike.bid')->label('Bike')->searchable()->sortable(),
+                TextColumn::make('bike.bid')->label(__('app.maintenance_ui.bike'))->searchable()->sortable(),
                 TextColumn::make('title')->searchable()->sortable(),
                 TextColumn::make('due_at')->date()->sortable(),
                 TextColumn::make('status')->badge()->color(fn (string $state): string => match ($state) {

@@ -15,6 +15,7 @@ const variants = [
 
 const page = usePage();
 const weather = useWeatherStore();
+const coverageNotice = page.props.coverageNotice as string;
 
 weather.hydrate({
     sites: (page.props.sites as WeatherSiteSnapshot[]) ?? [],
@@ -44,20 +45,20 @@ const first = computed(() => weather.sites[0] ?? null);
 
         <div v-if="current === 'strip'" class="flex min-h-screen flex-col">
             <div class="border-b border-white/10 p-4">
-                <WeatherStrip :sites="weather.sites" />
+                <WeatherStrip :sites="weather.sites" :coverage-notice="coverageNotice" />
             </div>
             <div class="flex flex-1 items-center justify-center text-white/40">Floor / ticket well</div>
         </div>
 
         <div v-else-if="current === 'board'" class="space-y-4 p-4">
-            <WeatherStrip :sites="weather.sites" />
+            <WeatherStrip :sites="weather.sites" :coverage-notice="coverageNotice" />
             <WeatherRadar :latitude="first?.latitude" :longitude="first?.longitude" />
         </div>
 
         <div v-else class="grid min-h-screen grid-cols-1 lg:grid-cols-2">
             <div class="border-r border-white/10 p-6 text-white/40">Ticket</div>
             <div class="space-y-4 p-4">
-                <WeatherStrip :sites="weather.sites" />
+                <WeatherStrip :sites="weather.sites" :coverage-notice="coverageNotice" />
                 <WeatherRadar :latitude="first?.latitude" :longitude="first?.longitude" />
             </div>
         </div>

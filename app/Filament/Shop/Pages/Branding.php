@@ -55,19 +55,19 @@ class Branding extends Page
 
     public function form(Schema $schema): Schema
     {
-        $colorHelperText = 'Enter a Tailwind color family name to use all its shades, or a six-digit HEX value such as #336699.';
+        $colorHelperText = __('app.branding_ui.color_help');
 
         return $schema
             ->components([
                 TextInput::make('brand_name')
-                    ->label('Brand name')
-                    ->helperText('Leave blank to use the shop name.')
+                    ->label(__('app.branding_ui.brand_name'))
+                    ->helperText(__('app.branding_ui.brand_name_help'))
                     ->maxLength(255),
                 Grid::make(['default' => 1, 'lg' => 2])
                     ->schema([
                         BrandColorDropdown::make('primary_color')
-                            ->label('Primary color')
-                            ->placeholder('blue or #336699')
+                            ->label(__('app.branding_ui.primary_color'))
+                            ->placeholder(__('app.branding_ui.primary_color_placeholder'))
                             ->helperText($colorHelperText)
                             ->maxLength(32)
                             ->live(),
@@ -75,14 +75,14 @@ class Branding extends Page
                             ->viewData(fn (Get $get): array => self::palettePreview(
                                 $get('primary_color'),
                                 ShopSetting::DEFAULT_PRIMARY_COLOR,
-                                'Primary shades',
+                                __('app.branding_ui.primary_shades'),
                             )),
                     ]),
                 Grid::make(['default' => 1, 'lg' => 2])
                     ->schema([
                         BrandColorDropdown::make('brand_gray_color')
-                            ->label('Brand gray')
-                            ->placeholder('gray or #6B7280')
+                            ->label(__('app.branding_ui.brand_gray'))
+                            ->placeholder(__('app.branding_ui.brand_gray_placeholder'))
                             ->helperText($colorHelperText)
                             ->maxLength(32)
                             ->live(),
@@ -90,11 +90,11 @@ class Branding extends Page
                             ->viewData(fn (Get $get): array => self::palettePreview(
                                 $get('brand_gray_color'),
                                 ShopSetting::DEFAULT_GRAY_COLOR,
-                                'Gray shades',
+                                __('app.branding_ui.gray_shades'),
                             )),
                     ]),
-                self::brandingImageUpload('logo_path', 'Panel logo', ['image/png', 'image/jpeg', 'image/webp'], 2048),
-                self::brandingImageUpload('favicon_path', 'Favicon', ['image/png'], 1024),
+                self::brandingImageUpload('logo_path', __('app.branding_ui.panel_logo'), ['image/png', 'image/jpeg', 'image/webp'], 2048),
+                self::brandingImageUpload('favicon_path', __('app.branding_ui.favicon'), ['image/png'], 1024),
             ])
             ->statePath('data');
     }
@@ -147,7 +147,7 @@ class Branding extends Page
         app(UpdateShopBrandingAction::class)($branding);
 
         Notification::make()
-            ->title('Branding saved')
+            ->title(__('app.branding_ui.saved'))
             ->success()
             ->send();
 

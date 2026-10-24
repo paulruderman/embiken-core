@@ -19,9 +19,12 @@ use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeFleet\Models\BikeCategory;
 use Embiken\BikeFleet\Models\BikeModel;
 use Embiken\BikeFleet\Models\BikeModelVariant;
+use Embiken\BikeRentals\Filament\Resources\Customers\Pages\EditCustomer;
+use Embiken\BikeRentals\Filament\Resources\Customers\RelationManagers\ReservationsRelationManager;
 use Embiken\BikeRentals\Filament\Resources\Reservations\Pages\EditReservation;
 use Embiken\BikeRentals\Filament\Resources\Reservations\Pages\ListReservations;
 use Embiken\BikeRentals\Filament\Resources\Reservations\ReservationResource;
+use Embiken\BikeRentals\Models\Customer;
 use Embiken\BikeRentals\Models\RentalPackage;
 use Embiken\BikeRentals\Models\Reservation;
 use Filament\Facades\Filament;
@@ -186,7 +189,7 @@ test('shop filament does not create or delete reservations', function () {
         ->and(ReservationResource::canDelete($reservation))->toBeFalse();
 });
 
-test('reservations remain available and point managers to incomplete Book setup', function () {
+test('reservation and service request pages link to their relevant incomplete setup', function () {
     $staff = Staff::factory()->create();
 
     $this->actingAs($staff, 'staff');
@@ -205,10 +208,10 @@ test('reservations remain available and point managers to incomplete Book setup'
         ->toBeInstanceOf(HtmlString::class)
         ->and($subheading->toHtml())
         ->toContain('Online Book setup is incomplete. Next: ')
-        ->toContain('href="'.BikeCategoryResource::getUrl('create').'?setup_target=bike_categories"')
+        ->toContain('href="'.BikeCategoryResource::getUrl('create').'?setup_target=book_offer"')
         ->toContain('>Add a bike category</a>')
         ->and($headerActions)->toHaveCount(1)
-        ->and($headerActions[0]->getUrl())->toContain('setup_target=bike_categories');
+        ->and($headerActions[0]->getUrl())->toContain('setup_target=book_offer');
 
     $serviceRequestPage = new ListServiceRequests;
     $serviceRequestHeaderActions = (new ReflectionMethod(ListServiceRequests::class, 'getHeaderActions'))
@@ -220,18 +223,79 @@ test('reservations remain available and point managers to incomplete Book setup'
         ->and(ServiceRequestResource::getNavigationBadgeTooltip())->toContain('Bike categories')
         ->and($serviceRequestSubheading)->toBeInstanceOf(HtmlString::class)
         ->and($serviceRequestSubheading->toHtml())
-        ->toContain('Online Book setup is incomplete. Next: ')
-        ->toContain('href="'.BikeCategoryResource::getUrl('create').'?setup_target=bike_categories"')
+        ->toContain('Before adding service requests, complete this step: ')
+        ->toContain('href="'.BikeCategoryResource::getUrl('create').'?setup_target=service_requests"')
         ->toContain('>Add a bike category</a>')
         ->and($serviceRequestHeaderActions)->toHaveCount(1)
         ->and($serviceRequestHeaderActions[0]->getName())->toBe('continueSetup')
-        ->and($serviceRequestHeaderActions[0]->getUrl())->toContain('setup_target=bike_categories');
+        ->and($serviceRequestHeaderActions[0]->getUrl())->toContain('setup_target=service_requests');
 
     Livewire::test(ListServiceRequests::class)
         ->assertOk()
-        ->assertSee('Online Book setup is incomplete. Next:')
+        ->assertSee('Before adding service requests, complete this step:')
+        ->assertSeeHtml('href="'.BikeCategoryResource::getUrl('create').'?setup_target=service_requests"')
         ->assertSee('Add a bike category')
         ->assertSee('Continue setup');
+});
+
+test('service requests are available once a bike exists even when online booking setup is incomplete', function () {
+    $staff = Staff::factory()->create();
+    $location = $staff->location;
+    $category = BikeCategory::factory()->create();
+    $model = BikeModel::factory()->for($category, 'bikeCategory')->create();
+    $variant = BikeModelVariant::factory()->for($model, 'bikeModel')->create();
+
+    Bike::factory()
+        ->for($location)
+        ->for($variant, 'variant')
+        ->create();
+
+    $this->actingAs($staff, 'staff');
+
+    $serviceRequestPage = new ListServiceRequests;
+    $serviceRequestHeaderActions = (new ReflectionMethod(ListServiceRequests::class, 'getHeaderActions'))
+        ->invoke($serviceRequestPage);
+    $reservationPage = new ListReservations;
+    $reservationHeaderActions = (new ReflectionMethod(ListReservations::class, 'getHeaderActions'))
+        ->invoke($reservationPage);
+    $reservationSubheading = $reservationPage->getSubheading();
+
+    expect(ServiceRequestResource::getNavigationBadge())->toBeNull()
+        ->and(ServiceRequestResource::getNavigationBadgeTooltip())->toBeNull()
+        ->and($serviceRequestPage->getSubheading())->toBeNull()
+        ->and($serviceRequestHeaderActions)->toHaveCount(1)
+        ->and($serviceRequestHeaderActions[0]->getName())->toBe('create')
+        ->and(ReservationResource::getNavigationBadge())->toBe('⚠️ Pending')
+        ->and(ReservationResource::getNavigationBadgeTooltip())->toContain('Opening hours')
+        ->and($reservationSubheading)->toBeInstanceOf(HtmlString::class)
+        ->and($reservationSubheading->toHtml())
+        ->toContain('Online Book setup is incomplete. Next: ')
+        ->toContain('href="'.LocationResource::getUrl('edit', ['record' => $location->getKey()]).'?setup_target=book_offer"')
+        ->and($reservationHeaderActions)->toHaveCount(1)
+        ->and($reservationHeaderActions[0]->getName())->toBe('continueSetup');
+});
+
+test('reservations follow Book setup requirements instead of the general onboarding order', function () {
+    $staff = Staff::factory()->create();
+    $location = $staff->location;
+    $category = BikeCategory::factory()->create();
+    $model = BikeModel::factory()->for($category, 'bikeCategory')->create();
+    $variant = BikeModelVariant::factory()->for($model, 'bikeModel')->create();
+
+    Bike::factory()
+        ->for($location)
+        ->for($variant, 'variant')
+        ->create();
+
+    $this->actingAs($staff, 'staff');
+
+    $reservationPage = new ListReservations;
+    $reservationSubheading = $reservationPage->getSubheading();
+
+    expect(ReservationResource::getNavigationBadgeTooltip())->toContain('Opening hours')
+        ->and($reservationSubheading)->toBeInstanceOf(HtmlString::class)
+        ->and($reservationSubheading->toHtml())
+        ->toContain('href="'.LocationResource::getUrl('edit', ['record' => $location->getKey()]).'?setup_target=book_offer"');
 });
 
 test('reservations stop showing the Book setup cue when the checklist is complete', function () {
@@ -296,4 +360,34 @@ test('a manager can open the reservation editor', function () {
         ->assertActionExists('extend')
         ->assertActionExists('refund')
         ->assertActionExists('cancel');
+});
+
+test('a customer page shows only that customer reservations with links to their details', function () {
+    $staff = Staff::factory()->create();
+    $customer = Customer::factory()->create();
+    $reservation = Reservation::factory()
+        ->for($staff->location)
+        ->for($customer)
+        ->create([
+            'owed' => 6400,
+            'paid' => 3200,
+        ]);
+    $otherReservation = Reservation::factory()->recycle($staff->location)->create();
+
+    $this->actingAs($staff, 'staff');
+
+    Livewire::test(EditCustomer::class, ['record' => $customer->getKey()])
+        ->assertSeeLivewire(ReservationsRelationManager::class);
+
+    Livewire::test(ReservationsRelationManager::class, [
+        'ownerRecord' => $customer,
+        'pageClass' => EditCustomer::class,
+    ])
+        ->assertCanSeeTableRecords([$reservation])
+        ->assertCanNotSeeTableRecords([$otherReservation])
+        ->assertTableActionHasUrl(
+            'viewReservation',
+            ReservationResource::getUrl('view', ['record' => $reservation]),
+            $reservation,
+        );
 });

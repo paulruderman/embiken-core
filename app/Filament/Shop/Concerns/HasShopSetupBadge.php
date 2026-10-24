@@ -12,7 +12,13 @@ trait HasShopSetupBadge
 
     public static function getNavigationBadge(): ?string
     {
-        $step = app(ShopSetupReadiness::class)->step(static::shopSetupBadgeStep());
+        $readiness = app(ShopSetupReadiness::class);
+
+        if (! $readiness->hasStep(static::shopSetupBadgeStep())) {
+            return null;
+        }
+
+        $step = $readiness->step(static::shopSetupBadgeStep());
 
         if ($step['complete']) {
             return null;
@@ -23,12 +29,30 @@ trait HasShopSetupBadge
 
     public static function getNavigationBadgeTooltip(): ?string
     {
-        return app(ShopSetupReadiness::class)->step(static::shopSetupBadgeStep())['tooltip'];
+        $readiness = app(ShopSetupReadiness::class);
+
+        if (! $readiness->hasStep(static::shopSetupBadgeStep())) {
+            return null;
+        }
+
+        $step = $readiness->step(static::shopSetupBadgeStep());
+
+        return $step['complete'] ? null : $step['tooltip'];
     }
 
     public static function getNavigationBadgeColor(): string|array|null
     {
-        $step = app(ShopSetupReadiness::class)->step(static::shopSetupBadgeStep());
+        $readiness = app(ShopSetupReadiness::class);
+
+        if (! $readiness->hasStep(static::shopSetupBadgeStep())) {
+            return null;
+        }
+
+        $step = $readiness->step(static::shopSetupBadgeStep());
+
+        if ($step['complete']) {
+            return null;
+        }
 
         return $step['blocked'] ? 'warning' : 'success';
     }

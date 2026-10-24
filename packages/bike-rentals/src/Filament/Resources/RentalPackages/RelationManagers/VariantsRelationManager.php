@@ -9,6 +9,7 @@ use Filament\Actions\AttachAction;
 use Filament\Actions\DetachAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
@@ -62,6 +63,17 @@ class VariantsRelationManager extends RelationManager
                 AttachAction::make()
                     ->visible(fn (): bool => BikeModelVariant::query()->exists())
                     ->preloadRecordSelect()
+                    ->successNotification(function (Notification $notification): Notification {
+                        $readiness = app(ShopSetupReadiness::class);
+
+                        if (request()->query('setup_target') !== ShopSetupReadiness::BookOffer
+                            || ! $readiness->hasStep(ShopSetupReadiness::BookOffer)
+                            || ! $readiness->step(ShopSetupReadiness::BookOffer)['complete']) {
+                            return $notification;
+                        }
+
+                        return $readiness->addContinueSetupAction($notification, $readiness->step(ShopSetupReadiness::BookOffer)['module_id']);
+                    })
                     ->schema(fn (AttachAction $action): array => [
                         $action->getRecordSelect(),
                         TextInput::make('rate_cents')

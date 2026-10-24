@@ -28,7 +28,7 @@ class CreateTenantAction extends Action
     ): Tenant {
         $tenant = Tenant::create([
             'name' => $name,
-            'billing_plan_id' => $billingPlan?->slug ?? BillingPlan::query()->where('slug', 'starter')->value('slug'),
+            'billing_plan_id' => $billingPlan->slug ?? BillingPlan::query()->where('slug', 'starter')->value('slug'),
             'manager_name' => $managerName,
             'manager_email' => $managerEmail,
             'charges_enabled' => false,

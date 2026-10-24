@@ -72,6 +72,32 @@ trait RequiresShopSetup
         return $readiness->continuationUrl($intent);
     }
 
+    protected function getCreatedNotification(): ?Notification
+    {
+        $notification = parent::getCreatedNotification();
+        $intent = $this->setupContinuationIntent();
+
+        if ($notification === null || $intent === null) {
+            return $notification;
+        }
+
+        $readiness = app(ShopSetupReadiness::class);
+
+        if ($intent === static::shopSetupRequirement()) {
+            if (! $readiness->step(static::shopSetupRequirement())['complete']) {
+                return $notification;
+            }
+
+            return $readiness->addContinueSetupAction($notification, $readiness->step($intent)['module_id']);
+        }
+
+        if ($readiness->firstMissingPrerequisite($intent) !== null) {
+            return $notification;
+        }
+
+        return $readiness->addContinueSetupAction($notification, setupTarget: $intent);
+    }
+
     private function redirectToMissingSetup(): bool
     {
         $readiness = app(ShopSetupReadiness::class);

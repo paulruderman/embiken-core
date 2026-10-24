@@ -30,6 +30,7 @@ class ShowTerminalAction extends Action
 
         return [
             ...$snapshot,
+            'bike_assignment_policy' => $location->bike_assignment_policy->value,
             'bikes' => $snapshot['modules']['fleet']['bikes'] ?? [],
             'reservations' => $snapshot['modules']['rentals']['reservations'] ?? [],
         ];

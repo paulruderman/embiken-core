@@ -3,7 +3,8 @@
 namespace Embiken\BikeFleet\Filament\Resources\ServiceRequests;
 
 use App\Filament\Concerns\RequiresTenantModule;
-use App\Filament\Shop\Concerns\HasIncompleteBookSetupBadge;
+use App\Filament\Shop\Concerns\HasShopSetupBadge;
+use App\Filament\Shop\Support\ShopSetupReadiness;
 use BackedEnum;
 use Embiken\BikeFleet\Filament\Resources\ServiceRequests\Pages\CreateServiceRequest;
 use Embiken\BikeFleet\Filament\Resources\ServiceRequests\Pages\EditServiceRequest;
@@ -19,8 +20,13 @@ use Filament\Tables\Table;
 
 class ServiceRequestResource extends Resource
 {
-    use HasIncompleteBookSetupBadge;
+    use HasShopSetupBadge;
     use RequiresTenantModule;
+
+    protected static function shopSetupBadgeStep(): string
+    {
+        return ShopSetupReadiness::ServiceRequests;
+    }
 
     public static function tenantModuleId(): string
     {
@@ -30,6 +36,8 @@ class ServiceRequestResource extends Resource
     protected static ?string $model = ServiceRequest::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedWrenchScrewdriver;
+
+    protected static string|\UnitEnum|null $navigationGroup = 'Fleet';
 
     protected static ?string $recordTitleAttribute = 'description';
 

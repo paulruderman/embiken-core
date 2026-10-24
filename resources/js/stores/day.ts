@@ -9,6 +9,7 @@ import type {
 export type DayBike = {
     id: number;
     bid: string;
+    variant_id: number;
     in_service: boolean;
     self_bookable: boolean;
     bike_situation_state: BikeSituation;
@@ -44,6 +45,7 @@ export type DayReservation = {
 export type DaySnapshot = {
     tenant_id: string;
     location_id: number;
+    bike_assignment_policy: string;
     timezone: string;
     currency: string;
     return_situation: ReturnSituation | string;

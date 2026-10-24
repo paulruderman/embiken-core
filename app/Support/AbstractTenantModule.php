@@ -63,6 +63,11 @@ abstract class AbstractTenantModule implements TenantModule
         return [];
     }
 
+    public function setupSteps(): array
+    {
+        return [];
+    }
+
     public function frontendEnums(): array
     {
         return [];

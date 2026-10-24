@@ -1,11 +1,14 @@
 <?php
 
+use App\Filament\Shop\Resources\Locations\LocationResource;
 use App\Filament\Shop\Support\ShopSetupReadiness;
 use App\Filament\Shop\Widgets\ShopSetupChecklistWidget;
 use App\Models\Location;
 use App\Models\LocationHour;
 use App\Models\Staff;
+use Embiken\BikeFleet\Enums\BikeSituation;
 use Embiken\BikeFleet\Enums\ServiceStage;
+use Embiken\BikeFleet\Filament\Pages\FleetDashboard;
 use Embiken\BikeFleet\Filament\Resources\BikeCategories\BikeCategoryResource;
 use Embiken\BikeFleet\Filament\Resources\BikeCategories\Pages\CreateBikeCategory;
 use Embiken\BikeFleet\Filament\Resources\BikeCategories\Pages\ListBikeCategories;
@@ -26,10 +29,15 @@ use Embiken\BikeFleet\Models\BikeCategory;
 use Embiken\BikeFleet\Models\BikeModel;
 use Embiken\BikeFleet\Models\BikeModelVariant;
 use Embiken\BikeFleet\Models\ServiceRequest;
+use Embiken\BikeRentals\Filament\Pages\RentalsDashboard;
 use Embiken\BikeRentals\Filament\Resources\RentalPackages\Pages\CreateRentalPackage;
 use Embiken\BikeRentals\Filament\Resources\RentalPackages\RentalPackageResource;
+use Embiken\BikeRentals\Models\Customer;
 use Embiken\BikeRentals\Models\RentalPackage;
+use Embiken\BikeRentals\Models\Reservation;
+use Embiken\BikeRentalSelfBooking\Filament\Pages\OnlineBookDashboard;
 use Filament\Facades\Filament;
+use Filament\Notifications\NotificationMailbox;
 use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
 use Tests\Concerns\MigratesTenantSchema;
@@ -82,6 +90,8 @@ it('continues the requested task as each catalog prerequisite is created', funct
     $variant = BikeModelVariant::query()->firstOrFail();
 
     Livewire::test(CreateBike::class)
+        ->assertSee('Add one physical bike to your fleet.')
+        ->assertSee(Bike::SETUP_DESCRIPTION)
         ->fillForm([
             'bike_model_variant_id' => $variant->getKey(),
             'bid' => 'A-101',
@@ -136,7 +146,67 @@ it('resolves selected active requests and records the resolving staff member', f
         ->and($active->entries()->count())->toBe(0);
 });
 
-it('continues Book offer setup through catalog prerequisites and into package setup', function () {
+it('filters service requests by stage, bike-use blocking, and assignment', function () {
+    $assignedStaff = Staff::factory()->create();
+    $openAssigned = ServiceRequest::factory()->create([
+        'stage' => ServiceStage::Open,
+        'blocks_usage' => true,
+        'assigned_to' => $assignedStaff->getKey(),
+    ]);
+    $blockedUnassigned = ServiceRequest::factory()->create([
+        'stage' => ServiceStage::Blocked,
+        'blocks_usage' => false,
+        'assigned_to' => null,
+    ]);
+    $resolvedAssigned = ServiceRequest::factory()->resolved()->create([
+        'blocks_usage' => false,
+        'assigned_to' => $assignedStaff->getKey(),
+    ]);
+
+    Livewire::test(ListServiceRequests::class)
+        ->filterTable('stage', ServiceStage::Open)
+        ->assertCanSeeTableRecords([$openAssigned])
+        ->assertCanNotSeeTableRecords([$blockedUnassigned, $resolvedAssigned]);
+
+    Livewire::test(ListServiceRequests::class)
+        ->filterTable('blocks_usage', true)
+        ->assertCanSeeTableRecords([$openAssigned])
+        ->assertCanNotSeeTableRecords([$blockedUnassigned, $resolvedAssigned]);
+
+    Livewire::test(ListServiceRequests::class)
+        ->filterTable('blocks_usage', false)
+        ->assertCanSeeTableRecords([$blockedUnassigned, $resolvedAssigned])
+        ->assertCanNotSeeTableRecords([$openAssigned]);
+
+    Livewire::test(ListServiceRequests::class)
+        ->filterTable('assignment', true)
+        ->assertCanSeeTableRecords([$openAssigned, $resolvedAssigned])
+        ->assertCanNotSeeTableRecords([$blockedUnassigned]);
+
+    Livewire::test(ListServiceRequests::class)
+        ->filterTable('assignment', false)
+        ->assertCanSeeTableRecords([$blockedUnassigned])
+        ->assertCanNotSeeTableRecords([$openAssigned, $resolvedAssigned]);
+});
+
+it('shows assigned and resolved staff in the service request list', function () {
+    $assignedStaff = Staff::factory()->create(['name' => 'Mika Mechanic']);
+    $resolvingStaff = Staff::factory()->create(['name' => 'Rowan Resolver']);
+    $serviceRequest = ServiceRequest::factory()->resolved()->create([
+        'assigned_to' => $assignedStaff->getKey(),
+        'resolved_by' => $resolvingStaff->getKey(),
+    ]);
+
+    Livewire::test(ListServiceRequests::class)
+        ->assertCanSeeTableRecords([$serviceRequest])
+        ->assertSee('Assigned to')
+        ->assertSee('Mika Mechanic')
+        ->assertSee('Resolved at')
+        ->assertSee('Resolved by')
+        ->assertSee('Rowan Resolver');
+});
+
+it('continues Book offer setup through catalog and rental prerequisites', function () {
     Livewire::withQueryParams(['setup_target' => ShopSetupReadiness::BookOffer])
         ->test(CreateBikeCategory::class)
         ->fillForm(['name' => 'Bikes'])
@@ -161,10 +231,27 @@ it('continues Book offer setup through catalog prerequisites and into package se
             'size' => 'Medium',
         ])
         ->call('create')
-        ->assertRedirect(RentalPackageResource::getUrl('create').'?setup_target=book_offer');
+        ->assertRedirect(LocationResource::getUrl('edit', ['record' => Location::query()->firstOrFail()->getKey()]).'?setup_target=book_offer');
 
     Livewire::test(CreateRentalPackage::class)
         ->assertOk();
+});
+
+it('offers the next dashboard setup step after completing a checklist step', function () {
+    Livewire::withQueryParams(['setup_target' => ShopSetupReadiness::BikeCategories])
+        ->test(CreateBikeCategory::class)
+        ->fillForm(['name' => 'City Bikes'])
+        ->call('create');
+
+    $mailbox = app(NotificationMailbox::class);
+    $mailbox->flush();
+    $notifications = collect($mailbox->pull());
+    $continueNotification = $notifications->first(fn (array $notification): bool => ($notification['body'] ?? null) === 'Next: Bike models.');
+
+    expect($continueNotification)->not->toBeNull()
+        ->and($continueNotification['actions'][0]['url'])
+        ->toBe(url(BikeModelResource::getUrl('create').'?setup_target=bike_models'))
+        ->and($continueNotification['actions'][0]['label'])->toBe('Continue setup');
 });
 
 it('keeps ideal rider height fields and removes the obsolete range from variants', function () {
@@ -246,8 +333,8 @@ it('shows the setup checklist and marks incomplete navigation resources', functi
     $checklist = Livewire::test(ShopSetupChecklistWidget::class)
         ->assertSee('Set up your shop')
         ->assertSee('Required setup')
-        ->assertSee('Build your fleet')
-        ->assertSee('Configure rentals')
+        ->assertSee('Fleet')
+        ->assertSee('Rentals')
         ->assertSee('Bike categories')
         ->assertSee('Add a bike category')
         ->assertSee('Opening hours')
@@ -276,6 +363,35 @@ it('shows the setup checklist and marks incomplete navigation resources', functi
         ->toContain('setup_target=book_offer');
 });
 
+it('scopes setup steps to each module dashboard', function () {
+    $readiness = app(ShopSetupReadiness::class);
+
+    expect(array_column($readiness->checklist('embiken/bike-fleet'), 'key'))
+        ->toBe(['bike_categories', 'bike_models', 'bike_model_variants', 'bikes'])
+        ->and(array_column($readiness->checklist('embiken/bike-rentals'), 'key'))
+        ->toBe(['location_hours', 'rental_packages'])
+        ->and(array_column($readiness->checklist('embiken/bike-rental-self-booking'), 'key'))
+        ->toBe(['book_offer', 'bookable_fleet'])
+        ->and(array_column($readiness->checklist(), 'key'))
+        ->toBe([
+            'bike_categories',
+            'bike_models',
+            'bike_model_variants',
+            'bikes',
+            'location_hours',
+            'rental_packages',
+            'book_offer',
+            'bookable_fleet',
+        ]);
+
+    expect((new FleetDashboard)->getWidgetData())
+        ->toBe(['moduleId' => 'embiken/bike-fleet'])
+        ->and((new RentalsDashboard)->getWidgetData())
+        ->toBe(['moduleId' => 'embiken/bike-rentals'])
+        ->and((new OnlineBookDashboard)->getWidgetData())
+        ->toBe(['moduleId' => 'embiken/bike-rental-self-booking']);
+});
+
 it('replaces blocked catalog create actions with the next prerequisite', function () {
     $headerActionsFor = fn (string $pageClass): array => (new ReflectionMethod($pageClass, 'getHeaderActions'))
         ->invoke(new $pageClass);
@@ -288,7 +404,8 @@ it('replaces blocked catalog create actions with the next prerequisite', functio
 
     Livewire::test(ListBikeModels::class)
         ->assertOk()
-        ->assertSee('Online Book setup is incomplete. Next:')
+        ->assertSee('Before adding bike models, complete this step:')
+        ->assertSeeHtml('href="'.BikeCategoryResource::getUrl('create').'?setup_target=bike_models"')
         ->assertSee('Add a bike category')
         ->assertSee('Continue setup');
 
@@ -381,4 +498,55 @@ it('renders category colors in the catalog table', function () {
 
     Livewire::test(ListBikeCategories::class)
         ->assertSee('City');
+});
+
+it('shows the occupying reservation and customer beside non-home bike situations', function () {
+    $location = Location::query()->firstOrFail();
+    $customer = Customer::factory()->create(['name' => 'Taylor Rider']);
+    $reservation = Reservation::factory()
+        ->terminal()
+        ->confirmed()
+        ->for($location)
+        ->for($customer)
+        ->create();
+    $bike = Bike::factory()
+        ->for($location)
+        ->create([
+            'bike_situation_state' => BikeSituation::RentedOut,
+            'bike_situation_reservation_id' => $reservation->getKey(),
+        ]);
+    $homeBike = Bike::factory()->for($location)->create(['bid' => 'HOME-001']);
+
+    Livewire::test(ListBikes::class)
+        ->assertCanSeeTableRecords([$bike, $homeBike])
+        ->assertSee('Occupying reservation')
+        ->assertSee('#'.$reservation->getKey().' · Taylor Rider')
+        ->assertTableColumnStateSet('occupying_reservation', null, $homeBike);
+});
+
+it('requires a Book-visible package to include a bookable bike variant', function () {
+    $location = Location::query()->firstOrFail();
+    $category = BikeCategory::factory()->create();
+    $model = BikeModel::factory()->for($category, 'bikeCategory')->create();
+    $bikeVariant = BikeModelVariant::factory()->for($model, 'bikeModel')->create();
+    $offeredVariant = BikeModelVariant::factory()->for($model, 'bikeModel')->create();
+
+    Bike::factory()
+        ->for($location)
+        ->for($bikeVariant, 'variant')
+        ->create();
+
+    $package = RentalPackage::factory()->for($location)->create();
+    $package->variants()->attach($offeredVariant, ['rate_cents' => 1000]);
+
+    $step = app(ShopSetupReadiness::class)->step(ShopSetupReadiness::BookableFleet);
+
+    expect($step['complete'])->toBeFalse()
+        ->and($step['blocked'])->toBeFalse()
+        ->and($step['action_label'])->toBe('Add bookable bike variants to a package')
+        ->and($step['action_url'])->toBe(RentalPackageResource::getUrl('edit', ['record' => $package->getKey()]).'?setup_target=bookable_fleet');
+
+    $package->variants()->attach($bikeVariant, ['rate_cents' => 1000]);
+
+    expect(app(ShopSetupReadiness::class)->step(ShopSetupReadiness::BookableFleet)['complete'])->toBeTrue();
 });

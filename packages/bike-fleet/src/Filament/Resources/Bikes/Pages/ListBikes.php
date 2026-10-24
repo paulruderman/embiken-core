@@ -2,8 +2,8 @@
 
 namespace Embiken\BikeFleet\Filament\Resources\Bikes\Pages;
 
-use App\Filament\Shop\Concerns\HasBookSetupCallout;
 use App\Filament\Shop\Concerns\HasPendingSetupTitle;
+use App\Filament\Shop\Concerns\HasSetupPrerequisiteCallout;
 use App\Filament\Shop\Support\ShopSetupReadiness;
 use Embiken\BikeFleet\Filament\Resources\Bikes\BikeResource;
 use Filament\Actions\CreateAction;
@@ -11,24 +11,19 @@ use Filament\Resources\Pages\ListRecords;
 
 class ListBikes extends ListRecords
 {
-    use HasBookSetupCallout;
     use HasPendingSetupTitle;
+    use HasSetupPrerequisiteCallout;
 
     protected static string $resource = BikeResource::class;
 
-    /**
-     * @return array{key: string, label: string, description: string, complete: bool, blocked: bool, status: string, action_label: string, action_url: string|null, next_step: string|null, tooltip: string, section: string}|null
-     */
-    protected function bookSetupCalloutStep(): ?array
+    protected static function setupPrerequisiteStep(): string
     {
-        $step = app(ShopSetupReadiness::class)->step(ShopSetupReadiness::Bikes);
-
-        return $step['blocked'] ? $step : null;
+        return ShopSetupReadiness::Bikes;
     }
 
     protected function getHeaderActions(): array
     {
-        $continueSetupAction = $this->continueBookSetupAction();
+        $continueSetupAction = $this->continueSetupPrerequisiteAction();
 
         return $continueSetupAction === null ? [CreateAction::make()] : [$continueSetupAction];
     }

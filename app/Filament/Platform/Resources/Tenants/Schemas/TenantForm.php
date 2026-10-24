@@ -7,6 +7,8 @@ use App\Support\ModuleRegistry;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 
 class TenantForm
@@ -51,6 +53,21 @@ class TenantForm
                     ->options(fn (): array => collect(app(ModuleRegistry::class)->installedTenantModules())
                         ->mapWithKeys(fn ($module): array => [$module->id() => $module->label()])
                         ->all())
+                    ->descriptions(fn (Get $get): array => app(ModuleRegistry::class)->moduleOptionDescriptions(
+                        self::selectedModuleIds($get('modules')),
+                    ))
+                    ->formatStateUsing(fn (mixed $state): array => app(ModuleRegistry::class)->normalizeModuleIds(
+                        self::selectedModuleIds($state),
+                    ))
+                    ->afterStateUpdated(fn (Set $set, mixed $state) => $set(
+                        'modules',
+                        app(ModuleRegistry::class)->normalizeModuleIds(self::selectedModuleIds($state)),
+                    ))
+                    ->disableOptionWhen(fn (string $value, Get $get): bool => app(ModuleRegistry::class)->hasSelectedDependents(
+                        $value,
+                        self::selectedModuleIds($get('modules')),
+                    ))
+                    ->helperText('Selecting a module selects its prerequisites automatically. Disable dependent modules first to turn off a prerequisite.')
                     ->visibleOn('edit')
                     ->columns(2),
                 Placeholder::make('express_status')
@@ -67,5 +84,17 @@ class TenantForm
                         return "{$account} ({$charges})";
                     }),
             ]);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function selectedModuleIds(mixed $state): array
+    {
+        if (! is_array($state)) {
+            return [];
+        }
+
+        return array_values(array_filter($state, fn (mixed $id): bool => is_string($id)));
     }
 }

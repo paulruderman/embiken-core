@@ -74,6 +74,9 @@ class Tenant extends BaseTenant implements TenantWithDatabase
         return $this->hasMany(Domain::class, 'tenant_id');
     }
 
+    /**
+     * @return BelongsTo<BillingPlan, $this>
+     */
     public function billingPlan(): BelongsTo
     {
         return $this->belongsTo(BillingPlan::class, 'billing_plan_id', 'slug');

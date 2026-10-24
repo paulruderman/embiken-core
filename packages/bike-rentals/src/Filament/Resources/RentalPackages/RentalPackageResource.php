@@ -25,7 +25,7 @@ class RentalPackageResource extends Resource
 
     protected static function shopSetupBadgeStep(): string
     {
-        return ShopSetupReadiness::BookOffer;
+        return ShopSetupReadiness::RentalPackages;
     }
 
     public static function tenantModuleId(): string
@@ -37,7 +37,7 @@ class RentalPackageResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBanknotes;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Catalog';
+    protected static string|\UnitEnum|null $navigationGroup = 'Rentals';
 
     protected static ?int $navigationSort = 5;
 

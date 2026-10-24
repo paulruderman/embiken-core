@@ -5,31 +5,33 @@ namespace Embiken\BikeRentals\Actions;
 use App\Actions\Action;
 use App\Actions\Concerns\AuthorizesStaff;
 use Embiken\BikeFleet\Enums\BikeSituation;
+use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeRentals\Enums\BikeReservationStatus;
+use Embiken\BikeRentals\Enums\ReservationChannel;
 use Embiken\BikeRentals\Enums\ReservationStage;
 use Embiken\BikeRentals\Http\Resources\DayPatchResource;
 use Embiken\BikeRentals\Models\BikeReservation;
 use Embiken\BikeRentals\Services\Availability;
 use Illuminate\Console\Command;
-use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
+use Lorisleiva\Actions\ActionRequest;
 
 class PickupAction extends Action
 {
     use AuthorizesStaff;
 
-    public string $commandSignature = 'reservations:pickup {line?} {--tenant=}';
+    public string $commandSignature = 'reservations:pickup {line?} {--tenant=} {--bike=}';
 
-    public function handle(BikeReservation $line): BikeReservation
+    public function handle(BikeReservation $line, ?Bike $bike = null): BikeReservation
     {
         $line->loadMissing('reservation');
 
-        return DB::transaction(function () use ($line): BikeReservation {
+        return DB::transaction(function () use ($line, $bike): BikeReservation {
             $availability = app(Availability::class);
-            $lines = $availability->lockReservationLines($line->reservation);
+            $lines = $availability->lockReservationLines($line->reservation, $bike === null ? [] : [$bike]);
             $reservation = $availability->lockReservation($line->reservation);
             $line = $lines->firstWhere('id', $line->getKey());
 
@@ -51,11 +53,42 @@ class PickupAction extends Action
                 throw new InvalidArgumentException('That line has already been returned.');
             }
 
-            if ($line->bike_id === null || $line->bike === null) {
+            if ($line->bike_id !== null && $bike !== null && $line->bike_id !== $bike->id) {
+                throw new InvalidArgumentException('Choose the bike already assigned to this line.');
+            }
+
+            if ($line->bike_id === null && $bike === null) {
                 throw new InvalidArgumentException('Assign a bike before pickup.');
             }
 
-            $bike = $line->bike;
+            if ($line->bike_id === null) {
+                $bike = Bike::query()->whereKey($bike->getKey())->lockForUpdate()->firstOrFail();
+                $line->loadMissing('product');
+
+                if ($bike->bike_model_variant_id !== $line->product_id) {
+                    throw new InvalidArgumentException('Choose a bike that matches this line’s variant.');
+                }
+
+                $availability->assertIntervalFree(
+                    $reservation,
+                    $reservation->starts_at,
+                    $reservation->ends_at,
+                    ReservationChannel::Terminal,
+                    $line->product,
+                    $bike,
+                    $line,
+                );
+
+                $line->bike()->associate($bike);
+                $line->save();
+            } else {
+                $line->load('bike');
+                $bike = $line->bike;
+
+                if ($bike === null) {
+                    throw new InvalidArgumentException('The assigned bike no longer exists.');
+                }
+            }
 
             $line->status = BikeReservationStatus::Out;
             $line->checked_out_at = now();
@@ -71,12 +104,30 @@ class PickupAction extends Action
         });
     }
 
-    public function asController(Request $request, BikeReservation $line): DayPatchResource
+    /**
+     * @return array<string, array<mixed>|string>
+     */
+    public function rules(): array
     {
+        return [
+            'bike_id' => ['nullable', 'integer', 'exists:bikes,id'],
+        ];
+    }
+
+    public function asController(ActionRequest $request, BikeReservation $line): DayPatchResource
+    {
+        /** @var array{bike_id?: int|null} $data */
+        $data = $request->validated();
+
         try {
-            $line = $this->handle($line);
+            $line = $this->handle(
+                $line,
+                isset($data['bike_id']) ? $this->findOneOrFail(Bike::query(), $data['bike_id']) : null,
+            );
         } catch (InvalidArgumentException $exception) {
-            throw ValidationException::withMessages(['line' => $exception->getMessage()]);
+            throw ValidationException::withMessages([
+                (isset($data['bike_id']) ? 'bike_id' : 'line') => $exception->getMessage(),
+            ]);
         }
 
         return new DayPatchResource([
@@ -93,7 +144,20 @@ class PickupAction extends Action
     public function asCommand(Command $command): int
     {
         $this->initializeTenancyFromCommand($command);
-        $line = $this->handle($this->findOneOrFail(BikeReservation::query(), $command->argument('line') ?: \Laravel\Prompts\text('Line id')));
+        $reservationLine = $this->findOneOrFail(BikeReservation::query(), $command->argument('line') ?: \Laravel\Prompts\text('Line id'));
+        $bikeOption = $command->option('bike');
+        $bike = is_string($bikeOption) && $bikeOption !== ''
+            ? $this->findOneOrFail(Bike::query(), $bikeOption)
+            : null;
+
+        if ($reservationLine->bike_id === null && $bike === null) {
+            $bike = $this->findOneOrFail(
+                Bike::query(),
+                $this->requiredStringInput($command, null, 'Bike id'),
+            );
+        }
+
+        $line = $this->handle($reservationLine, $bike);
         $command->info("Picked up line {$line->id}");
 
         return self::SUCCESS;

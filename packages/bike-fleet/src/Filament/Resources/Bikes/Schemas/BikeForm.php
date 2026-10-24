@@ -13,6 +13,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Text;
 use Filament\Schemas\Schema;
 
 class BikeForm
@@ -21,6 +22,9 @@ class BikeForm
     {
         return $schema
             ->components([
+                Text::make('Add one physical bike to your fleet. Choose the model variant that identifies this bike’s model and size.')
+                    ->size('sm')
+                    ->columnSpanFull(),
                 Hidden::make('location_id')
                     ->default(fn (): ?int => Location::query()->value('id')),
                 Select::make('bike_model_variant_id')
@@ -37,11 +41,11 @@ class BikeForm
                             ])->filter()->implode(' '),
                         ])
                         ->all())
+                    ->helperText(Bike::SETUP_DESCRIPTION)
                     ->required()
                     ->searchable(),
                 TextInput::make('bid')
                     ->required()
-                    ->helperText(Bike::SETUP_DESCRIPTION)
                     ->unique(ignoreRecord: true)
                     ->maxLength(255),
                 Toggle::make('in_service')

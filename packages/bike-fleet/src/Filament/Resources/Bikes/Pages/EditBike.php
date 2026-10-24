@@ -2,10 +2,12 @@
 
 namespace Embiken\BikeFleet\Filament\Resources\Bikes\Pages;
 
+use App\Filament\Shop\Support\ShopSetupReadiness;
 use Embiken\BikeFleet\Filament\Resources\Bikes\BikeResource;
 use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeFleet\Services\FleetMutationLock;
 use Filament\Actions\DeleteAction;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -29,6 +31,21 @@ class EditBike extends EditRecord
                 }, attempts: 5);
             }),
         ];
+    }
+
+    protected function getSavedNotification(): ?Notification
+    {
+        $notification = parent::getSavedNotification();
+        $readiness = app(ShopSetupReadiness::class);
+
+        if ($notification === null
+            || request()->query('setup_target') !== ShopSetupReadiness::BookableFleet
+            || ! $readiness->hasStep(ShopSetupReadiness::BookableFleet)
+            || ! $readiness->step(ShopSetupReadiness::BookableFleet)['complete']) {
+            return $notification;
+        }
+
+        return $readiness->addContinueSetupAction($notification, $readiness->step(ShopSetupReadiness::BookableFleet)['module_id']);
     }
 
     /**

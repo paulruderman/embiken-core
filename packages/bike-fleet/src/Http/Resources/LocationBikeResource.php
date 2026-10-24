@@ -25,6 +25,7 @@ class LocationBikeResource extends JsonResource
             'self_bookable' => $this->self_bookable,
             'bike_situation_state' => $this->bike_situation_state->value,
             'bike_situation_reservation_id' => $this->bike_situation_reservation_id,
+            'variant_id' => $this->bike_model_variant_id,
             'model' => $this->variant?->bikeModel->name ?? '',
             'variant' => $this->variant->size,
             'photo_url' => $this->photo ?? $this->variant->photo ?? $this->variant->bikeModel->photo,

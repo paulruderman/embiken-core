@@ -8,6 +8,7 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Text;
 use Filament\Schemas\Schema;
 
 class BikeModelForm
@@ -16,6 +17,9 @@ class BikeModelForm
     {
         return $schema
             ->components([
+                Text::make(BikeModel::SETUP_DESCRIPTION)
+                    ->size('sm')
+                    ->columnSpanFull(),
                 Select::make('bike_category_id')
                     ->label('Category')
                     ->options(fn (): array => BikeCategory::query()->orderBy('name')->pluck('name', 'id')->all())
@@ -23,7 +27,6 @@ class BikeModelForm
                     ->searchable(),
                 TextInput::make('name')
                     ->required()
-                    ->helperText(BikeModel::SETUP_DESCRIPTION)
                     ->maxLength(255),
                 TextInput::make('manufacturer')
                     ->maxLength(255),

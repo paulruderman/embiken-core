@@ -10,7 +10,17 @@ import RecordCashPaymentAction from '@/actions/Embiken/BikeRentals/Actions/Recor
 import ReturnAction from '@/actions/Embiken/BikeRentals/Actions/ReturnAction';
 import SwapAssetAction from '@/actions/Embiken/BikeRentals/Actions/SwapAssetAction';
 import { useDayStore, type DayPatch } from '@/stores/day';
-import type { Line, Reservation } from '@bike-rentals/Terminal/prototype/mock';
+import type { Line, Reservation } from '../../../packages/bike-rentals/resources/js/Terminal/prototype/mock';
+
+type DeskRequest = {
+    amount_cents?: number;
+    bike_id?: number;
+    email?: string;
+    ends_at?: string;
+    name?: string;
+    owed?: number;
+    phone?: string;
+};
 
 function apply(day: ReturnType<typeof useDayStore>, payload: unknown): void {
     const patch = (payload as { data?: DayPatch })?.data ?? (payload as DayPatch);
@@ -20,11 +30,11 @@ function apply(day: ReturnType<typeof useDayStore>, payload: unknown): void {
 
 export function useTerminalDesk() {
     const day = useDayStore();
-    const http = useHttp<Record<string, unknown>, DayPatch>({});
+    const http = useHttp<DeskRequest, DayPatch>({});
 
     function post(
         url: string,
-        body: Record<string, unknown> = {},
+        body: DeskRequest = {},
         onSuccess?: (patch: DayPatch) => void,
     ): void {
         http.transform(() => body).post(url, {
@@ -81,7 +91,7 @@ export function useTerminalDesk() {
         extendReservation(reservation: Reservation, requote: boolean): void {
             const ends = new Date(reservation.endsAtIso);
             ends.setHours(ends.getHours() + 1);
-            const body: Record<string, unknown> = {
+            const body: DeskRequest = {
                 ends_at: ends.toISOString(),
             };
 
@@ -92,7 +102,15 @@ export function useTerminalDesk() {
             post(ExtendAction.url(reservation.id), body);
         },
         startWalkIn(onCreated?: (id: number) => void): void {
-            post(CreateWalkInReservationAction.url(), {}, (patch) => {
+            const name = window.prompt('Customer name')?.trim();
+            const email = window.prompt('Customer email')?.trim();
+            const phone = window.prompt('Customer phone')?.trim();
+
+            if (!name || !email || !phone) {
+                return;
+            }
+
+            post(CreateWalkInReservationAction.url(), { name, email, phone }, (patch) => {
                 if (patch.reservation) {
                     onCreated?.(patch.reservation.id);
                 }

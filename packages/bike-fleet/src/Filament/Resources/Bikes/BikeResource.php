@@ -25,7 +25,7 @@ class BikeResource extends Resource
 
     protected static function shopSetupBadgeStep(): string
     {
-        return app(ModuleRegistry::class)->isEnabled('embiken/bike-rentals')
+        return app(ModuleRegistry::class)->isEnabled('embiken/bike-rental-self-booking')
             ? ShopSetupReadiness::BookableFleet
             : ShopSetupReadiness::Bikes;
     }
@@ -39,7 +39,7 @@ class BikeResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTruck;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Catalog';
+    protected static string|\UnitEnum|null $navigationGroup = 'Fleet';
 
     protected static ?int $navigationSort = 4;
 
@@ -52,7 +52,10 @@ class BikeResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return BikesTable::configure($table);
+        return BikesTable::configure(
+            $table,
+            app(ModuleRegistry::class)->isEnabled('embiken/bike-rentals'),
+        );
     }
 
     public static function getRelations(): array

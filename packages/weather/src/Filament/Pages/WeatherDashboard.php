@@ -3,6 +3,7 @@
 namespace Embiken\Weather\Filament\Pages;
 
 use App\Filament\Concerns\RequiresTenantModule;
+use App\Filament\Shop\Widgets\ShopSetupChecklistWidget;
 use BackedEnum;
 use Embiken\Weather\Actions\RefreshWeatherAction;
 use Embiken\Weather\Enums\RadarSource;
@@ -33,7 +34,7 @@ class WeatherDashboard extends Page
 
     protected static ?string $navigationLabel = 'Dashboard';
 
-    protected static ?string $title = 'Weather';
+    protected static ?string $title = 'Weather Dashboard';
 
     protected string $view = 'weather::filament.pages.weather-dashboard';
 
@@ -42,6 +43,19 @@ class WeatherDashboard extends Page
     public function mount(): void
     {
         $this->selectedSiteCode ??= WeatherSite::query()->enabled()->ordered()->value('code');
+    }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [ShopSetupChecklistWidget::class];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function getWidgetData(): array
+    {
+        return ['moduleId' => 'embiken/weather'];
     }
 
     /**

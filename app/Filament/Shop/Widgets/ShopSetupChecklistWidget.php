@@ -3,11 +3,14 @@
 namespace App\Filament\Shop\Widgets;
 
 use App\Filament\Shop\Support\ShopSetupReadiness;
+use App\Support\ModuleRegistry;
 use Filament\Widgets\Widget;
 
 class ShopSetupChecklistWidget extends Widget
 {
     public bool $showOnlyReady = true;
+
+    public ?string $moduleId = null;
 
     protected static ?int $sort = -2;
 
@@ -19,6 +22,8 @@ class ShopSetupChecklistWidget extends Widget
      * @return array{
      *     sections: list<array{label: string, description: string, steps: list<array<string, mixed>>}>,
      *     recommendations: list<array{label: string, description: string, actions: list<array{label: string, url: string}>}>,
+     *     heading: string,
+     *     description: string,
      *     completedCount: int,
      *     totalCount: int,
      *     progressPercent: int,
@@ -27,13 +32,12 @@ class ShopSetupChecklistWidget extends Widget
      */
     protected function getViewData(): array
     {
-        $steps = app(ShopSetupReadiness::class)->checklist();
+        $readiness = app(ShopSetupReadiness::class);
+        $moduleRegistry = app(ModuleRegistry::class);
+        $steps = $readiness->checklist($this->moduleId);
         $completedCount = count(array_filter($steps, fn (array $step): bool => $step['complete']));
         $totalCount = count($steps);
-        $sectionSteps = [
-            'fleet' => [],
-            'rentals' => [],
-        ];
+        $sectionSteps = [];
 
         $essentialsComplete = $totalCount > 0 && $completedCount === $totalCount;
 
@@ -42,27 +46,33 @@ class ShopSetupChecklistWidget extends Widget
                 continue;
             }
 
-            $sectionSteps[$step['section']][] = $step;
+            $moduleId = $step['module_id'];
+            $module = $moduleRegistry->find($moduleId);
+
+            if ($module === null) {
+                continue;
+            }
+
+            $sectionSteps[$moduleId] ??= [
+                'label' => $module->label(),
+                'description' => $module->description(),
+                'steps' => [],
+            ];
+            $sectionSteps[$moduleId]['steps'][] = $step;
         }
 
-        $sections = array_values(array_filter([
-            [
-                'label' => 'Build your fleet',
-                'description' => 'Set up the catalog and add the bikes your shop rents or services.',
-                'steps' => $sectionSteps['fleet'],
-            ],
-            [
-                'label' => 'Configure rentals',
-                'description' => 'Set your opening hours, rental pricing, and which bikes Book can offer.',
-                'steps' => $sectionSteps['rentals'],
-            ],
-        ], fn (array $section): bool => $section['steps'] !== []));
+        $sections = array_values($sectionSteps);
+        $module = $this->moduleId === null ? null : $moduleRegistry->find($this->moduleId);
 
         return [
             'sections' => $sections,
             'recommendations' => $completedCount === $totalCount && $totalCount > 0
-                ? app(ShopSetupReadiness::class)->recommendations()
+                ? $readiness->recommendations($this->moduleId)
                 : [],
+            'heading' => $module === null ? 'Set up your shop' : 'Set up '.$module->label(),
+            'description' => $module === null
+                ? 'Complete essential setup for all enabled modules.'
+                : 'Complete the essential setup for '.$module->label().'.',
             'completedCount' => $completedCount,
             'totalCount' => $totalCount,
             'progressPercent' => $totalCount > 0 ? (int) round($completedCount / $totalCount * 100) : 0,

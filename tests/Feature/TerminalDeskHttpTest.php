@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\BikeAssignmentPolicy;
 use App\Models\Location;
 use App\Models\Staff;
 use App\Models\Tenant;
@@ -7,6 +8,7 @@ use Embiken\BikeFleet\Enums\BikeSituation;
 use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeRentals\Actions\AllocateLineAction;
 use Embiken\BikeRentals\Enums\BikeReservationStatus;
+use Embiken\BikeRentals\Enums\ReservationStage;
 use Embiken\BikeRentals\Models\BikeReservation;
 use Embiken\BikeRentals\Models\Customer;
 use Embiken\BikeRentals\Models\RentalPackage;
@@ -86,6 +88,7 @@ test('staff can open the terminal prototype with the day-store DTO', function ()
             ->has('bikes', 1, fn (Assert $bike) => $bike
                 ->where('bid', 'T-01')
                 ->has('bike_situation_state')
+                ->has('variant_id')
                 ->has('model')
                 ->missing('bike_model_variant_id')
                 ->etc())
@@ -95,6 +98,27 @@ test('staff can open the terminal prototype with the day-store DTO', function ()
             ->has('timezone')
             ->has('currency')
             ->has('return_situation'));
+});
+
+test('staff can open terminal with the location bike assignment policy', function () {
+    $shop = provisionDeskShop('desk-terminal.localhost');
+    $this->deskTenant = $shop['tenant'];
+
+    $shop['tenant']->run(function () use ($shop): void {
+        Bike::factory()->recycle($shop['location'])->create(['bid' => 'T-02']);
+    });
+
+    $this->withoutVite()
+        ->actingAs($shop['staff'], 'staff')
+        ->get('http://desk-terminal.localhost/terminal')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Terminal/Index')
+            ->where('bike_assignment_policy', BikeAssignmentPolicy::Terminal->value)
+            ->has('bikes', 1, fn (Assert $bike) => $bike
+                ->where('bid', 'T-02')
+                ->has('variant_id')
+                ->etc()));
 });
 
 test('the terminal prototype is excluded from inertia ssr', function () {
@@ -167,9 +191,12 @@ test('pickup return walk-in cash and waiver write through staff HTTP', function 
 
     $lineId = null;
     $reservationId = null;
+    $walkInBikeIds = [];
 
-    $shop['tenant']->run(function () use ($shop, &$lineId, &$reservationId): void {
+    $shop['tenant']->run(function () use ($shop, &$lineId, &$reservationId, &$walkInBikeIds): void {
         $bike = Bike::factory()->recycle($shop['location'])->create();
+        $otherBike = Bike::factory()->recycle($shop['location'])->create();
+        $walkInBikeIds = [$bike->id, $otherBike->id];
         $reservation = Reservation::factory()->confirmed()->terminal()->recycle($shop['location'])->create([
             'owed' => 5000,
             'paid' => 0,
@@ -206,8 +233,31 @@ test('pickup return walk-in cash and waiver write through staff HTTP', function 
     });
 
     $this->postJson('http://desk-writes.localhost/reservations/walk-in')
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['name', 'email', 'phone', 'bike_ids', 'owed_cents'])
+        ->assertJsonPath('errors.name.0', 'The name field is required.')
+        ->assertJsonPath('errors.email.0', 'The email field is required.')
+        ->assertJsonPath('errors.phone.0', 'The phone field is required.')
+        ->assertJsonPath('errors.bike_ids.0', 'The bike ids field is required.')
+        ->assertJsonPath('errors.owed_cents.0', 'The owed cents field is required.');
+
+    $this->postJson('http://desk-writes.localhost/reservations/walk-in', [
+        'name' => 'Avery Rider',
+        'email' => 'avery@example.test',
+        'phone' => '+1 555 0100',
+        'bike_ids' => $walkInBikeIds,
+        'owed_cents' => 7500,
+    ])
         ->assertOk()
-        ->assertJsonPath('reservation.customer.name', 'Walk-in');
+        ->assertJsonPath('reservation.customer.name', 'Avery Rider')
+        ->assertJsonPath('reservation.owed', 7500)
+        ->assertJsonCount(2, 'reservation.lines');
+
+    $shop['tenant']->run(function () use ($walkInBikeIds): void {
+        expect(Bike::query()->whereIn('id', $walkInBikeIds)
+            ->where('bike_situation_state', BikeSituation::Prepping)
+            ->count())->toBe(2);
+    });
 });
 
 test('cancel refuses out bikes without confirmation', function () {
@@ -229,6 +279,71 @@ test('cancel refuses out bikes without confirmation', function () {
         ->postJson("http://desk-cancel.localhost/reservations/{$reservationId}/cancel")
         ->assertUnprocessable()
         ->assertJsonValidationErrors('confirm_out_bikes_in_shop');
+});
+
+test('pickup can select and persist a bike for an unassigned walk-in line', function () {
+    $shop = provisionDeskShop('desk-pickup-unassigned.localhost');
+    $this->deskTenant = $shop['tenant'];
+
+    $lineId = null;
+    $bikeId = null;
+
+    $shop['tenant']->run(function () use ($shop, &$lineId, &$bikeId): void {
+        $bike = Bike::factory()->recycle($shop['location'])->create();
+        $reservation = Reservation::factory()->confirmed()->terminal()->recycle($shop['location'])->create([
+            'starts_at' => now(),
+            'ends_at' => now()->addHours(2),
+        ]);
+        $line = app(AllocateLineAction::class)($reservation, $bike->variant);
+        $lineId = $line->id;
+        $bikeId = $bike->id;
+    });
+
+    $this->actingAs($shop['staff'], 'staff')
+        ->postJson("http://desk-pickup-unassigned.localhost/lines/{$lineId}/pickup", [
+            'bike_id' => $bikeId,
+        ])
+        ->assertOk()
+        ->assertJsonPath('reservation.lines.0.bike_id', $bikeId)
+        ->assertJsonPath('reservation.lines.0.status', BikeReservationStatus::Out->value)
+        ->assertJsonPath('bikes.0.bike_situation_state', BikeSituation::RentedOut->value);
+
+    $shop['tenant']->run(function () use ($lineId, $bikeId): void {
+        expect(BikeReservation::query()->find($lineId)->bike_id)->toBe($bikeId);
+    });
+});
+
+test('pickup-only walk-ins keep bikes unassigned until pickup', function () {
+    $shop = provisionDeskShop('desk-pickup-only.localhost');
+    $this->deskTenant = $shop['tenant'];
+
+    $bikeIds = [];
+
+    $shop['tenant']->run(function () use ($shop, &$bikeIds): void {
+        $shop['location']->update(['bike_assignment_policy' => BikeAssignmentPolicy::PickupOnly]);
+        $bikes = Bike::factory()->count(2)->recycle($shop['location'])->create();
+        $bikeIds = $bikes->modelKeys();
+    });
+
+    $this->actingAs($shop['staff'], 'staff')
+        ->postJson('http://desk-pickup-only.localhost/reservations/walk-in', [
+            'name' => 'Riley Rider',
+            'email' => 'riley@example.test',
+            'phone' => '+1 555 0101',
+            'bike_ids' => $bikeIds,
+            'owed_cents' => 0,
+        ])
+        ->assertOk()
+        ->assertJsonPath('reservation.stage', ReservationStage::Confirmed->value)
+        ->assertJsonPath('reservation.owed', 0)
+        ->assertJsonPath('reservation.lines.0.bike_id', null)
+        ->assertJsonPath('reservation.lines.1.bike_id', null);
+
+    $shop['tenant']->run(function () use ($bikeIds): void {
+        expect(Bike::query()->whereIn('id', $bikeIds)
+            ->where('bike_situation_state', BikeSituation::Home)
+            ->count())->toBe(2);
+    });
 });
 
 test('swap refuses a variant that is not on the package', function () {

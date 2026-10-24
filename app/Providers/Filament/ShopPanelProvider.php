@@ -9,6 +9,7 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationGroup;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -59,6 +60,13 @@ class ShopPanelProvider extends PanelProvider
                 Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Shop/Widgets'), for: 'App\Filament\Shop\Widgets')
+            ->navigationGroups([
+                NavigationGroup::make()->label('Fleet'),
+                NavigationGroup::make()->label('Rentals'),
+                NavigationGroup::make()->label('Online Book'),
+                NavigationGroup::make()->label('Weather'),
+                NavigationGroup::make()->label('Shop settings'),
+            ])
             ->widgets([
                 AccountWidget::class,
             ])

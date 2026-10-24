@@ -36,6 +36,8 @@ class ReservationResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'id';
 
+    protected static string|\UnitEnum|null $navigationGroup = 'Rentals';
+
     protected static ?int $navigationSort = 10;
 
     public static function form(Schema $schema): Schema

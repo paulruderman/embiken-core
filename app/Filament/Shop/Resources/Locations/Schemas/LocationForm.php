@@ -7,6 +7,7 @@ use App\Enums\ReturnSituation;
 use App\Models\Location;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Text;
 use Filament\Schemas\Schema;
 
 class LocationForm
@@ -15,9 +16,11 @@ class LocationForm
     {
         return $schema
             ->components([
+                Text::make(Location::SETUP_DESCRIPTION)
+                    ->size('sm')
+                    ->columnSpanFull(),
                 TextInput::make('name')
                     ->required()
-                    ->helperText(Location::SETUP_DESCRIPTION)
                     ->maxLength(255),
                 TextInput::make('timezone')
                     ->required(),

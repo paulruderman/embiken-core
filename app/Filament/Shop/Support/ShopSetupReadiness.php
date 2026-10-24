@@ -2,24 +2,17 @@
 
 namespace App\Filament\Shop\Support;
 
-use App\Filament\Shop\Resources\Locations\LocationResource;
-use App\Models\Location;
 use App\Support\ModuleRegistry;
 use Closure;
-use Embiken\BikeFleet\Filament\Resources\BikeCategories\BikeCategoryResource;
 use Embiken\BikeFleet\Filament\Resources\BikeModels\BikeModelResource;
 use Embiken\BikeFleet\Filament\Resources\BikeModelVariants\BikeModelVariantResource;
 use Embiken\BikeFleet\Filament\Resources\Bikes\BikeResource;
 use Embiken\BikeFleet\Filament\Resources\ServiceRequests\ServiceRequestResource;
-use Embiken\BikeFleet\Models\Bike;
-use Embiken\BikeFleet\Models\BikeCategory;
-use Embiken\BikeFleet\Models\BikeModel;
-use Embiken\BikeFleet\Models\BikeModelVariant;
-use Embiken\BikeFleet\Models\ServiceRequest;
-use Embiken\BikeRentals\Filament\Resources\RentalPackages\RentalPackageResource;
-use Embiken\BikeRentals\Models\RentalPackage;
+use Embiken\BikeRentalSelfBooking\BikeRentalSelfBookingModule;
 use Filament\Actions\Action;
+use Filament\Notifications\Notification;
 use Filament\Tables\Table;
+use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 
 class ShopSetupReadiness
@@ -54,15 +47,16 @@ class ShopSetupReadiness
      *     action_url: string|null,
      *     next_step: string|null,
      *     tooltip: string,
-     *     section: string
+     *     section: string,
+     *     module_id: string
      * }>
      */
-    public function checklist(): array
+    public function checklist(?string $moduleId = null): array
     {
         $steps = [];
 
         foreach ($this->definitions() as $key => $definition) {
-            if (! ($definition['show_in_checklist'] ?? true)) {
+            if (! $definition['show_in_checklist'] || ($moduleId !== null && $definition['module_id'] !== $moduleId)) {
                 continue;
             }
 
@@ -73,17 +67,27 @@ class ShopSetupReadiness
     }
 
     /**
-     * @return array{key: string, label: string, description: string, complete: bool, blocked: bool, status: string, action_label: string, action_url: string|null, next_step: string|null, tooltip: string, section: string}|null
+     * @return array{key: string, module_id: string, label: string, description: string, complete: bool, blocked: bool, status: string, action_label: string, action_url: string|null, next_step: string|null, tooltip: string, section: string}|null
      */
-    public function nextIncompleteSetupStep(): ?array
+    public function nextIncompleteSetupStep(?string $moduleId = null): ?array
     {
-        foreach ($this->checklist() as $step) {
+        foreach ($this->checklist($moduleId) as $step) {
             if (! $step['complete']) {
                 return $step;
             }
         }
 
         return null;
+    }
+
+    /**
+     * Return the next missing step required to configure online booking.
+     *
+     * @return array{key: string, module_id: string, label: string, description: string, complete: bool, blocked: bool, status: string, action_label: string, action_url: string|null, next_step: string|null, tooltip: string, section: string}|null
+     */
+    public function nextIncompleteBookSetupStep(): ?array
+    {
+        return $this->nextIncompleteSetupStep(BikeRentalSelfBookingModule::ID);
     }
 
     /**
@@ -98,7 +102,8 @@ class ShopSetupReadiness
      *     action_url: string|null,
      *     next_step: string|null,
      *     tooltip: string,
-     *     section: string
+     *     section: string,
+     *     module_id: string
      * }
      */
     public function step(string $key): array
@@ -130,6 +135,42 @@ class ShopSetupReadiness
         return $this->withSetupTarget($this->destinationUrl($key), $key);
     }
 
+    public function addContinueSetupAction(
+        Notification $notification,
+        ?string $moduleId = null,
+        ?string $setupTarget = null,
+    ): Notification {
+        if ($setupTarget !== null && $this->hasStep($setupTarget)) {
+            $nextStep = $this->firstMissingPrerequisite($setupTarget);
+
+            if ($nextStep === null && ! $this->step($setupTarget)['complete']) {
+                $nextStep = $this->step($setupTarget);
+            }
+
+            if ($nextStep === null) {
+                $moduleId = $this->step($setupTarget)['module_id'];
+            }
+        }
+
+        $nextStep ??= $this->nextIncompleteSetupStep($moduleId);
+
+        if ($nextStep === null || $nextStep['action_url'] === null) {
+            return $notification;
+        }
+
+        $actionUrl = $setupTarget === null
+            ? $nextStep['action_url']
+            : $this->withSetupTarget($nextStep['action_url'], $setupTarget);
+
+        return $notification
+            ->body('Next: '.$nextStep['label'].'.')
+            ->actions([
+                Action::make('continueSetup')
+                    ->label('Continue setup')
+                    ->url($actionUrl),
+            ]);
+    }
+
     public function setupTargetUrl(string $url, string $key): string
     {
         return $this->withSetupTarget($url, $key);
@@ -138,7 +179,7 @@ class ShopSetupReadiness
     /**
      * Return the earliest missing prerequisite for a step, or null if its prerequisites are met.
      *
-     * @return array{key: string, label: string, description: string, complete: bool, blocked: bool, status: string, action_label: string, action_url: string|null, next_step: string|null, tooltip: string, section: string}|null
+     * @return array{key: string, module_id: string, label: string, description: string, complete: bool, blocked: bool, status: string, action_label: string, action_url: string|null, next_step: string|null, tooltip: string, section: string}|null
      */
     public function firstMissingPrerequisite(string $key): ?array
     {
@@ -170,6 +211,15 @@ class ShopSetupReadiness
             ? $step['tooltip'].' '.$step['description']
             : $step['description'];
 
+        if ($step['blocked'] && $step['action_url'] !== null) {
+            $description = new HtmlString(
+                e($description)
+                    .' Next: <a href="'.e($step['action_url']).'" wire:navigate class="font-medium text-primary-600 underline decoration-primary-300 underline-offset-2 hover:text-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 dark:text-primary-400 dark:hover:text-primary-300">'
+                    .e($step['action_label'])
+                    .'</a>.',
+            );
+        }
+
         return $table
             ->emptyStateHeading($heading)
             ->emptyStateDescription($description)
@@ -177,131 +227,38 @@ class ShopSetupReadiness
                 ? []
                 : [
                     Action::make('continueSetup')
-                        ->label($step['action_label'])
+                        ->label($step['blocked'] ? 'Continue setup' : $step['action_label'])
                         ->url($step['action_url']),
                 ]);
     }
 
     /**
      * @return array<string, array{
+     *     module_id: string,
      *     label: string,
      *     description: string,
      *     action_label: string|Closure,
      *     action_url: Closure,
      *     is_complete: Closure,
      *     prerequisites: list<string>,
-     *     show_in_checklist?: bool,
-     *     section: string
+     *     show_in_checklist: bool
      * }>
      */
     private function definitions(): array
     {
         $steps = [];
 
-        if (app(ModuleRegistry::class)->isEnabled('embiken/bike-fleet')) {
-            $steps += [
-                self::BikeCategories => [
-                    'section' => 'fleet',
-                    'label' => 'Bike categories',
-                    'description' => BikeCategory::SETUP_DESCRIPTION,
-                    'action_label' => 'Add a bike category',
-                    'action_url' => fn (): string => BikeCategoryResource::getUrl('create'),
-                    'is_complete' => fn (): bool => BikeCategory::query()->exists(),
-                    'prerequisites' => [],
-                ],
-                self::BikeModels => [
-                    'section' => 'fleet',
-                    'label' => 'Bike models',
-                    'description' => BikeModel::SETUP_DESCRIPTION,
-                    'action_label' => 'Add a bike model',
-                    'action_url' => fn (): string => BikeModelResource::getUrl('create'),
-                    'is_complete' => fn (): bool => BikeModel::query()->exists(),
-                    'prerequisites' => [self::BikeCategories],
-                ],
-                self::BikeModelVariants => [
-                    'section' => 'fleet',
-                    'label' => 'Bike model variants',
-                    'description' => BikeModelVariant::SETUP_DESCRIPTION,
-                    'action_label' => 'Add a bike model variant',
-                    'action_url' => fn (): string => BikeModelVariantResource::getUrl('create'),
-                    'is_complete' => fn (): bool => BikeModelVariant::query()->exists(),
-                    'prerequisites' => [self::BikeModels],
-                ],
-                self::Bikes => [
-                    'section' => 'fleet',
-                    'label' => 'Bikes',
-                    'description' => Bike::SETUP_DESCRIPTION,
-                    'action_label' => 'Add a bike',
-                    'action_url' => fn (): string => BikeResource::getUrl('create'),
-                    'is_complete' => fn (): bool => Bike::query()->exists(),
-                    'prerequisites' => [self::BikeModelVariants],
-                ],
-                self::ServiceRequests => [
-                    'section' => 'fleet',
-                    'label' => 'Service requests',
-                    'description' => ServiceRequest::SETUP_DESCRIPTION,
-                    'action_label' => 'Add a bike',
-                    'action_url' => fn (): string => BikeResource::getUrl('create'),
-                    'is_complete' => fn (): bool => Bike::query()->exists(),
-                    'prerequisites' => [self::Bikes],
-                    'show_in_checklist' => false,
-                ],
-            ];
-        }
-
-        $location = Location::query()->first();
-
-        if ($location !== null) {
-            $steps[self::LocationHours] = [
-                'section' => 'rentals',
-                'label' => 'Opening hours',
-                'description' => Location::SETUP_DESCRIPTION,
-                'action_label' => 'Set opening hours',
-                'action_url' => fn (): string => LocationResource::getUrl('edit', [
-                    'record' => $location->getKey(),
-                ]),
-                'is_complete' => fn (): bool => $location->hours()->exists(),
-                'prerequisites' => [],
-            ];
-        }
-
-        if (app(ModuleRegistry::class)->isEnabled('embiken/bike-rentals')) {
-            $steps[self::RentalPackages] = [
-                'section' => 'rentals',
-                'label' => 'Rental packages',
-                'description' => RentalPackage::SETUP_DESCRIPTION,
-                'action_label' => 'Add a rental package',
-                'action_url' => fn (): string => RentalPackageResource::getUrl('create'),
-                'is_complete' => fn (): bool => RentalPackage::query()->exists(),
-                'prerequisites' => [],
-            ];
-            $steps[self::BookOffer] = [
-                'section' => 'rentals',
-                'label' => 'Book offer',
-                'description' => 'A Book-visible package needs at least one variant and rate to offer bikes.',
-                'action_label' => fn (): string => $this->bookOfferActionLabel(),
-                'action_url' => fn (): string => $this->bookOfferActionUrl(),
-                'is_complete' => fn (): bool => RentalPackage::query()
-                    ->where('book_visible', true)
-                    ->whereHas('variants')
-                    ->exists(),
-                'prerequisites' => array_key_exists(self::BikeModelVariants, $steps)
-                    ? [self::BikeModelVariants]
-                    : [],
-            ];
-
-            if (array_key_exists(self::Bikes, $steps)) {
-                $steps[self::BookableFleet] = [
-                    'section' => 'rentals',
-                    'label' => 'Bookable bike',
-                    'description' => 'Book can offer bikes that are in service and self-bookable.',
-                    'action_label' => 'Review bikes',
-                    'action_url' => fn (): string => BikeResource::getUrl('index'),
-                    'is_complete' => fn (): bool => Bike::query()
-                        ->where('in_service', true)
-                        ->where('self_bookable', true)
-                        ->exists(),
-                    'prerequisites' => [self::Bikes],
+        foreach (app(ModuleRegistry::class)->resolvedEnabledModules() as $module) {
+            foreach ($module->setupSteps() as $step) {
+                $steps[$step->key] = [
+                    'module_id' => $module->id(),
+                    'label' => $step->label,
+                    'description' => $step->description,
+                    'action_label' => $step->actionLabel,
+                    'action_url' => $step->actionUrl,
+                    'is_complete' => $step->isComplete,
+                    'prerequisites' => $step->prerequisites,
+                    'show_in_checklist' => $step->showInChecklist,
                 ];
             }
         }
@@ -312,13 +269,14 @@ class ShopSetupReadiness
     /**
      * @return list<array{label: string, description: string, actions: list<array{label: string, url: string}>}>
      */
-    public function recommendations(): array
+    public function recommendations(?string $moduleId = null): array
     {
-        $steps = $this->checklist();
+        $steps = $this->checklist($moduleId);
 
         if ($steps === []
             || count(array_filter($steps, fn (array $step): bool => ! $step['complete'])) > 0
-            || ! app(ModuleRegistry::class)->isEnabled('embiken/bike-fleet')) {
+            || ! app(ModuleRegistry::class)->isEnabled('embiken/bike-fleet')
+            || ($moduleId !== null && $moduleId !== 'embiken/bike-fleet')) {
             return [];
         }
 
@@ -334,8 +292,8 @@ class ShopSetupReadiness
     }
 
     /**
-     * @param  array{label: string, description: string, action_label: string|Closure, action_url: Closure, is_complete: Closure, prerequisites: list<string>, show_in_checklist?: bool, section: string}  $definition
-     * @return array{key: string, label: string, description: string, complete: bool, blocked: bool, status: string, action_label: string, action_url: string|null, next_step: string|null, tooltip: string, section: string}
+     * @param  array{module_id: string, label: string, description: string, action_label: string|Closure, action_url: Closure, is_complete: Closure, prerequisites: list<string>, show_in_checklist: bool}  $definition
+     * @return array{key: string, module_id: string, label: string, description: string, complete: bool, blocked: bool, status: string, action_label: string, action_url: string|null, next_step: string|null, tooltip: string, section: string}
      */
     private function present(string $key, array $definition): array
     {
@@ -370,6 +328,7 @@ class ShopSetupReadiness
 
         return [
             'key' => $key,
+            'module_id' => $definition['module_id'],
             'label' => $definition['label'],
             'description' => $definition['description'],
             'complete' => $complete,
@@ -379,40 +338,8 @@ class ShopSetupReadiness
             'action_url' => $actionUrl,
             'next_step' => $blocker['key'] ?? null,
             'tooltip' => $tooltip,
-            'section' => $definition['section'],
+            'section' => $definition['module_id'],
         ];
-    }
-
-    private function bookOfferActionLabel(): string
-    {
-        $visiblePackage = RentalPackage::query()
-            ->where('book_visible', true)
-            ->first();
-
-        if ($visiblePackage !== null) {
-            return 'Add package variants';
-        }
-
-        return RentalPackage::query()->exists()
-            ? 'Choose a Book-visible package'
-            : 'Create a rental package';
-    }
-
-    private function bookOfferActionUrl(): string
-    {
-        $visiblePackage = RentalPackage::query()
-            ->where('book_visible', true)
-            ->first();
-
-        if ($visiblePackage !== null) {
-            return RentalPackageResource::getUrl('edit', ['record' => $visiblePackage]);
-        }
-
-        if (RentalPackage::query()->exists()) {
-            return RentalPackageResource::getUrl('index');
-        }
-
-        return RentalPackageResource::getUrl('create');
     }
 
     private function withSetupTarget(string $url, string $target): string

@@ -45,10 +45,10 @@ trait HasBookSetupCallout
     }
 
     /**
-     * @return array{key: string, label: string, description: string, complete: bool, blocked: bool, status: string, action_label: string, action_url: string|null, next_step: string|null, tooltip: string, section: string}|null
+     * @return array{key: string, module_id: string, label: string, description: string, complete: bool, blocked: bool, status: string, action_label: string, action_url: string|null, next_step: string|null, tooltip: string, section: string}|null
      */
     protected function bookSetupCalloutStep(): ?array
     {
-        return app(ShopSetupReadiness::class)->nextIncompleteSetupStep();
+        return app(ShopSetupReadiness::class)->nextIncompleteBookSetupStep();
     }
 }

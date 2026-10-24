@@ -28,6 +28,7 @@ class ModuleRegistry
         return [
             'embiken/bike-fleet',
             'embiken/bike-rentals',
+            'embiken/bike-rental-self-booking',
         ];
     }
 
@@ -179,6 +180,66 @@ class ModuleRegistry
         return array_values(array_unique($normalized));
     }
 
+    /**
+     * @param  list<string>  $selectedIds
+     */
+    public function hasSelectedDependents(string $moduleId, array $selectedIds): bool
+    {
+        foreach ($this->installedTenantModules() as $module) {
+            if (! in_array($module->id(), $selectedIds, true)) {
+                continue;
+            }
+
+            if (in_array($moduleId, $this->dependencyIds($module), true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param  list<string>  $selectedIds
+     * @return array<string, string>
+     */
+    public function moduleOptionDescriptions(array $selectedIds): array
+    {
+        $descriptions = [];
+
+        foreach ($this->installedTenantModules() as $module) {
+            $sentences = [];
+            $dependencies = array_map(
+                fn (string $dependencyId): string => $this->find($dependencyId)?->label() ?? $dependencyId,
+                $this->dependencyIds($module),
+            );
+
+            if ($dependencies !== []) {
+                $sentences[] = 'Requires '.implode(', ', $dependencies).'; prerequisites are selected automatically.';
+            }
+
+            $dependents = [];
+
+            foreach ($this->installedTenantModules() as $candidate) {
+                if (in_array($candidate->id(), $selectedIds, true)
+                    && in_array($module->id(), $this->dependencyIds($candidate), true)) {
+                    $dependents[] = $candidate->label();
+                }
+            }
+
+            sort($dependents, SORT_NATURAL | SORT_FLAG_CASE);
+
+            if ($dependents !== []) {
+                $sentences[] = 'Required by '.implode(', ', $dependents).'; turn those off first to disable this module.';
+            }
+
+            if ($sentences !== []) {
+                $descriptions[$module->id()] = implode(' ', $sentences);
+            }
+        }
+
+        return $descriptions;
+    }
+
     public function applyFilamentDiscoveries(Panel $panel): Panel
     {
         foreach ($this->installedTenantModules() as $module) {
@@ -267,5 +328,31 @@ class ModuleRegistry
         $tenant = tenant();
 
         return $tenant instanceof Tenant ? $tenant : null;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function dependencyIds(TenantModule $module): array
+    {
+        $dependencies = [];
+        $visit = function (TenantModule $current) use (&$visit, &$dependencies): void {
+            foreach ($current->dependencies() as $dependencyId) {
+                if (in_array($dependencyId, $dependencies, true)) {
+                    continue;
+                }
+
+                $dependencies[] = $dependencyId;
+                $dependency = $this->find($dependencyId);
+
+                if ($dependency !== null) {
+                    $visit($dependency);
+                }
+            }
+        };
+
+        $visit($module);
+
+        return $dependencies;
     }
 }

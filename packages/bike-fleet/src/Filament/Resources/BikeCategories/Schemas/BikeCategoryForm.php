@@ -6,6 +6,7 @@ use App\Filament\Shop\Forms\Components\BrandColorDropdown;
 use Embiken\BikeFleet\Models\BikeCategory;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Text;
 use Filament\Schemas\Schema;
 
 class BikeCategoryForm
@@ -14,9 +15,11 @@ class BikeCategoryForm
     {
         return $schema
             ->components([
+                Text::make(BikeCategory::SETUP_DESCRIPTION)
+                    ->size('sm')
+                    ->columnSpanFull(),
                 TextInput::make('name')
                     ->required()
-                    ->helperText(BikeCategory::SETUP_DESCRIPTION)
                     ->maxLength(255),
                 Textarea::make('description'),
                 BrandColorDropdown::make('interface_color')

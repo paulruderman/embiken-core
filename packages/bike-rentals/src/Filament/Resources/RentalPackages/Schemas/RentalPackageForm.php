@@ -11,6 +11,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Text;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 
@@ -20,11 +21,13 @@ class RentalPackageForm
     {
         return $schema
             ->components([
+                Text::make(RentalPackage::SETUP_DESCRIPTION)
+                    ->size('sm')
+                    ->columnSpanFull(),
                 Hidden::make('location_id')
                     ->default(fn (): ?int => Location::query()->value('id')),
                 TextInput::make('name')
                     ->required()
-                    ->helperText(RentalPackage::SETUP_DESCRIPTION)
                     ->maxLength(255),
                 TextInput::make('tagline')
                     ->maxLength(255),

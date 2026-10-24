@@ -4,6 +4,8 @@ namespace Embiken\BikeFleet\Filament\Resources\Bikes\Tables;
 
 use App\Filament\Shop\Support\ShopSetupReadiness;
 use Embiken\BikeFleet\Enums\BikeSituation;
+use Embiken\BikeFleet\Filament\Resources\Bikes\BikeResource;
+use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeFleet\Models\BikeCategory;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -14,10 +16,11 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 class BikesTable
 {
-    public static function configure(Table $table): Table
+    public static function configure(Table $table, bool $showOccupyingReservation): Table
     {
         $table = $table
             ->columns([
@@ -37,6 +40,33 @@ class BikesTable
                     ->boolean(),
                 TextColumn::make('bike_situation_state')
                     ->badge(),
+                ...($showOccupyingReservation ? [
+                    TextColumn::make('occupying_reservation')
+                        ->label('Occupying reservation')
+                        ->getStateUsing(function (Bike $record): ?string {
+                            if ($record->bike_situation_state === BikeSituation::Home) {
+                                return null;
+                            }
+
+                            $reservationId = $record->bike_situation_reservation_id;
+
+                            if ($reservationId === null) {
+                                return 'No reservation linked';
+                            }
+
+                            $reservation = $record->getRelationValue('situationReservation');
+
+                            if (! $reservation instanceof Model) {
+                                return '#'.$reservationId;
+                            }
+
+                            $customer = $reservation->getRelationValue('customer');
+                            $customerName = $customer instanceof Model ? $customer->getAttribute('name') : null;
+
+                            return '#'.$reservation->getKey().' · '.($customerName ?? 'Customer unavailable');
+                        })
+                        ->placeholder('—'),
+                ] : []),
             ])
             ->filters([
                 SelectFilter::make('model')
@@ -77,10 +107,18 @@ class BikesTable
                     ->options(BikeSituation::class),
             ])
             ->recordActions([
-                EditAction::make(),
+                EditAction::make()
+                    ->url(fn (Bike $record): string => BikeResource::getUrl('edit', array_filter([
+                        'record' => $record,
+                        'setup_target' => request()->query('setup_target'),
+                    ], fn (mixed $value): bool => $value !== null))),
                 DeleteAction::make(),
             ])
             ->toolbarActions([]);
+
+        if ($showOccupyingReservation) {
+            $table->modifyQueryUsing(fn (Builder $query): Builder => $query->with('situationReservation.customer'));
+        }
 
         return app(ShopSetupReadiness::class)->configureEmptyState(
             $table,

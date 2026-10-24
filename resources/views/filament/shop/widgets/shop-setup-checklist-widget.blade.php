@@ -1,9 +1,9 @@
 <x-filament-widgets::widget>
     <x-filament::section>
-        <x-slot name="heading">Set up your shop</x-slot>
+        <x-slot name="heading">{{ $heading }}</x-slot>
 
         <x-slot name="description">
-            Complete the essentials to configure your catalog and rental offer.
+            {{ $description }}
         </x-slot>
 
         @if ($essentialsComplete)

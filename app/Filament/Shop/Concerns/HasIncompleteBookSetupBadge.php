@@ -10,14 +10,14 @@ trait HasIncompleteBookSetupBadge
 
     public static function getNavigationBadge(): ?string
     {
-        return app(ShopSetupReadiness::class)->nextIncompleteSetupStep() === null
+        return app(ShopSetupReadiness::class)->nextIncompleteBookSetupStep() === null
             ? null
             : '⚠️ Pending';
     }
 
     public static function getNavigationBadgeTooltip(): ?string
     {
-        $step = app(ShopSetupReadiness::class)->nextIncompleteSetupStep();
+        $step = app(ShopSetupReadiness::class)->nextIncompleteBookSetupStep();
 
         return $step === null
             ? null
@@ -26,7 +26,7 @@ trait HasIncompleteBookSetupBadge
 
     public static function getNavigationBadgeColor(): string|array|null
     {
-        return app(ShopSetupReadiness::class)->nextIncompleteSetupStep() === null
+        return app(ShopSetupReadiness::class)->nextIncompleteBookSetupStep() === null
             ? null
             : 'warning';
     }

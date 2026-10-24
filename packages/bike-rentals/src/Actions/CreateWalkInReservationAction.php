@@ -4,6 +4,7 @@ namespace Embiken\BikeRentals\Actions;
 
 use App\Actions\Action;
 use App\Actions\Concerns\AuthorizesStaff;
+use App\Enums\BikeAssignmentPolicy;
 use App\Models\Location;
 use Embiken\BikeFleet\Enums\BikeSituation;
 use Embiken\BikeFleet\Models\Bike;
@@ -14,42 +15,35 @@ use Embiken\BikeRentals\Http\Resources\DayPatchResource;
 use Embiken\BikeRentals\Models\Customer;
 use Embiken\BikeRentals\Models\Reservation;
 use Illuminate\Console\Command;
-use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Lorisleiva\Actions\ActionRequest;
 
 class CreateWalkInReservationAction extends Action
 {
     use AuthorizesStaff;
 
-    public string $commandSignature = 'reservations:walk-in {--tenant=} {--name=Walk-in} {--email=} {--phone=} {--bike=}';
+    public string $commandSignature = 'reservations:walk-in {--tenant=} {--name=} {--email=} {--phone=} {--bike=*} {--owed-cents=}';
 
+    /**
+     * @param  list<int>  $bikeIds
+     */
     public function handle(
         string $name,
         string $email,
         string $phone,
-        ?Bike $bike = null,
+        array $bikeIds,
+        int $owedCents,
     ): Reservation {
         $location = Location::query()->firstOrFail();
         $availability = app(AllocateLineAction::class);
+        $pickupOnly = $location->bike_assignment_policy === BikeAssignmentPolicy::PickupOnly;
 
-        $homeBike = $bike ?? Bike::query()
-            ->with('variant')
-            ->where('in_service', true)
-            ->where('bike_situation_state', BikeSituation::Home)
-            ->orderBy('bid')
-            ->first();
-
-        if ($homeBike === null) {
-            throw ValidationException::withMessages(['bike_id' => 'No in-service home bike is free.']);
-        }
-
-        $homeBike->loadMissing('variant');
-
-        return DB::transaction(function () use ($location, $availability, $homeBike, $name, $email, $phone): Reservation {
+        return DB::transaction(function () use ($location, $availability, $bikeIds, $name, $email, $phone, $owedCents, $pickupOnly): Reservation {
             $customer = Customer::query()->create([
                 'name' => $name,
                 'email' => $email,
@@ -65,52 +59,63 @@ class CreateWalkInReservationAction extends Action
                 'channel' => ReservationChannel::Terminal,
                 'starts_at' => $startsAt,
                 'ends_at' => $endsAt,
-                'stage' => ReservationStage::Provisional,
-                'owed' => 0,
+                'stage' => ReservationStage::Confirmed,
+                'owed' => $owedCents,
                 'paid' => 0,
-                'expires_at' => now()->addMinutes((int) config('embiken.provisional_ttl_minutes')),
+                'expires_at' => null,
                 'myrental_token' => Str::random(40),
             ]);
 
-            try {
-                $line = $availability($reservation, $homeBike->variant, $homeBike);
-            } catch (OccupancyUnavailable $exception) {
-                throw ValidationException::withMessages(['bike_id' => $exception->reason]);
+            foreach ($bikeIds as $index => $bikeId) {
+                $bike = Bike::query()->with('variant')->findOrFail($bikeId);
+
+                if (! $bike->in_service) {
+                    throw ValidationException::withMessages(["bike_ids.{$index}" => 'Choose an in-service bike.']);
+                }
+
+                try {
+                    $availability($reservation, $bike->variant, $pickupOnly ? null : $bike);
+                } catch (OccupancyUnavailable $exception) {
+                    throw ValidationException::withMessages(["bike_ids.{$index}" => $exception->reason]);
+                }
+
+                if (! $pickupOnly) {
+                    $bike->bike_situation_state = BikeSituation::Prepping;
+                    $bike->bike_situation_reservation_id = $reservation->id;
+                    $bike->save();
+                }
             }
-
-            $line->loadMissing('bike');
-            $bike = $line->bike;
-
-            if ($bike === null) {
-                throw ValidationException::withMessages(['bike_id' => 'Assign a bike before walk-in prep.']);
-            }
-
-            if ($bike->bike_situation_state !== BikeSituation::Home) {
-                throw ValidationException::withMessages(['bike_id' => 'A walk-in must use a bike that is still home.']);
-            }
-
-            $bike->bike_situation_state = BikeSituation::Prepping;
-            $bike->bike_situation_reservation_id = $reservation->id;
-            $bike->save();
 
             return $reservation->refresh()->load(['customer', 'bikeReservations.product.bikeModel', 'bikeReservations.bike']);
         });
     }
 
-    public function asController(Request $request): DayPatchResource
+    /**
+     * @return array<string, array<mixed>|string>
+     */
+    public function rules(): array
     {
-        $data = $request->validate([
-            'name' => ['sometimes', 'string', 'max:255'],
-            'email' => ['sometimes', 'email'],
-            'phone' => ['sometimes', 'string', 'max:32'],
-            'bike_id' => ['nullable', 'integer', 'exists:bikes,id'],
-        ]);
+        return [
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255'],
+            'phone' => ['required', 'string', 'max:32'],
+            'bike_ids' => ['required', 'array', 'min:1'],
+            'bike_ids.*' => ['required', 'integer', 'distinct', 'exists:bikes,id'],
+            'owed_cents' => ['required', 'integer', 'min:0'],
+        ];
+    }
+
+    public function asController(ActionRequest $request): DayPatchResource
+    {
+        /** @var array{name: string, email: string, phone: string, bike_ids: list<int>, owed_cents: int} $data */
+        $data = $request->validated();
 
         $reservation = $this->handle(
-            $data['name'] ?? 'Walk-in',
-            $data['email'] ?? 'walk-in-'.Str::lower(Str::random(8)).'@desk.local',
-            $data['phone'] ?? '0000000000',
-            isset($data['bike_id']) ? $this->findOneOrFail(Bike::query(), $data['bike_id']) : null,
+            $data['name'],
+            $data['email'],
+            $data['phone'],
+            $data['bike_ids'],
+            $data['owed_cents'],
         );
 
         $bikes = $reservation->bikeReservations->pluck('bike')->filter();
@@ -129,11 +134,30 @@ class CreateWalkInReservationAction extends Action
     public function asCommand(Command $command): int
     {
         $this->initializeTenancyFromCommand($command);
+
+        $bikeOptions = $command->option('bike');
+        $bikeInput = is_array($bikeOptions) && $bikeOptions !== []
+            ? $bikeOptions
+            : $this->requiredStringInput($command, is_string($bikeOptions) ? $bikeOptions : null, 'Bike IDs');
+        $bikeIds = is_array($bikeInput)
+            ? array_map('intval', $bikeInput)
+            : array_map('intval', explode(',', $bikeInput));
+        $owedInput = $this->requiredStringInput($command, $command->option('owed-cents'), 'Owed cents');
+
+        $validated = Validator::make([
+            'name' => $this->requiredStringInput($command, $command->option('name'), 'Name'),
+            'email' => $this->requiredStringInput($command, $command->option('email'), 'Email'),
+            'phone' => $this->requiredStringInput($command, $command->option('phone'), 'Phone'),
+            'bike_ids' => $bikeIds,
+            'owed_cents' => $owedInput,
+        ], $this->rules())->validate();
+
         $reservation = $this->handle(
-            $this->requiredStringInput($command, $command->option('name'), 'Name', 'Walk-in'),
-            $this->requiredStringInput($command, $command->option('email'), 'Email', 'walk-in-'.Str::lower(Str::random(8)).'@desk.local'),
-            $this->requiredStringInput($command, $command->option('phone'), 'Phone', '0000000000'),
-            $command->option('bike') ? $this->findOneOrFail(Bike::query(), $command->option('bike')) : null,
+            $validated['name'],
+            $validated['email'],
+            $validated['phone'],
+            $validated['bike_ids'],
+            (int) $validated['owed_cents'],
         );
         $command->info("Walk-in {$reservation->id}");
 

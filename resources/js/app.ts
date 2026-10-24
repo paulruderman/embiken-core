@@ -1,6 +1,7 @@
 import { createInertiaApp } from '@inertiajs/vue3';
 import { configureEcho } from '@laravel/echo-vue';
 import { createPinia } from 'pinia';
+import type { DefineComponent } from 'vue';
 
 if (!import.meta.env.SSR) {
     configureEcho({
@@ -10,8 +11,10 @@ if (!import.meta.env.SSR) {
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
-const corePages = import.meta.glob('./pages/**/*.vue');
-const packagePages = import.meta.glob('../../packages/*/resources/js/**/*.vue');
+const corePages = import.meta.glob<DefineComponent>('./pages/**/*.vue');
+const packagePages = import.meta.glob<DefineComponent>(
+    '../../packages/*/resources/js/**/*.vue',
+);
 
 void createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),

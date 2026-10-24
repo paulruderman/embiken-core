@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace Embiken\Weather;
 
 use App\Support\AbstractTenantModule;
+use App\Support\SetupStepDefinition;
 use Embiken\Weather\DayStore\WeatherDayStoreContributor;
 use Embiken\Weather\Enums\RadarSource;
+use Embiken\Weather\Filament\Resources\WeatherSites\WeatherSiteResource;
+use Embiken\Weather\Models\WeatherSite;
 
 class WeatherModule extends AbstractTenantModule
 {
@@ -35,6 +38,20 @@ class WeatherModule extends AbstractTenantModule
     public function frontendRoot(): ?string
     {
         return 'packages/weather/resources/js';
+    }
+
+    public function setupSteps(): array
+    {
+        return [
+            new SetupStepDefinition(
+                key: 'weather_sites',
+                label: 'Weather sites',
+                description: 'Add a weather site so Weather can display local forecasts and radar.',
+                actionLabel: 'Add a weather site',
+                actionUrl: fn (): string => WeatherSiteResource::getUrl('create'),
+                isComplete: fn (): bool => WeatherSite::query()->enabled()->exists(),
+            ),
+        ];
     }
 
     public function inertiaPagePrefix(): ?string

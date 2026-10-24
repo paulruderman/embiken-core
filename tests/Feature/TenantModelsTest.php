@@ -96,6 +96,12 @@ test('packages and reservations retain their currency when the location default 
         ->and(RentalPackage::factory()->recycle($location)->create()->currency)->toBe('usd');
 });
 
+test('locations store normalized lowercase currency codes', function () {
+    $location = Location::factory()->create(['currency' => ' USD ']);
+
+    expect($location->fresh()->currency)->toBe('usd');
+});
+
 test('staff include a platform manager with no password', function () {
     $staff = Staff::factory()->platformManager()->create();
 

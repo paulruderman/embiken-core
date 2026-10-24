@@ -71,7 +71,7 @@ class RentalPackage extends Model
                 $package->currency = (string) $package->location()->value('currency') ?: 'usd';
             }
 
-            $package->currency = strtolower($package->currency);
+            $package->currency = strtolower(trim($package->currency));
         });
     }
 

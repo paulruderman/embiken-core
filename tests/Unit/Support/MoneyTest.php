@@ -28,6 +28,10 @@ test('currency labels show both the ISO code and the locale symbol', function ()
         ->and(Money::currencyLabel('eur', 'de_DE'))->toBe('EUR (€)');
 });
 
+test('currency normalization trims input and uses Stripe lowercase format', function () {
+    expect(Money::normalizeCurrency(' USD '))->toBe('usd');
+});
+
 test('money inputs can be formatted for currency-aware forms', function () {
     expect(Money::formatInput(1234, 'usd', 'en_US'))->toBe('12.34')
         ->and(Money::formatInput(1234, 'kwd', 'en_US'))->toBe('12.34')

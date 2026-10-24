@@ -33,7 +33,8 @@ class TenantForm
                     ->visibleOn('create'),
                 TextInput::make('currency')
                     ->required()
-                    ->default('usd')
+                    ->default('USD')
+                    ->formatStateUsing(fn (mixed $state): string => strtoupper((string) $state))
                     ->length(3)
                     ->regex('/^[A-Za-z]{3}$/')
                     ->visibleOn('create'),

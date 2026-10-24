@@ -79,7 +79,7 @@ class Reservation extends Model
                     ->value('currency') ?: 'usd';
             }
 
-            $reservation->currency = strtolower($reservation->currency);
+            $reservation->currency = strtolower(trim($reservation->currency));
         });
     }
 

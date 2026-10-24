@@ -40,6 +40,13 @@ class Location extends Model
     /** @use HasFactory<LocationFactory> */
     use HasFactory;
 
+    protected static function booted(): void
+    {
+        static::saving(function (Location $location): void {
+            $location->currency = strtolower(trim($location->currency));
+        });
+    }
+
     /**
      * @return array<string, string>
      */

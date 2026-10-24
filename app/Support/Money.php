@@ -29,7 +29,7 @@ final class Money
 
     public static function normalizeCurrency(string $currency): string
     {
-        $currency = strtolower($currency);
+        $currency = strtolower(trim($currency));
 
         if (! preg_match('/^[a-z]{3}$/', $currency)) {
             throw new InvalidArgumentException('Currency must be a three-letter ISO code.');

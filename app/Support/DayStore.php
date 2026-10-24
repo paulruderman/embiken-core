@@ -37,7 +37,7 @@ class DayStore
             'tenant_id' => tenancy()->initialized ? (string) tenant('id') : 'local',
             'location_id' => $location->id,
             'timezone' => $location->timezone,
-            'currency' => $location->currency,
+            'currency' => strtolower($location->currency),
             'return_situation' => $location->return_situation->value,
             'modules' => $modules,
         ];

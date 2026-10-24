@@ -80,6 +80,17 @@ test('a manager can open the location list', function () {
         ->assertOk();
 });
 
+test('the location list displays currency codes in uppercase', function () {
+    $staff = Staff::factory()->create();
+    $staff->location->update(['currency' => 'usd']);
+
+    $this->actingAs($staff, 'staff');
+
+    Livewire::test(ListLocations::class)
+        ->assertSee('USD')
+        ->assertDontSee('usd');
+});
+
 test('a manager can configure shop branding', function () {
     $staff = Staff::factory()->create();
 

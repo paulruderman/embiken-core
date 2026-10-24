@@ -15,15 +15,18 @@ class CustomerForm
         return $schema
             ->components([
                 TextInput::make('name')
+                    ->label(__('app.rentals_ui.fields.name'))
                     ->required()
                     ->maxLength(255),
                 TextInput::make('email')
+                    ->label(__('app.rentals_ui.fields.email'))
                     ->email()
                     ->required(),
                 TextInput::make('phone')
+                    ->label(__('app.rentals_ui.fields.phone'))
                     ->required(),
                 Placeholder::make('owed_paid')
-                    ->label('Owed / paid')
+                    ->label(__('app.rentals_ui.fields.owed_paid'))
                     ->content(function (?Customer $record): string {
                         if ($record === null) {
                             return '—';
@@ -33,8 +36,10 @@ class CustomerForm
                             ->selectRaw('currency, SUM(owed) AS owed, SUM(paid) AS paid')
                             ->groupBy('currency')
                             ->get()
-                            ->map(fn (object $totals): string => Money::format((int) $totals->owed, $totals->currency)
-                                .' owed / '.Money::format((int) $totals->paid, $totals->currency).' paid')
+                            ->map(fn (object $totals): string => __('app.rentals_ui.money_totals', [
+                                'owed' => Money::format((int) $totals->owed, $totals->currency),
+                                'paid' => Money::format((int) $totals->paid, $totals->currency),
+                            ]))
                             ->implode('; ');
                     }),
             ]);

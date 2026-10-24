@@ -36,6 +36,21 @@ class ReservationResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'id';
 
+    public static function getModelLabel(): string
+    {
+        return __('app.resource_labels.reservation.singular');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('app.resource_labels.reservation.plural');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return static::getPluralModelLabel();
+    }
+
     protected static string|\UnitEnum|null $navigationGroup = 'Rentals';
 
     protected static ?int $navigationSort = 10;

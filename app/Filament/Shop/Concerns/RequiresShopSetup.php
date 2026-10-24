@@ -133,7 +133,7 @@ trait RequiresShopSetup
 
         Notification::make()
             ->title($prerequisite['action_label'])
-            ->body('Complete this step before setting up '.$target['label'].'.')
+            ->body(__('app.setup_checklist.prerequisite_notification', ['step' => $target['label']]))
             ->warning()
             ->send();
 

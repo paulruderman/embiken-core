@@ -30,6 +30,7 @@ class VariantsRelationManager extends RelationManager
         return $schema
             ->components([
                 MoneyInput::make('rate_minor_units', fn (): string => (string) $this->getOwnerRecord()->getAttribute('currency'))
+                    ->label(__('app.rentals_ui.fields.rate'))
                     ->required(),
             ]);
     }
@@ -40,15 +41,15 @@ class VariantsRelationManager extends RelationManager
             ->recordTitleAttribute('size')
             ->columns([
                 TextColumn::make('bikeModel.name')
-                    ->label('Model')
+                    ->label(__('app.fleet.fields.model'))
                     ->state(fn (BikeModelVariant $record): ?string => $record->bikeModel?->getTranslation('name', $this->activeLocale)),
-                TextColumn::make('size'),
+                TextColumn::make('size')->label(__('app.fleet.fields.size')),
                 TextColumn::make('color_name')
-                    ->label('Color')
+                    ->label(__('app.fleet.fields.color_name'))
                     ->state(fn (BikeModelVariant $record): ?string => $record->getTranslation('color_name', $this->activeLocale))
                     ->placeholder('—'),
                 TextColumn::make('rate_minor_units')
-                    ->label('Rate')
+                    ->label(__('app.rentals_ui.fields.rate'))
                     ->formatStateUsing(function (?int $state): string {
                         try {
                             return Money::format(
@@ -56,25 +57,25 @@ class VariantsRelationManager extends RelationManager
                                 (string) $this->getOwnerRecord()->getAttribute('currency'),
                             );
                         } catch (InvalidArgumentException) {
-                            return 'Invalid currency';
+                            return __('app.rentals_ui.errors.invalid_currency');
                         }
                     }),
             ])
-            ->emptyStateHeading('No variants in this package yet')
+            ->emptyStateHeading(__('app.rentals_ui.empty_states.package_variants'))
             ->emptyStateDescription(fn (): string => BikeModelVariant::query()->exists()
-                ? 'Attach variants and set each rate to define which bikes this package offers.'
-                : 'Create a bike model variant first. Then return here to add it to this package and set its rate.')
+                ? __('app.rentals_ui.empty_states.add_package_variants')
+                : __('app.rentals_ui.empty_states.create_variant_first'))
             ->emptyStateActions(BikeModelVariant::query()->exists()
                 ? []
                 : [
                     Action::make('createBikeModelVariant')
-                        ->label('Create a bike model variant')
+                        ->label(__('app.setup_steps.bike_model_variants.action'))
                         ->url(app(ShopSetupReadiness::class)->continuationUrl(ShopSetupReadiness::BookOffer)),
                 ])
             ->headerActions([
                 LocaleSwitcher::make(),
                 Action::make('createBikeModelVariant')
-                    ->label('Add bike model variants first')
+                    ->label(__('app.rentals_ui.actions.add_variants_first'))
                     ->url(app(ShopSetupReadiness::class)->continuationUrl(ShopSetupReadiness::BookOffer))
                     ->visible(fn (): bool => ! BikeModelVariant::query()->exists()),
                 AttachAction::make()

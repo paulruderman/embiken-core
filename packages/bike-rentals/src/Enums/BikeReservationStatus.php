@@ -21,9 +21,9 @@ enum BikeReservationStatus: string implements HasColor, HasDescription, HasIcon,
     public function getLabel(): string
     {
         return match ($this) {
-            self::Assigned => 'Assigned',
-            self::Out => 'Out',
-            self::In => 'In',
+            self::Assigned => __('app.rentals_ui.line_statuses.assigned'),
+            self::Out => __('app.rentals_ui.line_statuses.out'),
+            self::In => __('app.rentals_ui.line_statuses.in'),
         };
     }
 
@@ -39,9 +39,9 @@ enum BikeReservationStatus: string implements HasColor, HasDescription, HasIcon,
     public function getDescription(): string
     {
         return match ($this) {
-            self::Assigned => 'Line is on the reservation; not yet picked up.',
-            self::Out => 'Bike has been picked up.',
-            self::In => 'Bike has been returned.',
+            self::Assigned => __('app.rentals_ui.line_status_descriptions.assigned'),
+            self::Out => __('app.rentals_ui.line_status_descriptions.out'),
+            self::In => __('app.rentals_ui.line_status_descriptions.in'),
         };
     }
 

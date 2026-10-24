@@ -37,6 +37,11 @@ class ShopLandingPageEditor extends Page
 
     protected string $view = 'filament.shop.pages.shop-landing-page-editor';
 
+    public static function getNavigationLabel(): string
+    {
+        return __('app.shop_home.title');
+    }
+
     /** @var array<string, mixed>|null */
     public ?array $data = [];
 

@@ -11,14 +11,16 @@ trait HasPendingSetupTitle
     {
         $resource = static::getResource();
 
-        if ($resource::getNavigationBadge() !== '⚠️ Pending') {
+        if ($resource::getNavigationBadgeColor() !== 'warning') {
             return parent::getTitle();
         }
 
         $title = parent::getTitle();
 
+        $pendingLabel = ' ('.__('app.setup_checklist.pending_badge').')';
+
         return $title instanceof Htmlable
-            ? new HtmlString($title->toHtml().' (pending)')
-            : $title.' (pending)';
+            ? new HtmlString($title->toHtml().$pendingLabel)
+            : $title.$pendingLabel;
     }
 }

@@ -37,6 +37,21 @@ class ServiceRequestResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedWrenchScrewdriver;
 
+    public static function getModelLabel(): string
+    {
+        return __('app.fleet.resources.service_request.singular');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('app.fleet.resources.service_request.plural');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return static::getPluralModelLabel();
+    }
+
     protected static string|\UnitEnum|null $navigationGroup = 'Fleet';
 
     protected static ?string $recordTitleAttribute = 'description';

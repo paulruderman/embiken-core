@@ -20,22 +20,25 @@ class ReservationsRelationManager extends RelationManager
             ->recordTitleAttribute('id')
             ->columns([
                 TextColumn::make('id')
-                    ->label('Reservation')
+                    ->label(__('app.rentals_ui.fields.reservation'))
                     ->sortable(),
                 TextColumn::make('stage')
+                    ->label(__('app.rentals_ui.fields.stage'))
                     ->badge(),
                 TextColumn::make('starts_at')
+                    ->label(__('app.rentals_ui.fields.starts_at'))
                     ->dateTime()
                     ->sortable(),
                 TextColumn::make('ends_at')
+                    ->label(__('app.rentals_ui.fields.ends_at'))
                     ->dateTime(),
                 TextColumn::make('owed')
-                    ->label('Owed')
+                    ->label(__('app.rentals_ui.fields.owed'))
                     ->formatStateUsing(fn (?int $state, Reservation $record): ?string => $state === null
                         ? null
                         : Money::format($state, $record->currency)),
                 TextColumn::make('paid')
-                    ->label('Paid')
+                    ->label(__('app.rentals_ui.fields.paid'))
                     ->formatStateUsing(fn (?int $state, Reservation $record): ?string => $state === null
                         ? null
                         : Money::format($state, $record->currency)),
@@ -43,7 +46,7 @@ class ReservationsRelationManager extends RelationManager
             ->headerActions([])
             ->recordActions([
                 Action::make('viewReservation')
-                    ->label('View')
+                    ->label(__('app.rentals_ui.actions.view'))
                     ->url(fn (Reservation $record): string => ReservationResource::getUrl('view', [
                         'record' => $record,
                     ])),

@@ -24,7 +24,9 @@ trait HasShopSetupBadge
             return null;
         }
 
-        return $step['blocked'] ? '⚠️ Pending' : 'Set up now →';
+        return $step['blocked']
+            ? '⚠️ '.__('app.setup_checklist.pending_badge')
+            : __('app.setup_checklist.ready_badge');
     }
 
     public static function getNavigationBadgeTooltip(): ?string

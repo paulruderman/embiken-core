@@ -15,15 +15,16 @@ trait MutesSetupRequiredNavigation
     {
         $items = parent::getNavigationItems();
 
-        if (static::getNavigationBadge() !== '⚠️ Pending') {
+        if (static::getNavigationBadgeColor() !== 'warning') {
             return $items;
         }
 
         foreach ($items as $item) {
             $label = $item->getLabel();
+            $pendingSuffix = ' ('.__('app.setup_checklist.pending_badge').')';
             $pendingLabel = $label instanceof Htmlable
-                ? new HtmlString($label->toHtml().' (pending)')
-                : $label.' (pending)';
+                ? new HtmlString($label->toHtml().$pendingSuffix)
+                : $label.$pendingSuffix;
 
             $item
                 ->label($pendingLabel)

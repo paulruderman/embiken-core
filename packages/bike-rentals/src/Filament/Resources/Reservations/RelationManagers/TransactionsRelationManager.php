@@ -21,15 +21,19 @@ class TransactionsRelationManager extends RelationManager
             ->recordTitleAttribute('id')
             ->columns([
                 TextColumn::make('kind')
+                    ->label(__('app.rentals_ui.fields.transaction_type'))
                     ->badge(),
                 TextColumn::make('status')
+                    ->label(__('app.rentals_ui.fields.payment_status'))
                     ->badge(),
                 TextColumn::make('amount_minor_units')
-                    ->label('Amount')
+                    ->label(__('app.rentals_ui.fields.amount'))
                     ->formatStateUsing(fn (?int $state, Transaction $record): string => Money::format($state ?? 0, $record->currency)),
                 TextColumn::make('note')
+                    ->label(__('app.rentals_ui.fields.note'))
                     ->placeholder('—'),
                 TextColumn::make('captured_at')
+                    ->label(__('app.rentals_ui.fields.captured_at'))
                     ->dateTime(),
             ])
             ->headerActions([])

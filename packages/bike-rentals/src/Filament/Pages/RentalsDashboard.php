@@ -20,7 +20,17 @@ class RentalsDashboard extends ModuleSetupDashboard
 
     protected static ?int $navigationSort = -2;
 
-    protected static ?string $navigationLabel = 'Dashboard';
+    protected static ?string $navigationLabel = null;
 
-    protected static ?string $title = 'Rentals Dashboard';
+    protected static ?string $title = null;
+
+    public static function getNavigationLabel(): string
+    {
+        return __('app.navigation.dashboard');
+    }
+
+    public function getTitle(): string
+    {
+        return __('app.page_titles.rentals_dashboard');
+    }
 }

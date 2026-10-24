@@ -21,9 +21,9 @@ enum ConfirmThreshold: string implements HasColor, HasDescription, HasIcon, HasL
     public function getLabel(): string
     {
         return match ($this) {
-            self::None => 'None',
-            self::Deposit => 'Deposit',
-            self::Full => 'Full',
+            self::None => __('app.rentals_ui.confirm_thresholds.none'),
+            self::Deposit => __('app.rentals_ui.confirm_thresholds.deposit'),
+            self::Full => __('app.rentals_ui.confirm_thresholds.full'),
         };
     }
 
@@ -39,9 +39,9 @@ enum ConfirmThreshold: string implements HasColor, HasDescription, HasIcon, HasL
     public function getDescription(): string
     {
         return match ($this) {
-            self::None => 'Book may confirm with no payment.',
-            self::Deposit => 'Book captures a deposit (minor units or percent of owed).',
-            self::Full => 'Book captures the full owed amount.',
+            self::None => __('app.rentals_ui.confirm_threshold_descriptions.none'),
+            self::Deposit => __('app.rentals_ui.confirm_threshold_descriptions.deposit'),
+            self::Full => __('app.rentals_ui.confirm_threshold_descriptions.full'),
         };
     }
 

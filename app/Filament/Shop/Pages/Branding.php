@@ -33,6 +33,11 @@ class Branding extends Page
 
     protected string $view = 'filament.shop.pages.branding';
 
+    public static function getNavigationLabel(): string
+    {
+        return __('app.page_titles.branding');
+    }
+
     /** @var array<string, mixed>|null */
     public ?array $data = [];
 
@@ -156,6 +161,6 @@ class Branding extends Page
 
     public function getTitle(): string|Htmlable
     {
-        return 'Branding';
+        return (string) __('app.page_titles.branding');
     }
 }

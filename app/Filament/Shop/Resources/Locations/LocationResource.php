@@ -34,6 +34,21 @@ class LocationResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'name';
 
+    public static function getModelLabel(): string
+    {
+        return __('app.resource_labels.location.singular');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('app.resource_labels.location.plural');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return static::getPluralModelLabel();
+    }
+
     protected static ?int $navigationSort = 1;
 
     protected static string|\UnitEnum|null $navigationGroup = 'Shop settings';

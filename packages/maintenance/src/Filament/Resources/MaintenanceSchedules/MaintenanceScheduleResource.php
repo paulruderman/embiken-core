@@ -26,6 +26,21 @@ class MaintenanceScheduleResource extends Resource
 
     protected static ?string $model = MaintenanceSchedule::class;
 
+    public static function getModelLabel(): string
+    {
+        return __('app.resource_labels.maintenance_schedule.singular');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('app.resource_labels.maintenance_schedule.plural');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return static::getPluralModelLabel();
+    }
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
     protected static string|\UnitEnum|null $navigationGroup = 'Maintenance';

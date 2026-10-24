@@ -45,6 +45,21 @@ class BikeResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'bid';
 
+    public static function getModelLabel(): string
+    {
+        return __('app.fleet.resources.bike.singular');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('app.fleet.resources.bike.plural');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return static::getPluralModelLabel();
+    }
+
     public static function form(Schema $schema): Schema
     {
         return BikeForm::configure($schema);

@@ -12,16 +12,23 @@ trait HasIncompleteBookSetupBadge
     {
         return app(ShopSetupReadiness::class)->nextIncompleteBookSetupStep() === null
             ? null
-            : '⚠️ Pending';
+            : '⚠️ '.__('app.setup_checklist.pending_badge');
     }
 
     public static function getNavigationBadgeTooltip(): ?string
     {
         $step = app(ShopSetupReadiness::class)->nextIncompleteBookSetupStep();
 
-        return $step === null
-            ? null
-            : 'Online Book setup is incomplete. Next: '.$step['label'].'. '.$step['tooltip'];
+        if ($step === null) {
+            return null;
+        }
+
+        $tooltip = __('app.setup_checklist.incomplete_book_tooltip', [
+            'step' => $step['label'],
+            'description' => $step['tooltip'],
+        ]);
+
+        return is_string($tooltip) ? $tooltip : null;
     }
 
     public static function getNavigationBadgeColor(): string|array|null

@@ -25,13 +25,13 @@ enum ReservationStage: string implements HasColor, HasDescription, HasIcon, HasL
     public function getLabel(): string
     {
         return match ($this) {
-            self::Provisional => 'Provisional',
-            self::Confirmed => 'Confirmed',
-            self::Cancelled => 'Cancelled',
-            self::Out => 'Out',
-            self::Returned => 'Returned',
-            self::Completed => 'Completed',
-            self::NoShow => 'No Show',
+            self::Provisional => __('app.rentals_ui.reservation_stages.provisional'),
+            self::Confirmed => __('app.rentals_ui.reservation_stages.confirmed'),
+            self::Cancelled => __('app.rentals_ui.reservation_stages.cancelled'),
+            self::Out => __('app.rentals_ui.reservation_stages.out'),
+            self::Returned => __('app.rentals_ui.reservation_stages.returned'),
+            self::Completed => __('app.rentals_ui.reservation_stages.completed'),
+            self::NoShow => __('app.rentals_ui.reservation_stages.no_show'),
         };
     }
 
@@ -51,13 +51,13 @@ enum ReservationStage: string implements HasColor, HasDescription, HasIcon, HasL
     public function getDescription(): string
     {
         return match ($this) {
-            self::Provisional => 'Short cart lock; not yet confirmed.',
-            self::Confirmed => 'Confirmed and holding occupancy.',
-            self::Cancelled => 'Cancelled; unused lines released.',
-            self::Out => 'At least one bike is rented out.',
-            self::Returned => 'All lines in before ends_at.',
-            self::Completed => 'All lines in and ends_at has passed.',
-            self::NoShow => 'Confirmed with no pickup past ends_at.',
+            self::Provisional => __('app.rentals_ui.reservation_stage_descriptions.provisional'),
+            self::Confirmed => __('app.rentals_ui.reservation_stage_descriptions.confirmed'),
+            self::Cancelled => __('app.rentals_ui.reservation_stage_descriptions.cancelled'),
+            self::Out => __('app.rentals_ui.reservation_stage_descriptions.out'),
+            self::Returned => __('app.rentals_ui.reservation_stage_descriptions.returned'),
+            self::Completed => __('app.rentals_ui.reservation_stage_descriptions.completed'),
+            self::NoShow => __('app.rentals_ui.reservation_stage_descriptions.no_show'),
         };
     }
 

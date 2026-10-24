@@ -21,9 +21,9 @@ enum TransactionStatus: string implements HasColor, HasDescription, HasIcon, Has
     public function getLabel(): string
     {
         return match ($this) {
-            self::Pending => 'Pending',
-            self::Captured => 'Captured',
-            self::Failed => 'Failed',
+            self::Pending => __('app.rentals_ui.transaction_statuses.pending'),
+            self::Captured => __('app.rentals_ui.transaction_statuses.captured'),
+            self::Failed => __('app.rentals_ui.transaction_statuses.failed'),
         };
     }
 
@@ -39,9 +39,9 @@ enum TransactionStatus: string implements HasColor, HasDescription, HasIcon, Has
     public function getDescription(): string
     {
         return match ($this) {
-            self::Pending => 'Payment started but not yet captured.',
-            self::Captured => 'Payment captured successfully.',
-            self::Failed => 'Payment failed.',
+            self::Pending => __('app.rentals_ui.transaction_status_descriptions.pending'),
+            self::Captured => __('app.rentals_ui.transaction_status_descriptions.captured'),
+            self::Failed => __('app.rentals_ui.transaction_status_descriptions.failed'),
         };
     }
 

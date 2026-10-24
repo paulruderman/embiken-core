@@ -26,28 +26,32 @@ class BikesTable
         $table = $table
             ->columns([
                 TextColumn::make('bid')
+                    ->label(__('app.fleet.fields.bid'))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('serial_number')
-                    ->label('Serial number')
+                    ->label(__('app.fleet.fields.serial_number'))
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->placeholder('—'),
                 TextColumn::make('variant.bikeModel.name')
-                    ->label('Model'),
+                    ->label(__('app.fleet.fields.model')),
                 TextColumn::make('variant.size')
-                    ->label('Size'),
+                    ->label(__('app.fleet.fields.size')),
                 TextColumn::make('variant.bikeModel.bikeCategory.name')
-                    ->label('Category')
+                    ->label(__('app.fleet.fields.category'))
                     ->toggleable(isToggledHiddenByDefault: true),
                 IconColumn::make('in_service')
+                    ->label(__('app.fleet.fields.in_service'))
                     ->boolean(),
                 IconColumn::make('self_bookable')
+                    ->label(__('app.fleet.fields.self_bookable'))
                     ->boolean(),
                 TextColumn::make('bike_situation_state')
+                    ->label(__('app.fleet.fields.situation'))
                     ->badge(),
                 TextColumn::make('specifications_summary')
-                    ->label('Specifications')
+                    ->label(__('app.fleet.fields.specifications'))
                     ->getStateUsing(fn (Bike $record): ?string => $record->specifications
                         ->map(fn (BikeSpecification $specification): string => "{$specification->name}: {$specification->value}")
                         ->implode(' · ') ?: null)
@@ -56,7 +60,7 @@ class BikesTable
                     ->placeholder('—'),
                 ...($showOccupyingReservation ? [
                     TextColumn::make('occupying_reservation')
-                        ->label('Occupying reservation')
+                        ->label(__('app.fleet.fields.occupying_reservation'))
                         ->getStateUsing(function (Bike $record): ?string {
                             if ($record->bike_situation_state === BikeSituation::Home) {
                                 return null;
@@ -65,7 +69,7 @@ class BikesTable
                             $reservationId = $record->bike_situation_reservation_id;
 
                             if ($reservationId === null) {
-                                return 'No reservation linked';
+                                return __('app.fleet.table.no_reservation_linked');
                             }
 
                             $reservation = $record->getRelationValue('situationReservation');
@@ -77,21 +81,21 @@ class BikesTable
                             $customer = $reservation->getRelationValue('customer');
                             $customerName = $customer instanceof Model ? $customer->getAttribute('name') : null;
 
-                            return '#'.$reservation->getKey().' · '.($customerName ?? 'Customer unavailable');
+                            return '#'.$reservation->getKey().' · '.($customerName ?? __('app.fleet.table.customer_unavailable'));
                         })
                         ->placeholder('—'),
                 ] : []),
             ])
             ->filters([
                 SelectFilter::make('model')
-                    ->label('Model')
+                    ->label(__('app.fleet.fields.model'))
                     ->relationship('variant.bikeModel', 'name')
                     ->searchable()
                     ->preload(),
                 Filter::make('category')
                     ->form([
                         Select::make('value')
-                            ->label('Category')
+                            ->label(__('app.fleet.fields.category'))
                             ->options(fn (): array => BikeCategory::query()->orderBy('name')->pluck('name', 'id')->all())
                             ->searchable(),
                     ])
@@ -103,21 +107,21 @@ class BikesTable
                         ),
                     )),
                 Filter::make('out_of_service')
-                    ->label('Out of service')
+                    ->label(__('app.fleet.filters.out_of_service'))
                     ->toggle()
                     ->query(fn (Builder $query, array $data): Builder => $query->when(
                         $data['isActive'] ?? false,
                         fn (Builder $query): Builder => $query->where('in_service', false),
                     )),
                 Filter::make('not_bookable')
-                    ->label('Not bookable online')
+                    ->label(__('app.fleet.filters.not_bookable_online'))
                     ->toggle()
                     ->query(fn (Builder $query, array $data): Builder => $query->when(
                         $data['isActive'] ?? false,
                         fn (Builder $query): Builder => $query->where('self_bookable', false),
                     )),
                 SelectFilter::make('bike_situation_state')
-                    ->label('Situation')
+                    ->label(__('app.fleet.fields.situation'))
                     ->options(BikeSituation::class),
             ])
             ->recordActions([
@@ -141,7 +145,7 @@ class BikesTable
         return app(ShopSetupReadiness::class)->configureEmptyState(
             $table,
             ShopSetupReadiness::Bikes,
-            'No bikes in your fleet yet',
+            __('app.fleet.empty_states.bikes'),
         );
     }
 }

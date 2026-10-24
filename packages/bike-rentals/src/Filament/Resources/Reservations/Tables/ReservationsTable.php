@@ -22,23 +22,28 @@ class ReservationsTable
         return $table
             ->columns([
                 TextColumn::make('id')
+                    ->label(__('app.rentals_ui.fields.reservation'))
                     ->sortable(),
                 TextColumn::make('customer.name')
+                    ->label(__('app.rentals_ui.fields.customer'))
                     ->searchable(),
                 TextColumn::make('stage')
+                    ->label(__('app.rentals_ui.fields.stage'))
                     ->badge(),
                 TextColumn::make('starts_at')
+                    ->label(__('app.rentals_ui.fields.starts_at'))
                     ->dateTime()
                     ->sortable(),
                 TextColumn::make('ends_at')
+                    ->label(__('app.rentals_ui.fields.ends_at'))
                     ->dateTime(),
                 TextColumn::make('owed')
-                    ->label('Owed')
+                    ->label(__('app.rentals_ui.fields.owed'))
                     ->formatStateUsing(fn (?int $state, Reservation $record): ?string => $state === null
                         ? null
                         : Money::format($state, $record->currency)),
                 TextColumn::make('paid')
-                    ->label('Paid')
+                    ->label(__('app.rentals_ui.fields.paid'))
                     ->formatStateUsing(fn (?int $state, Reservation $record): ?string => $state === null
                         ? null
                         : Money::format($state, $record->currency)),
@@ -47,7 +52,7 @@ class ReservationsTable
                 Filter::make('stage')
                     ->form([
                         Select::make('value')
-                            ->label('Stage')
+                            ->label(__('app.rentals_ui.fields.stage'))
                             ->options(ReservationStage::class),
                     ])
                     ->query(fn (Builder $query, array $data): Builder => $query->when(
@@ -55,7 +60,7 @@ class ReservationsTable
                         fn (Builder $query, string $stage): Builder => $query->where('stage', $stage),
                     )),
                 Filter::make('today')
-                    ->label('Today')
+                    ->label(__('app.rentals_ui.filters.today'))
                     ->toggle()
                     ->query(fn (Builder $query, array $data): Builder => $query->when(
                         $data['isActive'] ?? false,
@@ -68,14 +73,14 @@ class ReservationsTable
                         },
                     )),
                 Filter::make('upcoming')
-                    ->label('Upcoming')
+                    ->label(__('app.rentals_ui.filters.upcoming'))
                     ->toggle()
                     ->query(fn (Builder $query, array $data): Builder => $query->when(
                         $data['isActive'] ?? false,
                         fn (Builder $query): Builder => $query->where('starts_at', '>=', self::shopDayStart()->copy()->addDay()),
                     )),
                 Filter::make('past')
-                    ->label('Past')
+                    ->label(__('app.rentals_ui.filters.past'))
                     ->toggle()
                     ->query(fn (Builder $query, array $data): Builder => $query->when(
                         $data['isActive'] ?? false,

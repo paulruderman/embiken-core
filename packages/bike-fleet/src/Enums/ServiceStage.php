@@ -28,11 +28,11 @@ enum ServiceStage: string implements HasColor, HasDescription, HasIcon, HasLabel
     public function getLabel(): string
     {
         return match ($this) {
-            self::Open => 'Open',
-            self::InProgress => 'In progress',
-            self::Blocked => 'Blocked',
-            self::Resolved => 'Resolved',
-            self::Cancelled => 'Cancelled',
+            self::Open => __('app.fleet.service_stages.open'),
+            self::InProgress => __('app.fleet.service_stages.in_progress'),
+            self::Blocked => __('app.fleet.service_stages.blocked'),
+            self::Resolved => __('app.fleet.service_stages.resolved'),
+            self::Cancelled => __('app.fleet.service_stages.cancelled'),
         };
     }
 
@@ -50,11 +50,11 @@ enum ServiceStage: string implements HasColor, HasDescription, HasIcon, HasLabel
     public function getDescription(): string
     {
         return match ($this) {
-            self::Open => 'Service work is open.',
-            self::InProgress => 'Service work is in progress.',
-            self::Blocked => 'Service is blocked.',
-            self::Resolved => 'Service work is resolved.',
-            self::Cancelled => 'Service work was cancelled.',
+            self::Open => __('app.fleet.service_stage_descriptions.open'),
+            self::InProgress => __('app.fleet.service_stage_descriptions.in_progress'),
+            self::Blocked => __('app.fleet.service_stage_descriptions.blocked'),
+            self::Resolved => __('app.fleet.service_stage_descriptions.resolved'),
+            self::Cancelled => __('app.fleet.service_stage_descriptions.cancelled'),
         };
     }
 

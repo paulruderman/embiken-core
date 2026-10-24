@@ -24,13 +24,13 @@ class BikeForm
     {
         return $schema
             ->components([
-                Text::make('Add one physical bike to your fleet. Choose the model variant that identifies this bike’s model and size.')
+                Text::make(__('app.fleet.setup_descriptions.bikes'))
                     ->size('sm')
                     ->columnSpanFull(),
                 Hidden::make('location_id')
                     ->default(fn (): ?int => Location::query()->value('id')),
                 Select::make('bike_model_variant_id')
-                    ->label('Variant')
+                    ->label(__('app.fleet.fields.variant'))
                     ->options(fn (): array => BikeModelVariant::query()
                         ->with('bikeModel')
                         ->get()
@@ -43,32 +43,36 @@ class BikeForm
                             ])->filter()->implode(' '),
                         ])
                         ->all())
-                    ->helperText(Bike::SETUP_DESCRIPTION)
+                    ->helperText(__('app.setup_steps.bikes.description'))
                     ->required()
                     ->searchable(),
                 TextInput::make('bid')
+                    ->label(__('app.fleet.fields.bid'))
                     ->required()
                     ->unique(ignoreRecord: true)
                     ->maxLength(255),
                 TextInput::make('serial_number')
-                    ->label('Manufacturer serial number')
+                    ->label(__('app.fleet.fields.serial_number'))
                     ->maxLength(255),
                 Toggle::make('in_service')
+                    ->label(__('app.fleet.fields.in_service'))
                     ->default(true),
                 Toggle::make('self_bookable')
+                    ->label(__('app.fleet.fields.self_bookable'))
                     ->default(true),
                 Placeholder::make('bike_situation_state')
-                    ->label('Situation')
+                    ->label(__('app.fleet.fields.situation'))
                     ->content(fn (?Bike $record): string => ($record->bike_situation_state ?? BikeSituation::Home)->getLabel()),
                 FileUpload::make('photo')
+                    ->label(__('app.fleet.fields.photo'))
                     ->image()
                     ->directory('bikes'),
                 Repeater::make('specifications')
                     ->relationship()
-                    ->label('Specifications')
+                    ->label(__('app.fleet.fields.specifications'))
                     ->schema([
                         Select::make('name')
-                            ->label('Specification')
+                            ->label(__('app.fleet.fields.specification'))
                             ->options(fn (): array => BikeSpecification::query()
                                 ->select('name')
                                 ->distinct()
@@ -86,14 +90,15 @@ class BikeForm
                             ->createOptionUsing(fn (array $data): string => self::existingOrNewSpecificationName($data['name']))
                             ->required(),
                         TextInput::make('value')
-                            ->label('Value')
+                            ->label(__('app.fleet.fields.value'))
                             ->required()
                             ->maxLength(1000),
                     ])
                     ->columns(2)
-                    ->addActionLabel('Add specification')
+                    ->addActionLabel(__('app.fleet.actions.add_specification'))
                     ->columnSpanFull(),
-                Textarea::make('damage_notes'),
+                Textarea::make('damage_notes')
+                    ->label(__('app.fleet.fields.damage_notes')),
             ]);
     }
 

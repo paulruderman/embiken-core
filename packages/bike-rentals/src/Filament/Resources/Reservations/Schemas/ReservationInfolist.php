@@ -14,28 +14,34 @@ class ReservationInfolist
         return $schema
             ->components([
                 TextEntry::make('customer.name')
-                    ->label('Customer'),
+                    ->label(__('app.rentals_ui.fields.customer')),
                 TextEntry::make('stage')
+                    ->label(__('app.rentals_ui.fields.stage'))
                     ->badge(),
                 TextEntry::make('starts_at')
+                    ->label(__('app.rentals_ui.fields.starts_at'))
                     ->dateTime(),
                 TextEntry::make('ends_at')
+                    ->label(__('app.rentals_ui.fields.ends_at'))
                     ->dateTime(),
                 TextEntry::make('owed')
-                    ->label('Owed')
+                    ->label(__('app.rentals_ui.fields.owed'))
                     ->formatStateUsing(fn (?int $state, Reservation $record): ?string => $state === null
                         ? null
                         : Money::format($state, $record->currency)),
                 TextEntry::make('paid')
-                    ->label('Paid')
+                    ->label(__('app.rentals_ui.fields.paid'))
                     ->formatStateUsing(fn (?int $state, Reservation $record): ?string => $state === null
                         ? null
                         : Money::format($state, $record->currency)),
                 TextEntry::make('rentalPackage.name')
+                    ->label(__('app.rentals_ui.fields.rental_package'))
                     ->placeholder('—'),
                 TextEntry::make('notes')
+                    ->label(__('app.rentals_ui.fields.notes'))
                     ->placeholder('—'),
                 TextEntry::make('damage_notes')
+                    ->label(__('app.rentals_ui.fields.damage_notes'))
                     ->placeholder('—'),
             ]);
     }

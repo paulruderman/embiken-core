@@ -24,18 +24,20 @@ class EntriesRelationManager extends RelationManager
         return $schema
             ->components([
                 Select::make('staff_id')
+                    ->label(__('app.fleet.fields.staff'))
                     ->relationship('staff', 'name')
                     ->default(function (): ?int {
                         $id = Auth::guard('staff')->id();
 
                         return is_int($id) ? $id : (is_string($id) && ctype_digit($id) ? (int) $id : null);
                     }),
-                Textarea::make('notes'),
+                Textarea::make('notes')->label(__('app.fleet.fields.notes')),
                 TextInput::make('labor_minutes')
+                    ->label(__('app.fleet.fields.labor_minutes'))
                     ->numeric()
                     ->minValue(0),
-                DateTimePicker::make('work_started_at'),
-                DateTimePicker::make('work_completed_at'),
+                DateTimePicker::make('work_started_at')->label(__('app.fleet.fields.work_started_at')),
+                DateTimePicker::make('work_completed_at')->label(__('app.fleet.fields.work_completed_at')),
             ]);
     }
 
@@ -44,10 +46,11 @@ class EntriesRelationManager extends RelationManager
         return $table
             ->recordTitleAttribute('notes')
             ->columns([
-                TextColumn::make('staff.name'),
+                TextColumn::make('staff.name')->label(__('app.fleet.fields.staff')),
                 TextColumn::make('notes')
+                    ->label(__('app.fleet.fields.notes'))
                     ->limit(40),
-                TextColumn::make('labor_minutes'),
+                TextColumn::make('labor_minutes')->label(__('app.fleet.fields.labor_minutes')),
             ])
             ->headerActions([
                 CreateAction::make(),

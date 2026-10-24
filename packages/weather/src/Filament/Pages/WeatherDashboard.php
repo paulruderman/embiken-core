@@ -32,11 +32,21 @@ class WeatherDashboard extends Page
 
     protected static ?int $navigationSort = -2;
 
-    protected static ?string $navigationLabel = 'Dashboard';
+    protected static ?string $navigationLabel = null;
 
-    protected static ?string $title = 'Weather Dashboard';
+    protected static ?string $title = null;
 
     protected string $view = 'weather::filament.pages.weather-dashboard';
+
+    public static function getNavigationLabel(): string
+    {
+        return __('app.navigation.dashboard');
+    }
+
+    public function getTitle(): string
+    {
+        return __('app.page_titles.weather_dashboard');
+    }
 
     public ?string $selectedSiteCode = null;
 

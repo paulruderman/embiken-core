@@ -14,49 +14,54 @@ class TransactionInfolist
     {
         return $schema
             ->components([
-                Section::make('Transaction')
+                Section::make(__('app.rentals_ui.sections.transaction'))
                     ->schema([
                         TextEntry::make('kind')
+                            ->label(__('app.rentals_ui.fields.transaction_type'))
                             ->badge(),
                         TextEntry::make('status')
+                            ->label(__('app.rentals_ui.fields.payment_status'))
                             ->badge(),
                         TextEntry::make('amount_minor_units')
-                            ->label('Amount')
+                            ->label(__('app.rentals_ui.fields.amount'))
                             ->formatStateUsing(fn (?int $state, Transaction $record): ?string => $state === null
                                 ? null
                                 : Money::format($state, $record->currency)),
                         TextEntry::make('captured_at')
+                            ->label(__('app.rentals_ui.fields.captured_at'))
                             ->dateTime()
-                            ->placeholder('Not captured'),
+                            ->placeholder(__('app.rentals_ui.table.not_captured')),
                         TextEntry::make('failed_at')
+                            ->label(__('app.rentals_ui.fields.failed_at'))
                             ->dateTime()
                             ->placeholder('—'),
                         TextEntry::make('note')
+                            ->label(__('app.rentals_ui.fields.note'))
                             ->placeholder('—')
                             ->columnSpanFull(),
                     ])
                     ->columns(2),
-                Section::make('Reservation and customer')
+                Section::make(__('app.rentals_ui.sections.reservation_and_customer'))
                     ->schema([
                         TextEntry::make('reservation.id')
-                            ->label('Reservation'),
+                            ->label(__('app.rentals_ui.fields.reservation')),
                         TextEntry::make('reservation.customer.name')
-                            ->label('Customer')
+                            ->label(__('app.rentals_ui.fields.customer'))
                             ->placeholder('—'),
                     ])
                     ->columns(2),
-                Section::make('Stripe Connect')
+                Section::make(__('app.rentals_ui.sections.stripe_connect'))
                     ->schema([
                         TextEntry::make('payment_intent_id')
-                            ->label('Payment Intent')
+                            ->label(__('app.rentals_ui.fields.payment_intent'))
                             ->copyable()
                             ->placeholder('—'),
                         TextEntry::make('charge_id')
-                            ->label('Charge')
+                            ->label(__('app.rentals_ui.fields.charge'))
                             ->copyable()
                             ->placeholder('—'),
                         TextEntry::make('original_transaction_id')
-                            ->label('Original Transaction')
+                            ->label(__('app.rentals_ui.fields.original_transaction'))
                             ->placeholder('—'),
                     ])
                     ->columns(2)

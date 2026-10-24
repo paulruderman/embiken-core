@@ -11,8 +11,8 @@ class ReservationForm
     {
         return $schema
             ->components([
-                Textarea::make('notes'),
-                Textarea::make('damage_notes'),
+                Textarea::make('notes')->label(__('app.rentals_ui.fields.notes')),
+                Textarea::make('damage_notes')->label(__('app.rentals_ui.fields.damage_notes')),
             ]);
     }
 }

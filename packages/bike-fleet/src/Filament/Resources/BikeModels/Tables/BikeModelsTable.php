@@ -15,15 +15,17 @@ class BikeModelsTable
         $table = $table
             ->columns([
                 TextColumn::make('name')
+                    ->label(__('app.fleet.fields.name'))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('manufacturer')
+                    ->label(__('app.fleet.fields.manufacturer'))
                     ->searchable()
                     ->toggleable(),
                 TextColumn::make('bikeCategory.name')
-                    ->label('Category'),
+                    ->label(__('app.fleet.fields.category')),
                 TextColumn::make('padding_minutes')
-                    ->label('Padding'),
+                    ->label(__('app.fleet.fields.padding_minutes')),
             ])
             ->recordActions([
                 EditAction::make(),
@@ -34,7 +36,7 @@ class BikeModelsTable
         return app(ShopSetupReadiness::class)->configureEmptyState(
             $table,
             ShopSetupReadiness::BikeModels,
-            'No bike models yet',
+            __('app.fleet.empty_states.bike_models'),
         );
     }
 }

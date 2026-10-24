@@ -17,16 +17,17 @@ class BikeModelVariantsTable
         $table = $table
             ->columns([
                 TextColumn::make('bikeModel.name')
-                    ->label('Model')
+                    ->label(__('app.fleet.fields.model'))
                     ->searchable(),
                 TextColumn::make('size')
+                    ->label(__('app.fleet.fields.size'))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('color_name')
-                    ->label('Color')
+                    ->label(__('app.fleet.fields.color_name'))
                     ->toggleable(),
                 ColorColumn::make('color_value')
-                    ->label('Swatch')
+                    ->label(__('app.fleet.fields.color'))
                     ->getStateUsing(static fn (?string $state): ?string => $state === null
                         ? null
                         : BrandColor::swatch($state, '#000000')),
@@ -40,7 +41,7 @@ class BikeModelVariantsTable
         return app(ShopSetupReadiness::class)->configureEmptyState(
             $table,
             ShopSetupReadiness::BikeModelVariants,
-            'No bike model variants yet',
+            __('app.fleet.empty_states.bike_model_variants'),
         );
     }
 }

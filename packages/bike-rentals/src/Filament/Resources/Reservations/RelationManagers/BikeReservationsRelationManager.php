@@ -29,7 +29,7 @@ class BikeReservationsRelationManager extends RelationManager
         return $schema
             ->components([
                 Select::make('product_id')
-                    ->label('Variant')
+                    ->label(__('app.rentals_ui.fields.variant'))
                     ->options(fn (): array => BikeModelVariant::query()
                         ->with('bikeModel')
                         ->get()
@@ -45,11 +45,12 @@ class BikeReservationsRelationManager extends RelationManager
                     ->required()
                     ->searchable(),
                 Select::make('bike_id')
-                    ->label('Bike')
+                    ->label(__('app.rentals_ui.fields.bike'))
                     ->options(fn (): array => Bike::query()->orderBy('bid')->pluck('bid', 'id')->all())
                     ->searchable(),
-                TextInput::make('rider_name'),
+                TextInput::make('rider_name')->label(__('app.rentals_ui.fields.rider_name')),
                 TextInput::make('rider_height_cm')
+                    ->label(__('app.rentals_ui.fields.rider_height'))
                     ->numeric(),
             ]);
     }
@@ -61,21 +62,21 @@ class BikeReservationsRelationManager extends RelationManager
             ->modifyQueryUsing(fn ($query) => $query->with(['product.bikeModel', 'bike']))
             ->columns([
                 TextColumn::make('product.bikeModel.name')
-                    ->label('Model'),
+                    ->label(__('app.fleet.fields.model')),
                 TextColumn::make('product.size')
-                    ->label('Size'),
+                    ->label(__('app.fleet.fields.size')),
                 TextColumn::make('product.color_name')
-                    ->label('Color')
+                    ->label(__('app.fleet.fields.color_name'))
                     ->placeholder('—'),
                 TextColumn::make('bike.bid')
-                    ->label('Bid')
-                    ->placeholder('unassigned'),
+                    ->label(__('app.fleet.fields.bid'))
+                    ->placeholder(__('app.rentals_ui.table.unassigned')),
                 TextColumn::make('bike.bike_situation_state')
-                    ->label('Situation')
+                    ->label(__('app.fleet.fields.situation'))
                     ->badge()
                     ->placeholder('—'),
                 TextColumn::make('occupying_customer')
-                    ->label('Occupying reservation')
+                    ->label(__('app.fleet.fields.occupying_reservation'))
                     ->getStateUsing(function (BikeReservation $record): string {
                         $occupying = $record->bike?->bike_situation_reservation_id
                             ? Reservation::query()->with('customer')->find($record->bike->bike_situation_reservation_id)
@@ -88,7 +89,7 @@ class BikeReservationsRelationManager extends RelationManager
                         return '#'.$occupying->id.' '.$occupying->customer?->name;
                     }),
                 IconColumn::make('wrong_ticket')
-                    ->label('Wrong ticket')
+                    ->label(__('app.rentals_ui.fields.wrong_reservation'))
                     ->boolean()
                     ->getStateUsing(function (BikeReservation $record): bool {
                         $occupyingId = $record->bike?->bike_situation_reservation_id;
@@ -100,19 +101,19 @@ class BikeReservationsRelationManager extends RelationManager
                 TextColumn::make('rider_name')
                     ->placeholder('—'),
             ])
-            ->emptyStateHeading('No reservation lines yet')
+            ->emptyStateHeading(__('app.rentals_ui.empty_states.reservation_lines'))
             ->emptyStateDescription(fn (): string => BikeModelVariant::query()->exists()
-                ? 'Add a variant to this Reservation to reserve a bike for the party.'
-                : 'Create a bike model variant before adding reservation lines.')
+                ? __('app.rentals_ui.empty_states.add_variant_to_reservation')
+                : __('app.rentals_ui.empty_states.create_variant_for_reservation'))
             ->emptyStateActions([
                 Action::make('createBikeModelVariantFromEmptyState')
-                    ->label('Create a bike model variant')
+                    ->label(__('app.setup_steps.bike_model_variants.action'))
                     ->url(BikeModelVariantResource::getUrl('create'))
                     ->visible(fn (): bool => ! BikeModelVariant::query()->exists()),
             ])
             ->headerActions([
                 Action::make('createBikeModelVariant')
-                    ->label('Add bike model variants first')
+                    ->label(__('app.rentals_ui.actions.add_variants_first'))
                     ->url(BikeModelVariantResource::getUrl('create'))
                     ->visible(fn (): bool => ! BikeModelVariant::query()->exists()),
                 CreateAction::make()

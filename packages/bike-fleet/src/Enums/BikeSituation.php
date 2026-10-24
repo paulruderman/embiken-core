@@ -23,11 +23,11 @@ enum BikeSituation: string implements HasColor, HasDescription, HasIcon, HasLabe
     public function getLabel(): string
     {
         return match ($this) {
-            self::Home => 'Home',
-            self::Prepping => 'Prepping',
-            self::Staged => 'Staged',
-            self::RentedOut => 'Rented Out',
-            self::Back => 'Back',
+            self::Home => __('app.fleet.situations.home'),
+            self::Prepping => __('app.fleet.situations.prepping'),
+            self::Staged => __('app.fleet.situations.staged'),
+            self::RentedOut => __('app.fleet.situations.rented_out'),
+            self::Back => __('app.fleet.situations.back'),
         };
     }
 
@@ -45,11 +45,11 @@ enum BikeSituation: string implements HasColor, HasDescription, HasIcon, HasLabe
     public function getDescription(): string
     {
         return match ($this) {
-            self::Home => 'At home base and available.',
-            self::Prepping => 'Being prepped for a reservation.',
-            self::Staged => 'Staged and ready for pickup.',
-            self::RentedOut => 'Currently rented out.',
-            self::Back => 'Returned; waiting for put-away.',
+            self::Home => __('app.fleet.situation_descriptions.home'),
+            self::Prepping => __('app.fleet.situation_descriptions.prepping'),
+            self::Staged => __('app.fleet.situation_descriptions.staged'),
+            self::RentedOut => __('app.fleet.situation_descriptions.rented_out'),
+            self::Back => __('app.fleet.situation_descriptions.back'),
         };
     }
 

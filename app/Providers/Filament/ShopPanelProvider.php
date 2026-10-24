@@ -74,6 +74,7 @@ class ShopPanelProvider extends PanelProvider
                 'Online Book' => NavigationGroup::make()->label(fn (): string => __('app.navigation.online_book')),
                 'Weather' => NavigationGroup::make()->label(fn (): string => __('app.navigation.weather')),
                 'Shop settings' => NavigationGroup::make()->label(fn (): string => __('app.navigation.shop_settings')),
+                'Maintenance' => NavigationGroup::make()->label(fn (): string => __('app.navigation.maintenance')),
             ])
             ->widgets([
                 AccountWidget::class,

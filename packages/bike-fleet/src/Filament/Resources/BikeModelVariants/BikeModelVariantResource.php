@@ -44,6 +44,21 @@ class BikeModelVariantResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'size';
 
+    public static function getModelLabel(): string
+    {
+        return __('app.fleet.resources.bike_model_variant.singular');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('app.fleet.resources.bike_model_variant.plural');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return static::getPluralModelLabel();
+    }
+
     public static function form(Schema $schema): Schema
     {
         return BikeModelVariantForm::configure($schema);

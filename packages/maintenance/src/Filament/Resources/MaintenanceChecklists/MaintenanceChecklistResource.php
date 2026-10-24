@@ -26,6 +26,21 @@ class MaintenanceChecklistResource extends Resource
 
     protected static ?string $model = MaintenanceChecklist::class;
 
+    public static function getModelLabel(): string
+    {
+        return __('app.resource_labels.maintenance_checklist.singular');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('app.resource_labels.maintenance_checklist.plural');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return static::getPluralModelLabel();
+    }
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
     protected static string|\UnitEnum|null $navigationGroup = 'Maintenance';

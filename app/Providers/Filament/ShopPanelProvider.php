@@ -6,6 +6,7 @@ use App\Filament\Shop\Widgets\ShopSetupChecklistWidget;
 use App\Http\Middleware\ApplyFilamentTranslationLocale;
 use App\Models\ShopSetting;
 use App\Support\BrandColor;
+use App\Support\EnumColorPalettes;
 use App\Support\Locales;
 use App\Support\ModuleRegistry;
 use Filament\Http\Middleware\Authenticate;
@@ -122,6 +123,7 @@ class ShopPanelProvider extends PanelProvider
         $settings = $this->shopSetting();
 
         return [
+            ...EnumColorPalettes::all(),
             'primary' => $this->paletteForColor($settings?->primary_color, ShopSetting::DEFAULT_PRIMARY_COLOR),
             'gray' => $this->paletteForColor($settings?->brand_gray_color, ShopSetting::DEFAULT_GRAY_COLOR),
         ];

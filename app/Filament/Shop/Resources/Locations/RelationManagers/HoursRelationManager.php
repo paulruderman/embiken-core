@@ -4,6 +4,7 @@ namespace App\Filament\Shop\Resources\Locations\RelationManagers;
 
 use App\Enums\Weekday;
 use App\Filament\Shop\Support\ShopSetupReadiness;
+use App\Models\LocationHour;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -45,7 +46,8 @@ class HoursRelationManager extends RelationManager
             ->recordTitleAttribute('weekday')
             ->columns([
                 TextColumn::make('weekday')
-                    ->badge(),
+                    ->badge()
+                    ->color(fn (LocationHour $record): string => $record->weekday->getColor()),
                 TextColumn::make('opens_at'),
                 TextColumn::make('closes_at'),
                 IconColumn::make('closes_next_day')

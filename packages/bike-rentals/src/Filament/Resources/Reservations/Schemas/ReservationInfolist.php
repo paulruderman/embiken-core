@@ -17,7 +17,8 @@ class ReservationInfolist
                     ->label(__('app.rentals_ui.fields.customer')),
                 TextEntry::make('stage')
                     ->label(__('app.rentals_ui.fields.stage'))
-                    ->badge(),
+                    ->badge()
+                    ->color(fn (Reservation $record): string => $record->stage->getColor()),
                 TextEntry::make('starts_at')
                     ->label(__('app.rentals_ui.fields.starts_at'))
                     ->dateTime(),

@@ -49,13 +49,15 @@ class BikesTable
                     ->boolean(),
                 TextColumn::make('bike_situation_state')
                     ->label(__('app.fleet.fields.situation'))
-                    ->badge(),
+                    ->badge()
+                    ->color(fn (Bike $record): string => $record->bike_situation_state->getColor()),
                 TextColumn::make('specifications_summary')
                     ->label(__('app.fleet.fields.specifications'))
                     ->getStateUsing(fn (Bike $record): ?string => $record->specifications
                         ->map(fn (BikeSpecification $specification): string => "{$specification->name}: {$specification->value}")
                         ->implode(' · ') ?: null)
                     ->limit(80)
+                    ->tooltip(fn (?string $state): ?string => $state !== null && mb_strlen($state) > 80 ? $state : null)
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->placeholder('—'),
                 ...($showOccupyingReservation ? [

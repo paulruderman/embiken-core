@@ -68,6 +68,14 @@ it('filters reservations by their current stage', function () {
         ->assertCanNotSeeTableRecords([$provisional]);
 });
 
+it('renders reservation stage badges with their enum colors', function () {
+    Reservation::factory()->confirmed()->create();
+
+    Livewire::test(ListReservations::class)
+        ->assertSeeHtml('fi-badge fi-size-sm fi-color fi-color-blue')
+        ->assertSee('Confirmed');
+});
+
 it('shows the latest service work entry and its date in the service request list', function () {
     $serviceRequest = ServiceRequest::factory()->create();
     ServiceEntry::factory()->for($serviceRequest)->create([

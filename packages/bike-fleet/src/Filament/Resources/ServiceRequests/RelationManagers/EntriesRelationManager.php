@@ -113,7 +113,8 @@ class EntriesRelationManager extends RelationManager
                 TextColumn::make('staff.name')->label(__('app.fleet.fields.staff')),
                 TextColumn::make('notes')
                     ->label(__('app.fleet.fields.notes'))
-                    ->limit(40),
+                    ->limit(40)
+                    ->tooltip(fn (?string $state): ?string => $state !== null && mb_strlen($state) > 40 ? $state : null),
                 TextColumn::make('labor_minutes')->label(__('app.fleet.fields.labor_minutes')),
                 TextColumn::make('partUsages.part_name')
                     ->label('Parts used')

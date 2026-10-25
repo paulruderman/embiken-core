@@ -31,8 +31,8 @@ enum BikeReadinessIssue: string implements HasColor, HasDescription, HasIcon, Ha
     public function getColor(): string
     {
         return match ($this) {
-            self::Unassigned, self::OtherReservation, self::MissingReservation => 'warning',
-            default => 'danger',
+            self::Unassigned, self::OtherReservation, self::MissingReservation => 'yellow',
+            default => 'red',
         };
     }
 

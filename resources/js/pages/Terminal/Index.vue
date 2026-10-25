@@ -799,7 +799,13 @@ function bikesForLine(line: DayLine): DayBike[] {
                                         line,
                                     )"
                                     :key="issue"
-                                    class="rounded-full bg-amber-950 px-2 py-0.5 font-semibold text-amber-200"
+                                    :class="[
+                                        getStatusBadgeClasses(
+                                            'bikeReadinessIssue',
+                                            issue,
+                                        ),
+                                        'rounded-full px-2 py-0.5 font-semibold',
+                                    ]"
                                     >{{ readinessLabel(issue) }}</span
                                 >
                             </template>
@@ -987,7 +993,13 @@ function bikesForLine(line: DayLine): DayBike[] {
                                     line,
                                 )"
                                 :key="issue"
-                                class="rounded-full bg-amber-950 px-3 py-1 text-sm font-semibold text-amber-200"
+                                :class="[
+                                    getStatusBadgeClasses(
+                                        'bikeReadinessIssue',
+                                        issue,
+                                    ),
+                                    'rounded-full px-3 py-1 text-sm font-semibold',
+                                ]"
                                 >{{ readinessLabel(issue) }}</span
                             >
                         </div>

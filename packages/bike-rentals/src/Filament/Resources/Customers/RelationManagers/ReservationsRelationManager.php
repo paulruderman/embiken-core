@@ -25,7 +25,8 @@ class ReservationsRelationManager extends RelationManager
                     ->sortable(),
                 TextColumn::make('stage')
                     ->label(__('app.rentals_ui.fields.stage'))
-                    ->badge(),
+                    ->badge()
+                    ->color(fn (Reservation $record): string => $record->stage->getColor()),
                 LocalizedDateTimeColumn::make('starts_at')
                     ->label(__('app.rentals_ui.fields.starts_at'))
                     ->sortable(),

@@ -2,20 +2,20 @@ import type { EnumMeta, EnumName, StatusColor } from '@/types/enums';
 import { usePage } from '@inertiajs/vue3';
 
 /**
- * Semantic badge classes for generic StatusColor names from PHP enums.
- * All classes are written out in full so Tailwind can detect them at build time.
+ * Badge classes use the hue named by the enum's color metadata.
+ * Keep each class literal so Tailwind detects it at build time.
  */
-const semanticBadgeClasses: Record<StatusColor, string> = {
-    gray: 'bg-muted text-muted-foreground',
-    blue: 'bg-primary/15 text-primary',
-    green: 'bg-success/15 text-success',
-    red: 'bg-destructive/15 text-destructive',
-    yellow: 'bg-warning/15 text-warning',
-    indigo: 'bg-primary/15 text-primary',
-    sky: 'bg-primary/15 text-primary',
-    purple: 'bg-primary/15 text-primary',
-    amber: 'bg-warning/15 text-warning',
-    orange: 'bg-warning/15 text-warning',
+const enumBadgeClasses: Record<StatusColor, string> = {
+    gray: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200',
+    blue: 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200',
+    green: 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-200',
+    red: 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200',
+    yellow: 'bg-yellow-100 text-yellow-900 dark:bg-yellow-950 dark:text-yellow-200',
+    indigo: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-200',
+    sky: 'bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-200',
+    purple: 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-200',
+    amber: 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200',
+    orange: 'bg-orange-100 text-orange-900 dark:bg-orange-950 dark:text-orange-200',
 };
 
 const DEFAULT_COLOR: StatusColor = 'gray';
@@ -23,7 +23,7 @@ const DEFAULT_COLOR: StatusColor = 'gray';
 function isStatusColor(color: string | undefined): color is StatusColor {
     return (
         color !== undefined &&
-        Object.prototype.hasOwnProperty.call(semanticBadgeClasses, color)
+        Object.prototype.hasOwnProperty.call(enumBadgeClasses, color)
     );
 }
 
@@ -39,7 +39,7 @@ export function resolveEnumBadgeClasses(
     const color = isStatusColor(meta?.color) ? meta.color : fallbackColor;
 
     return (
-        semanticBadgeClasses[color] ?? semanticBadgeClasses[DEFAULT_COLOR]
+        enumBadgeClasses[color] ?? enumBadgeClasses[DEFAULT_COLOR]
     );
 }
 
@@ -88,7 +88,7 @@ export function getStatusBadgeClasses(
  */
 export function getBadgeClassesForColor(color: StatusColor): string {
     return (
-        semanticBadgeClasses[color] ?? semanticBadgeClasses[DEFAULT_COLOR]
+        enumBadgeClasses[color] ?? enumBadgeClasses[DEFAULT_COLOR]
     );
 }
 

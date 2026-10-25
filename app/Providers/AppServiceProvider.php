@@ -9,6 +9,7 @@ use BezhanSalleh\LanguageSwitch\Events\LocaleChanged;
 use BezhanSalleh\LanguageSwitch\LanguageSwitch;
 use Carbon\CarbonImmutable;
 use Filament\Facades\Filament;
+use Filament\Tables\Table;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -41,6 +42,10 @@ class AppServiceProvider extends ServiceProvider
         }
 
         $this->configureDefaults();
+        Table::configureUsing(static function (Table $table): void {
+            $table->striped();
+        });
+
         Translatable::fallback('en');
 
         LanguageSwitch::configureUsing(function (LanguageSwitch $switch): void {

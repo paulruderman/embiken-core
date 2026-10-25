@@ -2,6 +2,7 @@
 
 namespace App\Filament\Shop\Resources\Locations\Tables;
 
+use App\Models\Location;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -22,9 +23,11 @@ class LocationsTable
                 TextColumn::make('reservation_readiness_window_minutes')
                     ->label(__('app.location_ui.readiness_window_short')),
                 TextColumn::make('bike_assignment_policy')
-                    ->badge(),
+                    ->badge()
+                    ->color(fn (Location $record): string => $record->bike_assignment_policy->getColor()),
                 TextColumn::make('return_situation')
-                    ->badge(),
+                    ->badge()
+                    ->color(fn (Location $record): string => $record->return_situation->getColor()),
             ])
             ->recordActions([
                 EditAction::make(),

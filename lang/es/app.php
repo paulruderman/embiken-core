@@ -114,13 +114,13 @@ return [
             'confirm_bikes_in_shop' => 'Confirmo que las bicicletas están en la tienda', 'refund_amount' => 'Importe del reembolso', 'note' => 'Nota',
             'transaction_type' => 'Tipo de transacción', 'payment_status' => 'Estado del pago', 'amount' => 'Importe',
             'captured_at' => 'Fecha del cobro', 'failed_at' => 'Fecha del fallo', 'payment_intent' => 'Intención de pago',
-            'charge' => 'Cargo', 'original_transaction' => 'Transacción original',
+            'charge' => 'Cargo', 'original_transaction' => 'Transacción original', 'line_status' => 'Estado de la línea',
         ],
         'actions' => [
             'view' => 'Ver', 'set_stage' => 'Cambiar etapa', 'set_owed' => 'Cambiar importe pendiente', 'extend' => 'Ampliar reserva',
             'refund' => 'Reembolsar', 'cancel' => 'Cancelar reserva', 'add_variants_first' => 'Añade primero variantes de modelos de bicicleta',
         ],
-        'filters' => ['today' => 'Hoy', 'upcoming' => 'Próximas', 'past' => 'Pasadas'],
+        'filters' => ['all' => 'Todas', 'today' => 'Hoy', 'upcoming' => 'Próximas', 'past' => 'Pasadas'],
         'help' => ['leave_blank_to_keep_owed' => 'Déjalo en blanco para mantener el importe pendiente actual.'],
         'money_totals' => ':owed pendiente / :paid pagado',
         'errors' => [
@@ -136,6 +136,8 @@ return [
             'create_variant_for_reservation' => 'Crea una variante de modelo antes de añadir bicicletas a la reserva.',
         ],
         'table' => ['unassigned' => 'Sin asignar', 'not_captured' => 'Sin cobrar'],
+        'today_schedule' => 'Líneas de reserva de hoy',
+        'today_schedule_empty' => 'No hay bicicletas asignadas o alquiladas que comiencen o terminen hoy.',
         'sections' => ['transaction' => 'Transacción', 'reservation_and_customer' => 'Reserva y cliente', 'stripe_connect' => 'Stripe Connect'],
         'confirm_thresholds' => ['none' => 'Ninguno', 'deposit' => 'Depósito', 'full' => 'Importe total'],
         'confirm_threshold_descriptions' => [

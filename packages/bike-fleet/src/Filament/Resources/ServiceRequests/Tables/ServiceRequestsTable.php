@@ -37,10 +37,12 @@ class ServiceRequestsTable
                 TextColumn::make('description')
                     ->label(__('app.fleet.fields.description'))
                     ->limit(40)
+                    ->tooltip(fn (?string $state): ?string => $state !== null && mb_strlen($state) > 40 ? $state : null)
                     ->searchable(),
                 TextColumn::make('latestEntry.notes')
                     ->label(__('app.fleet.fields.latest_work'))
                     ->limit(40)
+                    ->tooltip(fn (?string $state): ?string => $state !== null && mb_strlen($state) > 40 ? $state : null)
                     ->placeholder(__('app.fleet.table.no_work_logged')),
                 LocalizedDateTimeColumn::make('latestEntry.created_at')
                     ->label(__('app.fleet.fields.last_worked'))
@@ -48,7 +50,8 @@ class ServiceRequestsTable
                     ->toggleable(),
                 TextColumn::make('stage')
                     ->label(__('app.fleet.fields.stage'))
-                    ->badge(),
+                    ->badge()
+                    ->color(fn (ServiceRequest $record): string => $record->stage->getColor()),
                 IconColumn::make('blocks_usage')
                     ->label(__('app.fleet.fields.blocks_usage'))
                     ->boolean(),

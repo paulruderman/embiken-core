@@ -23,10 +23,12 @@ class TransactionsRelationManager extends RelationManager
             ->columns([
                 TextColumn::make('kind')
                     ->label(__('app.rentals_ui.fields.transaction_type'))
-                    ->badge(),
+                    ->badge()
+                    ->color(fn (Transaction $record): string => $record->kind->getColor()),
                 TextColumn::make('status')
                     ->label(__('app.rentals_ui.fields.payment_status'))
-                    ->badge(),
+                    ->badge()
+                    ->color(fn (Transaction $record): string => $record->status->getColor()),
                 TextColumn::make('amount_minor_units')
                     ->label(__('app.rentals_ui.fields.amount'))
                     ->formatStateUsing(fn (?int $state, Transaction $record): string => Money::format($state ?? 0, $record->currency)),

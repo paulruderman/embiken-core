@@ -114,13 +114,13 @@ return [
             'confirm_bikes_in_shop' => 'I confirm the bikes are in the shop', 'refund_amount' => 'Refund amount', 'note' => 'Note',
             'transaction_type' => 'Transaction type', 'payment_status' => 'Payment status', 'amount' => 'Amount',
             'captured_at' => 'Captured at', 'failed_at' => 'Failed at', 'payment_intent' => 'Payment Intent',
-            'charge' => 'Charge', 'original_transaction' => 'Original transaction',
+            'charge' => 'Charge', 'original_transaction' => 'Original transaction', 'line_status' => 'Line status',
         ],
         'actions' => [
             'view' => 'View', 'set_stage' => 'Set stage', 'set_owed' => 'Set amount owed', 'extend' => 'Extend reservation',
             'refund' => 'Refund', 'cancel' => 'Cancel reservation', 'add_variants_first' => 'Add bike model variants first',
         ],
-        'filters' => ['today' => 'Today', 'upcoming' => 'Upcoming', 'past' => 'Past'],
+        'filters' => ['all' => 'All', 'today' => 'Today', 'upcoming' => 'Upcoming', 'past' => 'Past'],
         'help' => ['leave_blank_to_keep_owed' => 'Leave blank to keep the current amount owed.'],
         'money_totals' => ':owed owed / :paid paid',
         'errors' => [
@@ -136,6 +136,8 @@ return [
             'create_variant_for_reservation' => 'Create a bike model variant before adding reservation lines.',
         ],
         'table' => ['unassigned' => 'Unassigned', 'not_captured' => 'Not captured'],
+        'today_schedule' => 'Today’s reservation lines',
+        'today_schedule_empty' => 'No assigned or checked-out bike lines start or end today.',
         'sections' => ['transaction' => 'Transaction', 'reservation_and_customer' => 'Reservation and customer', 'stripe_connect' => 'Stripe Connect'],
         'confirm_thresholds' => ['none' => 'None', 'deposit' => 'Deposit', 'full' => 'Full amount'],
         'confirm_threshold_descriptions' => [

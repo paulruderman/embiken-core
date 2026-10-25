@@ -67,6 +67,7 @@ class BikeReservationsRelationManager extends RelationManager
                 TextColumn::make('bike.bike_situation_state')
                     ->label(__('app.fleet.fields.situation'))
                     ->badge()
+                    ->color(fn (BikeReservation $record): ?string => $record->bike?->bike_situation_state->getColor())
                     ->placeholder('—'),
                 TextColumn::make('occupying_customer')
                     ->label(__('app.fleet.fields.occupying_reservation'))
@@ -99,11 +100,18 @@ class BikeReservationsRelationManager extends RelationManager
                     ->label(__('app.location_ui.readiness'))
                     ->badge()
                     ->getStateUsing(fn (BikeReservation $record): ?string => self::readinessLabel($record))
-                    ->color(fn (?string $state): string => $state === __('app.location_ui.readiness_ready')
-                        ? 'success'
-                        : 'warning'),
+                    ->color(function (BikeReservation $record): string {
+                        $issues = app(Availability::class)->readinessIssuesForLine($record);
+
+                        if ($issues === []) {
+                            return 'green';
+                        }
+
+                        return BikeReadinessIssue::from($issues[0])->getColor();
+                    }),
                 TextColumn::make('status')
-                    ->badge(),
+                    ->badge()
+                    ->color(fn (BikeReservation $record): string => $record->status->getColor()),
                 TextColumn::make('rider_name')
                     ->placeholder('—'),
             ])

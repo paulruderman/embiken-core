@@ -114,13 +114,13 @@ return [
             'confirm_bikes_in_shop' => 'Je confirme que les vélos sont à la boutique', 'refund_amount' => 'Montant du remboursement', 'note' => 'Note',
             'transaction_type' => 'Type de transaction', 'payment_status' => 'État du paiement', 'amount' => 'Montant',
             'captured_at' => 'Capturé le', 'failed_at' => 'Échec le', 'payment_intent' => 'Intention de paiement',
-            'charge' => 'Débit', 'original_transaction' => 'Transaction d’origine',
+            'charge' => 'Débit', 'original_transaction' => 'Transaction d’origine', 'line_status' => 'Statut de la ligne',
         ],
         'actions' => [
             'view' => 'Voir', 'set_stage' => 'Modifier l’étape', 'set_owed' => 'Modifier le montant dû', 'extend' => 'Prolonger la réservation',
             'refund' => 'Rembourser', 'cancel' => 'Annuler la réservation', 'add_variants_first' => 'Ajoutez d’abord des variantes de modèles de vélo',
         ],
-        'filters' => ['today' => 'Aujourd’hui', 'upcoming' => 'À venir', 'past' => 'Passées'],
+        'filters' => ['all' => 'Toutes', 'today' => 'Aujourd’hui', 'upcoming' => 'À venir', 'past' => 'Passées'],
         'help' => ['leave_blank_to_keep_owed' => 'Laissez vide pour conserver le montant dû actuel.'],
         'money_totals' => ':owed dû / :paid payé',
         'errors' => [
@@ -136,6 +136,8 @@ return [
             'create_variant_for_reservation' => 'Créez une variante de modèle de vélo avant d’ajouter des vélos à la réservation.',
         ],
         'table' => ['unassigned' => 'Non assigné', 'not_captured' => 'Non capturé'],
+        'today_schedule' => 'Lignes de réservation du jour',
+        'today_schedule_empty' => 'Aucun vélo attribué ou loué ne commence ou ne se termine aujourd’hui.',
         'sections' => ['transaction' => 'Transaction', 'reservation_and_customer' => 'Réservation et client', 'stripe_connect' => 'Stripe Connect'],
         'confirm_thresholds' => ['none' => 'Aucun', 'deposit' => 'Dépôt', 'full' => 'Montant total'],
         'confirm_threshold_descriptions' => [

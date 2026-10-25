@@ -3,9 +3,9 @@
 namespace App\Actions\Platform;
 
 use App\Actions\Action;
+use App\Actions\Shop\UpdateShopBrandingAction;
 use App\Actions\Staff\InviteStaffAction;
 use App\Enums\StaffRole;
-use App\Models\Domain;
 use App\Models\Location;
 use App\Models\Staff;
 use App\Models\Tenant;
@@ -30,6 +30,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
@@ -54,6 +55,7 @@ class SeedFakeTenantAction extends Action
         private CatalogFleetImport $catalogFleetImport,
         private PackageRateImport $packageRateImport,
         private LocationMetadataImport $locationMetadataImport,
+        private UpdateShopBrandingAction $updateShopBranding,
     ) {}
 
     public function handle(
@@ -264,9 +266,23 @@ class SeedFakeTenantAction extends Action
         $location = Location::query()->firstOrFail();
 
         if ($resume && (Customer::query()->exists() || Reservation::query()->exists())) {
-            throw ValidationException::withMessages([
-                'resume' => 'This Tenant already has demo Customers or Reservations and cannot be resumed safely.',
-            ]);
+            $catalogFiles = $this->readDemoCsvFiles($profile, ['categories', 'models', 'variants']);
+            $catalogFiles['bikes'] = "bid,variant_key,serial_number,in_service,self_bookable\n";
+            $catalogReport = $this->catalogFleetImport->apply(
+                $catalogFiles,
+                'update',
+                'all-or-nothing',
+                $this->readDemoPhotoAssets(),
+                "demo-{$profile}",
+            );
+
+            if (! $catalogReport['applied']) {
+                throw new RuntimeException('The demo catalog and fleet CSV files could not be refreshed: '.json_encode($catalogReport['issues']));
+            }
+
+            $this->seedShopBranding($profile, $location->name);
+
+            return;
         }
 
         if (! Staff::query()->where('email', 'counter@example.com')->exists()) {
@@ -291,6 +307,8 @@ class SeedFakeTenantAction extends Action
             throw new RuntimeException('The demo shop metadata could not be applied: '.json_encode($metadataReport['issues']));
         }
 
+        $this->seedShopBranding($profile, $location->fresh()->name);
+
         [, $packages] = $this->seedCatalogAndPackages($profile, $resume);
         $bikes = Bike::query()->with('variant')->orderBy('id')->get();
         $customerCount = min(150, max(12, (int) ceil($bikes->count() / 2)));
@@ -310,7 +328,13 @@ class SeedFakeTenantAction extends Action
     private function seedCatalogAndPackages(string $profile, bool $resume): array
     {
         $catalogFiles = $this->readDemoCsvFiles($profile, ['categories', 'models', 'variants', 'bikes']);
-        $catalogReport = $this->catalogFleetImport->apply($catalogFiles, $resume ? 'skip' : 'report', 'all-or-nothing');
+        $catalogReport = $this->catalogFleetImport->apply(
+            $catalogFiles,
+            $resume ? 'skip' : 'report',
+            'all-or-nothing',
+            $this->readDemoPhotoAssets(),
+            "demo-{$profile}",
+        );
 
         if (! $catalogReport['applied']) {
             throw new RuntimeException('The demo catalog and fleet CSV files could not be imported: '.json_encode($catalogReport['issues']));
@@ -327,6 +351,70 @@ class SeedFakeTenantAction extends Action
             array_values(BikeModelVariant::query()->orderBy('id')->get()->all()),
             array_values(RentalPackage::query()->orderBy('sort_order')->orderBy('id')->get()->all()),
         ];
+    }
+
+    /** @return array<string, string> */
+    private function readDemoPhotoAssets(): array
+    {
+        $photos = [];
+        $paths = glob(database_path('seeders/demo-tenants/assets/*.png'));
+
+        if ($paths === false) {
+            throw new RuntimeException('The demo photo assets could not be listed.');
+        }
+
+        foreach ($paths as $path) {
+            if (str_starts_with(basename($path), 'brand-')) {
+                continue;
+            }
+
+            $contents = file_get_contents($path);
+
+            if ($contents === false) {
+                throw new RuntimeException("The demo photo asset {$path} could not be read.");
+            }
+
+            $photos['images/'.basename($path)] = $contents;
+        }
+
+        return $photos;
+    }
+
+    private function seedShopBranding(string $profile, string $brandName): void
+    {
+        $path = database_path("seeders/demo-tenants/{$profile}/branding.json");
+        $json = file_get_contents($path);
+
+        if ($json === false) {
+            throw new RuntimeException("The demo branding file {$path} could not be read.");
+        }
+
+        /** @var array{primary_color: string, brand_gray_color: string, logo_file: string} $branding */
+        $branding = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+
+        if (! preg_match('/\\Abrand-[A-Za-z0-9][A-Za-z0-9._-]*\\.png\\z/', $branding['logo_file'])) {
+            throw new RuntimeException('The demo branding logo filename is invalid.');
+        }
+
+        $logoContents = file_get_contents(database_path('seeders/demo-tenants/assets/'.$branding['logo_file']));
+
+        if ($logoContents === false) {
+            throw new RuntimeException("The demo branding logo {$branding['logo_file']} could not be read.");
+        }
+
+        $logoPath = "branding/demo-{$profile}.png";
+
+        if (! Storage::disk('public')->put($logoPath, $logoContents)) {
+            throw new RuntimeException("The demo branding logo {$branding['logo_file']} could not be stored.");
+        }
+
+        $this->updateShopBranding->handle([
+            'brand_name' => $brandName,
+            'primary_color' => $branding['primary_color'],
+            'brand_gray_color' => $branding['brand_gray_color'],
+            'logo_path' => $logoPath,
+            'favicon_path' => null,
+        ]);
     }
 
     /** @param list<string> $files
@@ -351,11 +439,7 @@ class SeedFakeTenantAction extends Action
 
     private function generateDomain(string $profile): string
     {
-        do {
-            $domain = 'demo-'.$profile.'-'.Str::lower(Str::random(8)).'.localhost';
-        } while (Domain::query()->where('domain', $domain)->exists());
-
-        return $domain;
+        return $profile.'.localhost';
     }
 
     /**

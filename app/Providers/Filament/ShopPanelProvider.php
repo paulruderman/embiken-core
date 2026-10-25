@@ -53,7 +53,7 @@ class ShopPanelProvider extends PanelProvider
             ->passwordReset()
             ->viteTheme('resources/css/filament/shop/theme.css')
             ->plugin(SpatieTranslatablePlugin::make()
-                ->defaultLocales(Locales::contentLocales())
+                ->defaultLocales(Locales::tenantContentLocales())
                 ->getLocaleLabelUsing(fn (string $locale): ?string => Locales::contentLabels()[$locale] ?? null)
                 ->useFallbackLocale())
             ->colors(fn (): array => $this->panelColors())

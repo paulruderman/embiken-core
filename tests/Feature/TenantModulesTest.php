@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\Platform\CreateTenantAction;
+use App\Models\Location;
 use App\Models\Staff;
 use App\Models\Tenant;
 use App\Support\ModuleRegistry;
@@ -23,6 +24,25 @@ test('creating a tenant enables the core shop modules', function () {
     );
 
     expect($tenant->moduleIds())->toBe(ModuleRegistry::defaultTenantModuleIds());
+});
+
+test('a new tenant starts with the selected site language enabled as its default', function () {
+    Notification::fake();
+
+    $tenant = app(CreateTenantAction::class)(
+        name: 'French Shop',
+        domain: 'french-shop.localhost',
+        timezone: 'America/Toronto',
+        currency: 'cad',
+        managerName: 'Pat',
+        managerEmail: 'pat@example.com',
+        siteLocale: 'fr_CA',
+    );
+
+    $settings = $tenant->run(fn (): Location => Location::query()->firstOrFail());
+
+    expect($settings->enabled_content_locales)->toBe(['fr'])
+        ->and($settings->default_content_locale)->toBe('fr');
 });
 
 test('existing rental tenants keep Online Book enabled after the module split', function () {

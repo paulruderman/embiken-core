@@ -4,6 +4,7 @@ use App\Actions\Platform\SeedFakeTenantAction;
 use App\Models\Domain;
 use App\Models\Location;
 use App\Models\LocationHour;
+use App\Models\ShopSetting;
 use App\Models\Staff;
 use App\Models\Tenant;
 use App\Models\User;
@@ -17,7 +18,9 @@ use Embiken\BikeRentals\Models\Customer;
 use Embiken\BikeRentals\Models\RentalPackage;
 use Embiken\BikeRentals\Models\Reservation;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 function seedFakeTenantAndCleanup(string $domain, string $profile = 'city-shop'): Tenant
@@ -27,6 +30,12 @@ function seedFakeTenantAndCleanup(string $domain, string $profile = 'city-shop')
 
 function deleteTenantSqlite(?Tenant $tenant): void
 {
+    if ($tenant !== null) {
+        $tenant->run(static function (): void {
+            Storage::disk('public')->deleteDirectory('bike-models');
+        });
+    }
+
     tenancy()->end();
 
     if ($tenant === null) {
@@ -38,7 +47,13 @@ function deleteTenantSqlite(?Tenant $tenant): void
     if (is_file($path)) {
         unlink($path);
     }
+
+    File::deleteDirectory(storage_path('tenant'.$tenant->getKey()));
 }
+
+beforeEach(function () {
+    Storage::fake('public');
+});
 
 test('the fake tenant seeder is registered as an artisan command', function () {
     expect(Artisan::all())->toHaveKey('db:seed-fake-tenant');
@@ -58,7 +73,7 @@ test('the fake tenant artisan command exits successfully', function () {
         ->assertSuccessful();
 
     $tenant = Tenant::query()
-        ->whereHas('domains', fn ($query) => $query->where('domain', 'like', 'demo-city-shop-%'))
+        ->whereHas('domains', fn ($query) => $query->where('domain', 'city-shop.localhost'))
         ->first();
 
     expect($tenant)->not->toBeNull();
@@ -75,7 +90,7 @@ test('the fake tenant artisan command can seed every demo profile', function () 
         ->assertSuccessful();
 
     $tenants = Tenant::query()
-        ->whereHas('domains', fn ($query) => $query->where('domain', 'like', 'demo-%'))
+        ->whereHas('domains', fn ($query) => $query->where('domain', 'like', '%.localhost'))
         ->with('domains')
         ->get();
 
@@ -85,7 +100,7 @@ test('the fake tenant artisan command can seed every demo profile', function () 
         foreach (['city-shop', 'e-bike-adventure', 'family-rentals', 'jimbos', 'showroom-demo'] as $profile) {
             expect($tenants->contains(fn (Tenant $tenant): bool => str_starts_with(
                 (string) $tenant->domains->first()?->domain,
-                "demo-{$profile}-",
+                "{$profile}.localhost",
             )))->toBeTrue();
         }
     } finally {
@@ -115,6 +130,11 @@ test('seeding a fake tenant creates a shop the platform user and staff can use',
             ->and($tenant->transfers_active)->toBeFalse();
 
         $tenant->run(function (): void {
+            expect(ShopSetting::current()->brand_name)->toBe('Harbor City Bikes')
+                ->and(ShopSetting::current()->primary_color)->toBe('#0F766E')
+                ->and(ShopSetting::current()->logo_path)->toBe('branding/demo-city-shop.png')
+                ->and(Storage::disk('public')->exists(ShopSetting::current()->logo_path))->toBeTrue();
+
             $manager = Staff::query()->where('email', 'manager@example.com')->first();
             $counter = Staff::query()->where('email', 'counter@example.com')->first();
             $platformManager = Staff::query()->where('is_platform_manager', true)->first();
@@ -128,6 +148,8 @@ test('seeding a fake tenant creates a shop the platform user and staff can use',
                 ->and(LocationHour::query()->count())->toBe(7)
                 ->and(Bike::query()->count())->toBe(36)
                 ->and(BikeCategory::query()->pluck('name')->all())->toBe(['City Bikes', 'Cargo Bikes'])
+                ->and(BikeModel::query()->firstOrFail()->photo)->not->toBeNull()
+                ->and(Storage::disk('public')->exists(BikeModel::query()->firstOrFail()->photo))->toBeTrue()
                 ->and(RentalPackage::query()->where('book_visible', true)->count())->toBe(3)
                 ->and(Reservation::query()->where('stage', ReservationStage::Confirmed)->count())->toBe(31)
                 ->and(Reservation::query()->whereIn('stage', [
@@ -145,7 +167,7 @@ test('seeding a fake tenant creates a shop the platform user and staff can use',
     }
 });
 
-test('demo profiles import different catalog and rate fixtures and get distinct generated domains', function () {
+test('demo profiles import different catalog and rate fixtures and get distinct readable domains', function () {
     $adventureTenant = seedFakeTenantAndCleanup('', 'e-bike-adventure');
     $familyTenant = null;
 
@@ -153,9 +175,9 @@ test('demo profiles import different catalog and rate fixtures and get distinct 
         $familyTenant = app(SeedFakeTenantAction::class)(confirmed: true, profile: 'family-rentals');
 
         expect($adventureTenant->domains->first()?->domain)
-            ->toStartWith('demo-e-bike-adventure-')
+            ->toBe('e-bike-adventure.localhost')
             ->and($familyTenant->domains->first()?->domain)
-            ->toStartWith('demo-family-rentals-')
+            ->toBe('family-rentals.localhost')
             ->and($familyTenant->domains->first()?->domain)
             ->not->toBe($adventureTenant->domains->first()?->domain);
 
@@ -166,18 +188,55 @@ test('demo profiles import different catalog and rate fixtures and get distinct 
                 ->and(BikeCategory::query()->count())->toBe(4)
                 ->and(RentalPackage::query()->orderBy('sort_order')->first()?->variants()->count())->toBe(26)
                 ->and(Location::query()->firstOrFail()->name)->toBe('Summit E-bike Adventures')
-                ->and(Location::query()->firstOrFail()->timezone)->toBe('America/Denver');
+                ->and(Location::query()->firstOrFail()->timezone)->toBe('America/Denver')
+                ->and(ShopSetting::current()->primary_color)->toBe('#1D4ED8')
+                ->and(BikeModel::query()->get()->firstWhere('name', 'Ridge Trail')?->photo)->not->toBeNull()
+                ->and(Storage::disk('public')->exists(BikeModel::query()->get()->firstWhere('name', 'Adaptive E-Trike')?->photo))->toBeTrue();
         });
 
         $familyTenant->run(function (): void {
             expect(BikeCategory::query()->pluck('name')->all())
                 ->toBe(['Kids Bikes', 'Comfort Bikes'])
                 ->and(Bike::query()->count())->toBe(37)
-                ->and(RentalPackage::query()->orderBy('sort_order')->first()?->variants()->count())->toBe(6);
+                ->and(RentalPackage::query()->orderBy('sort_order')->first()?->variants()->count())->toBe(6)
+                ->and(ShopSetting::current()->primary_color)->toBe('#A16207')
+                ->and(Storage::disk('public')->exists(BikeModel::query()->get()->firstWhere('name', 'Family Tandem')?->photo))->toBeTrue();
         });
     } finally {
         deleteTenantSqlite($adventureTenant);
         deleteTenantSqlite($familyTenant);
+    }
+});
+
+test('resuming a populated demo refreshes its branding and catalog photos without duplicating rentals', function () {
+    $tenant = seedFakeTenantAndCleanup('resume-refresh.test');
+    $reservationCount = 0;
+    $customerCount = 0;
+
+    try {
+        $tenant->run(function () use (&$reservationCount, &$customerCount): void {
+            BikeModel::query()->firstOrFail()->update(['photo' => null]);
+            ShopSetting::current()->update(['primary_color' => '#000000']);
+            $reservationCount = Reservation::query()->count();
+            $customerCount = Customer::query()->count();
+        });
+
+        app(SeedFakeTenantAction::class)(
+            domain: 'resume-refresh.test',
+            confirmed: true,
+            profile: 'city-shop',
+            resume: true,
+        );
+
+        $tenant->run(function () use ($reservationCount, $customerCount): void {
+            expect(Reservation::query()->count())->toBe($reservationCount)
+                ->and(Customer::query()->count())->toBe($customerCount)
+                ->and(BikeModel::query()->firstOrFail()->photo)->not->toBeNull()
+                ->and(ShopSetting::current()->primary_color)->toBe('#0F766E')
+                ->and(Storage::disk('public')->exists(ShopSetting::current()->logo_path))->toBeTrue();
+        });
+    } finally {
+        deleteTenantSqlite($tenant);
     }
 });
 
@@ -213,7 +272,7 @@ test('showroom demo seeds a broad catalog with a small tryout fleet for each siz
 
     try {
         expect($tenant->name)->toBe('Northline Cycle Studio')
-            ->and($tenant->domains->first()?->domain)->toStartWith('demo-showroom-demo-');
+            ->and($tenant->domains->first()?->domain)->toBe('showroom-demo.localhost');
 
         $tenant->run(function (): void {
             $bikeCountsByVariant = Bike::query()

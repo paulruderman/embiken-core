@@ -11,10 +11,7 @@ class ApplyFilamentTranslationLocale
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $locale = session('locale');
-        $canonicalLocale = Locales::isSupported($locale)
-            ? Locales::canonical($locale)
-            : Locales::canonical($request->attributes->get('embiken.locale'));
+        $canonicalLocale = Locales::canonical($request->attributes->get('embiken.locale'));
 
         app()->setLocale(Locales::translationLocale($canonicalLocale));
 

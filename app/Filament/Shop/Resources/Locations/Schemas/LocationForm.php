@@ -5,10 +5,13 @@ namespace App\Filament\Shop\Resources\Locations\Schemas;
 use App\Enums\BikeAssignmentPolicy;
 use App\Enums\ReturnSituation;
 use App\Models\Location;
+use App\Support\Locales;
 use Embiken\BikeRentals\Models\RentalPackage;
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Text;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Schema as SchemaFacade;
 
@@ -49,6 +52,20 @@ class LocationForm
                     ->default(45)
                     ->minValue(0)
                     ->maxValue(1440),
+                CheckboxList::make('enabled_content_locales')
+                    ->label(__('app.location_ui.site_languages'))
+                    ->helperText(__('app.location_ui.site_languages_help'))
+                    ->options(Locales::contentLabels())
+                    ->required()
+                    ->minItems(1)
+                    ->live(),
+                Select::make('default_content_locale')
+                    ->label(__('app.location_ui.default_site_language'))
+                    ->options(fn (Get $get): array => array_intersect_key(
+                        Locales::contentLabels(),
+                        array_flip($get('enabled_content_locales') ?? ['en']),
+                    ))
+                    ->required(),
                 Select::make('bike_assignment_policy')
                     ->options(BikeAssignmentPolicy::class)
                     ->required(),

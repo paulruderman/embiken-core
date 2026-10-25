@@ -6,6 +6,7 @@ use App\Actions\Action;
 use App\Models\BillingPlan;
 use App\Models\Domain;
 use App\Models\Tenant;
+use App\Support\Locales;
 use Illuminate\Console\Command;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -27,6 +28,7 @@ class PublicSignupAction extends Action
         string $currency,
         string $managerName,
         string $managerEmail,
+        string $siteLocale = Locales::Default,
     ): Tenant {
         return app(CreateTenantAction::class)(
             $name,
@@ -36,6 +38,7 @@ class PublicSignupAction extends Action
             $managerName,
             $managerEmail,
             $plan,
+            $siteLocale,
         );
     }
 
@@ -63,6 +66,7 @@ class PublicSignupAction extends Action
             $data['currency'],
             $data['manager_name'],
             $data['manager_email'],
+            Locales::canonical($request->attributes->get('embiken.locale')),
         );
 
         return redirect()->route('marketing.checkout.placeholder')->with([

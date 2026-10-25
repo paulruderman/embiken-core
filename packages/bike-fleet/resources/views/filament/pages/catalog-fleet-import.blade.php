@@ -43,13 +43,13 @@
                     <x-filament::icon icon="heroicon-o-arrow-path" class="size-5 animate-spin" />
                     <div>
                         <p class="font-medium">Import {{ $importRunStatus }}</p>
-                        <p class="mt-1">Your CSV files are being processed in the background. This page will show the report when the import finishes.</p>
+                        <p class="mt-1">Your files are being processed in the background. This page will show the report when the import finishes.</p>
                     </div>
                 </div>
             </div>
         @elseif ($importRunStatus === 'failed')
             <div class="rounded-xl border border-danger-200 bg-danger-50 p-4 text-sm text-danger-700 dark:border-danger-400/20 dark:bg-danger-400/10 dark:text-danger-300">
-                The import could not be completed. Please upload the four CSV files again and retry.
+                The import could not be completed. Please upload the ZIP bundle or all four CSV files again and retry.
             </div>
         @elseif ($importRunStatus === 'completed')
             <div class="rounded-xl border border-success-200 bg-success-50 p-4 text-sm text-success-700 dark:border-success-400/20 dark:bg-success-400/10 dark:text-success-300">
@@ -95,6 +95,9 @@
                         @else
                             Resolve the reported issues before applying this import.
                         @endif
+                    </p>
+                    <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                        {{ number_format($report['photo_references'] ?? 0) }} photo references across {{ number_format($report['photo_assets'] ?? 0) }} uploaded images.
                     </p>
                 </div>
 

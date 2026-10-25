@@ -13,6 +13,11 @@ use Embiken\BikeFleet\Models\BikeModel;
 use Embiken\BikeFleet\Models\BikeModelVariant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
+use RuntimeException;
+use Throwable;
 
 class CatalogFleetImport
 {
@@ -23,104 +28,143 @@ class CatalogFleetImport
         'bikes' => ['bid', 'variant_key', 'serial_number', 'in_service', 'self_bookable'],
     ];
 
+    private const array PHOTO_DIRECTORIES = [
+        'models' => 'bike-models',
+        'variants' => 'bike-variants',
+        'bikes' => 'bikes',
+    ];
+
+    public function __construct(private CatalogFleetImportBundle $bundle) {}
+
     /** @return array<string, string> */
     public function templates(): array
     {
-        return array_map(static fn (array $headers): string => implode(',', $headers)."\n", self::FILES);
+        $templates = [];
+
+        foreach (self::FILES as $file => $headers) {
+            $templates[$file] = implode(',', $file === 'categories' ? $headers : [...$headers, 'photo_file'])."\n";
+        }
+
+        return $templates;
     }
 
     /**
      * @param  array<string, string>  $files  CSV contents keyed by categories, models, variants, bikes.
-     * @return array{summary: array<string, array{create: int, update: int, skip: int, conflict: int, invalid: int}>, issues: list<array{file: string, row: int|null, message: string}>, can_apply: bool, valid_rows: int}
+     * @param  array<string, string>  $photos
+     * @return array{summary: array<string, array{create: int, update: int, skip: int, conflict: int, invalid: int}>, issues: list<array{file: string, row: int|null, message: string}>, can_apply: bool, valid_rows: int, photo_assets: int, photo_references: int}
      */
-    public function preview(array $files, string $duplicateStrategy, string $partialStrategy): array
+    public function preview(array $files, string $duplicateStrategy, string $partialStrategy, array $photos = []): array
     {
-        return $this->analyze($files, $duplicateStrategy, $partialStrategy)['report'];
+        return $this->analyze($files, $duplicateStrategy, $partialStrategy, $photos)['report'];
     }
 
     /**
      * @param  array<string, string>  $files
-     * @return array{summary: array<string, array{create: int, update: int, skip: int, conflict: int, invalid: int}>, issues: list<array{file: string, row: int|null, message: string}>, can_apply: bool, valid_rows: int}
+     * @param  array<string, string>  $photos
+     * @return array{summary: array<string, array{create: int, update: int, skip: int, conflict: int, invalid: int}>, issues: list<array{file: string, row: int|null, message: string}>, can_apply: bool, valid_rows: int, photo_assets: int, photo_references: int}
      */
-    public function validateFiles(array $files): array
+    public function validateFiles(array $files, array $photos = []): array
     {
-        return $this->analyze($files, 'report', 'all-or-nothing', checkExistingRecords: false)['report'];
+        return $this->analyze($files, 'report', 'all-or-nothing', $photos, checkExistingRecords: false)['report'];
     }
 
     /**
      * @param  array<string, string>  $files
-     * @return array{summary: array<string, array{create: int, update: int, skip: int, conflict: int, invalid: int}>, issues: list<array{file: string, row: int|null, message: string}>, can_apply: bool, valid_rows: int, applied: bool}
+     * @param  array<string, string>  $photos
+     * @return array{summary: array<string, array{create: int, update: int, skip: int, conflict: int, invalid: int}>, issues: list<array{file: string, row: int|null, message: string}>, can_apply: bool, valid_rows: int, photo_assets: int, photo_references: int, applied: bool}
      */
-    public function apply(array $files, string $duplicateStrategy, string $partialStrategy): array
+    public function apply(array $files, string $duplicateStrategy, string $partialStrategy, array $photos = [], ?string $photoNamespace = null): array
     {
-        return DB::transaction(function () use ($files, $duplicateStrategy, $partialStrategy): array {
-            $analysis = $this->analyze($files, $duplicateStrategy, $partialStrategy);
-            $report = $analysis['report'];
+        $writtenPhotoPaths = [];
+        $photoNamespace ??= (string) Str::uuid();
 
-            if (! $report['can_apply']) {
-                return [...$report, 'applied' => false];
-            }
+        try {
+            return DB::transaction(function () use ($files, $duplicateStrategy, $partialStrategy, $photos, $photoNamespace, &$writtenPhotoPaths): array {
+                $analysis = $this->analyze($files, $duplicateStrategy, $partialStrategy, $photos);
+                $report = $analysis['report'];
 
-            $location = Location::query()->firstOrFail();
-            $created = [
-                'categories' => [],
-                'models' => [],
-                'variants' => [],
-            ];
+                if (! $report['can_apply']) {
+                    return [...$report, 'applied' => false];
+                }
 
-            foreach (['categories', 'models', 'variants', 'bikes'] as $file) {
-                foreach ($analysis['rows'][$file] ?? [] as $key => $entry) {
-                    if (! in_array($entry['operation'], ['create', 'update'], true)) {
-                        if ($file !== 'bikes' && $entry['matched'] instanceof Model) {
-                            $created[$file][$key] = $entry['matched'];
+                $location = Location::query()->firstOrFail();
+                $created = [
+                    'categories' => [],
+                    'models' => [],
+                    'variants' => [],
+                ];
+
+                foreach (['categories', 'models', 'variants', 'bikes'] as $file) {
+                    foreach ($analysis['rows'][$file] ?? [] as $key => $entry) {
+                        if (! in_array($entry['operation'], ['create', 'update'], true)) {
+                            if ($file !== 'bikes' && $entry['matched'] instanceof Model) {
+                                $created[$file][$key] = $entry['matched'];
+                            }
+
+                            continue;
                         }
 
-                        continue;
-                    }
+                        $attributes = $entry['attributes'];
 
-                    $attributes = $entry['attributes'];
+                        if ($file === 'models') {
+                            $attributes['bike_category_id'] = $created['categories'][$entry['row']['category_key']]->getKey();
+                        } elseif ($file === 'variants') {
+                            $attributes['bike_model_id'] = $created['models'][$entry['row']['model_key']]->getKey();
+                        } elseif ($file === 'bikes') {
+                            $attributes['location_id'] = $location->getKey();
+                            $attributes['bike_model_variant_id'] = $created['variants'][$entry['row']['variant_key']]->getKey();
+                        }
 
-                    if ($file === 'models') {
-                        $attributes['bike_category_id'] = $created['categories'][$entry['row']['category_key']]->getKey();
-                    } elseif ($file === 'variants') {
-                        $attributes['bike_model_id'] = $created['models'][$entry['row']['model_key']]->getKey();
-                    } elseif ($file === 'bikes') {
-                        $attributes['location_id'] = $location->getKey();
-                        $attributes['bike_model_variant_id'] = $created['variants'][$entry['row']['variant_key']]->getKey();
-                    }
+                        $photoFile = $entry['row']['photo_file'] ?? '';
 
-                    $modelClass = match ($file) {
-                        'categories' => BikeCategory::class,
-                        'models' => BikeModel::class,
-                        'variants' => BikeModelVariant::class,
-                        'bikes' => Bike::class,
-                    };
-                    $record = $entry['matched'];
+                        if ($photoFile !== '') {
+                            $attributes['photo'] = $this->storePhoto(
+                                $file,
+                                $photoFile,
+                                $photos[$photoFile],
+                                $photoNamespace,
+                                $writtenPhotoPaths,
+                            );
+                        }
 
-                    if ($entry['operation'] === 'create') {
-                        $record = $modelClass::query()->create($attributes);
-                    } else {
-                        $record->fill($attributes)->save();
-                    }
+                        $modelClass = match ($file) {
+                            'categories' => BikeCategory::class,
+                            'models' => BikeModel::class,
+                            'variants' => BikeModelVariant::class,
+                            'bikes' => Bike::class,
+                        };
+                        $record = $entry['matched'];
 
-                    if ($file !== 'bikes') {
-                        $created[$file][$key] = $record;
+                        if ($entry['operation'] === 'create') {
+                            $record = $modelClass::query()->create($attributes);
+                        } else {
+                            $record->fill($attributes)->save();
+                        }
+
+                        if ($file !== 'bikes') {
+                            $created[$file][$key] = $record;
+                        }
                     }
                 }
-            }
 
-            return [...$report, 'applied' => true];
-        }, attempts: 3);
+                return [...$report, 'applied' => true];
+            }, attempts: 3);
+        } catch (Throwable $exception) {
+            Storage::disk('public')->delete($writtenPhotoPaths);
+
+            throw $exception;
+        }
     }
 
     /**
      * @param  array<string, string>  $files
+     * @param  array<string, string>  $photos
      * @return array{
-     *     report: array{summary: array<string, array{create: int, update: int, skip: int, conflict: int, invalid: int}>, issues: list<array{file: string, row: int|null, message: string}>, can_apply: bool, valid_rows: int},
+     *     report: array{summary: array<string, array{create: int, update: int, skip: int, conflict: int, invalid: int}>, issues: list<array{file: string, row: int|null, message: string}>, can_apply: bool, valid_rows: int, photo_assets: int, photo_references: int},
      *     rows: array<string, array<string, array{row: array<string, string>, attributes: array<string, mixed>, matched: Model|null, operation: string}>>
      * }
      */
-    private function analyze(array $files, string $duplicateStrategy, string $partialStrategy, bool $checkExistingRecords = true): array
+    private function analyze(array $files, string $duplicateStrategy, string $partialStrategy, array $photos = [], bool $checkExistingRecords = true): array
     {
         $summary = [
             'categories' => ['create' => 0, 'update' => 0, 'skip' => 0, 'conflict' => 0, 'invalid' => 0],
@@ -141,6 +185,24 @@ class CatalogFleetImport
                 $key = $row['values']['key'] ?? $row['values']['bid'] ?? '';
                 $planKey = $key;
                 $rowIssues = $this->validateRow($file, $row['values']);
+
+                $photoFile = $row['values']['photo_file'] ?? '';
+
+                if ($photoFile !== '') {
+                    if ($file === 'categories') {
+                        $rowIssues[] = 'Photos can only be assigned to models, variants, or Bikes.';
+                    } elseif (! $this->bundle->isValidPhotoReference($photoFile)) {
+                        $rowIssues[] = 'photo_file must reference a PNG, JPEG, or WebP file inside images/. The path must not contain folders.';
+                    } elseif (! array_key_exists($photoFile, $photos)) {
+                        $rowIssues[] = "The photo file {$photoFile} was not found in the ZIP bundle.";
+                    } else {
+                        try {
+                            $this->bundle->validatePhoto($photoFile, $photos[$photoFile]);
+                        } catch (ValidationException $exception) {
+                            array_push($rowIssues, ...($exception->errors()['photo_file'] ?? ['The referenced photo is invalid.']));
+                        }
+                    }
+                }
 
                 if ($key !== '' && isset($seenKeys[$key])) {
                     $rowIssues[] = "Duplicate key '{$key}' in this file.";
@@ -230,6 +292,11 @@ class CatalogFleetImport
                 'issues' => $issues,
                 'can_apply' => $canApply,
                 'valid_rows' => $validRows,
+                'photo_assets' => count($photos),
+                'photo_references' => collect($plannedRows)
+                    ->flatMap(static fn (array $rows): array => array_values($rows))
+                    ->filter(static fn (array $entry): bool => ($entry['row']['photo_file'] ?? '') !== '')
+                    ->count(),
             ],
             'rows' => $plannedRows,
         ];
@@ -265,7 +332,7 @@ class CatalogFleetImport
 
         $headerRow[0] = preg_replace('/^\xEF\xBB\xBF/', '', (string) $headerRow[0]) ?? (string) $headerRow[0];
         $actualHeaders = array_map(static fn (mixed $header): string => trim((string) $header), $headerRow);
-        if ($actualHeaders !== $headers) {
+        if ($actualHeaders !== $headers && $actualHeaders !== [...$headers, 'photo_file']) {
             fclose($stream);
             $issues[] = [
                 'file' => $file,
@@ -283,15 +350,18 @@ class CatalogFleetImport
             if (count($values) === 1 && trim((string) $values[0]) === '') {
                 continue;
             }
-            if (count($values) !== count($headers)) {
+            if (count($values) !== count($actualHeaders)) {
                 $issues[] = ['file' => $file, 'row' => $line, 'message' => 'The row has a different number of columns than the header.'];
 
                 continue;
             }
 
+            $rowValues = array_combine($actualHeaders, array_map(static fn (mixed $value): string => trim((string) $value), $values));
+            $rowValues['photo_file'] ??= '';
+
             $rows[] = [
                 'line' => $line,
-                'values' => array_combine($headers, array_map(static fn (mixed $value): string => trim((string) $value), $values)),
+                'values' => $rowValues,
             ];
         }
         fclose($stream);
@@ -426,5 +496,26 @@ class CatalogFleetImport
         };
 
         return hash('sha256', json_encode(array_map(static fn (string $value): string => mb_strtolower($value), $values), JSON_THROW_ON_ERROR));
+    }
+
+    /** @param list<string> $writtenPhotoPaths */
+    private function storePhoto(string $file, string $reference, string $contents, string $namespace, array &$writtenPhotoPaths): string
+    {
+        $directory = self::PHOTO_DIRECTORIES[$file];
+        $namespace = hash('sha256', $namespace);
+        $hash = hash('sha256', $contents);
+        $extension = strtolower(pathinfo($reference, PATHINFO_EXTENSION));
+        $path = "{$directory}/imports/{$namespace}/{$hash}.{$extension}";
+        $disk = Storage::disk('public');
+
+        if (! $disk->exists($path)) {
+            if (! $disk->put($path, $contents)) {
+                throw new RuntimeException("The photo {$reference} could not be saved to tenant storage.");
+            }
+
+            $writtenPhotoPaths[] = $path;
+        }
+
+        return $path;
     }
 }

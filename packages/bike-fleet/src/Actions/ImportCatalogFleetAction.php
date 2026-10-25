@@ -10,6 +10,7 @@ use App\Models\Staff;
 use Embiken\BikeFleet\Jobs\ProcessCatalogFleetImport;
 use Embiken\BikeFleet\Models\CatalogFleetImportRun;
 use Embiken\BikeFleet\Services\CatalogFleetImport;
+use Embiken\BikeFleet\Services\CatalogFleetImportBundle;
 use Illuminate\Console\Command;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,12 +22,13 @@ use Illuminate\Validation\ValidationException;
 
 class ImportCatalogFleetAction extends Action
 {
-    public string $commandSignature = 'fleet:import-catalog {--tenant=} {--run=} {--categories=} {--models=} {--variants=} {--bikes=} {--duplicate-strategy=} {--partial-strategy=} {--apply}';
+    public string $commandSignature = 'fleet:import-catalog {--tenant=} {--run=} {--archive=} {--categories=} {--models=} {--variants=} {--bikes=} {--duplicate-strategy=} {--partial-strategy=} {--apply}';
 
-    public function __construct(private CatalogFleetImport $import) {}
+    public function __construct(private CatalogFleetImport $import, private CatalogFleetImportBundle $bundle) {}
 
     /**
      * @param  array{categories: string, models: string, variants: string, bikes: string}  $files
+     * @param  array<string, string>  $photos
      * @return array<string, mixed>
      */
     public function handle(
@@ -34,11 +36,12 @@ class ImportCatalogFleetAction extends Action
         string $duplicateStrategy,
         string $partialStrategy,
         bool $apply = false,
+        array $photos = [],
     ): array {
         $this->validateChoices($duplicateStrategy, $partialStrategy);
 
         if (! $apply) {
-            return $this->import->preview($files, $duplicateStrategy, $partialStrategy);
+            return $this->import->preview($files, $duplicateStrategy, $partialStrategy, $photos);
         }
 
         $runId = (string) Str::uuid();
@@ -49,6 +52,14 @@ class ImportCatalogFleetAction extends Action
             foreach ($files as $file => $contents) {
                 if (! $disk->put("{$directory}/{$file}.csv", $contents)) {
                     throw ValidationException::withMessages(['files' => "The {$file} CSV file could not be staged for import."]);
+                }
+            }
+
+            foreach ($photos as $photo => $contents) {
+                $this->bundle->validatePhoto($photo, $contents);
+
+                if (! $disk->put("{$directory}/photos/{$photo}", $contents)) {
+                    throw ValidationException::withMessages(['photos' => "The {$photo} image could not be staged for import."]);
                 }
             }
 
@@ -77,10 +88,20 @@ class ImportCatalogFleetAction extends Action
     {
         $this->authorizeManager();
         $data = $request->validate($this->rules());
-        $files = [];
+        $bundleFile = $data['files']['bundle'] ?? null;
 
-        foreach (['categories', 'models', 'variants', 'bikes'] as $key) {
-            $files[$key] = $this->uploadedContent($data['files'][$key]);
+        if ($bundleFile instanceof UploadedFile) {
+            $bundle = $this->bundle->read($bundleFile->getRealPath());
+            $files = $bundle['files'];
+            $photos = $bundle['photos'];
+        } else {
+            $files = [];
+
+            foreach (['categories', 'models', 'variants', 'bikes'] as $key) {
+                $files[$key] = $this->uploadedContent($data['files'][$key]);
+            }
+
+            $photos = [];
         }
 
         return response()->json($this(
@@ -88,6 +109,7 @@ class ImportCatalogFleetAction extends Action
             $data['duplicate_strategy'],
             $data['partial_strategy'],
             (bool) ($data['apply'] ?? false),
+            $photos,
         ));
     }
 
@@ -96,10 +118,11 @@ class ImportCatalogFleetAction extends Action
     {
         return [
             'files' => ['required', 'array'],
-            'files.categories' => ['required', 'file', 'mimes:csv,txt', 'max:10240'],
-            'files.models' => ['required', 'file', 'mimes:csv,txt', 'max:10240'],
-            'files.variants' => ['required', 'file', 'mimes:csv,txt', 'max:10240'],
-            'files.bikes' => ['required', 'file', 'mimes:csv,txt', 'max:10240'],
+            'files.bundle' => ['nullable', 'file', 'mimes:zip', 'max:102400', 'prohibited_with:files.categories,files.models,files.variants,files.bikes'],
+            'files.categories' => ['required_without:files.bundle', 'file', 'mimes:csv,txt', 'max:10240', 'prohibited_with:files.bundle'],
+            'files.models' => ['required_without:files.bundle', 'file', 'mimes:csv,txt', 'max:10240', 'prohibited_with:files.bundle'],
+            'files.variants' => ['required_without:files.bundle', 'file', 'mimes:csv,txt', 'max:10240', 'prohibited_with:files.bundle'],
+            'files.bikes' => ['required_without:files.bundle', 'file', 'mimes:csv,txt', 'max:10240', 'prohibited_with:files.bundle'],
             'duplicate_strategy' => ['required', 'in:report,update,skip'],
             'partial_strategy' => ['required', 'in:all-or-nothing,partial'],
             'apply' => ['sometimes', 'boolean'],
@@ -115,15 +138,32 @@ class ImportCatalogFleetAction extends Action
             return $this->reportRunStatus($command, $runId);
         }
 
-        $files = [];
+        $archivePath = $command->option('archive');
+        $photos = [];
 
-        foreach (['categories', 'models', 'variants', 'bikes'] as $key) {
-            $path = $this->requiredStringInput($command, $command->option($key), ucfirst($key).' CSV path');
-            $content = file_get_contents($path);
-            if ($content === false) {
-                throw ValidationException::withMessages([$key => "The {$key} CSV file could not be read."]);
+        if (is_string($archivePath) && $archivePath !== '') {
+            foreach (['categories', 'models', 'variants', 'bikes'] as $key) {
+                if ($command->option($key) !== null && $command->option($key) !== '') {
+                    throw ValidationException::withMessages([
+                        'archive' => 'Use either --archive or the four CSV path options.',
+                    ]);
+                }
             }
-            $files[$key] = $content;
+
+            $bundle = $this->bundle->read($archivePath);
+            $files = $bundle['files'];
+            $photos = $bundle['photos'];
+        } else {
+            $files = [];
+
+            foreach (['categories', 'models', 'variants', 'bikes'] as $key) {
+                $path = $this->requiredStringInput($command, $command->option($key), ucfirst($key).' CSV path');
+                $content = file_get_contents($path);
+                if ($content === false) {
+                    throw ValidationException::withMessages([$key => "The {$key} CSV file could not be read."]);
+                }
+                $files[$key] = $content;
+            }
         }
 
         $duplicateStrategy = $command->option('duplicate-strategy');
@@ -143,7 +183,7 @@ class ImportCatalogFleetAction extends Action
             ], 'all-or-nothing');
         }
 
-        $result = $this($files, $duplicateStrategy, $partialStrategy, (bool) $command->option('apply'));
+        $result = $this($files, $duplicateStrategy, $partialStrategy, (bool) $command->option('apply'), $photos);
 
         if ($command->option('apply')) {
             $command->info("Catalog and fleet import queued (run {$result['run_id']}).");

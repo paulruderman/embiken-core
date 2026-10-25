@@ -21,6 +21,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $currency
  * @property int $minimum_turnaround_buffer_minutes
  * @property int $reservation_readiness_window_minutes
+ * @property list<string> $enabled_content_locales
+ * @property string $default_content_locale
  * @property BikeAssignmentPolicy $bike_assignment_policy
  * @property ReturnSituation $return_situation
  * @property CarbonImmutable|null $created_at
@@ -32,6 +34,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'currency',
     'minimum_turnaround_buffer_minutes',
     'reservation_readiness_window_minutes',
+    'enabled_content_locales',
+    'default_content_locale',
     'bike_assignment_policy',
     'return_situation',
 ])]
@@ -57,9 +61,28 @@ class Location extends Model
         return [
             'minimum_turnaround_buffer_minutes' => 'integer',
             'reservation_readiness_window_minutes' => 'integer',
+            'enabled_content_locales' => 'array',
             'bike_assignment_policy' => BikeAssignmentPolicy::class,
             'return_situation' => ReturnSituation::class,
         ];
+    }
+
+    /** @return list<string> */
+    public function getEnabledContentLocalesAttribute(mixed $value): array
+    {
+        $supported = ['en', 'es', 'fr'];
+        $locales = is_array($value)
+            ? $value
+            : (is_string($value) ? json_decode($value, true) : null);
+        $locales = is_array($locales) ? $locales : ['en'];
+        $locales = array_values(array_intersect($supported, $locales));
+
+        return $locales === [] ? ['en'] : $locales;
+    }
+
+    public function getDefaultContentLocaleAttribute(mixed $value): string
+    {
+        return in_array($value, $this->enabled_content_locales, true) ? $value : $this->enabled_content_locales[0];
     }
 
     /**

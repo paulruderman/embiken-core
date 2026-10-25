@@ -8,6 +8,7 @@ use Embiken\BikeFleet\Models\BikeCategory;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\ColorColumn;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -17,6 +18,14 @@ class BikeCategoriesTable
     {
         $table = $table
             ->columns([
+                ImageColumn::make('photo')
+                    ->label(__('app.fleet.fields.photo'))
+                    ->getStateUsing(static fn (BikeCategory $record): ?string => $record->photo === null
+                        ? null
+                        : tenant_asset($record->photo))
+                    ->imageSize(56)
+                    ->extraImgAttributes(['style' => 'object-fit: contain;'])
+                    ->alt(static fn (BikeCategory $record): string => $record->name),
                 TextColumn::make('name')
                     ->label(__('app.fleet.fields.name'))
                     ->searchable()

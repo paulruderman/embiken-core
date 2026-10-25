@@ -2,9 +2,11 @@
 
 use App\Enums\StaffRole;
 use App\Filament\Shop\Pages\ShopLandingPageEditor;
+use App\Models\Location;
 use App\Models\ShopLandingPage;
 use App\Models\Staff;
 use App\Models\Tenant;
+use App\Support\TranslationCompleteness;
 use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -81,6 +83,10 @@ test('the tenant root renders translated copy and falls back to English for miss
     $this->landingTenant = $shop['tenant'];
 
     $shop['tenant']->run(function (): void {
+        Location::query()->firstOrFail()->update([
+            'enabled_content_locales' => ['en', 'es', 'fr'],
+            'default_content_locale' => 'en',
+        ]);
         ShopLandingPage::factory()->create([
             'layout_data' => [
                 'shared' => ['image_path' => null, 'image_position' => 'right'],
@@ -99,6 +105,49 @@ test('the tenant root renders translated copy and falls back to English for miss
             ->where('contentLocale', 'es')
             ->where('layoutData.headline', 'Recorre la costa')
             ->where('layoutData.description', 'Bikes for a day by the water.'));
+});
+
+test('tenant locale choices expose only enabled languages and fall back to the default', function () {
+    $shop = makeShopLandingTenant('landing-languages.localhost');
+    $this->landingTenant = $shop['tenant'];
+
+    $shop['tenant']->run(function (): void {
+        Location::query()->firstOrFail()->update([
+            'enabled_content_locales' => ['es'],
+            'default_content_locale' => 'es',
+        ]);
+    });
+
+    $this->withoutVite()
+        ->withHeaders(['Accept-Language' => 'fr-CA,fr;q=0.9'])
+        ->get('http://landing-languages.localhost/?locale=fr_CA')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('locale', 'es-419')
+            ->where('supportedLocales.0.value', 'es_419')
+            ->has('supportedLocales', 1));
+});
+
+test('translation setup ignores languages that the tenant has not enabled', function () {
+    $shop = makeShopLandingTenant('landing-translation-setup.localhost');
+    $this->landingTenant = $shop['tenant'];
+
+    $hasMissingTranslations = $shop['tenant']->run(function (): bool {
+        Location::query()->firstOrFail()->update([
+            'enabled_content_locales' => ['es'],
+            'default_content_locale' => 'es',
+        ]);
+        ShopLandingPage::factory()->create([
+            'layout_data' => [
+                'shared' => ['image_path' => null, 'image_position' => 'right'],
+                'es' => ['eyebrow' => '', 'headline' => 'Pasea por la costa', 'description' => 'Bicicletas para el día.', 'button_label' => 'Reservar'],
+            ],
+        ]);
+
+        return app(TranslationCompleteness::class)->hasMissingTranslations();
+    });
+
+    expect($hasMissingTranslations)->toBeFalse();
 });
 
 test('the tenant home renders rich editor custom blocks as safe html', function () {

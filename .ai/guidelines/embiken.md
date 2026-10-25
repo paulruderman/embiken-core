@@ -12,6 +12,11 @@ This is a multilingual app.  When making changes please include translations for
 
 When rendering an enum value as a badge, tag, or other status marker in Filament or a frontend surface, use the color defined by that enum's metadata. Do not choose a separate presentation color for the same enum value.
 
+For testing, use: platform@embiken.com for platform login and manager@example.com and counter@example.com for tenant logins.
+All testing passwords are: 11111111
+
+Browser test using harness or laravel boost.  Do not use chrome plugin.
+
 ## Real-time reactive app
 Most interface pages will update in real-time.
 Apart from Filament panels, the interface shall be mostly written using vue.

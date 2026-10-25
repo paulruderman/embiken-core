@@ -49,7 +49,7 @@ class HandleInertiaRequests extends Middleware
                     'tag' => Locales::intlLocale($locale),
                     'label' => Locales::labels()[$locale],
                 ],
-                Locales::all(),
+                $this->supportedLocales(),
             ),
             'auth' => [
                 'user' => $request->user(),
@@ -60,6 +60,22 @@ class HandleInertiaRequests extends Middleware
             ),
             'enums' => $this->enumMeta(),
         ];
+    }
+
+    /** @return list<string> */
+    private function supportedLocales(): array
+    {
+        if (tenant() !== null) {
+            return array_map(static function (string $contentLocale): string {
+                return match ($contentLocale) {
+                    'es' => 'es_419',
+                    'fr' => 'fr_CA',
+                    default => 'en_US',
+                };
+            }, Locales::tenantContentLocales());
+        }
+
+        return Locales::all();
     }
 
     /**

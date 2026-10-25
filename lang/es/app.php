@@ -36,6 +36,9 @@ return [
         'notifications' => ['updated' => 'Tiempo actualizado'],
     ],
     'location_ui' => [
+        'site_languages' => 'Idiomas del sitio',
+        'site_languages_help' => 'Elige los idiomas que los clientes pueden usar en tu sitio.',
+        'default_site_language' => 'Idioma predeterminado del sitio',
         'hours_empty_heading' => 'El horario de apertura aún no está configurado',
         'hours_empty_description' => 'Añade los intervalos en los que los clientes pueden comenzar y finalizar sus alquileres. Book no puede aceptar reservas hasta que se configure el horario de apertura.',
         'add_hours' => 'Añadir horario de apertura',

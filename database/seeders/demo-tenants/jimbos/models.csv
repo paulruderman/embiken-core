@@ -1,18 +1,18 @@
-key,category_key,name,manufacturer,description,padding_minutes
-commuter,urban,Jimbo Commuter,Jimbo House,Everyday city bike in five sizes.,
-step-through,urban,Easy Rider Step-Through,Jimbo House,Upright comfort frame in three sizes.,
-folding,urban,Quick Fold,Metro Works,Folding bike for train connections.,10
-longtail,cargo,Family Longtail,CargoCraft,Longtail utility bike with passenger deck.,20
-front-loader,cargo,Front Loader,CargoCraft,Front box cargo bike for family and shop use.,20
-delivery,cargo,Delivery Trike,CargoCraft,One off delivery trike with large front box.,20
-hardtail,trail,Trail Hardtail,Switchback,Broad size range hardtail for local trails.,20
-full-suspension,trail,Full Suspension,Switchback,Trail bike with extra turnaround needs.,25
-fat-tire,trail,Beach and Snow Fat Tire,Switchback,Wide tire bike for sand and snow.,20
-road,road,Endurance Road,Longline,Light road bike for longer rides.,15
-gravel,road,Gravel Rambler,Longline,Versatile gravel bike for mixed routes.,15
-youth-20,youth,Youth Trail 20,Little Loop,Youth bike with 20 inch wheels.,10
-youth-24,youth,Youth Trail 24,Little Loop,Youth bike with 24 inch wheels.,10
-balance,youth,First Ride Balance Bike,Little Loop,One off balance bike for very young riders.,
-handcycle,adaptive,Adaptive Handcycle,Open Path,One off handcycle with staff fitting.,20
-tandem,adaptive,Jimbo Tandem,Open Path,One off tandem bike for two riders.,20
-cruiser,urban,Beach Cruiser,Jimbo House,Relaxed cruiser for boardwalk rides.,10
+key,category_key,name,manufacturer,description,padding_minutes,photo_file
+commuter,urban,Jimbo Commuter,Jimbo House,Everyday city bike in five sizes.,,images/urban-commuter.png
+step-through,urban,Easy Rider Step-Through,Jimbo House,Upright comfort frame in three sizes.,,images/urban-commuter.png
+folding,urban,Quick Fold,Metro Works,Folding bike for train connections.,10,images/urban-commuter.png
+longtail,cargo,Family Longtail,CargoCraft,Longtail utility bike with passenger deck.,20,images/cargo-electric.png
+front-loader,cargo,Front Loader,CargoCraft,Front box cargo bike for family and shop use.,20,images/cargo-electric.png
+delivery,cargo,Delivery Trike,CargoCraft,One off delivery trike with large front box.,20,images/cargo-electric.png
+hardtail,trail,Trail Hardtail,Switchback,Broad size range hardtail for local trails.,20,images/trail-mountain.png
+full-suspension,trail,Full Suspension,Switchback,Trail bike with extra turnaround needs.,25,images/trail-mountain.png
+fat-tire,trail,Beach and Snow Fat Tire,Switchback,Wide tire bike for sand and snow.,20,images/trail-mountain.png
+road,road,Endurance Road,Longline,Light road bike for longer rides.,15,images/road-endurance.png
+gravel,road,Gravel Rambler,Longline,Versatile gravel bike for mixed routes.,15,images/road-endurance.png
+youth-20,youth,Youth Trail 20,Little Loop,Youth bike with 20 inch wheels.,10,images/youth-mountain.png
+youth-24,youth,Youth Trail 24,Little Loop,Youth bike with 24 inch wheels.,10,images/youth-mountain.png
+balance,youth,First Ride Balance Bike,Little Loop,One off balance bike for very young riders.,,images/youth-mountain.png
+handcycle,adaptive,Adaptive Handcycle,Open Path,One off handcycle with staff fitting.,20,images/adaptive-handcycle.png
+tandem,adaptive,Jimbo Tandem,Open Path,One off tandem bike for two riders.,20,images/recumbent-tandem.png
+cruiser,urban,Beach Cruiser,Jimbo House,Relaxed cruiser for boardwalk rides.,10,images/urban-commuter.png

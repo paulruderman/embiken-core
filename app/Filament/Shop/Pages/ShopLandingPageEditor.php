@@ -8,6 +8,7 @@ use App\Filament\Forms\Components\RichEditor\RichContentCustomBlocks\ShopCallout
 use App\Filament\Forms\Components\RichEditor\RichContentCustomBlocks\ShopFeatureBlock;
 use App\Models\ShopLandingPage;
 use App\Models\Staff;
+use App\Support\Locales;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
@@ -55,14 +56,18 @@ class ShopLandingPageEditor extends Page
     public function mount(): void
     {
         $page = ShopLandingPage::current();
+        $defaultLocale = Locales::tenantDefaultContentLocale();
+        $defaultCopy = [
+            'en' => ['eyebrow' => '', 'headline' => '', 'description' => '', 'button_label' => 'Book a bike'],
+            'es' => ['eyebrow' => '', 'headline' => '', 'description' => '', 'button_label' => 'Reservar una bicicleta'],
+            'fr' => ['eyebrow' => '', 'headline' => '', 'description' => '', 'button_label' => 'Réserver un vélo'],
+        ];
 
         $this->landingPageForm()->fill($page?->attributesToArray() ?? [
             'layout' => 'hero',
             'layout_data' => [
                 'shared' => ['image_path' => null, 'image_position' => 'right'],
-                'en' => ['eyebrow' => '', 'headline' => '', 'description' => '', 'button_label' => 'Book a bike'],
-                'es' => ['eyebrow' => '', 'headline' => '', 'description' => '', 'button_label' => 'Reservar una bicicleta'],
-                'fr' => ['eyebrow' => '', 'headline' => '', 'description' => '', 'button_label' => 'Réserver un vélo'],
+                ...$defaultCopy,
             ],
             'theme' => 'light',
             'custom_content' => null,
@@ -89,11 +94,10 @@ class ShopLandingPageEditor extends Page
                             ->default('light')
                             ->required(),
                         Tabs::make('Translations')
-                            ->tabs([
-                                Tab::make('English (US)')->schema(self::translatedLayoutFields('en', true)),
-                                Tab::make('Español (Latinoamérica)')->schema(self::translatedLayoutFields('es')),
-                                Tab::make('Français (Canada)')->schema(self::translatedLayoutFields('fr')),
-                            ])
+                            ->tabs(self::translationTabs(static fn (string $locale): array => self::translatedLayoutFields(
+                                $locale,
+                                $locale === Locales::tenantDefaultContentLocale(),
+                            )))
                             ->columnSpanFull(),
                         self::imageUpload(),
                         Select::make('layout_data.shared.image_position')
@@ -107,11 +111,7 @@ class ShopLandingPageEditor extends Page
                     ->description(__('app.shop_home.extra_sections_description'))
                     ->schema([
                         Tabs::make('Translations')
-                            ->tabs([
-                                Tab::make('English (US)')->schema([self::richContentField('en')]),
-                                Tab::make('Español (Latinoamérica)')->schema([self::richContentField('es')]),
-                                Tab::make('Français (Canada)')->schema([self::richContentField('fr')]),
-                            ])
+                            ->tabs(self::translationTabs(static fn (string $locale): array => [self::richContentField($locale)]))
                             ->columnSpanFull(),
                     ]),
                 Section::make(__('app.shop_home.booking_screen'))
@@ -121,11 +121,10 @@ class ShopLandingPageEditor extends Page
                             ->label(__('app.shop_home.booking_messages'))
                             ->schema([
                                 Tabs::make('Translations')
-                                    ->tabs([
-                                        Tab::make('English (US)')->schema([self::noticeField('en', true)]),
-                                        Tab::make('Español (Latinoamérica)')->schema([self::noticeField('es')]),
-                                        Tab::make('Français (Canada)')->schema([self::noticeField('fr')]),
-                                    ])
+                                    ->tabs(self::translationTabs(static fn (string $locale): array => [self::noticeField(
+                                        $locale,
+                                        $locale === Locales::tenantDefaultContentLocale(),
+                                    )]))
                                     ->columnSpanFull(),
                                 Select::make('tone')
                                     ->options(__('app.shop_home.tones'))
@@ -139,6 +138,19 @@ class ShopLandingPageEditor extends Page
                     ]),
             ])
             ->statePath('data');
+    }
+
+    /** @param callable(string): array<int, Component> $schema
+     * @return list<Tab>
+     */
+    private static function translationTabs(callable $schema): array
+    {
+        $labels = Locales::contentLabels();
+
+        return array_map(
+            static fn (string $locale): Tab => Tab::make($labels[$locale])->schema($schema($locale)),
+            Locales::tenantContentLocales(),
+        );
     }
 
     public function save(): void

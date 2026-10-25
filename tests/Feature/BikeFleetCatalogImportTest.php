@@ -6,12 +6,15 @@ use Embiken\BikeFleet\Filament\Pages\CatalogFleetImportPage;
 use Embiken\BikeFleet\Jobs\ProcessCatalogFleetImport;
 use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeFleet\Models\BikeCategory;
+use Embiken\BikeFleet\Models\BikeModel;
 use Embiken\BikeFleet\Models\CatalogFleetImportRun;
 use Embiken\BikeFleet\Services\CatalogFleetImport;
+use Embiken\BikeFleet\Services\CatalogFleetImportBundle;
 use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Tests\Concerns\MigratesTenantSchema;
 
@@ -119,10 +122,69 @@ test('prospect file validation checks structure without querying or writing tena
         ->and(Bike::query()->count())->toBe(0);
 });
 
+test('catalog and fleet CSV rows can reference validated photos which are saved to tenant storage', function () {
+    Storage::fake('public');
+    $photo = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p7sAAAAASUVORK5CYII=', true);
+    expect($photo)->toBeString();
+    $files = catalogFleetCsvs();
+    $files['models'] = "key,category_key,name,manufacturer,description,padding_minutes,photo_file\ncommuter,city,Commuter,Acme,Comfortable city bike,15,images/city.png\n";
+
+    $result = app(CatalogFleetImport::class)->apply(
+        $files,
+        'report',
+        'all-or-nothing',
+        ['images/city.png' => $photo],
+        'catalog-photo-test',
+    );
+    $model = BikeModel::query()->firstOrFail();
+
+    expect($result['applied'])->toBeTrue()
+        ->and($result['photo_assets'])->toBe(1)
+        ->and($result['photo_references'])->toBe(1)
+        ->and($model->photo)->not->toBeNull()
+        ->and(Storage::disk('public')->exists($model->photo))->toBeTrue();
+});
+
+test('catalog fleet ZIP bundle reads four CSVs and rejects unsafe archive paths', function () {
+    $photo = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p7sAAAAASUVORK5CYII=', true);
+    $files = catalogFleetCsvs();
+    $files['models'] = "key,category_key,name,manufacturer,description,padding_minutes,photo_file\ncommuter,city,Commuter,Acme,Comfortable city bike,15,images/city.png\n";
+    $archivePath = tempnam(sys_get_temp_dir(), 'catalog-bundle-');
+    $archive = new ZipArchive;
+    $archive->open($archivePath, ZipArchive::OVERWRITE);
+    $archive->addEmptyDir('Catalog bundle');
+    foreach ($files as $name => $contents) {
+        $archive->addFromString("Catalog bundle/{$name}.csv", $contents);
+    }
+    $archive->addFromString('Catalog bundle/images/city.png', $photo);
+    $archive->close();
+
+    try {
+        $bundle = app(CatalogFleetImportBundle::class)->read($archivePath);
+        expect($bundle['files'])->toBe($files)
+            ->and($bundle['photos']['images/city.png'])->toBe($photo);
+    } finally {
+        unlink($archivePath);
+    }
+
+    $unsafePath = tempnam(sys_get_temp_dir(), 'catalog-bundle-');
+    $archive->open($unsafePath, ZipArchive::OVERWRITE);
+    $archive->addFromString('../categories.csv', $files['categories']);
+    $archive->close();
+
+    try {
+        expect(fn () => app(CatalogFleetImportBundle::class)->read($unsafePath))
+            ->toThrow(ValidationException::class, 'unsafe file path');
+    } finally {
+        unlink($unsafePath);
+    }
+});
+
 test('the catalog and fleet import page is available to a Manager', function () {
     Livewire::test(CatalogFleetImportPage::class)
         ->assertOk()
         ->assertSee('Categories CSV')
+        ->assertSee('ZIP bundle')
         ->assertSee('Preview import')
         ->assertSee('Report conflicts');
 });
@@ -130,14 +192,19 @@ test('the catalog and fleet import page is available to a Manager', function () 
 test('applying a catalog and fleet import queues a tenant job and records its result', function () {
     Queue::fake([ProcessCatalogFleetImport::class]);
     Storage::fake('local');
+    Storage::fake('public');
     $staff = Staff::query()->firstOrFail();
     $this->actingAs($staff, 'staff');
+    $photo = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p7sAAAAASUVORK5CYII=', true);
+    $files = catalogFleetCsvs();
+    $files['models'] = "key,category_key,name,manufacturer,description,padding_minutes,photo_file\ncommuter,city,Commuter,Acme,Comfortable city bike,15,images/city.png\n";
 
     $queued = app(ImportCatalogFleetAction::class)(
-        catalogFleetCsvs(),
+        $files,
         'report',
         'all-or-nothing',
         true,
+        ['images/city.png' => $photo],
     );
 
     $run = CatalogFleetImportRun::query()->findOrFail($queued['run_id']);
@@ -152,5 +219,6 @@ test('applying a catalog and fleet import queues a tenant job and records its re
 
     expect($run->status)->toBe(CatalogFleetImportRun::STATUS_COMPLETED)
         ->and($run->report['applied'])->toBeTrue()
-        ->and(Bike::query()->where('bid', 'BIKE-001')->exists())->toBeTrue();
+        ->and(Bike::query()->where('bid', 'BIKE-001')->exists())->toBeTrue()
+        ->and(Storage::disk('public')->exists(BikeModel::query()->firstOrFail()->photo))->toBeTrue();
 });

@@ -130,26 +130,29 @@ class SaveShopLandingPageAction extends Action
     private function rulesForPage(array $page): array
     {
         $layout = $page['layout'] ?? null;
+        $locales = Locales::tenantContentLocales();
+        $defaultLocale = Locales::tenantDefaultContentLocale();
+        $localeKeys = implode(',', Locales::contentLocales());
         $translatedKeys = match ($layout) {
             'story' => ['eyebrow', 'headline', 'description', 'button_label', 'story_quote', 'story_byline'],
             default => ['eyebrow', 'headline', 'description', 'button_label'],
         };
         $rules = [
             'layout' => ['required', 'string', 'in:hero,split,story'],
-            'layout_data' => ['required', 'array:shared,en,es,fr'],
+            'layout_data' => ['required', 'array:shared,'.$localeKeys],
             'layout_data.shared' => ['required', 'array:image_path,image_position'],
             'layout_data.shared.image_path' => ['nullable', 'string', 'max:1024', 'regex:/\Alanding-pages\/[A-Za-z0-9][A-Za-z0-9._-]*\.(?:png|jpe?g|webp)\z/i'],
             'layout_data.shared.image_position' => ['required_if:layout,split', 'nullable', 'in:left,right'],
             'theme' => ['required', 'string', 'in:light,warm,dark'],
-            'custom_content' => ['nullable', 'array:en,es,fr'],
+            'custom_content' => ['nullable', 'array:'.$localeKeys],
             'booking_notices' => ['nullable', 'array', 'max:5'],
             'booking_notices.*.tone' => ['required', 'string', 'in:info,success,warning'],
         ];
 
-        foreach (Locales::contentLocales() as $locale) {
+        foreach ($locales as $locale) {
             $rules["layout_data.{$locale}"] = ['required', 'array:'.implode(',', $translatedKeys)];
             foreach ($translatedKeys as $key) {
-                $required = $locale === 'en' && in_array($key, ['headline', 'description', 'button_label'], true);
+                $required = $locale === $defaultLocale && in_array($key, ['headline', 'description', 'button_label'], true);
                 $max = match ($key) {
                     'eyebrow' => 120,
                     'headline' => 180,
@@ -161,11 +164,11 @@ class SaveShopLandingPageAction extends Action
                 $rules["layout_data.{$locale}.{$key}"] = [$required ? 'required' : 'nullable', 'string', "max:{$max}"];
             }
             $rules["custom_content.{$locale}"] = ['nullable'];
-            $rules["booking_notices.*.message.{$locale}"] = [$locale === 'en' ? 'required' : 'nullable', 'string', 'max:240'];
+            $rules["booking_notices.*.message.{$locale}"] = [$locale === $defaultLocale ? 'required' : 'nullable', 'string', 'max:240'];
         }
 
         $rules['booking_notices.*'] = ['required', 'array:message,tone'];
-        $rules['booking_notices.*.message'] = ['required', 'array:en,es,fr'];
+        $rules['booking_notices.*.message'] = ['required', 'array:'.$localeKeys];
 
         return $rules;
     }

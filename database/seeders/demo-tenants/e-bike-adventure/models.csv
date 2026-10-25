@@ -1,11 +1,11 @@
-key,category_key,name,manufacturer,description,padding_minutes
-trail,e-mtb,Ridge Trail,Summit Works,Full-power trail bike with long turnaround needs.,30
-hardtail,e-mtb,Ridge Hardtail,Summit Works,Lightweight hardtail for mixed terrain.,20
-full-suspension,e-mtb,Switchback Pro,Summit Works,Long travel e-mountain bike.,25
-fat-tire,e-mtb,Highline Fat E,Summit Works,Wide tire bike for snow and loose surfaces.,20
-tourer,touring,Range Explorer,Voltline,Long-range touring bike with rack and lights.,25
-step-through,touring,Open Road Step-Through,Voltline,Easy mount touring bike with upright fit.,15
-longtail,cargo,Guide Longtail,Voltline,Cargo bike for guides and family gear.,20
-adaptive,specialty,Adaptive E-Trike,Voltline,Stable three wheel assisted ride for adaptive tours.,20
-tagalong,specialty,Guide Tagalong,Voltline,One off guide bike for tandem trail introductions.,20
-rescue,specialty,Trail Rescue Trike,Voltline,One off support trike for remote guided trips.,20
+key,category_key,name,manufacturer,description,padding_minutes,photo_file
+trail,e-mtb,Ridge Trail,Summit Works,Full-power trail bike with long turnaround needs.,30,images/electric-mountain.png
+hardtail,e-mtb,Ridge Hardtail,Summit Works,Lightweight hardtail for mixed terrain.,20,images/electric-mountain.png
+full-suspension,e-mtb,Switchback Pro,Summit Works,Long travel e-mountain bike.,25,images/electric-mountain.png
+fat-tire,e-mtb,Highline Fat E,Summit Works,Wide tire bike for snow and loose surfaces.,20,images/electric-mountain.png
+tourer,touring,Range Explorer,Voltline,Long-range touring bike with rack and lights.,25,images/road-endurance.png
+step-through,touring,Open Road Step-Through,Voltline,Easy mount touring bike with upright fit.,15,images/road-endurance.png
+longtail,cargo,Guide Longtail,Voltline,Cargo bike for guides and family gear.,20,images/cargo-electric.png
+adaptive,specialty,Adaptive E-Trike,Voltline,Stable three wheel assisted ride for adaptive tours.,20,images/adaptive-handcycle.png
+tagalong,specialty,Guide Tagalong,Voltline,One off guide bike for tandem trail introductions.,20,images/recumbent-tandem.png
+rescue,specialty,Trail Rescue Trike,Voltline,One off support trike for remote guided trips.,20,images/adaptive-handcycle.png

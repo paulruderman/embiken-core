@@ -50,7 +50,13 @@ class AppServiceProvider extends ServiceProvider
 
         LanguageSwitch::configureUsing(function (LanguageSwitch $switch): void {
             $switch
-                ->locales(Locales::all())
+                ->locales(static fn (): array => tenant() === null
+                    ? Locales::all()
+                    : array_map(static fn (string $locale): string => match ($locale) {
+                        'es' => 'es_419',
+                        'fr' => 'fr_CA',
+                        default => 'en_US',
+                    }, Locales::tenantContentLocales()))
                 ->labels(Locales::labels())
                 ->userPreferredLocale(function (): ?string {
                     $guard = Filament::getCurrentPanel()?->getAuthGuard();

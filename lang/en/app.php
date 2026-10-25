@@ -36,6 +36,9 @@ return [
         'notifications' => ['updated' => 'Weather updated'],
     ],
     'location_ui' => [
+        'site_languages' => 'Site languages',
+        'site_languages_help' => 'Choose which languages customers can use on your site.',
+        'default_site_language' => 'Default site language',
         'hours_empty_heading' => 'Opening hours are not set up',
         'hours_empty_description' => 'Add the intervals when customers can start and finish rentals. Book cannot accept reservations until opening hours are configured.',
         'add_hours' => 'Add opening hours',

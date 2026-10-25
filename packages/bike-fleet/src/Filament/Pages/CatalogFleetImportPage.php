@@ -10,6 +10,7 @@ use Embiken\BikeFleet\Actions\ImportCatalogFleetAction;
 use Embiken\BikeFleet\BikeFleetModule;
 use Embiken\BikeFleet\Models\CatalogFleetImportRun;
 use Embiken\BikeFleet\Services\CatalogFleetImport;
+use Embiken\BikeFleet\Services\CatalogFleetImportBundle;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
@@ -79,9 +80,15 @@ class CatalogFleetImportPage extends Page
         return $schema
             ->components([
                 Section::make('Catalog and fleet files')
-                    ->description('Upload the four CSV templates together. The key columns connect categories, models, variants, and Bikes.')
+                    ->description('Upload either all four CSV templates or a ZIP bundle. In a ZIP, keep the CSVs at the root (or inside one common folder) and place optional images in images/. Set a row’s photo_file to a path such as images/commuter.png.')
                     ->columns(2)
                     ->schema([
+                        FileUpload::make('bundle')
+                            ->label('ZIP bundle (optional)')
+                            ->acceptedFileTypes(['application/zip', 'application/x-zip-compressed'])
+                            ->rules(['file', 'mimes:zip', 'max:102400'])
+                            ->maxSize(102400)
+                            ->storeFiles(false),
                         self::csvUpload('categories', 'Categories CSV'),
                         self::csvUpload('models', 'Models CSV'),
                         self::csvUpload('variants', 'Variants CSV'),
@@ -118,10 +125,12 @@ class CatalogFleetImportPage extends Page
         $this->importRunId = null;
         $this->importRunStatus = null;
         $data = $this->importForm()->getState();
+        [$files, $photos] = $this->fileContents($data);
         $this->report = app(ImportCatalogFleetAction::class)(
-            $this->fileContents($data),
+            $files,
             $data['duplicate_strategy'],
             $data['partial_strategy'],
+            photos: $photos,
         );
     }
 
@@ -129,11 +138,13 @@ class CatalogFleetImportPage extends Page
     {
         $this->authorizeManager();
         $data = $this->importForm()->getState();
+        [$files, $photos] = $this->fileContents($data);
         $queued = app(ImportCatalogFleetAction::class)(
-            $this->fileContents($data),
+            $files,
             $data['duplicate_strategy'],
             $data['partial_strategy'],
             true,
+            $photos,
         );
         $this->importRunId = $queued['run_id'];
         $this->importRunStatus = CatalogFleetImportRun::STATUS_QUEUED;
@@ -196,14 +207,26 @@ class CatalogFleetImportPage extends Page
     }
 
     /** @param array<string, mixed> $data
-     *  @return array<string, string> */
+     *  @return array{array<string, string>, array<string, string>} */
     private function fileContents(array $data): array
     {
+        $bundle = $data['bundle'] ?? null;
+
+        if ($bundle instanceof TemporaryUploadedFile) {
+            foreach (['categories', 'models', 'variants', 'bikes'] as $key) {
+                if (($data[$key] ?? null) instanceof TemporaryUploadedFile) {
+                    throw ValidationException::withMessages(['bundle' => 'Choose a ZIP bundle or four CSV files, not both.']);
+                }
+            }
+
+            return array_values(app(CatalogFleetImportBundle::class)->read($bundle->getRealPath()));
+        }
+
         $files = [];
         foreach (['categories', 'models', 'variants', 'bikes'] as $key) {
             $file = $data[$key] ?? null;
             if (! $file instanceof TemporaryUploadedFile) {
-                throw ValidationException::withMessages([$key => 'Select a CSV file.']);
+                throw ValidationException::withMessages([$key => 'Choose a ZIP bundle or select all four CSV files.']);
             }
             $content = file_get_contents($file->getRealPath());
             if ($content === false) {
@@ -212,7 +235,7 @@ class CatalogFleetImportPage extends Page
             $files[$key] = $content;
         }
 
-        return $files;
+        return [$files, []];
     }
 
     private static function csvUpload(string $name, string $label): FileUpload
@@ -222,7 +245,6 @@ class CatalogFleetImportPage extends Page
             ->acceptedFileTypes(['text/csv', 'text/plain', 'application/vnd.ms-excel'])
             ->rules(['file', 'mimes:csv,txt', 'max:10240'])
             ->maxSize(10240)
-            ->required()
             ->storeFiles(false);
     }
 }

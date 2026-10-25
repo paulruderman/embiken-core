@@ -4,7 +4,9 @@ namespace App\Actions\Platform;
 
 use App\Actions\Action;
 use App\Models\BillingPlan;
+use App\Models\Location;
 use App\Models\Tenant;
+use App\Support\Locales;
 use App\Support\ModuleRegistry;
 use Illuminate\Console\Command;
 use Illuminate\Http\JsonResponse;
@@ -25,6 +27,7 @@ class CreateTenantAction extends Action
         string $managerName,
         string $managerEmail,
         ?BillingPlan $billingPlan = null,
+        string $siteLocale = Locales::Default,
     ): Tenant {
         $tenant = Tenant::create([
             'name' => $name,
@@ -38,7 +41,8 @@ class CreateTenantAction extends Action
 
         $tenant->domains()->create(['domain' => $domain]);
 
-        $tenant->run(function () use ($name, $timezone, $currency, $managerName, $managerEmail): void {
+        $contentLocale = Locales::translationLocale($siteLocale);
+        $tenant->run(function () use ($name, $timezone, $currency, $managerName, $managerEmail, $contentLocale): void {
             app(ProvisionShopAction::class)(
                 shopName: $name,
                 timezone: $timezone,
@@ -46,6 +50,10 @@ class CreateTenantAction extends Action
                 managerName: $managerName,
                 managerEmail: $managerEmail,
             );
+            Location::query()->firstOrFail()->forceFill([
+                'enabled_content_locales' => [$contentLocale],
+                'default_content_locale' => $contentLocale,
+            ])->save();
         });
 
         app(StartExpressAccountLinkAction::class)($tenant);

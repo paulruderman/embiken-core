@@ -1,22 +1,22 @@
-key,category_key,name,manufacturer,description,padding_minutes
-road-endurance,road,Endurance Road,Aster,Endurance geometry for long pavement rides,
-road-race,road,Race Road,Aster,Responsive race geometry for fast test rides,
-road-aero,road,Aero Road,Veloce,Aero frame and integrated cockpit demo,
-gravel-allroad,gravel,All-Road Gravel,Northline,Comfortable all-road build with wide tire clearance,
-gravel-race,gravel,Gravel Race,Northline,Lightweight gravel race setup,
-gravel-adventure,gravel,Adventure Gravel,Farway,Long-distance gravel model with cargo mounts,
-xc-hardtail,mountain,XC Hardtail,Ridgeback,Efficient cross-country hardtail,
-trail-29,mountain,Trail 29,Ridgeback,Modern 29 inch trail bike,
-trail-mullet,mountain,Trail Mullet,Ridgeback,Mixed-wheel trail bike,
-enduro-carbon,mountain,Enduro Carbon,Summit,Long-travel enduro demo,
-emtb-light,electric,Light E-MTB,Current,Lightweight electric trail bike,20
-emtb-fullpower,electric,Full-Power E-MTB,Current,Full-power electric mountain bike,20
-e-commuter,electric,Electric Commuter,Current,Upright electric city bike,20
-city-step,commuter,City Step-Through,Northline,Easy-access everyday commuter,
-touring,commuter,Touring Bike,Farway,Loaded touring setup with rack and fenders,
-folding,commuter,Folding Commuter,MetroFold,Compact folding bike for mixed-mode travel,
-compact-cargo,cargo,Compact Cargo,Loadstar,Compact front-box cargo model,20
-longtail-cargo,cargo,Longtail Cargo,Loadstar,Longtail family and utility bike,20
-youth-24,youth,Youth Trail 24,Little North,Trail-ready 24 inch youth bike,
-adaptive-trike,adaptive,Adaptive Trike,Open Path,Three-wheel model for supported test rides,20
-tandem,adaptive,Tandem Tourer,Farway,Two-rider touring tandem,20
+key,category_key,name,manufacturer,description,padding_minutes,photo_file
+road-endurance,road,Endurance Road,Aster,Endurance geometry for long pavement rides,,images/road-endurance.png
+road-race,road,Race Road,Aster,Responsive race geometry for fast test rides,,images/road-endurance.png
+road-aero,road,Aero Road,Veloce,Aero frame and integrated cockpit demo,,images/road-endurance.png
+gravel-allroad,gravel,All-Road Gravel,Northline,Comfortable all-road build with wide tire clearance,,images/road-endurance.png
+gravel-race,gravel,Gravel Race,Northline,Lightweight gravel race setup,,images/road-endurance.png
+gravel-adventure,gravel,Adventure Gravel,Farway,Long-distance gravel model with cargo mounts,,images/road-endurance.png
+xc-hardtail,mountain,XC Hardtail,Ridgeback,Efficient cross-country hardtail,,images/trail-mountain.png
+trail-29,mountain,Trail 29,Ridgeback,Modern 29 inch trail bike,,images/trail-mountain.png
+trail-mullet,mountain,Trail Mullet,Ridgeback,Mixed-wheel trail bike,,images/trail-mountain.png
+enduro-carbon,mountain,Enduro Carbon,Summit,Long-travel enduro demo,,images/trail-mountain.png
+emtb-light,electric,Light E-MTB,Current,Lightweight electric trail bike,20,images/electric-mountain.png
+emtb-fullpower,electric,Full-Power E-MTB,Current,Full-power electric mountain bike,20,images/electric-mountain.png
+e-commuter,electric,Electric Commuter,Current,Upright electric city bike,20,images/urban-commuter.png
+city-step,commuter,City Step-Through,Northline,Easy-access everyday commuter,,images/urban-commuter.png
+touring,commuter,Touring Bike,Farway,Loaded touring setup with rack and fenders,,images/urban-commuter.png
+folding,commuter,Folding Commuter,MetroFold,Compact folding bike for mixed-mode travel,,images/urban-commuter.png
+compact-cargo,cargo,Compact Cargo,Loadstar,Compact front-box cargo model,20,images/cargo-electric.png
+longtail-cargo,cargo,Longtail Cargo,Loadstar,Longtail family and utility bike,20,images/cargo-electric.png
+youth-24,youth,Youth Trail 24,Little North,Trail-ready 24 inch youth bike,,images/youth-mountain.png
+adaptive-trike,adaptive,Adaptive Trike,Open Path,Three-wheel model for supported test rides,20,images/adaptive-handcycle.png
+tandem,adaptive,Tandem Tourer,Farway,Two-rider touring tandem,20,images/recumbent-tandem.png

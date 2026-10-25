@@ -55,7 +55,20 @@ class ProcessCatalogFleetImport implements ShouldQueue
             $files[$file] = $contents;
         }
 
-        $report = $import->apply($files, $run->duplicate_strategy, $run->partial_strategy);
+        $photos = [];
+        $photoDirectory = "{$directory}/photos";
+
+        foreach ($disk->allFiles($photoDirectory) as $path) {
+            $contents = $disk->get($path);
+            if (! is_string($contents)) {
+                throw new \RuntimeException('A staged catalog photo could not be read.');
+            }
+
+            $photoReference = substr($path, strlen($photoDirectory) + 1);
+            $photos[$photoReference] = $contents;
+        }
+
+        $report = $import->apply($files, $run->duplicate_strategy, $run->partial_strategy, $photos, $run->id);
         $run->update([
             'status' => $report['applied'] ? CatalogFleetImportRun::STATUS_COMPLETED : CatalogFleetImportRun::STATUS_NOT_APPLIED,
             'report' => $report,

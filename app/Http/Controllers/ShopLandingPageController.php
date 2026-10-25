@@ -8,6 +8,7 @@ use App\Models\Location;
 use App\Models\ShopLandingPage;
 use App\Models\ShopSetting;
 use App\Support\BrandColor;
+use App\Support\Locales;
 use Filament\Forms\Components\RichEditor\RichContentRenderer;
 use Inertia\Response as InertiaResponse;
 use Symfony\Component\HtmlSanitizer\HtmlSanitizer;
@@ -22,10 +23,11 @@ class ShopLandingPageController extends Controller
         $shopName = $settings?->brand_name ?: Location::query()->value('name') ?: (string) tenant()->name;
         $locale = app()->getLocale();
         $storedLayoutData = $page->layout_data ?? [];
-        $englishLayoutData = $storedLayoutData['en'] ?? [];
+        $defaultLocale = Locales::tenantDefaultContentLocale();
+        $defaultLayoutData = $storedLayoutData[$defaultLocale] ?? [];
         $localizedLayoutData = $storedLayoutData[$locale] ?? [];
         $localizedLayoutData = array_filter($localizedLayoutData, static fn (mixed $value): bool => $value !== null && $value !== '');
-        $layoutData = array_replace($englishLayoutData, $localizedLayoutData) ?: [
+        $layoutData = array_replace($defaultLayoutData, $localizedLayoutData) ?: [
             'headline' => $shopName,
             'description' => '',
             'button_label' => 'Book a bike',
@@ -33,8 +35,8 @@ class ShopLandingPageController extends Controller
         $sharedLayoutData = $storedLayoutData['shared'] ?? [];
         $imagePath = $sharedLayoutData['image_path'] ?? null;
         $customContent = $page?->custom_content;
-        $customContent = is_array($customContent) && array_key_exists('en', $customContent)
-            ? ($customContent[$locale] ?? null) ?: $customContent['en']
+        $customContent = is_array($customContent) && array_key_exists($defaultLocale, $customContent)
+            ? ($customContent[$locale] ?? null) ?: $customContent[$defaultLocale]
             : $customContent;
         $contentHtml = $customContent
             ? RichContentRenderer::make($customContent)
@@ -65,14 +67,15 @@ class ShopLandingPageController extends Controller
     public function booking(): InertiaResponse
     {
         $locale = app()->getLocale();
+        $defaultLocale = Locales::tenantDefaultContentLocale();
         $bookingNotices = ShopLandingPage::current()->booking_notices ?? [];
-        $bookingNotices = array_map(static function (array $notice) use ($locale): array {
+        $bookingNotices = array_map(static function (array $notice) use ($locale, $defaultLocale): array {
             $message = $notice['message'];
 
             $localizedMessage = is_array($message) ? ($message[$locale] ?? null) : $message;
 
             return [
-                'message' => $localizedMessage ?: (is_array($message) ? ($message['en'] ?? '') : $message),
+                'message' => $localizedMessage ?: (is_array($message) ? ($message[$defaultLocale] ?? '') : $message),
                 'tone' => $notice['tone'],
             ];
         }, $bookingNotices);

@@ -27,6 +27,8 @@ class CustomerResource extends Resource
 
     protected static ?string $model = Customer::class;
 
+    protected static ?string $recordRouteKeyName = 'public_id';
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedIdentification;
 
     protected static ?string $recordTitleAttribute = 'name';

@@ -11,9 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('tenants', function (Blueprint $table): void {
-            $table->string('manager_name')->nullable();
-            $table->string('manager_email')->nullable();
+        Schema::table('maintenance_schedules', function (Blueprint $table) {
+            //
         });
     }
 
@@ -22,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('tenants', function (Blueprint $table): void {
-            $table->dropColumn(['manager_name', 'manager_email']);
+        Schema::table('maintenance_schedules', function (Blueprint $table) {
+            //
         });
     }
 };

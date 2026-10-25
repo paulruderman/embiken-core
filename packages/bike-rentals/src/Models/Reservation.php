@@ -11,6 +11,7 @@ use Embiken\BikeRentals\Enums\ReservationStage;
 use Embiken\BikeRentals\Enums\TransactionKind;
 use Embiken\BikeRentals\Enums\TransactionStatus;
 use Embiken\BikeRentals\Observers\ReservationObserver;
+use Embiken\BikeRentals\Support\PublicId;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,6 +21,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property int $id
+ * @property string $public_id
  * @property int $location_id
  * @property int $customer_id
  * @property int|null $rental_package_id
@@ -69,6 +71,8 @@ class Reservation extends Model
     protected static function booted(): void
     {
         static::creating(function (Reservation $reservation): void {
+            $reservation->public_id ??= PublicId::reservation();
+
             if ($reservation->rental_package_id !== null) {
                 $reservation->currency = (string) RentalPackage::query()
                     ->whereKey($reservation->rental_package_id)
@@ -81,6 +85,11 @@ class Reservation extends Model
 
             $reservation->currency = strtolower(trim($reservation->currency));
         });
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'public_id';
     }
 
     /**

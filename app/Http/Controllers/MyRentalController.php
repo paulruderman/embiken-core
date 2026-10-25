@@ -14,8 +14,10 @@ class MyRentalController
         return Inertia::render('MyRental/RequestLink');
     }
 
-    public function show(Reservation $reservation, string $token): Response
+    public function show(string $reservation, string $token): Response
     {
+        $reservation = Reservation::query()->where('public_id', $reservation)->firstOrFail();
+
         abort_unless(
             $reservation->myrental_token !== null
                 && hash_equals($reservation->myrental_token, $token)
@@ -33,7 +35,7 @@ class MyRentalController
 
         return Inertia::render('MyRental/Show', [
             'reservation' => [
-                'id' => $reservation->id,
+                'id' => $reservation->public_id,
                 'stage' => $reservation->stage->value,
                 'starts_at' => $reservation->starts_at->toIso8601String(),
                 'ends_at' => $reservation->ends_at->toIso8601String(),

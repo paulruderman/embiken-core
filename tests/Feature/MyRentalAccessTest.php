@@ -45,6 +45,18 @@ afterEach(function (): void {
     deleteMyRentalTenantDatabase($this->myRentalTenant ?? null);
 });
 
+test('Customers and Reservations receive short public references', function (): void {
+    $customer = Customer::factory()->create();
+    $reservation = Reservation::factory()->recycle($customer)->create();
+
+    expect($customer->public_id)
+        ->toStartWith('C-')
+        ->toHaveLength(14)
+        ->and($reservation->public_id)
+        ->toStartWith('R-')
+        ->toHaveLength(14);
+});
+
 test('requesting a MyRental link emails the existing signed link for eligible reservations only', function (): void {
     Mail::fake();
     $customer = Customer::factory()->create(['email' => 'renter@example.com']);
@@ -68,7 +80,7 @@ test('requesting a MyRental link emails the existing signed link for eligible re
         parse_str($parts['query'] ?? '', $query);
 
         return $mail->hasTo('renter@example.com')
-            && str_ends_with($parts['path'] ?? '', '/'.$reservation->id.'/stable-secret-token')
+            && str_ends_with($parts['path'] ?? '', '/'.$reservation->public_id.'/stable-secret-token')
             && ($query['expires'] ?? null) === (string) $reservation->ends_at->addDays(3)->timestamp
             && isset($query['signature']);
     });
@@ -84,7 +96,7 @@ test('revoking MyRental access invalidates every saved link for the customer', f
 
     expect($revoked)->toBe(2)
         ->and($customer->reservations()->whereNotNull('myrental_token')->exists())->toBeFalse()
-        ->and($url)->toContain((string) $reservation->id);
+        ->and($url)->toContain($reservation->public_id);
 });
 
 test('Managers can find the access revoke control on a Customer record', function (): void {
@@ -117,7 +129,7 @@ test('confirming a reservation sends a MyRental link in the confirmation notice'
     );
 
     Mail::assertQueued(MyRentalReservationNotice::class, fn (MyRentalReservationNotice $mail): bool => $mail->hasTo($reservation->customer->email)
-            && str_contains($mail->myRentalUrl, (string) $reservation->id)
+            && str_contains($mail->myRentalUrl, $reservation->public_id)
             && str_contains($mail->myRentalUrl, $reservation->myrental_token));
 });
 
@@ -146,7 +158,7 @@ test('the final returned line sends a MyRental link in the return notice', funct
     $return($secondLine->fresh());
 
     Mail::assertQueued(MyRentalReservationNotice::class, fn (MyRentalReservationNotice $mail): bool => $mail->notice === 'Thanks for returning your reservation'
-            && str_contains($mail->myRentalUrl, (string) $reservation->id));
+            && str_contains($mail->myRentalUrl, $reservation->public_id));
 });
 
 test('the MyRental request sends the same signed link and revoked links no longer open', function (): void {

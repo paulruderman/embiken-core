@@ -1,0 +1,4 @@
+key,name,tagline,blurb,description,meter,confirm_threshold,deposit_minor_units,deposit_percent,min_duration_minutes,max_duration_minutes,book_visible,sort_order
+jimbo-hour,Jimbo Hourly,Local loops and short rides,,Hourly rentals for the complete Jimbo fleet.,per_hour,full,,,60,480,true,1
+jimbo-day,Jimbo Day Pass,Take the scenic route,,A full day with a 50 percent booking deposit.,per_calendar_day,deposit,,50,60,480,true,2
+jimbo-staff,Staff Fitting Ride,Specialty fit and orientation,,Complimentary shop supervised fitting rides.,none,none,,,60,480,false,3

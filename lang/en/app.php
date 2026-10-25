@@ -108,7 +108,7 @@ return [
             'description' => 'Description', 'meter' => 'Pricing meter', 'confirm_threshold' => 'Book confirmation payment',
             'deposit_percent' => 'Deposit percent', 'min_duration_minutes' => 'Minimum duration (minutes)',
             'max_duration_minutes' => 'Maximum duration (minutes)', 'book_visible' => 'Visible in Book', 'sort_order' => 'Sort order',
-            'rate' => 'Rate', 'customer' => 'Customer', 'rental_package' => 'Rental package', 'notes' => 'Staff notes',
+            'rate' => 'Rate', 'reference' => 'Reference', 'customer' => 'Customer', 'rental_package' => 'Rental package', 'notes' => 'Staff notes',
             'damage_notes' => 'Damage notes', 'variant' => 'Bike model variant', 'bike' => 'Bike',
             'rider_name' => 'Rider name', 'rider_height' => 'Rider height (cm)',
             'confirm_bikes_in_shop' => 'I confirm the bikes are in the shop', 'refund_amount' => 'Refund amount', 'note' => 'Note',

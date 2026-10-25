@@ -11,9 +11,11 @@ use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeFleet\Models\BikeCategory;
 use Embiken\BikeRentals\Enums\ReservationStage;
 use Embiken\BikeRentals\Models\BikeReservation;
+use Embiken\BikeRentals\Models\Customer;
 use Embiken\BikeRentals\Models\RentalPackage;
 use Embiken\BikeRentals\Models\Reservation;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 function seedFakeTenantAndCleanup(string $domain, string $profile = 'city-shop'): Tenant
@@ -76,13 +78,16 @@ test('seeding a fake tenant creates a shop the platform user and staff can use',
         $tenant->run(function (): void {
             $manager = Staff::query()->where('email', 'manager@example.com')->first();
             $counter = Staff::query()->where('email', 'counter@example.com')->first();
+            $platformManager = Staff::query()->where('is_platform_manager', true)->first();
 
             expect($manager)->not->toBeNull()
-                ->and($manager->password)->toBeNull()
+                ->and(Hash::check('11111111', $manager->password))
                 ->and($counter)->not->toBeNull()
-                ->and($counter->password)->toBeNull()
+                ->and(Hash::check('11111111', $counter->password))
+                ->and($platformManager)->not->toBeNull()
+                ->and($platformManager->password)->toBeNull()
                 ->and(LocationHour::query()->count())->toBe(7)
-                ->and(Bike::query()->count())->toBe(10)
+                ->and(Bike::query()->count())->toBe(36)
                 ->and(BikeCategory::query()->pluck('name')->all())->toBe(['City Bikes', 'Cargo Bikes'])
                 ->and(RentalPackage::query()->where('book_visible', true)->count())->toBe(3)
                 ->and(Reservation::query()->where('stage', ReservationStage::Confirmed)->count())->toBe(31)
@@ -117,9 +122,10 @@ test('demo profiles import different catalog and rate fixtures and get distinct 
 
         $adventureTenant->run(function (): void {
             expect(BikeCategory::query()->pluck('name')->all())
-                ->toBe(['Electric Mountain Bikes', 'Electric Touring'])
-                ->and(Bike::query()->count())->toBe(12)
-                ->and(RentalPackage::query()->orderBy('sort_order')->first()?->variants()->count())->toBe(5)
+                ->toBe(['Electric Mountain Bikes', 'Electric Touring', 'Cargo and Utility E-bikes', 'Specialty Adventure Bikes'])
+                ->and(Bike::query()->count())->toBe(233)
+                ->and(BikeCategory::query()->count())->toBe(4)
+                ->and(RentalPackage::query()->orderBy('sort_order')->first()?->variants()->count())->toBe(26)
                 ->and(Location::query()->firstOrFail()->name)->toBe('Summit E-bike Adventures')
                 ->and(Location::query()->firstOrFail()->timezone)->toBe('America/Denver');
         });
@@ -127,12 +133,39 @@ test('demo profiles import different catalog and rate fixtures and get distinct 
         $familyTenant->run(function (): void {
             expect(BikeCategory::query()->pluck('name')->all())
                 ->toBe(['Kids Bikes', 'Comfort Bikes'])
-                ->and(Bike::query()->count())->toBe(12)
+                ->and(Bike::query()->count())->toBe(37)
                 ->and(RentalPackage::query()->orderBy('sort_order')->first()?->variants()->count())->toBe(6);
         });
     } finally {
         deleteTenantSqlite($adventureTenant);
         deleteTenantSqlite($familyTenant);
+    }
+});
+
+test('Jimbo demo seeds a large specialty fleet with shop-specific bids and usable logins', function () {
+    $tenant = app(SeedFakeTenantAction::class)(
+        domain: 'jimbos.localhost',
+        confirmed: true,
+        profile: 'jimbos',
+    );
+
+    try {
+        expect($tenant->name)->toBe("Jimbo's Bike Barn")
+            ->and($tenant->domains->first()?->domain)->toBe('jimbos.localhost');
+
+        $tenant->run(function (): void {
+            expect(Bike::query()->count())->toBe(236)
+                ->and(BikeCategory::query()->count())->toBe(6)
+                ->and(Bike::query()->where('bid', 'like', 'JB-CITY-%')->count())->toBeGreaterThan(20)
+                ->and(Bike::query()->where('bid', 'JB-ADAPT-HC-01')->exists())->toBeTrue()
+                ->and(Bike::query()->where('bid', 'JB-TANDEM-01')->exists())->toBeTrue()
+                ->and(Reservation::query()->where('stage', ReservationStage::Confirmed)->count())->toBeGreaterThan(70)
+                ->and(Customer::query()->count())->toBeGreaterThan(100)
+                ->and(Hash::check('11111111', Staff::query()->where('email', 'manager@example.com')->firstOrFail()->password))->toBeTrue()
+                ->and(Hash::check('11111111', Staff::query()->where('email', 'counter@example.com')->firstOrFail()->password))->toBeTrue();
+        });
+    } finally {
+        deleteTenantSqlite($tenant);
     }
 });
 

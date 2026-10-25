@@ -46,7 +46,7 @@ class TodayReservationLinesWidget extends TableWidget
                         ->whereColumn('reservations.id', 'bike_reservation.reservation_id')),
             )
             ->columns([
-                TextColumn::make('reservation_id')
+                TextColumn::make('reservation.public_id')
                     ->label(__('app.rentals_ui.fields.reservation'))
                     ->url(fn (BikeReservation $record): string => ReservationResource::getUrl('view', [
                         'record' => $record->reservation_id,

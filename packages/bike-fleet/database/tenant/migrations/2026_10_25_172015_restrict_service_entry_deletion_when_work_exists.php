@@ -11,9 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('bikes', function (Blueprint $table): void {
-            $table->string('serial_number')->nullable()->index();
-        });
+        //
     }
 
     /**
@@ -21,9 +19,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('bikes', function (Blueprint $table): void {
-            $table->dropIndex(['serial_number']);
-            $table->dropColumn('serial_number');
-        });
+        //
     }
 };

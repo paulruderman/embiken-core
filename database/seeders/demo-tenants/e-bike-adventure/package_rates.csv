@@ -2,15 +2,78 @@ package_key,category_name,model_name,variant_size,variant_color_name,variant_col
 guided-hour,Electric Mountain Bikes,Ridge Trail,S,Moss,#166534,5500
 guided-hour,Electric Mountain Bikes,Ridge Trail,M,Moss,#166534,5500
 guided-hour,Electric Mountain Bikes,Ridge Trail,L,Moss,#166534,5500
+guided-hour,Electric Mountain Bikes,Ridge Trail,XL,Moss,#166534,5500
+guided-hour,Electric Mountain Bikes,Ridge Hardtail,S,Sand,#D6B56D,5500
 guided-hour,Electric Mountain Bikes,Ridge Hardtail,M,Sand,#D6B56D,5500
+guided-hour,Electric Mountain Bikes,Ridge Hardtail,L,Sand,#D6B56D,5500
+guided-hour,Electric Mountain Bikes,Ridge Hardtail,XL,Sand,#D6B56D,5500
+guided-hour,Electric Mountain Bikes,Switchback Pro,S,Red,#DC2626,5500
+guided-hour,Electric Mountain Bikes,Switchback Pro,M,Red,#DC2626,5500
+guided-hour,Electric Mountain Bikes,Switchback Pro,L,Red,#DC2626,5500
+guided-hour,Electric Mountain Bikes,Switchback Pro,XL,Red,#DC2626,5500
+guided-hour,Electric Mountain Bikes,Highline Fat E,M,Black,#111827,5500
+guided-hour,Electric Mountain Bikes,Highline Fat E,L,Black,#111827,5500
+guided-hour,Electric Touring,Range Explorer,S,Blue,#2563EB,5500
 guided-hour,Electric Touring,Range Explorer,M,Blue,#2563EB,5500
+guided-hour,Electric Touring,Range Explorer,L,Blue,#2563EB,5500
+guided-hour,Electric Touring,Range Explorer,XL,Blue,#2563EB,5500
+guided-hour,Electric Touring,Open Road Step-Through,S,Silver,#94A3B8,5500
+guided-hour,Electric Touring,Open Road Step-Through,M,Silver,#94A3B8,5500
+guided-hour,Electric Touring,Open Road Step-Through,L,Silver,#94A3B8,5500
+guided-hour,Cargo and Utility E-bikes,Guide Longtail,M,Orange,#F97316,5500
+guided-hour,Cargo and Utility E-bikes,Guide Longtail,L,Orange,#F97316,5500
+guided-hour,Specialty Adventure Bikes,Adaptive E-Trike,One Size,Teal,#0F766E,5500
+guided-hour,Specialty Adventure Bikes,Guide Tagalong,One Size,Yellow,#EAB308,5500
+guided-hour,Specialty Adventure Bikes,Trail Rescue Trike,One Size,Orange,#EA580C,5500
 adventure-day,Electric Mountain Bikes,Ridge Trail,S,Moss,#166534,14500
 adventure-day,Electric Mountain Bikes,Ridge Trail,M,Moss,#166534,14500
 adventure-day,Electric Mountain Bikes,Ridge Trail,L,Moss,#166534,14500
+adventure-day,Electric Mountain Bikes,Ridge Trail,XL,Moss,#166534,14500
+adventure-day,Electric Mountain Bikes,Ridge Hardtail,S,Sand,#D6B56D,14500
 adventure-day,Electric Mountain Bikes,Ridge Hardtail,M,Sand,#D6B56D,14500
+adventure-day,Electric Mountain Bikes,Ridge Hardtail,L,Sand,#D6B56D,14500
+adventure-day,Electric Mountain Bikes,Ridge Hardtail,XL,Sand,#D6B56D,14500
+adventure-day,Electric Mountain Bikes,Switchback Pro,S,Red,#DC2626,14500
+adventure-day,Electric Mountain Bikes,Switchback Pro,M,Red,#DC2626,14500
+adventure-day,Electric Mountain Bikes,Switchback Pro,L,Red,#DC2626,14500
+adventure-day,Electric Mountain Bikes,Switchback Pro,XL,Red,#DC2626,14500
+adventure-day,Electric Mountain Bikes,Highline Fat E,M,Black,#111827,14500
+adventure-day,Electric Mountain Bikes,Highline Fat E,L,Black,#111827,14500
+adventure-day,Electric Touring,Range Explorer,S,Blue,#2563EB,14500
 adventure-day,Electric Touring,Range Explorer,M,Blue,#2563EB,14500
+adventure-day,Electric Touring,Range Explorer,L,Blue,#2563EB,14500
+adventure-day,Electric Touring,Range Explorer,XL,Blue,#2563EB,14500
+adventure-day,Electric Touring,Open Road Step-Through,S,Silver,#94A3B8,14500
+adventure-day,Electric Touring,Open Road Step-Through,M,Silver,#94A3B8,14500
+adventure-day,Electric Touring,Open Road Step-Through,L,Silver,#94A3B8,14500
+adventure-day,Cargo and Utility E-bikes,Guide Longtail,M,Orange,#F97316,14500
+adventure-day,Cargo and Utility E-bikes,Guide Longtail,L,Orange,#F97316,14500
+adventure-day,Specialty Adventure Bikes,Adaptive E-Trike,One Size,Teal,#0F766E,14500
+adventure-day,Specialty Adventure Bikes,Guide Tagalong,One Size,Yellow,#EAB308,14500
+adventure-day,Specialty Adventure Bikes,Trail Rescue Trike,One Size,Orange,#EA580C,14500
 demo,Electric Mountain Bikes,Ridge Trail,S,Moss,#166534,0
 demo,Electric Mountain Bikes,Ridge Trail,M,Moss,#166534,0
 demo,Electric Mountain Bikes,Ridge Trail,L,Moss,#166534,0
+demo,Electric Mountain Bikes,Ridge Trail,XL,Moss,#166534,0
+demo,Electric Mountain Bikes,Ridge Hardtail,S,Sand,#D6B56D,0
 demo,Electric Mountain Bikes,Ridge Hardtail,M,Sand,#D6B56D,0
+demo,Electric Mountain Bikes,Ridge Hardtail,L,Sand,#D6B56D,0
+demo,Electric Mountain Bikes,Ridge Hardtail,XL,Sand,#D6B56D,0
+demo,Electric Mountain Bikes,Switchback Pro,S,Red,#DC2626,0
+demo,Electric Mountain Bikes,Switchback Pro,M,Red,#DC2626,0
+demo,Electric Mountain Bikes,Switchback Pro,L,Red,#DC2626,0
+demo,Electric Mountain Bikes,Switchback Pro,XL,Red,#DC2626,0
+demo,Electric Mountain Bikes,Highline Fat E,M,Black,#111827,0
+demo,Electric Mountain Bikes,Highline Fat E,L,Black,#111827,0
+demo,Electric Touring,Range Explorer,S,Blue,#2563EB,0
 demo,Electric Touring,Range Explorer,M,Blue,#2563EB,0
+demo,Electric Touring,Range Explorer,L,Blue,#2563EB,0
+demo,Electric Touring,Range Explorer,XL,Blue,#2563EB,0
+demo,Electric Touring,Open Road Step-Through,S,Silver,#94A3B8,0
+demo,Electric Touring,Open Road Step-Through,M,Silver,#94A3B8,0
+demo,Electric Touring,Open Road Step-Through,L,Silver,#94A3B8,0
+demo,Cargo and Utility E-bikes,Guide Longtail,M,Orange,#F97316,0
+demo,Cargo and Utility E-bikes,Guide Longtail,L,Orange,#F97316,0
+demo,Specialty Adventure Bikes,Adaptive E-Trike,One Size,Teal,#0F766E,0
+demo,Specialty Adventure Bikes,Guide Tagalong,One Size,Yellow,#EAB308,0
+demo,Specialty Adventure Bikes,Trail Rescue Trike,One Size,Orange,#EA580C,0

@@ -108,7 +108,7 @@ return [
             'description' => 'Descripción', 'meter' => 'Método de cobro', 'confirm_threshold' => 'Pago para confirmar en Book',
             'deposit_percent' => 'Porcentaje del depósito', 'min_duration_minutes' => 'Duración mínima (minutos)',
             'max_duration_minutes' => 'Duración máxima (minutos)', 'book_visible' => 'Visible en Book', 'sort_order' => 'Orden',
-            'rate' => 'Tarifa', 'customer' => 'Cliente', 'rental_package' => 'Paquete de alquiler', 'notes' => 'Notas del personal',
+            'rate' => 'Tarifa', 'reference' => 'Referencia', 'customer' => 'Cliente', 'rental_package' => 'Paquete de alquiler', 'notes' => 'Notas del personal',
             'damage_notes' => 'Notas sobre daños', 'variant' => 'Variante del modelo de bicicleta', 'bike' => 'Bicicleta',
             'rider_name' => 'Nombre de ciclista', 'rider_height' => 'Altura de ciclista (cm)',
             'confirm_bikes_in_shop' => 'Confirmo que las bicicletas están en la tienda', 'refund_amount' => 'Importe del reembolso', 'note' => 'Nota',

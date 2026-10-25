@@ -14,8 +14,8 @@ return new class extends Migration
             $table->string('size');
             $table->unsignedInteger('min_ideal_rider_height')->nullable();
             $table->unsignedInteger('max_ideal_rider_height')->nullable();
-            $table->unsignedInteger('min_extended_rider_height')->nullable();
-            $table->unsignedInteger('max_extended_rider_height')->nullable();
+            $table->json('color_name')->nullable();
+            $table->string('color_value')->nullable();
             $table->string('photo')->nullable();
             $table->timestamps();
         });

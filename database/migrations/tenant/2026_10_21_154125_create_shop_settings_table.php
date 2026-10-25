@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('shop_settings', function (Blueprint $table) {
             $table->unsignedTinyInteger('id')->primary();
             $table->string('brand_name')->nullable();
-            $table->string('primary_color', 7)->nullable();
-            $table->string('brand_gray_color', 7)->nullable();
+            $table->string('primary_color', 32)->nullable();
+            $table->string('brand_gray_color', 32)->nullable();
             $table->string('logo_path')->nullable();
             $table->string('favicon_path')->nullable();
             $table->timestamps();

@@ -16,6 +16,7 @@ return new class extends Migration
             $table->unsignedInteger('minimum_turnaround_buffer_minutes')->default(10);
             $table->string('bike_assignment_policy')->default('terminal');
             $table->string('return_situation')->default('home');
+            $table->unsignedInteger('reservation_readiness_window_minutes')->default(45);
             $table->timestamps();
         });
     }

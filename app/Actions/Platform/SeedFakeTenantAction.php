@@ -7,6 +7,7 @@ use App\Actions\Staff\InviteStaffAction;
 use App\Enums\StaffRole;
 use App\Models\Domain;
 use App\Models\Location;
+use App\Models\Staff;
 use App\Models\Tenant;
 use App\Services\LocationMetadataImport;
 use Embiken\BikeFleet\Enums\BikeSituation;
@@ -39,11 +40,12 @@ class SeedFakeTenantAction extends Action
         'city-shop' => ['label' => 'City commuter and cargo shop'],
         'e-bike-adventure' => ['label' => 'E-bike adventure and trail shop'],
         'family-rentals' => ['label' => 'Family and kids rental shop'],
+        'jimbos' => ['label' => "Jimbo's multi-category rental shop"],
     ];
 
-    public string $commandSignature = 'db:seed-fake-tenant {--profile=} {--domain=} {--name=} {--timezone=} {--confirm-demo}';
+    public string $commandSignature = 'db:seed-fake-tenant {--profile=} {--domain=} {--name=} {--timezone=} {--confirm-demo} {--resume}';
 
-    public string $commandDescription = 'Provision a demo shop Tenant with catalog, hours, packages, and upcoming Reservations.';
+    public string $commandDescription = 'Provision a demo shop Tenant with profile data, catalog, fleet, Customers, and Reservations.';
 
     public function __construct(
         private CreateTenantAction $createTenant,
@@ -59,6 +61,7 @@ class SeedFakeTenantAction extends Action
         string $timezone = '',
         bool $confirmed = false,
         string $profile = 'city-shop',
+        bool $resume = false,
     ): Tenant {
         if (! $confirmed) {
             throw ValidationException::withMessages([
@@ -92,13 +95,27 @@ class SeedFakeTenantAction extends Action
         $name = $metadata['shop']['name'];
         $timezone = $metadata['shop']['timezone'];
 
-        if (Domain::query()->where('domain', $domain)->exists()) {
+        $existingTenant = Tenant::query()
+            ->whereHas('domains', fn ($query) => $query->where('domain', $domain))
+            ->first();
+
+        if ($existingTenant !== null && ! $resume) {
             throw ValidationException::withMessages([
                 'domain' => "The domain {$domain} is already taken.",
             ]);
         }
 
-        $tenant = ($this->createTenant)(
+        if ($existingTenant !== null
+            && ($existingTenant->name !== $name
+                || $existingTenant->isSuspended()
+                || $existingTenant->charges_enabled
+                || $existingTenant->transfers_active)) {
+            throw ValidationException::withMessages([
+                'domain' => 'Resume is allowed only for a matching, active demo Tenant with payments disabled.',
+            ]);
+        }
+
+        $tenant = $existingTenant ?? ($this->createTenant)(
             $name,
             $domain,
             $timezone,
@@ -107,8 +124,8 @@ class SeedFakeTenantAction extends Action
             'manager@example.com',
         );
 
-        $tenant->run(function () use ($timezone, $profile, $metadataJson): void {
-            $this->seedShop($timezone, $profile, $metadataJson);
+        $tenant->run(function () use ($timezone, $profile, $metadataJson, $resume): void {
+            $this->seedShop($timezone, $profile, $metadataJson, $resume);
         });
 
         return $tenant->refresh();
@@ -144,7 +161,7 @@ class SeedFakeTenantAction extends Action
             }
 
             $confirmed = \Laravel\Prompts\confirm(
-                'Create a fully seeded demo Tenant in '.app()->environment().'? Payments will remain disabled.',
+                'Create a fully seeded demo Tenant in '.app()->environment().'? Payments stay disabled; demo Staff use password 11111111.',
                 false,
             );
         }
@@ -177,18 +194,21 @@ class SeedFakeTenantAction extends Action
             ]);
         }
 
+        config()->set('broadcasting.default', 'null');
+
         $tenant = $this->handle(
             $this->optionalStringValue($command->option('domain'), 'Domain') ?? '',
             $this->optionalStringValue($command->option('name'), 'Name') ?? '',
             $this->optionalStringValue($command->option('timezone'), 'Timezone') ?? '',
             true,
             $profile,
+            (bool) $command->option('resume'),
         );
 
         $command->info("Fake tenant {$tenant->id} ({$profile}) at {$tenant->domains->first()?->domain}");
         $command->info('Platform Users are not created by demo Tenant seeding.');
-        $command->info('Shop Manager: manager@example.com (set password through the invite or reset flow).');
-        $command->info('Shop Counter: counter@example.com (set password through the reset flow).');
+        $command->info('Demo Shop Manager: manager@example.com / 11111111');
+        $command->info('Demo Shop Counter: counter@example.com / 11111111');
 
         return self::SUCCESS;
     }
@@ -207,15 +227,31 @@ class SeedFakeTenantAction extends Action
         ];
     }
 
-    private function seedShop(string $timezone, string $profile, string $metadataJson): void
+    private function seedShop(string $timezone, string $profile, string $metadataJson, bool $resume): void
     {
         $location = Location::query()->firstOrFail();
-        app(InviteStaffAction::class)(
-            location: $location,
-            name: 'Casey Counter',
-            email: 'counter@example.com',
-            role: StaffRole::Counter,
-        );
+
+        if ($resume && (Customer::query()->exists() || Reservation::query()->exists())) {
+            throw ValidationException::withMessages([
+                'resume' => 'This Tenant already has demo Customers or Reservations and cannot be resumed safely.',
+            ]);
+        }
+
+        if (! Staff::query()->where('email', 'counter@example.com')->exists()) {
+            app(InviteStaffAction::class)(
+                location: $location,
+                name: 'Casey Counter',
+                email: 'counter@example.com',
+                role: StaffRole::Counter,
+            );
+        }
+
+        Staff::query()->where('email', 'manager@example.com')->firstOrFail()->update([
+            'password' => '11111111',
+        ]);
+        Staff::query()->where('email', 'counter@example.com')->firstOrFail()->update([
+            'password' => '11111111',
+        ]);
 
         $metadataReport = $this->locationMetadataImport->apply($metadataJson);
 
@@ -223,9 +259,10 @@ class SeedFakeTenantAction extends Action
             throw new RuntimeException('The demo shop metadata could not be applied: '.json_encode($metadataReport['issues']));
         }
 
-        [$variants, $packages] = $this->seedCatalogAndPackages($profile);
-        $customers = Customer::factory()->count(12)->create();
+        [, $packages] = $this->seedCatalogAndPackages($profile, $resume);
         $bikes = Bike::query()->with('variant')->orderBy('id')->get();
+        $customerCount = min(150, max(12, (int) ceil($bikes->count() / 2)));
+        $customers = Customer::factory()->count($customerCount)->create();
 
         $this->seedTodayFloor($location, $timezone, $packages, $customers, $bikes);
         $this->seedUpcomingReservations($location, $timezone, $packages, $customers, $bikes);
@@ -238,17 +275,17 @@ class SeedFakeTenantAction extends Action
     /**
      * @return array{list<BikeModelVariant>, list<RentalPackage>}
      */
-    private function seedCatalogAndPackages(string $profile): array
+    private function seedCatalogAndPackages(string $profile, bool $resume): array
     {
         $catalogFiles = $this->readDemoCsvFiles($profile, ['categories', 'models', 'variants', 'bikes']);
-        $catalogReport = $this->catalogFleetImport->apply($catalogFiles, 'report', 'all-or-nothing');
+        $catalogReport = $this->catalogFleetImport->apply($catalogFiles, $resume ? 'skip' : 'report', 'all-or-nothing');
 
         if (! $catalogReport['applied']) {
             throw new RuntimeException('The demo catalog and fleet CSV files could not be imported: '.json_encode($catalogReport['issues']));
         }
 
         $packageFiles = $this->readDemoCsvFiles($profile, ['packages', 'package_rates']);
-        $packageReport = $this->packageRateImport->apply($packageFiles, 'report', 'all-or-nothing');
+        $packageReport = $this->packageRateImport->apply($packageFiles, $resume ? 'skip' : 'report', 'all-or-nothing');
 
         if (! $packageReport['applied']) {
             throw new RuntimeException('The demo package and rate CSV files could not be imported: '.json_encode($packageReport['issues']));
@@ -351,7 +388,11 @@ class SeedFakeTenantAction extends Action
         $bikes,
     ): void {
         $cursor = 0;
-        $slots = [[10, 12], [14, 16]];
+        $slots = match (true) {
+            $bikes->count() > 150 => [[8, 10], [10, 12], [12, 14], [14, 16], [16, 18]],
+            $bikes->count() > 50 => [[9, 11], [11, 13], [13, 15], [15, 17]],
+            default => [[10, 12], [14, 16]],
+        };
 
         foreach (range(1, 14) as $dayOffset) {
             foreach ($slots as $hours) {

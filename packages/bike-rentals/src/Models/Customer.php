@@ -5,6 +5,7 @@ namespace Embiken\BikeRentals\Models;
 use App\Support\Locales;
 use Carbon\CarbonImmutable;
 use Embiken\BikeRentals\Database\Factories\CustomerFactory;
+use Embiken\BikeRentals\Support\PublicId;
 use Illuminate\Contracts\Translation\HasLocalePreference;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -14,6 +15,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 
 /**
  * @property int $id
+ * @property string $public_id
  * @property string $name
  * @property string $email
  * @property string $phone
@@ -32,6 +34,18 @@ class Customer extends Authenticatable implements HasLocalePreference
     protected static function newFactory(): CustomerFactory
     {
         return CustomerFactory::new();
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (Customer $customer): void {
+            $customer->public_id ??= PublicId::customer();
+        });
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'public_id';
     }
 
     /**

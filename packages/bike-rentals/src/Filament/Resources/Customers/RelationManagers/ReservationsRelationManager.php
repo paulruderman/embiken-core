@@ -20,9 +20,9 @@ class ReservationsRelationManager extends RelationManager
         return $table
             ->recordTitleAttribute('id')
             ->columns([
-                TextColumn::make('id')
+                TextColumn::make('public_id')
                     ->label(__('app.rentals_ui.fields.reservation'))
-                    ->sortable(),
+                    ->searchable(),
                 TextColumn::make('stage')
                     ->label(__('app.rentals_ui.fields.stage'))
                     ->badge()

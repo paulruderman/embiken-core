@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('rental_package_id')->constrained()->cascadeOnDelete();
             $table->foreignId('product_id')->constrained('bike_model_variants')->restrictOnDelete();
-            $table->unsignedInteger('rate_cents');
+            $table->unsignedInteger('rate_minor_units');
             $table->timestamps();
 
             $table->unique(['rental_package_id', 'product_id']);

@@ -19,7 +19,7 @@ class MyRentalLink
             'myrental.show',
             $expiresAt,
             [
-                'reservation' => $reservation->getKey(),
+                'reservation' => $reservation->public_id,
                 'token' => $reservation->myrental_token,
             ],
         );

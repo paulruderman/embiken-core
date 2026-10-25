@@ -32,6 +32,8 @@ class ReservationResource extends Resource
 
     protected static ?string $model = Reservation::class;
 
+    protected static ?string $recordRouteKeyName = 'public_id';
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
 
     protected static ?string $recordTitleAttribute = 'id';

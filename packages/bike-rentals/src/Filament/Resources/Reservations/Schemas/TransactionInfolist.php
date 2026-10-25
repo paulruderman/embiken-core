@@ -45,7 +45,7 @@ class TransactionInfolist
                     ->columns(2),
                 Section::make(__('app.rentals_ui.sections.reservation_and_customer'))
                     ->schema([
-                        TextEntry::make('reservation.id')
+                        TextEntry::make('reservation.public_id')
                             ->label(__('app.rentals_ui.fields.reservation')),
                         TextEntry::make('reservation.customer.name')
                             ->label(__('app.rentals_ui.fields.customer'))

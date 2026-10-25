@@ -108,7 +108,7 @@ return [
             'description' => 'Description', 'meter' => 'Mode de tarification', 'confirm_threshold' => 'Paiement de confirmation Book',
             'deposit_percent' => 'Pourcentage du dépôt', 'min_duration_minutes' => 'Durée minimale (minutes)',
             'max_duration_minutes' => 'Durée maximale (minutes)', 'book_visible' => 'Visible dans Book', 'sort_order' => 'Ordre de tri',
-            'rate' => 'Tarif', 'customer' => 'Client', 'rental_package' => 'Forfait de location', 'notes' => 'Notes du personnel',
+            'rate' => 'Tarif', 'reference' => 'Référence', 'customer' => 'Client', 'rental_package' => 'Forfait de location', 'notes' => 'Notes du personnel',
             'damage_notes' => 'Notes sur les dommages', 'variant' => 'Variante de modèle de vélo', 'bike' => 'Vélo',
             'rider_name' => 'Nom du cycliste', 'rider_height' => 'Taille du cycliste (cm)',
             'confirm_bikes_in_shop' => 'Je confirme que les vélos sont à la boutique', 'refund_amount' => 'Montant du remboursement', 'note' => 'Note',

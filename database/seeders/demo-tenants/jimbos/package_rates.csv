@@ -1,0 +1,115 @@
+package_key,category_name,model_name,variant_size,variant_color_name,variant_color_value,rate_minor_units
+jimbo-hour,Urban and Comfort,Jimbo Commuter,XS,Blue,#2563EB,3000
+jimbo-hour,Urban and Comfort,Jimbo Commuter,S,Blue,#2563EB,3000
+jimbo-hour,Urban and Comfort,Jimbo Commuter,M,Blue,#2563EB,3000
+jimbo-hour,Urban and Comfort,Jimbo Commuter,L,Blue,#2563EB,3000
+jimbo-hour,Urban and Comfort,Jimbo Commuter,XL,Blue,#2563EB,3000
+jimbo-hour,Urban and Comfort,Easy Rider Step-Through,S,Cream,#F5E6C8,3000
+jimbo-hour,Urban and Comfort,Easy Rider Step-Through,M,Cream,#F5E6C8,3000
+jimbo-hour,Urban and Comfort,Easy Rider Step-Through,L,Cream,#F5E6C8,3000
+jimbo-hour,Urban and Comfort,Quick Fold,One Size,Black,#111827,3000
+jimbo-hour,Cargo and Utility,Family Longtail,S,Forest,#166534,3000
+jimbo-hour,Cargo and Utility,Family Longtail,M,Forest,#166534,3000
+jimbo-hour,Cargo and Utility,Family Longtail,L,Forest,#166534,3000
+jimbo-hour,Cargo and Utility,Front Loader,M,Orange,#F97316,3000
+jimbo-hour,Cargo and Utility,Front Loader,L,Orange,#F97316,3000
+jimbo-hour,Cargo and Utility,Delivery Trike,One Size,Yellow,#EAB308,3000
+jimbo-hour,Trail and Fat Tire,Trail Hardtail,S,Red,#DC2626,3000
+jimbo-hour,Trail and Fat Tire,Trail Hardtail,M,Red,#DC2626,3000
+jimbo-hour,Trail and Fat Tire,Trail Hardtail,L,Red,#DC2626,3000
+jimbo-hour,Trail and Fat Tire,Trail Hardtail,XL,Red,#DC2626,3000
+jimbo-hour,Trail and Fat Tire,Full Suspension,S,Charcoal,#374151,3000
+jimbo-hour,Trail and Fat Tire,Full Suspension,M,Charcoal,#374151,3000
+jimbo-hour,Trail and Fat Tire,Full Suspension,L,Charcoal,#374151,3000
+jimbo-hour,Trail and Fat Tire,Beach and Snow Fat Tire,M,Sand,#D6B56D,3000
+jimbo-hour,Trail and Fat Tire,Beach and Snow Fat Tire,L,Sand,#D6B56D,3000
+jimbo-hour,Road and Gravel,Endurance Road,XS,Silver,#94A3B8,3000
+jimbo-hour,Road and Gravel,Endurance Road,S,Silver,#94A3B8,3000
+jimbo-hour,Road and Gravel,Endurance Road,M,Silver,#94A3B8,3000
+jimbo-hour,Road and Gravel,Endurance Road,L,Silver,#94A3B8,3000
+jimbo-hour,Road and Gravel,Gravel Rambler,S,Green,#16A34A,3000
+jimbo-hour,Road and Gravel,Gravel Rambler,M,Green,#16A34A,3000
+jimbo-hour,Road and Gravel,Gravel Rambler,L,Green,#16A34A,3000
+jimbo-hour,Youth Fleet,Youth Trail 20,20-inch,Blue,#38BDF8,3000
+jimbo-hour,Youth Fleet,Youth Trail 24,24-inch,Blue,#38BDF8,3000
+jimbo-hour,Youth Fleet,First Ride Balance Bike,12-inch,Yellow,#EAB308,3000
+jimbo-hour,Adaptive and Specialty,Adaptive Handcycle,One Size,Purple,#7C3AED,3000
+jimbo-hour,Adaptive and Specialty,Jimbo Tandem,One Size,Black,#111827,3000
+jimbo-hour,Urban and Comfort,Beach Cruiser,S,Teal,#0F766E,3000
+jimbo-hour,Urban and Comfort,Beach Cruiser,M,Teal,#0F766E,3000
+jimbo-day,Urban and Comfort,Jimbo Commuter,XS,Blue,#2563EB,7500
+jimbo-day,Urban and Comfort,Jimbo Commuter,S,Blue,#2563EB,7500
+jimbo-day,Urban and Comfort,Jimbo Commuter,M,Blue,#2563EB,7500
+jimbo-day,Urban and Comfort,Jimbo Commuter,L,Blue,#2563EB,7500
+jimbo-day,Urban and Comfort,Jimbo Commuter,XL,Blue,#2563EB,7500
+jimbo-day,Urban and Comfort,Easy Rider Step-Through,S,Cream,#F5E6C8,7500
+jimbo-day,Urban and Comfort,Easy Rider Step-Through,M,Cream,#F5E6C8,7500
+jimbo-day,Urban and Comfort,Easy Rider Step-Through,L,Cream,#F5E6C8,7500
+jimbo-day,Urban and Comfort,Quick Fold,One Size,Black,#111827,7500
+jimbo-day,Cargo and Utility,Family Longtail,S,Forest,#166534,7500
+jimbo-day,Cargo and Utility,Family Longtail,M,Forest,#166534,7500
+jimbo-day,Cargo and Utility,Family Longtail,L,Forest,#166534,7500
+jimbo-day,Cargo and Utility,Front Loader,M,Orange,#F97316,7500
+jimbo-day,Cargo and Utility,Front Loader,L,Orange,#F97316,7500
+jimbo-day,Cargo and Utility,Delivery Trike,One Size,Yellow,#EAB308,7500
+jimbo-day,Trail and Fat Tire,Trail Hardtail,S,Red,#DC2626,7500
+jimbo-day,Trail and Fat Tire,Trail Hardtail,M,Red,#DC2626,7500
+jimbo-day,Trail and Fat Tire,Trail Hardtail,L,Red,#DC2626,7500
+jimbo-day,Trail and Fat Tire,Trail Hardtail,XL,Red,#DC2626,7500
+jimbo-day,Trail and Fat Tire,Full Suspension,S,Charcoal,#374151,7500
+jimbo-day,Trail and Fat Tire,Full Suspension,M,Charcoal,#374151,7500
+jimbo-day,Trail and Fat Tire,Full Suspension,L,Charcoal,#374151,7500
+jimbo-day,Trail and Fat Tire,Beach and Snow Fat Tire,M,Sand,#D6B56D,7500
+jimbo-day,Trail and Fat Tire,Beach and Snow Fat Tire,L,Sand,#D6B56D,7500
+jimbo-day,Road and Gravel,Endurance Road,XS,Silver,#94A3B8,7500
+jimbo-day,Road and Gravel,Endurance Road,S,Silver,#94A3B8,7500
+jimbo-day,Road and Gravel,Endurance Road,M,Silver,#94A3B8,7500
+jimbo-day,Road and Gravel,Endurance Road,L,Silver,#94A3B8,7500
+jimbo-day,Road and Gravel,Gravel Rambler,S,Green,#16A34A,7500
+jimbo-day,Road and Gravel,Gravel Rambler,M,Green,#16A34A,7500
+jimbo-day,Road and Gravel,Gravel Rambler,L,Green,#16A34A,7500
+jimbo-day,Youth Fleet,Youth Trail 20,20-inch,Blue,#38BDF8,7500
+jimbo-day,Youth Fleet,Youth Trail 24,24-inch,Blue,#38BDF8,7500
+jimbo-day,Youth Fleet,First Ride Balance Bike,12-inch,Yellow,#EAB308,7500
+jimbo-day,Adaptive and Specialty,Adaptive Handcycle,One Size,Purple,#7C3AED,7500
+jimbo-day,Adaptive and Specialty,Jimbo Tandem,One Size,Black,#111827,7500
+jimbo-day,Urban and Comfort,Beach Cruiser,S,Teal,#0F766E,7500
+jimbo-day,Urban and Comfort,Beach Cruiser,M,Teal,#0F766E,7500
+jimbo-staff,Urban and Comfort,Jimbo Commuter,XS,Blue,#2563EB,0
+jimbo-staff,Urban and Comfort,Jimbo Commuter,S,Blue,#2563EB,0
+jimbo-staff,Urban and Comfort,Jimbo Commuter,M,Blue,#2563EB,0
+jimbo-staff,Urban and Comfort,Jimbo Commuter,L,Blue,#2563EB,0
+jimbo-staff,Urban and Comfort,Jimbo Commuter,XL,Blue,#2563EB,0
+jimbo-staff,Urban and Comfort,Easy Rider Step-Through,S,Cream,#F5E6C8,0
+jimbo-staff,Urban and Comfort,Easy Rider Step-Through,M,Cream,#F5E6C8,0
+jimbo-staff,Urban and Comfort,Easy Rider Step-Through,L,Cream,#F5E6C8,0
+jimbo-staff,Urban and Comfort,Quick Fold,One Size,Black,#111827,0
+jimbo-staff,Cargo and Utility,Family Longtail,S,Forest,#166534,0
+jimbo-staff,Cargo and Utility,Family Longtail,M,Forest,#166534,0
+jimbo-staff,Cargo and Utility,Family Longtail,L,Forest,#166534,0
+jimbo-staff,Cargo and Utility,Front Loader,M,Orange,#F97316,0
+jimbo-staff,Cargo and Utility,Front Loader,L,Orange,#F97316,0
+jimbo-staff,Cargo and Utility,Delivery Trike,One Size,Yellow,#EAB308,0
+jimbo-staff,Trail and Fat Tire,Trail Hardtail,S,Red,#DC2626,0
+jimbo-staff,Trail and Fat Tire,Trail Hardtail,M,Red,#DC2626,0
+jimbo-staff,Trail and Fat Tire,Trail Hardtail,L,Red,#DC2626,0
+jimbo-staff,Trail and Fat Tire,Trail Hardtail,XL,Red,#DC2626,0
+jimbo-staff,Trail and Fat Tire,Full Suspension,S,Charcoal,#374151,0
+jimbo-staff,Trail and Fat Tire,Full Suspension,M,Charcoal,#374151,0
+jimbo-staff,Trail and Fat Tire,Full Suspension,L,Charcoal,#374151,0
+jimbo-staff,Trail and Fat Tire,Beach and Snow Fat Tire,M,Sand,#D6B56D,0
+jimbo-staff,Trail and Fat Tire,Beach and Snow Fat Tire,L,Sand,#D6B56D,0
+jimbo-staff,Road and Gravel,Endurance Road,XS,Silver,#94A3B8,0
+jimbo-staff,Road and Gravel,Endurance Road,S,Silver,#94A3B8,0
+jimbo-staff,Road and Gravel,Endurance Road,M,Silver,#94A3B8,0
+jimbo-staff,Road and Gravel,Endurance Road,L,Silver,#94A3B8,0
+jimbo-staff,Road and Gravel,Gravel Rambler,S,Green,#16A34A,0
+jimbo-staff,Road and Gravel,Gravel Rambler,M,Green,#16A34A,0
+jimbo-staff,Road and Gravel,Gravel Rambler,L,Green,#16A34A,0
+jimbo-staff,Youth Fleet,Youth Trail 20,20-inch,Blue,#38BDF8,0
+jimbo-staff,Youth Fleet,Youth Trail 24,24-inch,Blue,#38BDF8,0
+jimbo-staff,Youth Fleet,First Ride Balance Bike,12-inch,Yellow,#EAB308,0
+jimbo-staff,Adaptive and Specialty,Adaptive Handcycle,One Size,Purple,#7C3AED,0
+jimbo-staff,Adaptive and Specialty,Jimbo Tandem,One Size,Black,#111827,0
+jimbo-staff,Urban and Comfort,Beach Cruiser,S,Teal,#0F766E,0
+jimbo-staff,Urban and Comfort,Beach Cruiser,M,Teal,#0F766E,0

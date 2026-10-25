@@ -22,7 +22,9 @@ use Embiken\BikeFleet\Models\BikeCategory;
 use Embiken\BikeFleet\Models\BikeModel;
 use Embiken\BikeFleet\Models\BikeModelVariant;
 use Embiken\BikeRentals\Actions\AllocateLineAction;
+use Embiken\BikeRentals\Filament\Resources\Customers\CustomerResource;
 use Embiken\BikeRentals\Filament\Resources\Customers\Pages\EditCustomer;
+use Embiken\BikeRentals\Filament\Resources\Customers\Pages\ListCustomers;
 use Embiken\BikeRentals\Filament\Resources\Customers\RelationManagers\ReservationsRelationManager;
 use Embiken\BikeRentals\Filament\Resources\RentalPackages\Pages\EditRentalPackage;
 use Embiken\BikeRentals\Filament\Resources\RentalPackages\RelationManagers\VariantsRelationManager;
@@ -442,7 +444,7 @@ test('a manager can open the reservation editor', function () {
 
     $this->actingAs($staff, 'staff');
 
-    Livewire::test(EditReservation::class, ['record' => $reservation->getKey()])
+    Livewire::test(EditReservation::class, ['record' => $reservation->public_id])
         ->assertOk()
         ->assertActionExists('setStage')
         ->assertActionExists('setOwed')
@@ -462,7 +464,7 @@ test('a manager enters owed in the location currency rather than minor units', f
 
     $this->actingAs($staff, 'staff');
 
-    Livewire::test(EditReservation::class, ['record' => $reservation->getKey()])
+    Livewire::test(EditReservation::class, ['record' => $reservation->public_id])
         ->callAction('setOwed', data: ['owed' => '1250'])
         ->assertHasNoFormErrors();
 
@@ -478,7 +480,7 @@ test('a manager can enter a reservation amount with the active locale decimal se
     app()->setLocale('de_DE');
     $this->actingAs($staff, 'staff');
 
-    Livewire::test(EditReservation::class, ['record' => $reservation->getKey()])
+    Livewire::test(EditReservation::class, ['record' => $reservation->public_id])
         ->callAction('setOwed', data: ['owed' => '12,50'])
         ->assertHasNoFormErrors();
 
@@ -525,7 +527,7 @@ test('reservation bike lines show the occupying reservation only when it differs
     ])
         ->assertTableColumnStateSet(
             'occupying_customer',
-            '#'.$otherReservation->id.' · Other Rider',
+            $otherReservation->public_id.' · Other Rider',
             $line,
         );
 });
@@ -544,7 +546,13 @@ test('a customer page shows only that customer reservations with links to their 
 
     $this->actingAs($staff, 'staff');
 
-    Livewire::test(EditCustomer::class, ['record' => $customer->getKey()])
+    Livewire::test(ListCustomers::class)
+        ->assertSee($customer->public_id);
+
+    expect(CustomerResource::getUrl('edit', ['record' => $customer]))
+        ->toEndWith('/'.$customer->public_id.'/edit');
+
+    Livewire::test(EditCustomer::class, ['record' => $customer->public_id])
         ->assertSeeLivewire(ReservationsRelationManager::class);
 
     Livewire::test(ReservationsRelationManager::class, [
@@ -552,10 +560,18 @@ test('a customer page shows only that customer reservations with links to their 
         'pageClass' => EditCustomer::class,
     ])
         ->assertCanSeeTableRecords([$reservation])
+        ->assertSee($reservation->public_id)
         ->assertCanNotSeeTableRecords([$otherReservation])
         ->assertTableActionHasUrl(
             'viewReservation',
             ReservationResource::getUrl('view', ['record' => $reservation]),
             $reservation,
         );
+
+    expect(ReservationResource::getUrl('view', ['record' => $reservation]))
+        ->toEndWith('/'.$reservation->public_id)
+        ->and(ReservationResource::resolveRecordRouteBinding($reservation->public_id))
+        ->toBeInstanceOf(Reservation::class)
+        ->and(CustomerResource::resolveRecordRouteBinding($customer->public_id))
+        ->toBeInstanceOf(Customer::class);
 });

@@ -22,9 +22,9 @@ class ReservationsTable
     {
         return $table
             ->columns([
-                TextColumn::make('id')
+                TextColumn::make('public_id')
                     ->label(__('app.rentals_ui.fields.reservation'))
-                    ->sortable(),
+                    ->searchable(),
                 TextColumn::make('customer.name')
                     ->label(__('app.rentals_ui.fields.customer'))
                     ->searchable(),

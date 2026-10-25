@@ -94,7 +94,7 @@ class BikeReservationsRelationManager extends RelationManager
                             return '#'.$occupyingId;
                         }
 
-                        return '#'.$occupying->id.' · '.($occupying->customer->name ?: '#'.$occupying->id);
+                        return $occupying->public_id.' · '.($occupying->customer->name ?: $occupying->public_id);
                     }),
                 TextColumn::make('readiness')
                     ->label(__('app.location_ui.readiness'))

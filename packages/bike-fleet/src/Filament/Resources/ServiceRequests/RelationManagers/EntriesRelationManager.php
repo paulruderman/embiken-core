@@ -2,6 +2,7 @@
 
 namespace Embiken\BikeFleet\Filament\Resources\ServiceRequests\RelationManagers;
 
+use App\Filament\Tables\Columns\LocalizedDateTimeColumn;
 use Embiken\BikeFleet\Models\Part;
 use Embiken\BikeFleet\Models\ServiceEntryPart;
 use Filament\Actions\CreateAction;
@@ -39,8 +40,18 @@ class EntriesRelationManager extends RelationManager
                     ->label(__('app.fleet.fields.labor_minutes'))
                     ->numeric()
                     ->minValue(0),
-                DateTimePicker::make('work_started_at')->label(__('app.fleet.fields.work_started_at')),
-                DateTimePicker::make('work_completed_at')->label(__('app.fleet.fields.work_completed_at')),
+                DateTimePicker::make('work_started_at')
+                    ->label(__('app.fleet.fields.work_started_at'))
+                    ->native(false)
+                    ->seconds(false)
+                    ->timezone(LocalizedDateTimeColumn::shopTimezone())
+                    ->displayFormat(__('app.datetime_ui.input_format')),
+                DateTimePicker::make('work_completed_at')
+                    ->label(__('app.fleet.fields.work_completed_at'))
+                    ->native(false)
+                    ->seconds(false)
+                    ->timezone(LocalizedDateTimeColumn::shopTimezone())
+                    ->displayFormat(__('app.datetime_ui.input_format')),
                 Repeater::make('partUsages')
                     ->label('Parts used')
                     ->relationship()

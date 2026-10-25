@@ -19,7 +19,7 @@ class FleetDayStoreContributor implements DayStoreContributor
     public function snapshot(Location $location): array
     {
         $bikes = Bike::query()
-            ->with(['variant.bikeModel'])
+            ->with(['location', 'variant.bikeModel'])
             ->orderBy('bid')
             ->orderBy('id')
             ->get();

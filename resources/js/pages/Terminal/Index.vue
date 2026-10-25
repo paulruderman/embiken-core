@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { Head, usePage } from '@inertiajs/vue3';
 import CreateWalkInReservationAction from '@/actions/Embiken/BikeRentals/Actions/CreateWalkInReservationAction';
 import PickupAction from '@/actions/Embiken/BikeRentals/Actions/PickupAction';
@@ -52,6 +52,8 @@ const pickupBikeByLineId = ref<Record<number, number>>({});
 const pickupRequest = useHttp<PickupForm, DayPatchResponse>({});
 const walkInOwed = ref('');
 const walkInError = ref('');
+const clock = ref(Date.now());
+let readinessClockInterval: ReturnType<typeof setInterval> | undefined;
 const walkInRequest = useHttp<WalkInForm, DayPatchResponse>({
     name: '',
     email: '',
@@ -95,6 +97,18 @@ const visibleReservations = computed(() => {
         .sort((left, right) => left.starts_at.localeCompare(right.starts_at));
 });
 
+onMounted(() => {
+    readinessClockInterval = setInterval(() => {
+        clock.value = Date.now();
+    }, 30_000);
+});
+
+onUnmounted(() => {
+    if (readinessClockInterval !== undefined) {
+        clearInterval(readinessClockInterval);
+    }
+});
+
 const todayLabel = computed(() =>
     new Intl.DateTimeFormat(locale, {
         weekday: 'long',
@@ -127,10 +141,103 @@ function bikeFor(line: DayLine): DayBike | undefined {
     return line.bike_id === null ? undefined : day.bikeById(line.bike_id);
 }
 
-function occupyingReservation(bike: DayBike): DayReservation | undefined {
-    return bike.bike_situation_reservation_id === null
+function displayBikeForLine(line: DayLine): DayBike | undefined {
+    const assignedBike = bikeFor(line);
+
+    if (assignedBike !== undefined) {
+        return assignedBike;
+    }
+
+    const selectedBikeId = pickupBikeByLineId.value[line.id];
+
+    return selectedBikeId === undefined
+        ? undefined
+        : day.bikeById(selectedBikeId);
+}
+
+function occupyingReservation(
+    bike: DayBike,
+    contextReservationId?: number,
+): DayReservation | undefined {
+    return bike.bike_situation_state === BikeSituation.Home ||
+        bike.bike_situation_reservation_id === null ||
+        bike.bike_situation_reservation_id === contextReservationId
         ? undefined
         : day.reservationById(bike.bike_situation_reservation_id);
+}
+
+function occupyingReservationLabel(
+    bike: DayBike,
+    contextReservationId?: number,
+): string | undefined {
+    const reservation = occupyingReservation(bike, contextReservationId);
+
+    return reservation === undefined
+        ? undefined
+        : `#${reservation.id} · ${reservation.customer.name}`;
+}
+
+function readinessIssues(reservation: DayReservation, line: DayLine): string[] {
+    if (
+        reservation.stage === ReservationStage.Cancelled ||
+        line.status !== BikeReservationStatus.Assigned
+    ) {
+        return [];
+    }
+
+    return line.readiness_issues;
+}
+
+function readinessIssuesForLine(
+    reservation: DayReservation,
+    line: DayLine,
+): string[] {
+    if (
+        line.bike_id === null &&
+        pickupBikeByLineId.value[line.id] !== undefined
+    ) {
+        return [];
+    }
+
+    return readinessIssues(reservation, line);
+}
+
+function reservationNeedsAttention(reservation: DayReservation): boolean {
+    return (
+        (isWithinReadinessWindow(reservation) ||
+            isBeingPrepared(reservation)) &&
+        reservation.lines.some(
+            (line) => readinessIssuesForLine(reservation, line).length > 0,
+        )
+    );
+}
+
+function isBeingPrepared(reservation: DayReservation): boolean {
+    return reservation.lines.some((line) => {
+        const bike = bikeFor(line);
+
+        return (
+            bike?.bike_situation_reservation_id === reservation.id &&
+            (bike.bike_situation_state === BikeSituation.Prepping ||
+                bike.bike_situation_state === BikeSituation.Staged)
+        );
+    });
+}
+
+function isWithinReadinessWindow(reservation: DayReservation): boolean {
+    const windowMinutes = day.reservationReadinessWindowMinutes;
+    const startsAt = Date.parse(reservation.starts_at);
+
+    return (
+        windowMinutes > 0 &&
+        reservation.stage !== ReservationStage.Cancelled &&
+        startsAt >= clock.value &&
+        startsAt <= clock.value + windowMinutes * 60_000
+    );
+}
+
+function readinessLabel(issue: string): string {
+    return getEnumLabel('bikeReadinessIssue', issue);
 }
 
 function canPickUp(reservation: DayReservation, line: DayLine): boolean {
@@ -144,25 +251,17 @@ function canPickUp(reservation: DayReservation, line: DayLine): boolean {
     const selectedBikeId = line.bike_id ?? pickupBikeByLineId.value[line.id];
     const bike =
         selectedBikeId === undefined ? undefined : day.bikeById(selectedBikeId);
+    const bikeIsReadyForThisReservation =
+        line.bike_id !== null
+            ? readinessIssues(reservation, line).length === 0
+            : bike?.in_service === true &&
+              (bike.bike_situation_state === BikeSituation.Home ||
+                  ((bike.bike_situation_state === BikeSituation.Prepping ||
+                      bike.bike_situation_state === BikeSituation.Staged) &&
+                      bike.bike_situation_reservation_id === reservation.id));
 
-    if (line.bike_id === null) {
-        return Boolean(bike?.in_service && bike.variant_id === line.product_id);
-    }
-
-    if (!bike?.in_service) {
-        return false;
-    }
-
-    const availableSituations: DayBike['bike_situation_state'][] = [
-        BikeSituation.Home,
-        BikeSituation.Prepping,
-        BikeSituation.Staged,
-    ];
-
-    return (
-        availableSituations.includes(bike.bike_situation_state) &&
-        (bike.bike_situation_reservation_id === null ||
-            bike.bike_situation_reservation_id === reservation.id)
+    return Boolean(
+        bike?.variant_id === line.product_id && bikeIsReadyForThisReservation,
     );
 }
 
@@ -433,7 +532,9 @@ function bikesForLine(line: DayLine): DayBike[] {
                         default is now for two hours.
                     </p>
                     <div class="mt-4 grid gap-4 sm:grid-cols-2">
-                        <label class="flex flex-col gap-2 text-sm font-semibold">
+                        <label
+                            class="flex flex-col gap-2 text-sm font-semibold"
+                        >
                             Starts
                             <input
                                 v-model="walkInRequest.starts_at_local"
@@ -442,7 +543,9 @@ function bikesForLine(line: DayLine): DayBike[] {
                                 class="h-14 rounded-xl border border-zinc-700 bg-zinc-950 px-4 text-lg text-white focus:border-emerald-400 focus:outline-none"
                             />
                         </label>
-                        <label class="flex flex-col gap-2 text-sm font-semibold">
+                        <label
+                            class="flex flex-col gap-2 text-sm font-semibold"
+                        >
                             Expected return
                             <input
                                 v-model="walkInRequest.ends_at_local"
@@ -495,12 +598,10 @@ function bikesForLine(line: DayLine): DayBike[] {
                                             bike.bike_situation_state,
                                         )
                                     }}
-                                    <template v-if="occupyingReservation(bike)">
-                                        ·
-                                        {{
-                                            occupyingReservation(bike)?.customer
-                                                .name
-                                        }}’s reservation
+                                    <template
+                                        v-if="occupyingReservationLabel(bike)"
+                                    >
+                                        · {{ occupyingReservationLabel(bike) }}
                                     </template>
                                     <template
                                         v-else-if="
@@ -626,17 +727,82 @@ function bikesForLine(line: DayLine): DayBike[] {
                         <span class="font-mono text-lg">{{
                             formatTime(reservation.starts_at)
                         }}</span>
+                        <span
+                            v-if="reservationNeedsAttention(reservation)"
+                            class="rounded-full bg-amber-400 px-3 py-1 text-sm font-bold text-zinc-950"
+                            >Needs attention</span
+                        >
                     </div>
                     <ul class="flex w-full flex-wrap gap-2">
                         <li
                             v-for="line in reservation.lines"
                             :key="line.id"
-                            class="rounded-lg bg-zinc-800 px-3 py-2 text-sm"
+                            class="flex flex-wrap items-center gap-2 rounded-lg bg-zinc-800 px-3 py-2 text-sm"
                         >
-                            {{ line.product_label }} ·
-                            {{
-                                line.bike_id ? bikeFor(line)?.bid : 'Unassigned'
-                            }}
+                            <span
+                                >{{ line.product_label }} ·
+                                {{
+                                    displayBikeForLine(line)?.bid ??
+                                    'Unassigned'
+                                }}</span
+                            >
+                            <template v-if="displayBikeForLine(line)">
+                                <span class="text-zinc-400">·</span>
+                                <span>{{
+                                    getEnumLabel(
+                                        'bikeSituation',
+                                        displayBikeForLine(line)!
+                                            .bike_situation_state,
+                                    )
+                                }}</span>
+                                <span
+                                    v-if="
+                                        occupyingReservationLabel(
+                                            displayBikeForLine(line)!,
+                                            reservation.id,
+                                        )
+                                    "
+                                    class="text-amber-300"
+                                >
+                                    ·
+                                    {{
+                                        occupyingReservationLabel(
+                                            displayBikeForLine(line)!,
+                                            reservation.id,
+                                        )
+                                    }}
+                                </span>
+                                <span
+                                    v-else-if="
+                                        displayBikeForLine(line)!
+                                            .bike_situation_state !==
+                                            BikeSituation.Home &&
+                                        displayBikeForLine(line)!
+                                            .bike_situation_reservation_id ===
+                                            null
+                                    "
+                                    class="text-amber-300"
+                                >
+                                    ·
+                                    {{ readinessLabel('missing_reservation') }}
+                                </span>
+                            </template>
+                            <template
+                                v-if="
+                                    isWithinReadinessWindow(reservation) ||
+                                    isBeingPrepared(reservation)
+                                "
+                            >
+                                <span
+                                    v-for="issue in readinessIssuesForLine(
+                                        reservation,
+                                        line,
+                                    )"
+                                    :key="issue"
+                                    class="rounded-full bg-amber-950 px-2 py-0.5 font-semibold text-amber-200"
+                                    >{{ readinessLabel(issue) }}</span
+                                >
+                            </template>
                         </li>
                     </ul>
                     <p
@@ -748,7 +914,10 @@ function bikesForLine(line: DayLine): DayBike[] {
                             <span
                                 class="rounded-lg bg-zinc-800 px-3 py-2 font-mono text-lg font-bold"
                             >
-                                {{ bikeFor(line)?.bid ?? 'Unassigned' }}
+                                {{
+                                    displayBikeForLine(line)?.bid ??
+                                    'Unassigned'
+                                }}
                             </span>
                             <span
                                 class="rounded-full px-3 py-1 text-sm font-semibold"
@@ -767,57 +936,70 @@ function bikesForLine(line: DayLine): DayBike[] {
                                 }}
                             </span>
                             <span
-                                v-if="bikeFor(line)"
+                                v-if="displayBikeForLine(line)"
                                 class="rounded-full px-3 py-1 text-sm font-semibold"
                                 :class="
                                     getStatusBadgeClasses(
                                         'bikeSituation',
-                                        bikeFor(line)?.bike_situation_state,
+                                        displayBikeForLine(line)
+                                            ?.bike_situation_state,
                                     )
                                 "
                             >
                                 {{
                                     getEnumLabel(
                                         'bikeSituation',
-                                        bikeFor(line)?.bike_situation_state,
+                                        displayBikeForLine(line)
+                                            ?.bike_situation_state,
                                     )
                                 }}
                                 <template
-                                    v-if="occupyingReservation(bikeFor(line)!)"
+                                    v-if="
+                                        occupyingReservationLabel(
+                                            displayBikeForLine(line)!,
+                                            selectedReservation.id,
+                                        )
+                                    "
                                 >
                                     ·
                                     {{
-                                        occupyingReservation(bikeFor(line)!)
-                                            ?.customer.name
+                                        occupyingReservationLabel(
+                                            displayBikeForLine(line)!,
+                                            selectedReservation.id,
+                                        )
                                     }}
                                 </template>
                             </span>
                         </div>
-                        <p
+                        <div
                             v-if="
-                                bikeFor(line) &&
-                                bikeFor(line)?.bike_situation_reservation_id !==
-                                    null &&
-                                bikeFor(line)?.bike_situation_reservation_id !==
-                                    selectedReservation.id
+                                readinessIssuesForLine(
+                                    selectedReservation,
+                                    line,
+                                ).length > 0
                             "
-                            class="mt-2 text-sm font-semibold text-amber-300"
+                            class="mt-3 flex flex-wrap gap-2"
+                            aria-label="Readiness"
                         >
-                            Wrong place: this bike is occupied by another
-                            reservation.
-                        </p>
-                        <p
+                            <span
+                                v-for="issue in readinessIssuesForLine(
+                                    selectedReservation,
+                                    line,
+                                )"
+                                :key="issue"
+                                class="rounded-full bg-amber-950 px-3 py-1 text-sm font-semibold text-amber-200"
+                                >{{ readinessLabel(issue) }}</span
+                            >
+                        </div>
+                        <span
                             v-else-if="
-                                bikeFor(line) &&
-                                bikeFor(line)?.bike_situation_state !==
-                                    BikeSituation.Home &&
-                                !occupyingReservation(bikeFor(line)!)
+                                line.status ===
+                                    BikeReservationStatus.Assigned &&
+                                displayBikeForLine(line)
                             "
-                            class="mt-2 text-sm text-amber-300"
+                            class="mt-3 inline-flex rounded-full bg-emerald-950 px-3 py-1 text-sm font-semibold text-emerald-200"
+                            >Ready</span
                         >
-                            No occupying reservation is recorded for this bike
-                            situation.
-                        </p>
                     </div>
 
                     <label
@@ -846,11 +1028,12 @@ function bikesForLine(line: DayLine): DayBike[] {
                                         bike.bike_situation_state,
                                     )
                                 }}
-                                <template v-if="occupyingReservation(bike)">
+                                <template
+                                    v-if="occupyingReservationLabel(bike)"
+                                >
                                     ·
                                     {{
-                                        occupyingReservation(bike)?.customer
-                                            .name
+                                        occupyingReservationLabel(bike)
                                     }}</template
                                 >
                             </option>

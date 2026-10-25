@@ -16,7 +16,13 @@ class LocationReservationResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $this->resource->loadMissing(['customer', 'bikeReservations.product.bikeModel']);
+        $this->resource->loadMissing([
+            'customer',
+            'location',
+            'bikeReservations.product.bikeModel',
+            'bikeReservations.bike.location',
+            'bikeReservations.bike.variant.bikeModel',
+        ]);
 
         return [
             'id' => $this->id,

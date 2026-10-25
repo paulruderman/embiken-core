@@ -19,6 +19,8 @@ class LocationsTable
                     ->formatStateUsing(fn (?string $state): string => strtoupper((string) $state)),
                 TextColumn::make('minimum_turnaround_buffer_minutes')
                     ->label('Buffer (min)'),
+                TextColumn::make('reservation_readiness_window_minutes')
+                    ->label(__('app.location_ui.readiness_window_short')),
                 TextColumn::make('bike_assignment_policy')
                     ->badge(),
                 TextColumn::make('return_situation')

@@ -4,6 +4,7 @@ namespace Embiken\BikeFleet\Filament\Resources\ServiceRequests\Tables;
 
 use App\Enums\StaffRole;
 use App\Filament\Shop\Support\ShopSetupReadiness;
+use App\Filament\Tables\Columns\LocalizedDateTimeColumn;
 use App\Models\Staff;
 use Embiken\BikeFleet\Actions\AssignServiceRequestToMeAction;
 use Embiken\BikeFleet\Actions\ResolveServiceRequestsAction;
@@ -41,9 +42,8 @@ class ServiceRequestsTable
                     ->label(__('app.fleet.fields.latest_work'))
                     ->limit(40)
                     ->placeholder(__('app.fleet.table.no_work_logged')),
-                TextColumn::make('latestEntry.created_at')
+                LocalizedDateTimeColumn::make('latestEntry.created_at')
                     ->label(__('app.fleet.fields.last_worked'))
-                    ->dateTime()
                     ->placeholder('—')
                     ->toggleable(),
                 TextColumn::make('stage')
@@ -57,9 +57,8 @@ class ServiceRequestsTable
                     ->sortable()
                     ->searchable()
                     ->placeholder(__('app.fleet.table.unassigned')),
-                TextColumn::make('resolved_at')
+                LocalizedDateTimeColumn::make('resolved_at')
                     ->label(__('app.fleet.fields.resolved_at'))
-                    ->dateTime()
                     ->sortable()
                     ->placeholder(__('app.fleet.table.not_resolved')),
                 TextColumn::make('resolvedBy.name')

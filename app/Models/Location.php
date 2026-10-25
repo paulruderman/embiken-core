@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $timezone
  * @property string $currency
  * @property int $minimum_turnaround_buffer_minutes
+ * @property int $reservation_readiness_window_minutes
  * @property BikeAssignmentPolicy $bike_assignment_policy
  * @property ReturnSituation $return_situation
  * @property CarbonImmutable|null $created_at
@@ -30,6 +31,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'timezone',
     'currency',
     'minimum_turnaround_buffer_minutes',
+    'reservation_readiness_window_minutes',
     'bike_assignment_policy',
     'return_situation',
 ])]
@@ -54,6 +56,7 @@ class Location extends Model
     {
         return [
             'minimum_turnaround_buffer_minutes' => 'integer',
+            'reservation_readiness_window_minutes' => 'integer',
             'bike_assignment_policy' => BikeAssignmentPolicy::class,
             'return_situation' => ReturnSituation::class,
         ];

@@ -2,6 +2,7 @@
 
 namespace Embiken\Maintenance\Filament\Resources\MaintenanceChecklists\Tables;
 
+use App\Filament\Tables\Columns\LocalizedDateTimeColumn;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -16,7 +17,7 @@ class MaintenanceChecklistsTable
             ->columns([
                 TextColumn::make('name')->searchable()->sortable(),
                 TextColumn::make('items')->label(__('app.maintenance_ui.items'))->getStateUsing(fn ($record): int => count($record->items ?? [])),
-                TextColumn::make('updated_at')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
+                LocalizedDateTimeColumn::make('updated_at')->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 //

@@ -32,6 +32,7 @@ class ProvisionShopAction extends Action
                 'timezone' => $timezone,
                 'currency' => strtolower($currency),
                 'minimum_turnaround_buffer_minutes' => 10,
+                'reservation_readiness_window_minutes' => 45,
                 'bike_assignment_policy' => BikeAssignmentPolicy::Terminal,
                 'return_situation' => ReturnSituation::Home,
             ]);

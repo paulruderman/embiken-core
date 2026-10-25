@@ -1,6 +1,10 @@
 <?php
 
 return [
+    'datetime_ui' => [
+        'compact_format' => 'EEE d MMM HH:mm',
+        'input_format' => 'd M, Y H:i',
+    ],
     'navigation' => [
         'fleet' => 'Flota',
         'rentals' => 'Alquileres',
@@ -35,6 +39,19 @@ return [
         'hours_empty_heading' => 'El horario de apertura aún no está configurado',
         'hours_empty_description' => 'Añade los intervalos en los que los clientes pueden comenzar y finalizar sus alquileres. Book no puede aceptar reservas hasta que se configure el horario de apertura.',
         'add_hours' => 'Añadir horario de apertura',
+        'readiness' => 'Preparación de las bicicletas',
+        'readiness_window' => 'Ventana de preparación antes de la reserva (minutos)',
+        'readiness_window_short' => 'Ventana (min)',
+        'readiness_window_help' => 'Mostrar avisos de disponibilidad estos minutos antes del inicio de una reserva. El personal también verá avisos mientras la prepara en Terminal.',
+        'readiness_ready' => 'Lista para esta reserva',
+        'readiness_unassigned' => 'Aún no hay bicicleta asignada',
+        'readiness_parked' => 'La bicicleta está fuera de servicio',
+        'readiness_blocking_service' => 'La bicicleta tiene una solicitud de servicio bloqueante',
+        'readiness_wrong_situation' => 'La bicicleta no está físicamente lista',
+        'readiness_other_reservation' => 'La bicicleta pertenece a otra reserva',
+        'readiness_conflict' => 'La bicicleta está reservada para otro alquiler durante este intervalo',
+        'readiness_cancelled_out' => 'La bicicleta aún está fuera en una reserva cancelada',
+        'readiness_missing_reservation' => 'No hay ninguna reserva vinculada a esta situación',
     ],
     'branding_ui' => [
         'brand_name' => 'Nombre de marca',
@@ -93,7 +110,7 @@ return [
             'max_duration_minutes' => 'Duración máxima (minutos)', 'book_visible' => 'Visible en Book', 'sort_order' => 'Orden',
             'rate' => 'Tarifa', 'customer' => 'Cliente', 'rental_package' => 'Paquete de alquiler', 'notes' => 'Notas del personal',
             'damage_notes' => 'Notas sobre daños', 'variant' => 'Variante del modelo de bicicleta', 'bike' => 'Bicicleta',
-            'rider_name' => 'Nombre de ciclista', 'rider_height' => 'Altura de ciclista (cm)', 'wrong_reservation' => 'Reserva incorrecta',
+            'rider_name' => 'Nombre de ciclista', 'rider_height' => 'Altura de ciclista (cm)',
             'confirm_bikes_in_shop' => 'Confirmo que las bicicletas están en la tienda', 'refund_amount' => 'Importe del reembolso', 'note' => 'Nota',
             'transaction_type' => 'Tipo de transacción', 'payment_status' => 'Estado del pago', 'amount' => 'Importe',
             'captured_at' => 'Fecha del cobro', 'failed_at' => 'Fecha del fallo', 'payment_intent' => 'Intención de pago',

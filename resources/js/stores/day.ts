@@ -27,11 +27,12 @@ export type DayLine = {
     status: BikeReservationStatus;
     rider_name: string | null;
     rider_height_cm: number | null;
+    readiness_issues: string[];
 };
 
 export type DayReservation = {
     id: number;
-    stage: ReservationStage | string;
+    stage: ReservationStage;
     starts_at: string;
     ends_at: string;
     owed_minor_units: number;
@@ -47,9 +48,10 @@ export type DaySnapshot = {
     tenant_id: string;
     location_id: number;
     bike_assignment_policy: string;
+    reservation_readiness_window_minutes: number;
     timezone: string;
     currency: string;
-    return_situation: ReturnSituation | string;
+    return_situation: ReturnSituation;
     bikes: DayBike[];
     reservations: DayReservation[];
 };
@@ -71,6 +73,7 @@ export const useDayStore = defineStore('day', {
         timezone: 'UTC',
         currency: 'usd',
         returnSituation: 'home',
+        reservationReadinessWindowMinutes: 45,
         bikes: {} as Record<number, DayBike>,
         reservations: {} as Record<number, DayReservation>,
     }),
@@ -97,6 +100,8 @@ export const useDayStore = defineStore('day', {
             this.timezone = snapshot.timezone;
             this.currency = snapshot.currency;
             this.returnSituation = snapshot.return_situation;
+            this.reservationReadinessWindowMinutes =
+                snapshot.reservation_readiness_window_minutes;
             this.bikes = indexById(snapshot.bikes);
             this.reservations = indexById(snapshot.reservations);
             this.hydrated = true;

@@ -39,6 +39,7 @@ class DayStore
             'timezone' => $location->timezone,
             'currency' => strtolower($location->currency),
             'return_situation' => $location->return_situation->value,
+            'reservation_readiness_window_minutes' => $location->reservation_readiness_window_minutes,
             'modules' => $modules,
         ];
     }

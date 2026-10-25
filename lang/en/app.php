@@ -1,6 +1,10 @@
 <?php
 
 return [
+    'datetime_ui' => [
+        'compact_format' => 'EEE MMM d h:mm a',
+        'input_format' => 'M j, Y g:i A',
+    ],
     'navigation' => [
         'fleet' => 'Fleet',
         'rentals' => 'Rentals',
@@ -35,6 +39,19 @@ return [
         'hours_empty_heading' => 'Opening hours are not set up',
         'hours_empty_description' => 'Add the intervals when customers can start and finish rentals. Book cannot accept reservations until opening hours are configured.',
         'add_hours' => 'Add opening hours',
+        'readiness' => 'Bike readiness',
+        'readiness_window' => 'Upcoming reservation readiness window (minutes)',
+        'readiness_window_short' => 'Ready window (min)',
+        'readiness_window_help' => 'Show bike readiness warnings this many minutes before a reservation starts. Staff also see warnings while preparing a reservation in Terminal.',
+        'readiness_ready' => 'Ready for this reservation',
+        'readiness_unassigned' => 'No bike assigned yet',
+        'readiness_parked' => 'Bike is out of service',
+        'readiness_blocking_service' => 'Bike has blocking service',
+        'readiness_wrong_situation' => 'Bike is not physically ready',
+        'readiness_other_reservation' => 'Bike belongs to another reservation',
+        'readiness_missing_reservation' => 'No reservation is linked to this bike situation',
+        'readiness_conflict' => 'Bike is reserved for another rental during this interval',
+        'readiness_cancelled_out' => 'Bike is still out on a cancelled reservation',
     ],
     'branding_ui' => [
         'brand_name' => 'Brand name',
@@ -93,7 +110,7 @@ return [
             'max_duration_minutes' => 'Maximum duration (minutes)', 'book_visible' => 'Visible in Book', 'sort_order' => 'Sort order',
             'rate' => 'Rate', 'customer' => 'Customer', 'rental_package' => 'Rental package', 'notes' => 'Staff notes',
             'damage_notes' => 'Damage notes', 'variant' => 'Bike model variant', 'bike' => 'Bike',
-            'rider_name' => 'Rider name', 'rider_height' => 'Rider height (cm)', 'wrong_reservation' => 'Wrong reservation',
+            'rider_name' => 'Rider name', 'rider_height' => 'Rider height (cm)',
             'confirm_bikes_in_shop' => 'I confirm the bikes are in the shop', 'refund_amount' => 'Refund amount', 'note' => 'Note',
             'transaction_type' => 'Transaction type', 'payment_status' => 'Payment status', 'amount' => 'Amount',
             'captured_at' => 'Captured at', 'failed_at' => 'Failed at', 'payment_intent' => 'Payment Intent',

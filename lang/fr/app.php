@@ -1,6 +1,10 @@
 <?php
 
 return [
+    'datetime_ui' => [
+        'compact_format' => 'EEE d MMM HH:mm',
+        'input_format' => 'd M, Y H:i',
+    ],
     'navigation' => [
         'fleet' => 'Flotte',
         'rentals' => 'Locations',
@@ -35,6 +39,19 @@ return [
         'hours_empty_heading' => 'Les horaires d’ouverture ne sont pas configurés',
         'hours_empty_description' => 'Ajoutez les plages horaires pendant lesquelles les clients peuvent commencer et terminer leur location. Book ne peut pas accepter de réservations tant que les horaires ne sont pas configurés.',
         'add_hours' => 'Ajouter des horaires d’ouverture',
+        'readiness' => 'État de préparation des vélos',
+        'readiness_window' => 'Fenêtre de préparation avant réservation (minutes)',
+        'readiness_window_short' => 'Fenêtre (min)',
+        'readiness_window_help' => 'Afficher les alertes de disponibilité ce nombre de minutes avant le début d’une réservation. Le personnel les voit aussi pendant la préparation dans Terminal.',
+        'readiness_ready' => 'Prêt pour cette réservation',
+        'readiness_unassigned' => 'Aucun vélo attribué',
+        'readiness_parked' => 'Vélo hors service',
+        'readiness_blocking_service' => 'Le vélo a une demande d’entretien bloquante',
+        'readiness_wrong_situation' => 'Le vélo n’est pas physiquement prêt',
+        'readiness_other_reservation' => 'Le vélo appartient à une autre réservation',
+        'readiness_conflict' => 'Vélo réservé pour une autre location pendant cet intervalle',
+        'readiness_cancelled_out' => 'Le vélo est encore sorti pour une réservation annulée',
+        'readiness_missing_reservation' => 'Aucune réservation liée à cette situation',
     ],
     'branding_ui' => [
         'brand_name' => 'Nom de la marque',
@@ -93,7 +110,7 @@ return [
             'max_duration_minutes' => 'Durée maximale (minutes)', 'book_visible' => 'Visible dans Book', 'sort_order' => 'Ordre de tri',
             'rate' => 'Tarif', 'customer' => 'Client', 'rental_package' => 'Forfait de location', 'notes' => 'Notes du personnel',
             'damage_notes' => 'Notes sur les dommages', 'variant' => 'Variante de modèle de vélo', 'bike' => 'Vélo',
-            'rider_name' => 'Nom du cycliste', 'rider_height' => 'Taille du cycliste (cm)', 'wrong_reservation' => 'Mauvaise réservation',
+            'rider_name' => 'Nom du cycliste', 'rider_height' => 'Taille du cycliste (cm)',
             'confirm_bikes_in_shop' => 'Je confirme que les vélos sont à la boutique', 'refund_amount' => 'Montant du remboursement', 'note' => 'Note',
             'transaction_type' => 'Type de transaction', 'payment_status' => 'État du paiement', 'amount' => 'Montant',
             'captured_at' => 'Capturé le', 'failed_at' => 'Échec le', 'payment_intent' => 'Intention de paiement',

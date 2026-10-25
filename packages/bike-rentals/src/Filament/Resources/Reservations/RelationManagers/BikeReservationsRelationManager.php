@@ -9,15 +9,17 @@ use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeFleet\Models\BikeModelVariant;
 use Embiken\BikeRentals\Actions\AllocateLineAction;
 use Embiken\BikeRentals\Actions\ReleaseLineAction;
+use Embiken\BikeRentals\Enums\BikeReadinessIssue;
+use Embiken\BikeRentals\Enums\BikeReservationStatus;
 use Embiken\BikeRentals\Models\BikeReservation;
 use Embiken\BikeRentals\Models\Reservation;
+use Embiken\BikeRentals\Services\Availability;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -47,7 +49,10 @@ class BikeReservationsRelationManager extends RelationManager
     {
         return $table
             ->recordTitleAttribute('id')
-            ->modifyQueryUsing(fn ($query) => $query->with(['product.bikeModel', 'bike']))
+            ->modifyQueryUsing(fn ($query) => $query->with([
+                'product.bikeModel',
+                'bike.situationReservation.customer',
+            ]))
             ->columns([
                 TextColumn::make('product.bikeModel.name')
                     ->label(__('app.fleet.fields.model')),
@@ -65,25 +70,38 @@ class BikeReservationsRelationManager extends RelationManager
                     ->placeholder('—'),
                 TextColumn::make('occupying_customer')
                     ->label(__('app.fleet.fields.occupying_reservation'))
-                    ->getStateUsing(function (BikeReservation $record): string {
-                        $occupying = $record->bike?->bike_situation_reservation_id
-                            ? Reservation::query()->with('customer')->find($record->bike->bike_situation_reservation_id)
-                            : null;
+                    ->getStateUsing(function (BikeReservation $record): ?string {
+                        $bike = $record->bike;
 
-                        if ($occupying === null) {
-                            return $record->bike?->bike_situation_state === BikeSituation::Home ? '—' : '—';
+                        if ($bike === null || $bike->bike_situation_state === BikeSituation::Home) {
+                            return null;
                         }
 
-                        return '#'.$occupying->id.' '.$occupying->customer?->name;
-                    }),
-                IconColumn::make('wrong_ticket')
-                    ->label(__('app.rentals_ui.fields.wrong_reservation'))
-                    ->boolean()
-                    ->getStateUsing(function (BikeReservation $record): bool {
-                        $occupyingId = $record->bike?->bike_situation_reservation_id;
+                        $occupyingId = $bike->bike_situation_reservation_id;
 
-                        return $occupyingId !== null && $occupyingId !== $record->reservation_id;
+                        if ($occupyingId === null) {
+                            return __('app.location_ui.readiness_missing_reservation');
+                        }
+
+                        if ($occupyingId === $record->reservation_id) {
+                            return null;
+                        }
+
+                        $occupying = $bike->getRelationValue('situationReservation');
+
+                        if (! $occupying instanceof Reservation) {
+                            return '#'.$occupyingId;
+                        }
+
+                        return '#'.$occupying->id.' · '.($occupying->customer->name ?: '#'.$occupying->id);
                     }),
+                TextColumn::make('readiness')
+                    ->label(__('app.location_ui.readiness'))
+                    ->badge()
+                    ->getStateUsing(fn (BikeReservation $record): ?string => self::readinessLabel($record))
+                    ->color(fn (?string $state): string => $state === __('app.location_ui.readiness_ready')
+                        ? 'success'
+                        : 'warning'),
                 TextColumn::make('status')
                     ->badge(),
                 TextColumn::make('rider_name')
@@ -124,5 +142,41 @@ class BikeReservationsRelationManager extends RelationManager
                     ->requiresConfirmation()
                     ->action(fn (BikeReservation $record) => app(ReleaseLineAction::class)($record)),
             ]);
+    }
+
+    private static function readinessLabel(BikeReservation $record): ?string
+    {
+        if ($record->status !== BikeReservationStatus::Assigned) {
+            return null;
+        }
+
+        $record->loadMissing(['reservation.location', 'bike']);
+        $bike = $record->bike;
+        $activePreparation = $bike !== null
+            && $bike->bike_situation_reservation_id === $record->reservation_id
+            && in_array($bike->bike_situation_state, [BikeSituation::Prepping, BikeSituation::Staged], true);
+        $windowMinutes = $record->reservation->location->reservation_readiness_window_minutes;
+        $startsAt = $record->reservation->starts_at;
+        $now = now();
+        $withinWindow = $windowMinutes > 0
+            && $startsAt->greaterThanOrEqualTo($now)
+            && $startsAt->lessThanOrEqualTo($now->copy()->addMinutes($windowMinutes));
+
+        if (! $activePreparation && ! $withinWindow) {
+            return null;
+        }
+
+        $issues = app(Availability::class)->readinessIssuesForLine($record);
+
+        if ($issues === []) {
+            return $record->bike_id === null
+                ? null
+                : (string) __('app.location_ui.readiness_ready');
+        }
+
+        return implode(' · ', array_map(
+            fn (string $issue): string => BikeReadinessIssue::from($issue)->getLabel(),
+            $issues,
+        ));
     }
 }

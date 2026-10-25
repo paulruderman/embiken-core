@@ -11,6 +11,7 @@ use App\Support\SetupStepDefinition;
 use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeFleet\Models\BikeModelVariant;
 use Embiken\BikeRentals\DayStore\RentalsDayStoreContributor;
+use Embiken\BikeRentals\Enums\BikeReadinessIssue;
 use Embiken\BikeRentals\Enums\BikeReservationStatus;
 use Embiken\BikeRentals\Enums\ConfirmThreshold;
 use Embiken\BikeRentals\Enums\PackageMeter;
@@ -132,6 +133,7 @@ class BikeRentalsModule extends AbstractTenantModule
         return [
             ReservationStage::class,
             BikeReservationStatus::class,
+            BikeReadinessIssue::class,
             PackageMeter::class,
             ConfirmThreshold::class,
             ReservationChannel::class,

@@ -12,6 +12,7 @@ use App\Models\LocationHour;
 use App\Models\ShopSetting;
 use App\Models\Staff;
 use App\Notifications\SetPasswordNotification;
+use Embiken\BikeFleet\Enums\BikeSituation;
 use Embiken\BikeFleet\Filament\Resources\BikeCategories\BikeCategoryResource;
 use Embiken\BikeFleet\Filament\Resources\BikeModels\Pages\ListBikeModels;
 use Embiken\BikeFleet\Filament\Resources\ServiceRequests\Pages\ListServiceRequests;
@@ -20,12 +21,14 @@ use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeFleet\Models\BikeCategory;
 use Embiken\BikeFleet\Models\BikeModel;
 use Embiken\BikeFleet\Models\BikeModelVariant;
+use Embiken\BikeRentals\Actions\AllocateLineAction;
 use Embiken\BikeRentals\Filament\Resources\Customers\Pages\EditCustomer;
 use Embiken\BikeRentals\Filament\Resources\Customers\RelationManagers\ReservationsRelationManager;
 use Embiken\BikeRentals\Filament\Resources\RentalPackages\Pages\EditRentalPackage;
 use Embiken\BikeRentals\Filament\Resources\RentalPackages\RelationManagers\VariantsRelationManager;
 use Embiken\BikeRentals\Filament\Resources\Reservations\Pages\EditReservation;
 use Embiken\BikeRentals\Filament\Resources\Reservations\Pages\ListReservations;
+use Embiken\BikeRentals\Filament\Resources\Reservations\RelationManagers\BikeReservationsRelationManager;
 use Embiken\BikeRentals\Filament\Resources\Reservations\ReservationResource;
 use Embiken\BikeRentals\Models\Customer;
 use Embiken\BikeRentals\Models\RentalPackage;
@@ -60,6 +63,7 @@ test('provisioning a shop creates a location, invitible manager, and platform ma
 
     expect($location->name)->toBe('River Bikes')
         ->and($location->minimum_turnaround_buffer_minutes)->toBe(10)
+        ->and($location->reservation_readiness_window_minutes)->toBe(45)
         ->and($location->hours)->toHaveCount(0)
         ->and(Staff::query()->where('is_platform_manager', true)->whereNull('password')->exists())->toBeTrue();
 
@@ -479,6 +483,51 @@ test('a manager can enter a reservation amount with the active locale decimal se
         ->assertHasNoFormErrors();
 
     expect($reservation->fresh()->owed)->toBe(1250);
+});
+
+test('reservation bike lines show the occupying reservation only when it differs', function () {
+    $staff = Staff::factory()->create();
+    $customer = Customer::factory()->create(['name' => 'Current Rider']);
+    $bike = Bike::factory()->for($staff->location)->create();
+    $reservation = Reservation::factory()
+        ->for($staff->location)
+        ->for($customer)
+        ->confirmed()
+        ->terminal()
+        ->create();
+    $line = app(AllocateLineAction::class)($reservation, $bike->variant, $bike);
+    $bike->update([
+        'bike_situation_state' => BikeSituation::Staged,
+        'bike_situation_reservation_id' => $reservation->id,
+    ]);
+    $this->actingAs($staff, 'staff');
+
+    Livewire::test(BikeReservationsRelationManager::class, [
+        'ownerRecord' => $reservation,
+        'pageClass' => EditReservation::class,
+    ])
+        ->assertCanSeeTableRecords([$line])
+        ->assertTableColumnStateSet('occupying_customer', null, $line)
+        ->assertTableColumnStateSet('readiness', __('app.location_ui.readiness_ready'), $line);
+
+    $otherCustomer = Customer::factory()->create(['name' => 'Other Rider']);
+    $otherReservation = Reservation::factory()
+        ->for($staff->location)
+        ->for($otherCustomer)
+        ->confirmed()
+        ->terminal()
+        ->create();
+    $bike->update(['bike_situation_reservation_id' => $otherReservation->id]);
+
+    Livewire::test(BikeReservationsRelationManager::class, [
+        'ownerRecord' => $reservation,
+        'pageClass' => EditReservation::class,
+    ])
+        ->assertTableColumnStateSet(
+            'occupying_customer',
+            '#'.$otherReservation->id.' · Other Rider',
+            $line,
+        );
 });
 
 test('a customer page shows only that customer reservations with links to their details', function () {

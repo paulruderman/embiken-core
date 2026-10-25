@@ -221,6 +221,37 @@ test('pickup remains blocked while the assigned bike is physically unavailable',
         ->toThrow(OccupancyUnavailable::class);
 });
 
+test('readiness treats prep and staging as ready only for the linked reservation', function () {
+    $bike = Bike::factory()->create();
+    $reservation = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create([
+        'starts_at' => '2026-10-26 10:00:00',
+        'ends_at' => '2026-10-26 12:00:00',
+    ]);
+    $otherReservation = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create([
+        'starts_at' => '2026-10-26 13:00:00',
+        'ends_at' => '2026-10-26 15:00:00',
+    ]);
+    $line = app(AllocateLineAction::class)($reservation, $bike->variant, $bike);
+    $availability = app(Availability::class);
+
+    $bike->update([
+        'bike_situation_state' => BikeSituation::Staged,
+        'bike_situation_reservation_id' => $reservation->id,
+    ]);
+
+    expect($availability->readinessIssuesForLine($line->fresh()))->toBe([]);
+
+    $bike->update(['bike_situation_reservation_id' => $otherReservation->id]);
+
+    expect($availability->readinessIssuesForLine($line->fresh()))
+        ->toContain('other_reservation', 'wrong_situation');
+
+    $bike->update(['bike_situation_reservation_id' => null]);
+
+    expect($availability->readinessIssuesForLine($line->fresh()))
+        ->toContain('missing_reservation', 'wrong_situation');
+});
+
 test('swapAsset moves the line to another in-service bike', function () {
     $from = Bike::factory()->create();
     $to = Bike::factory()->recycle($from->location)->recycle($from->variant)->create();

@@ -16,7 +16,7 @@ class LocationBikeResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $this->resource->loadMissing('variant.bikeModel');
+        $this->resource->loadMissing(['location', 'variant.bikeModel']);
 
         return [
             'id' => $this->id,

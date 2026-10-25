@@ -41,6 +41,14 @@ class LocationForm
                     ->required()
                     ->default(10)
                     ->minValue(0),
+                TextInput::make('reservation_readiness_window_minutes')
+                    ->label(__('app.location_ui.readiness_window'))
+                    ->helperText(__('app.location_ui.readiness_window_help'))
+                    ->numeric()
+                    ->required()
+                    ->default(45)
+                    ->minValue(0)
+                    ->maxValue(1440),
                 Select::make('bike_assignment_policy')
                     ->options(BikeAssignmentPolicy::class)
                     ->required(),

@@ -2,6 +2,7 @@
 
 namespace Embiken\BikeRentals\Services;
 
+use App\Enums\BikeAssignmentPolicy;
 use App\Models\Location;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
@@ -10,6 +11,7 @@ use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeFleet\Models\BikeModelVariant;
 use Embiken\BikeFleet\Models\ServiceRequest;
 use Embiken\BikeFleet\Services\FleetMutationLock;
+use Embiken\BikeRentals\Enums\BikeReadinessIssue;
 use Embiken\BikeRentals\Enums\BikeReservationStatus;
 use Embiken\BikeRentals\Enums\ReservationChannel;
 use Embiken\BikeRentals\Enums\ReservationStage;
@@ -430,18 +432,120 @@ class Availability
         ?int $ignoreLineId,
         bool $allowOverride,
     ): void {
+        $conflictReason = $this->bikeIntervalConflictReason(
+            $bike,
+            $startsAt,
+            $endsAt,
+            $ignoreReservationId,
+            $ignoreLineId,
+        );
+
+        if ($conflictReason === 'cancelled_out' && ! $allowOverride) {
+            throw new OccupancyUnavailable('That bike is still Out on a Cancelled reservation.');
+        }
+
+        if ($conflictReason === 'reservation_conflict' && ! $allowOverride) {
+            throw new OccupancyUnavailable('That interval overlaps another reservation.');
+        }
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function readinessIssuesForLine(BikeReservation $line): array
+    {
+        $line->loadMissing(['bike.location', 'bike.variant.bikeModel', 'reservation.location']);
+
+        if ($line->reservation->stage === ReservationStage::Cancelled || $line->status !== BikeReservationStatus::Assigned) {
+            return [];
+        }
+
+        $bike = $line->bike;
+
+        if ($bike === null) {
+            return $line->reservation->location->bike_assignment_policy === BikeAssignmentPolicy::PickupOnly
+                ? []
+                : [BikeReadinessIssue::Unassigned->value];
+        }
+
+        $issues = [];
+
+        if (! $bike->in_service) {
+            $issues[] = BikeReadinessIssue::Parked->value;
+        }
+
+        if ($this->hasBlockingServiceForInterval($bike, $line->reservation->starts_at, $line->reservation->ends_at)) {
+            $issues[] = BikeReadinessIssue::BlockingService->value;
+        }
+
+        if ($bike->bike_situation_reservation_id !== null
+            && $bike->bike_situation_reservation_id !== $line->reservation_id
+            && $bike->bike_situation_state !== BikeSituation::Home) {
+            $issues[] = BikeReadinessIssue::OtherReservation->value;
+        }
+
+        if ($bike->bike_situation_state !== BikeSituation::Home
+            && $bike->bike_situation_reservation_id === null) {
+            $issues[] = BikeReadinessIssue::MissingReservation->value;
+        }
+
+        if (in_array($bike->bike_situation_state, [BikeSituation::Prepping, BikeSituation::Staged], true)
+            && $bike->bike_situation_reservation_id !== $line->reservation_id) {
+            $issues[] = BikeReadinessIssue::WrongSituation->value;
+        }
+
+        if (! in_array($bike->bike_situation_state, [BikeSituation::Home, BikeSituation::Prepping, BikeSituation::Staged], true)) {
+            $issues[] = BikeReadinessIssue::WrongSituation->value;
+        }
+
+        $intervalConflict = $this->bikeIntervalConflictReason(
+            $bike,
+            $line->reservation->starts_at,
+            $line->reservation->ends_at,
+            $line->reservation_id,
+            $line->id,
+        );
+
+        if ($intervalConflict !== null) {
+            $issues[] = BikeReadinessIssue::from($intervalConflict)->value;
+        }
+
+        return array_values(array_unique($issues));
+    }
+
+    private function hasBlockingServiceForInterval(Bike $bike, CarbonInterface $startsAt, CarbonInterface $endsAt): bool
+    {
+        return ServiceRequest::query()
+            ->where('bike_id', $bike->id)
+            ->where('blocks_usage', true)
+            ->where(fn ($query) => $query
+                ->whereNull('starts_at')
+                ->orWhere('starts_at', '<=', $endsAt))
+            ->where(fn ($query) => $query
+                ->whereNull('ends_at')
+                ->orWhere('ends_at', '>=', $startsAt))
+            ->get()
+            ->contains(fn (ServiceRequest $request): bool => $request->stage->occupiesWhenBlocking());
+    }
+
+    private function bikeIntervalConflictReason(
+        Bike $bike,
+        CarbonInterface $startsAt,
+        CarbonInterface $endsAt,
+        int $ignoreReservationId,
+        ?int $ignoreLineId,
+    ): ?string {
         $cancelledOut = BikeReservation::query()
             ->where('bike_id', $bike->id)
             ->where('status', BikeReservationStatus::Out)
             ->whereHas('reservation', fn ($builder) => $builder->where('stage', ReservationStage::Cancelled))
             ->exists();
 
-        if ($cancelledOut && ! $allowOverride) {
-            throw new OccupancyUnavailable('That bike is still Out on a Cancelled reservation.');
+        if ($cancelledOut) {
+            return 'cancelled_out';
         }
 
         $buffer = $this->effectiveBufferMinutes($bike);
-
         $conflict = BikeReservation::query()
             ->with('reservation')
             ->where('bike_id', $bike->id)
@@ -456,9 +560,7 @@ class Availability
                 return $line->reservation->starts_at->lte($endsAt) && $occupiedUntil->gte($startsAt);
             });
 
-        if ($conflict && ! $allowOverride) {
-            throw new OccupancyUnavailable('That interval overlaps another reservation.');
-        }
+        return $conflict ? 'reservation_conflict' : null;
     }
 
     private function assertClassCapacity(

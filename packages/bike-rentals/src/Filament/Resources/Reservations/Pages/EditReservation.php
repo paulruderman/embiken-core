@@ -2,6 +2,7 @@
 
 namespace Embiken\BikeRentals\Filament\Resources\Reservations\Pages;
 
+use App\Filament\Tables\Columns\LocalizedDateTimeColumn;
 use Embiken\BikeRentals\Actions\CancelAction;
 use Embiken\BikeRentals\Actions\ExtendAction;
 use Embiken\BikeRentals\Actions\RefundAction;
@@ -81,6 +82,10 @@ class EditReservation extends EditRecord
                 ->schema([
                     DateTimePicker::make('ends_at')
                         ->label(__('app.rentals_ui.fields.ends_at'))
+                        ->native(false)
+                        ->seconds(false)
+                        ->timezone(LocalizedDateTimeColumn::shopTimezone())
+                        ->displayFormat(__('app.datetime_ui.input_format'))
                         ->required()
                         ->default(fn (): mixed => $reservation->ends_at),
                     MoneyInput::make('owed', fn (): string => $reservation->currency)

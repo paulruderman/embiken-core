@@ -2,6 +2,7 @@
 
 namespace Embiken\BikeRentals\Filament\Resources\Reservations\RelationManagers;
 
+use App\Filament\Tables\Columns\LocalizedDateTimeColumn;
 use App\Support\Money;
 use Embiken\BikeRentals\Filament\Resources\Reservations\Schemas\TransactionInfolist;
 use Embiken\BikeRentals\Models\Transaction;
@@ -32,9 +33,9 @@ class TransactionsRelationManager extends RelationManager
                 TextColumn::make('note')
                     ->label(__('app.rentals_ui.fields.note'))
                     ->placeholder('—'),
-                TextColumn::make('captured_at')
+                LocalizedDateTimeColumn::make('captured_at')
                     ->label(__('app.rentals_ui.fields.captured_at'))
-                    ->dateTime(),
+                    ->sortable(),
             ])
             ->headerActions([])
             ->recordActions([

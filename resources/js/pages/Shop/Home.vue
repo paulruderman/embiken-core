@@ -18,7 +18,7 @@ const props = defineProps<{
     shopName: string;
     logoUrl: string | null;
     primaryColor: string;
-    locale: 'en' | 'es' | 'fr';
+    contentLocale: 'en' | 'es' | 'fr';
     layout: 'hero' | 'split' | 'story';
     layoutData: LayoutData;
     theme: 'light' | 'warm' | 'dark';
@@ -32,7 +32,7 @@ const copy = {
     fr: { title: 'Location de vélos', book: 'Réserver un vélo', setup: 'Cette boutique prépare sa page d’accueil.' },
 };
 
-const text = copy[props.locale];
+const text = copy[props.contentLocale];
 </script>
 
 <template>

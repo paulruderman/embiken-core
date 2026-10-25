@@ -49,7 +49,7 @@ class ShopLandingPageController extends Controller
             'shopName' => $shopName,
             'logoUrl' => $settings?->logo_path === null ? null : tenant_asset($settings->logo_path),
             'primaryColor' => BrandColor::swatch($settings?->primary_color, ShopSetting::DEFAULT_PRIMARY_COLOR),
-            'locale' => $locale,
+            'contentLocale' => $locale,
             'layout' => $page->layout ?? 'hero',
             'layoutData' => [
                 ...$layoutData,
@@ -78,7 +78,7 @@ class ShopLandingPageController extends Controller
         }, $bookingNotices);
 
         return inertia('Book/Index', [
-            'locale' => $locale,
+            'contentLocale' => $locale,
             'bookingNotices' => $bookingNotices,
         ]);
     }

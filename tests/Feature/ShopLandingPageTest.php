@@ -95,7 +95,8 @@ test('the tenant root renders translated copy and falls back to English for miss
         ->get('http://landing-translated.localhost/?locale=es_419')
         ->assertInertia(fn (Assert $page) => $page
             ->component('Shop/Home')
-            ->where('locale', 'es')
+            ->where('locale', 'es-419')
+            ->where('contentLocale', 'es')
             ->where('layoutData.headline', 'Recorre la costa')
             ->where('layoutData.description', 'Bikes for a day by the water.'));
 });

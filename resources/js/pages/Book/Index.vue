@@ -3,7 +3,7 @@ import { Head } from '@inertiajs/vue3';
 import LocaleSwitcher from '@/components/LocaleSwitcher.vue';
 
 const props = defineProps<{
-    locale: 'en' | 'es' | 'fr';
+    contentLocale: 'en' | 'es' | 'fr';
     bookingNotices: Array<{
         message: string;
         tone: 'info' | 'success' | 'warning';
@@ -16,7 +16,7 @@ const copy = {
     fr: { title: 'Réserver', description: 'Réservations en ligne pour cette boutique.', language: 'Langue' },
 };
 
-const text = copy[props.locale];
+const text = copy[props.contentLocale];
 </script>
 
 <template>

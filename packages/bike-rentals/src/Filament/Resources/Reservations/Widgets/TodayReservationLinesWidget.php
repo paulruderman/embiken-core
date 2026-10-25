@@ -3,7 +3,6 @@
 namespace Embiken\BikeRentals\Filament\Resources\Reservations\Widgets;
 
 use App\Filament\Tables\Columns\LocalizedDateTimeColumn;
-use Embiken\BikeFleet\Enums\BikeSituation;
 use Embiken\BikeRentals\Enums\BikeReservationStatus;
 use Embiken\BikeRentals\Enums\ReservationStage;
 use Embiken\BikeRentals\Filament\Resources\Reservations\ReservationResource;
@@ -45,7 +44,6 @@ class TodayReservationLinesWidget extends TableWidget
                     ->with([
                         'reservation.customer',
                         'product.bikeModel',
-                        'bike.situationReservation.customer',
                     ])
                     ->orderBy(Reservation::query()
                         ->select('starts_at')

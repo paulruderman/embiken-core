@@ -73,6 +73,7 @@ it('renders reservation stage badges with their enum colors', function () {
 
     Livewire::test(ListReservations::class)
         ->assertSeeHtml('fi-badge fi-size-sm fi-color fi-color-blue')
+        ->assertSeeHtml('fi-striped')
         ->assertSee('Confirmed');
 });
 

@@ -2,6 +2,7 @@
 
 use App\Actions\Platform\ImpersonatePlatformManagerAction;
 use App\Actions\Platform\PublicSignupAction;
+use App\Actions\Shop\ImportLocationMetadataAction;
 use App\Http\Controllers\MarketingPageController;
 use Embiken\BikeFleet\Actions\ImportCatalogFleetAction;
 use Embiken\BikeFleet\Actions\ValidateCatalogFleetImportAction;
@@ -15,6 +16,10 @@ Route::post('/fleet/import/catalog', ImportCatalogFleetAction::class)
 Route::post('/rentals/import/package-rates', ImportPackageRatesAction::class)
     ->middleware('auth:staff')
     ->name('rentals.import.package-rates');
+
+Route::post('/shop/import/location-metadata', ImportLocationMetadataAction::class)
+    ->middleware('auth:staff')
+    ->name('shop.import.location-metadata');
 
 $centralDomains = config('tenancy.central_domains');
 

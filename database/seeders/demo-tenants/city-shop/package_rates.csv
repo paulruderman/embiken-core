@@ -1,0 +1,16 @@
+package_key,category_name,model_name,variant_size,variant_color_name,variant_color_value,rate_minor_units
+hourly,City Bikes,Everyday Commuter,S,Slate,#64748B,2500
+hourly,City Bikes,Everyday Commuter,M,Slate,#64748B,2500
+hourly,City Bikes,Easy Step-Through,M,Cream,#F5E6C8,2500
+hourly,City Bikes,Easy Step-Through,L,Cream,#F5E6C8,2500
+hourly,Cargo Bikes,Longtail E-Cargo,M,Forest,#166534,2500
+day,City Bikes,Everyday Commuter,S,Slate,#64748B,6500
+day,City Bikes,Everyday Commuter,M,Slate,#64748B,6500
+day,City Bikes,Easy Step-Through,M,Cream,#F5E6C8,6500
+day,City Bikes,Easy Step-Through,L,Cream,#F5E6C8,6500
+day,Cargo Bikes,Longtail E-Cargo,M,Forest,#166534,6500
+test-ride,City Bikes,Everyday Commuter,S,Slate,#64748B,0
+test-ride,City Bikes,Everyday Commuter,M,Slate,#64748B,0
+test-ride,City Bikes,Easy Step-Through,M,Cream,#F5E6C8,0
+test-ride,City Bikes,Easy Step-Through,L,Cream,#F5E6C8,0
+test-ride,Cargo Bikes,Longtail E-Cargo,M,Forest,#166534,0

@@ -1,0 +1,20 @@
+{
+  "shop": {
+    "name": "Summit E-bike Adventures",
+    "timezone": "America/Denver",
+    "currency": "usd",
+    "minimum_turnaround_buffer_minutes": 20,
+    "bike_assignment_policy": "pickup_only",
+    "return_situation": "back",
+    "hours": {
+      "sunday": [{"opens_at": "08:00", "closes_at": "18:00", "closes_next_day": false}],
+      "monday": [],
+      "tuesday": [{"opens_at": "08:00", "closes_at": "18:00", "closes_next_day": false}],
+      "wednesday": [{"opens_at": "08:00", "closes_at": "18:00", "closes_next_day": false}],
+      "thursday": [{"opens_at": "08:00", "closes_at": "18:00", "closes_next_day": false}],
+      "friday": [{"opens_at": "08:00", "closes_at": "18:00", "closes_next_day": false}],
+      "saturday": [{"opens_at": "08:00", "closes_at": "18:00", "closes_next_day": false}]
+    },
+    "closed_dates": []
+  }
+}

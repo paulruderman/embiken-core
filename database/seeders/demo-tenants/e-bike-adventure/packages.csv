@@ -1,0 +1,4 @@
+key,name,tagline,blurb,description,meter,confirm_threshold,deposit_minor_units,deposit_percent,min_duration_minutes,max_duration_minutes,book_visible,sort_order
+guided-hour,Guided Trail Hour,A supervised trail session,,Guided Trail Hour for this fictional demo shop.,per_hour,deposit,2500,,60,480,true,1
+adventure-day,Adventure Day,Full-day e-bike adventure,,Adventure Day for this fictional demo shop.,per_calendar_day,full,,,60,480,true,2
+demo,Shop Demo Ride,Staff demo fleet walkthrough,,Shop Demo Ride for this fictional demo shop.,none,none,,,60,480,true,3

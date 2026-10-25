@@ -1,0 +1,13 @@
+bid,variant_key,serial_number,in_service,self_bookable
+E--01,trail-s,DEMO-E--001,true,true
+E--02,trail-s,DEMO-E--002,true,true
+E--03,trail-m,DEMO-E--003,true,true
+E--04,trail-m,DEMO-E--004,true,false
+E--05,trail-m,DEMO-E--005,true,true
+E--06,trail-l,DEMO-E--006,true,true
+E--07,trail-l,DEMO-E--007,true,true
+E--08,hardtail-m,DEMO-E--008,true,false
+E--09,hardtail-m,DEMO-E--009,true,true
+E--10,tourer-m,DEMO-E--010,true,true
+E--11,tourer-m,DEMO-E--011,true,true
+E--12,tourer-m,DEMO-E--012,true,false

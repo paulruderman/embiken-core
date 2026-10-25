@@ -5,19 +5,16 @@ namespace App\Actions\Platform;
 use App\Actions\Action;
 use App\Actions\Staff\InviteStaffAction;
 use App\Enums\StaffRole;
-use App\Enums\Weekday;
 use App\Models\Domain;
 use App\Models\Location;
-use App\Models\LocationHour;
 use App\Models\Tenant;
+use App\Services\LocationMetadataImport;
 use Embiken\BikeFleet\Enums\BikeSituation;
 use Embiken\BikeFleet\Models\Bike;
-use Embiken\BikeFleet\Models\BikeCategory;
-use Embiken\BikeFleet\Models\BikeModel;
 use Embiken\BikeFleet\Models\BikeModelVariant;
+use Embiken\BikeFleet\Services\CatalogFleetImport;
 use Embiken\BikeRentals\Actions\AllocateLineAction;
 use Embiken\BikeRentals\Enums\BikeReservationStatus;
-use Embiken\BikeRentals\Enums\ConfirmThreshold;
 use Embiken\BikeRentals\Enums\PackageMeter;
 use Embiken\BikeRentals\Enums\ReservationChannel;
 use Embiken\BikeRentals\Enums\ReservationStage;
@@ -25,6 +22,7 @@ use Embiken\BikeRentals\Models\BikeReservation;
 use Embiken\BikeRentals\Models\Customer;
 use Embiken\BikeRentals\Models\RentalPackage;
 use Embiken\BikeRentals\Models\Reservation;
+use Embiken\BikeRentals\Services\PackageRateImport;
 use Illuminate\Console\Command;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -33,23 +31,34 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use RuntimeException;
 
 class SeedFakeTenantAction extends Action
 {
-    public string $commandSignature = 'db:seed-fake-tenant {--domain=demo.localhost} {--name=Harbor Demo Bikes} {--timezone=America/New_York} {--confirm-demo}';
+    private const array PROFILES = [
+        'city-shop' => ['label' => 'City commuter and cargo shop'],
+        'e-bike-adventure' => ['label' => 'E-bike adventure and trail shop'],
+        'family-rentals' => ['label' => 'Family and kids rental shop'],
+    ];
+
+    public string $commandSignature = 'db:seed-fake-tenant {--profile=} {--domain=} {--name=} {--timezone=} {--confirm-demo}';
 
     public string $commandDescription = 'Provision a demo shop Tenant with catalog, hours, packages, and upcoming Reservations.';
 
     public function __construct(
         private CreateTenantAction $createTenant,
         private AllocateLineAction $allocateLine,
+        private CatalogFleetImport $catalogFleetImport,
+        private PackageRateImport $packageRateImport,
+        private LocationMetadataImport $locationMetadataImport,
     ) {}
 
     public function handle(
-        string $domain = 'demo.localhost',
-        string $name = 'Harbor Demo Bikes',
-        string $timezone = 'America/New_York',
+        string $domain = '',
+        string $name = '',
+        string $timezone = '',
         bool $confirmed = false,
+        string $profile = 'city-shop',
     ): Tenant {
         if (! $confirmed) {
             throw ValidationException::withMessages([
@@ -59,6 +68,29 @@ class SeedFakeTenantAction extends Action
 
         Notification::fake();
         fake()->seed(20260902);
+
+        $profileConfig = self::PROFILES[$profile] ?? null;
+
+        if ($profileConfig === null) {
+            throw ValidationException::withMessages([
+                'profile' => "The demo profile {$profile} is not available.",
+            ]);
+        }
+
+        $domain = $domain === '' ? $this->generateDomain($profile) : $domain;
+        $metadataPath = database_path("seeders/demo-tenants/{$profile}/shop.json");
+        $metadataJson = file_get_contents($metadataPath);
+
+        if ($metadataJson === false) {
+            throw new RuntimeException("The demo metadata file {$metadataPath} could not be read.");
+        }
+
+        $metadata = $this->locationMetadataImport->parse($metadataJson);
+        $metadata['shop']['name'] = $name === '' ? $metadata['shop']['name'] : $name;
+        $metadata['shop']['timezone'] = $timezone === '' ? $metadata['shop']['timezone'] : $timezone;
+        $metadataJson = json_encode($metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+        $name = $metadata['shop']['name'];
+        $timezone = $metadata['shop']['timezone'];
 
         if (Domain::query()->where('domain', $domain)->exists()) {
             throw ValidationException::withMessages([
@@ -70,13 +102,13 @@ class SeedFakeTenantAction extends Action
             $name,
             $domain,
             $timezone,
-            'usd',
+            $metadata['shop']['currency'],
             'Mina Manager',
             'manager@example.com',
         );
 
-        $tenant->run(function () use ($timezone): void {
-            $this->seedShop($timezone);
+        $tenant->run(function () use ($timezone, $profile, $metadataJson): void {
+            $this->seedShop($timezone, $profile, $metadataJson);
         });
 
         return $tenant->refresh();
@@ -87,10 +119,11 @@ class SeedFakeTenantAction extends Action
         $data = $request->validate($this->rules());
 
         return $this->jsonResponse($this->handle(
-            $data['domain'],
-            $data['name'],
-            $data['timezone'],
+            $data['domain'] ?? '',
+            $data['name'] ?? '',
+            $data['timezone'] ?? '',
             $data['confirm_demo'],
+            $data['profile'],
         ));
     }
 
@@ -122,14 +155,37 @@ class SeedFakeTenantAction extends Action
             return self::SUCCESS;
         }
 
+        $profile = $command->option('profile');
+
+        if (! is_string($profile) || $profile === '') {
+            if ($command->option('no-interaction')) {
+                throw ValidationException::withMessages([
+                    'profile' => 'Pass --profile to select a demo Tenant profile in a non-interactive run.',
+                ]);
+            }
+
+            $profile = \Laravel\Prompts\select(
+                'Choose a demo Tenant profile',
+                collect(self::PROFILES)->mapWithKeys(fn (array $profile, string $key): array => [$key => $profile['label']])->all(),
+                'city-shop',
+            );
+        }
+
+        if (! array_key_exists($profile, self::PROFILES)) {
+            throw ValidationException::withMessages([
+                'profile' => 'Choose a supported demo Tenant profile.',
+            ]);
+        }
+
         $tenant = $this->handle(
-            $this->requiredStringInput($command, $command->option('domain'), 'Domain', 'demo.localhost'),
-            $this->requiredStringInput($command, $command->option('name'), 'Name', 'Harbor Demo Bikes'),
-            $this->requiredStringInput($command, $command->option('timezone'), 'Timezone', 'America/New_York'),
+            $this->optionalStringValue($command->option('domain'), 'Domain') ?? '',
+            $this->optionalStringValue($command->option('name'), 'Name') ?? '',
+            $this->optionalStringValue($command->option('timezone'), 'Timezone') ?? '',
             true,
+            $profile,
         );
 
-        $command->info("Fake tenant {$tenant->id} at {$tenant->domains->first()?->domain}");
+        $command->info("Fake tenant {$tenant->id} ({$profile}) at {$tenant->domains->first()?->domain}");
         $command->info('Platform Users are not created by demo Tenant seeding.');
         $command->info('Shop Manager: manager@example.com (set password through the invite or reset flow).');
         $command->info('Shop Counter: counter@example.com (set password through the reset flow).');
@@ -143,14 +199,15 @@ class SeedFakeTenantAction extends Action
     public function rules(): array
     {
         return [
-            'domain' => ['required', 'string', 'max:255', 'unique:domains,domain'],
-            'name' => ['required', 'string', 'max:255'],
-            'timezone' => ['required', 'timezone'],
+            'profile' => ['required', 'string', 'in:'.implode(',', array_keys(self::PROFILES))],
+            'domain' => ['nullable', 'string', 'max:255', 'unique:domains,domain'],
+            'name' => ['nullable', 'string', 'max:255'],
+            'timezone' => ['nullable', 'timezone'],
             'confirm_demo' => ['required', 'accepted'],
         ];
     }
 
-    private function seedShop(string $timezone): void
+    private function seedShop(string $timezone, string $profile, string $metadataJson): void
     {
         $location = Location::query()->firstOrFail();
         app(InviteStaffAction::class)(
@@ -160,18 +217,13 @@ class SeedFakeTenantAction extends Action
             role: StaffRole::Counter,
         );
 
-        foreach (Weekday::cases() as $weekday) {
-            LocationHour::query()->create([
-                'location_id' => $location->id,
-                'weekday' => $weekday,
-                'opens_at' => '09:00:00',
-                'closes_at' => '18:00:00',
-                'closes_next_day' => false,
-            ]);
+        $metadataReport = $this->locationMetadataImport->apply($metadataJson);
+
+        if (! $metadataReport['applied']) {
+            throw new RuntimeException('The demo shop metadata could not be applied: '.json_encode($metadataReport['issues']));
         }
 
-        $variants = $this->seedCatalog($location);
-        $packages = $this->seedPackages($location, $variants);
+        [$variants, $packages] = $this->seedCatalogAndPackages($profile);
         $customers = Customer::factory()->count(12)->create();
         $bikes = Bike::query()->with('variant')->orderBy('id')->get();
 
@@ -184,101 +236,57 @@ class SeedFakeTenantAction extends Action
     }
 
     /**
-     * @return list<BikeModelVariant>
+     * @return array{list<BikeModelVariant>, list<RentalPackage>}
      */
-    private function seedCatalog(Location $location): array
+    private function seedCatalogAndPackages(string $profile): array
     {
-        $catalog = [
-            'City' => ['Commuter', 'Cruiser'],
-            'E-bike' => ['City Plus', 'Trail'],
-            'Kids' => ['Mini'],
-        ];
+        $catalogFiles = $this->readDemoCsvFiles($profile, ['categories', 'models', 'variants', 'bikes']);
+        $catalogReport = $this->catalogFleetImport->apply($catalogFiles, 'report', 'all-or-nothing');
 
-        $variants = [];
-        $bid = 1;
-
-        foreach ($catalog as $categoryName => $models) {
-            $category = BikeCategory::query()->create([
-                'name' => $categoryName,
-                'description' => $categoryName.' rentals',
-            ]);
-
-            foreach ($models as $modelName) {
-                $model = BikeModel::query()->create([
-                    'bike_category_id' => $category->id,
-                    'name' => $modelName,
-                    'padding_minutes' => $categoryName === 'E-bike' ? 20 : null,
-                ]);
-
-                $sizes = $categoryName === 'Kids' ? ['S', 'M'] : ['S', 'M', 'L'];
-
-                foreach ($sizes as $size) {
-                    $variant = BikeModelVariant::query()->create([
-                        'bike_model_id' => $model->id,
-                        'size' => $size,
-                        'min_ideal_rider_height' => 140,
-                        'max_ideal_rider_height' => 190,
-                    ]);
-
-                    $variants[] = $variant;
-
-                    for ($n = 0; $n < 3; $n++) {
-                        Bike::factory()->recycle($location)->recycle($variant)->create([
-                            'bid' => sprintf('%s-%02d', Str::upper(Str::substr($categoryName, 0, 1)), $bid),
-                        ]);
-                        $bid++;
-                    }
-                }
-            }
+        if (! $catalogReport['applied']) {
+            throw new RuntimeException('The demo catalog and fleet CSV files could not be imported: '.json_encode($catalogReport['issues']));
         }
 
-        return $variants;
+        $packageFiles = $this->readDemoCsvFiles($profile, ['packages', 'package_rates']);
+        $packageReport = $this->packageRateImport->apply($packageFiles, 'report', 'all-or-nothing');
+
+        if (! $packageReport['applied']) {
+            throw new RuntimeException('The demo package and rate CSV files could not be imported: '.json_encode($packageReport['issues']));
+        }
+
+        return [
+            array_values(BikeModelVariant::query()->orderBy('id')->get()->all()),
+            array_values(RentalPackage::query()->orderBy('sort_order')->orderBy('id')->get()->all()),
+        ];
     }
 
-    /**
-     * @param  list<BikeModelVariant>  $variants
-     * @return list<RentalPackage>
-     */
-    private function seedPackages(Location $location, array $variants): array
+    /** @param list<string> $files
+     *  @return array<string, string> */
+    private function readDemoCsvFiles(string $profile, array $files): array
     {
-        $hourly = RentalPackage::factory()->recycle($location)->create([
-            'name' => 'Hourly',
-            'meter' => PackageMeter::PerHour,
-            'confirm_threshold' => ConfirmThreshold::Full,
-            'book_visible' => true,
-            'sort_order' => 1,
-        ]);
+        $contents = [];
 
-        $day = RentalPackage::factory()->recycle($location)->create([
-            'name' => 'Day pass',
-            'meter' => PackageMeter::PerCalendarDay,
-            'confirm_threshold' => ConfirmThreshold::Deposit,
-            'deposit_percent' => 50,
-            'book_visible' => true,
-            'sort_order' => 2,
-        ]);
+        foreach ($files as $file) {
+            $path = database_path("seeders/demo-tenants/{$profile}/{$file}.csv");
+            $csv = file_get_contents($path);
 
-        $free = RentalPackage::factory()->recycle($location)->free()->create([
-            'name' => 'Complimentary',
-            'book_visible' => true,
-            'sort_order' => 3,
-        ]);
-
-        $packages = [$hourly, $day, $free];
-
-        foreach ($packages as $package) {
-            $rate = match ($package->meter) {
-                PackageMeter::None => 0,
-                PackageMeter::PerHour => 2500,
-                PackageMeter::PerCalendarDay, PackageMeter::PerLine => 8000,
-            };
-
-            foreach ($variants as $variant) {
-                $package->variants()->attach($variant->id, ['rate_minor_units' => $rate]);
+            if ($csv === false) {
+                throw new RuntimeException("The demo CSV file {$path} could not be read.");
             }
+
+            $contents[$file] = $csv;
         }
 
-        return $packages;
+        return $contents;
+    }
+
+    private function generateDomain(string $profile): string
+    {
+        do {
+            $domain = 'demo-'.$profile.'-'.Str::lower(Str::random(8)).'.localhost';
+        } while (Domain::query()->where('domain', $domain)->exists());
+
+        return $domain;
     }
 
     /**
@@ -439,7 +447,7 @@ class SeedFakeTenantAction extends Action
             'ends_at' => $endsAt,
             'stage' => $stage,
             'owed' => $package->meter === PackageMeter::None ? 0 : 5000,
-            'paid' => $stage === ReservationStage::Confirmed ? 5000 : 0,
+            'paid' => 0,
             'currency' => $location->currency,
             'expires_at' => $stage === ReservationStage::Provisional
                 ? now()->addMinutes((int) config('embiken.provisional_ttl_minutes'))

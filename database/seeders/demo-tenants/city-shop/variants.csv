@@ -1,0 +1,6 @@
+key,model_key,size,color_name,color_value,min_ideal_rider_height,max_ideal_rider_height,min_extended_rider_height,max_extended_rider_height
+commuter-s,commuter,S,Slate,#64748B,150,170,,
+commuter-m,commuter,M,Slate,#64748B,165,185,,
+step-m,step-through,M,Cream,#F5E6C8,155,180,,
+step-l,step-through,L,Cream,#F5E6C8,175,195,,
+longtail-m,longtail,M,Forest,#166534,165,185,,

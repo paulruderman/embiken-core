@@ -1,0 +1,16 @@
+package_key,category_name,model_name,variant_size,variant_color_name,variant_color_value,rate_minor_units
+guided-hour,Electric Mountain Bikes,Ridge Trail,S,Moss,#166534,5500
+guided-hour,Electric Mountain Bikes,Ridge Trail,M,Moss,#166534,5500
+guided-hour,Electric Mountain Bikes,Ridge Trail,L,Moss,#166534,5500
+guided-hour,Electric Mountain Bikes,Ridge Hardtail,M,Sand,#D6B56D,5500
+guided-hour,Electric Touring,Range Explorer,M,Blue,#2563EB,5500
+adventure-day,Electric Mountain Bikes,Ridge Trail,S,Moss,#166534,14500
+adventure-day,Electric Mountain Bikes,Ridge Trail,M,Moss,#166534,14500
+adventure-day,Electric Mountain Bikes,Ridge Trail,L,Moss,#166534,14500
+adventure-day,Electric Mountain Bikes,Ridge Hardtail,M,Sand,#D6B56D,14500
+adventure-day,Electric Touring,Range Explorer,M,Blue,#2563EB,14500
+demo,Electric Mountain Bikes,Ridge Trail,S,Moss,#166534,0
+demo,Electric Mountain Bikes,Ridge Trail,M,Moss,#166534,0
+demo,Electric Mountain Bikes,Ridge Trail,L,Moss,#166534,0
+demo,Electric Mountain Bikes,Ridge Hardtail,M,Sand,#D6B56D,0
+demo,Electric Touring,Range Explorer,M,Blue,#2563EB,0

@@ -1,0 +1,6 @@
+key,model_key,size,color_name,color_value,min_ideal_rider_height,max_ideal_rider_height,min_extended_rider_height,max_extended_rider_height
+trail-s,trail,S,Moss,#166534,150,170,,
+trail-m,trail,M,Moss,#166534,165,185,,
+trail-l,trail,L,Moss,#166534,180,200,,
+hardtail-m,hardtail,M,Sand,#D6B56D,165,185,,
+tourer-m,tourer,M,Blue,#2563EB,165,185,,

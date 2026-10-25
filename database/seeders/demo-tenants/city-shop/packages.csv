@@ -1,0 +1,4 @@
+key,name,tagline,blurb,description,meter,confirm_threshold,deposit_minor_units,deposit_percent,min_duration_minutes,max_duration_minutes,book_visible,sort_order
+hourly,City Hourly,Quick city trips,,City Hourly for this fictional demo shop.,per_hour,full,,,60,480,true,1
+day,City Day Pass,Explore all day,,City Day Pass for this fictional demo shop.,per_calendar_day,deposit,,50,60,480,true,2
+test-ride,Staff Test Ride,Demo package for staff walkthroughs,,Staff Test Ride for this fictional demo shop.,none,none,,,60,480,true,3

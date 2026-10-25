@@ -1,0 +1,13 @@
+bid,variant_key,serial_number,in_service,self_bookable
+FA-01,sprout-12,DEMO-FA-001,true,true
+FA-02,sprout-12,DEMO-FA-002,true,true
+FA-03,sprout-16,DEMO-FA-003,true,true
+FA-04,sprout-16,DEMO-FA-004,true,true
+FA-05,trail-20,DEMO-FA-005,true,true
+FA-06,trail-20,DEMO-FA-006,true,true
+FA-07,trail-20,DEMO-FA-007,true,true
+FA-08,comfort-s,DEMO-FA-008,true,true
+FA-09,comfort-s,DEMO-FA-009,true,true
+FA-10,comfort-m,DEMO-FA-010,true,true
+FA-11,comfort-m,DEMO-FA-011,true,true
+FA-12,tandem-one,DEMO-FA-012,true,true

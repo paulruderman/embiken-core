@@ -1,0 +1,7 @@
+key,model_key,size,color_name,color_value,min_ideal_rider_height,max_ideal_rider_height,min_extended_rider_height,max_extended_rider_height
+sprout-12,sprout,12-inch,Coral,#F97360,90,110,,
+sprout-16,sprout,16-inch,Coral,#F97360,105,125,,
+trail-20,trailblazer,20-inch,Sky,#38BDF8,115,140,,
+comfort-s,comfort,S,Mint,#34D399,145,165,,
+comfort-m,comfort,M,Mint,#34D399,160,180,,
+tandem-one,tandem,One Size,Red,#DC2626,150,195,,

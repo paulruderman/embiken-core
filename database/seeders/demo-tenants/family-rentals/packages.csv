@@ -1,0 +1,4 @@
+key,name,tagline,blurb,description,meter,confirm_threshold,deposit_minor_units,deposit_percent,min_duration_minutes,max_duration_minutes,book_visible,sort_order
+family-hour,Family Hourly,A flexible short family ride,,Family Hourly for this fictional demo shop.,per_hour,full,,,60,480,true,1
+family-day,Family Day Out,A full day for the whole family,,Family Day Out for this fictional demo shop.,per_calendar_day,deposit,,50,60,480,true,2
+fit-check,Fit Check Ride,Complimentary sizing ride,,Fit Check Ride for this fictional demo shop.,none,none,,,60,480,true,3

@@ -2,11 +2,13 @@
 
 use App\Actions\Platform\SeedFakeTenantAction;
 use App\Models\Domain;
+use App\Models\Location;
 use App\Models\LocationHour;
 use App\Models\Staff;
 use App\Models\Tenant;
 use App\Models\User;
 use Embiken\BikeFleet\Models\Bike;
+use Embiken\BikeFleet\Models\BikeCategory;
 use Embiken\BikeRentals\Enums\ReservationStage;
 use Embiken\BikeRentals\Models\BikeReservation;
 use Embiken\BikeRentals\Models\RentalPackage;
@@ -14,9 +16,9 @@ use Embiken\BikeRentals\Models\Reservation;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Validation\ValidationException;
 
-function seedFakeTenantAndCleanup(string $domain): Tenant
+function seedFakeTenantAndCleanup(string $domain, string $profile = 'city-shop'): Tenant
 {
-    return app(SeedFakeTenantAction::class)($domain, confirmed: true);
+    return app(SeedFakeTenantAction::class)($domain, confirmed: true, profile: $profile);
 }
 
 function deleteTenantSqlite(?Tenant $tenant): void
@@ -44,12 +46,15 @@ test('direct fake tenant creation requires explicit confirmation', function () {
 });
 
 test('the fake tenant artisan command exits successfully', function () {
-    $this->artisan('db:seed-fake-tenant', ['--domain' => 'harbor-exit.test', '--confirm-demo' => true])
+    $this->artisan('db:seed-fake-tenant', [
+        '--profile' => 'city-shop',
+        '--confirm-demo' => true,
+    ])
         ->expectsOutputToContain('Fake tenant')
         ->assertSuccessful();
 
     $tenant = Tenant::query()
-        ->whereHas('domains', fn ($query) => $query->where('domain', 'harbor-exit.test'))
+        ->whereHas('domains', fn ($query) => $query->where('domain', 'like', 'demo-city-shop-%'))
         ->first();
 
     expect($tenant)->not->toBeNull();
@@ -77,7 +82,8 @@ test('seeding a fake tenant creates a shop the platform user and staff can use',
                 ->and($counter)->not->toBeNull()
                 ->and($counter->password)->toBeNull()
                 ->and(LocationHour::query()->count())->toBe(7)
-                ->and(Bike::query()->count())->toBe(42)
+                ->and(Bike::query()->count())->toBe(10)
+                ->and(BikeCategory::query()->pluck('name')->all())->toBe(['City Bikes', 'Cargo Bikes'])
                 ->and(RentalPackage::query()->where('book_visible', true)->count())->toBe(3)
                 ->and(Reservation::query()->where('stage', ReservationStage::Confirmed)->count())->toBe(31)
                 ->and(Reservation::query()->whereIn('stage', [
@@ -93,6 +99,48 @@ test('seeding a fake tenant creates a shop the platform user and staff can use',
     } finally {
         deleteTenantSqlite($tenant);
     }
+});
+
+test('demo profiles import different catalog and rate fixtures and get distinct generated domains', function () {
+    $adventureTenant = seedFakeTenantAndCleanup('', 'e-bike-adventure');
+    $familyTenant = null;
+
+    try {
+        $familyTenant = app(SeedFakeTenantAction::class)(confirmed: true, profile: 'family-rentals');
+
+        expect($adventureTenant->domains->first()?->domain)
+            ->toStartWith('demo-e-bike-adventure-')
+            ->and($familyTenant->domains->first()?->domain)
+            ->toStartWith('demo-family-rentals-')
+            ->and($familyTenant->domains->first()?->domain)
+            ->not->toBe($adventureTenant->domains->first()?->domain);
+
+        $adventureTenant->run(function (): void {
+            expect(BikeCategory::query()->pluck('name')->all())
+                ->toBe(['Electric Mountain Bikes', 'Electric Touring'])
+                ->and(Bike::query()->count())->toBe(12)
+                ->and(RentalPackage::query()->orderBy('sort_order')->first()?->variants()->count())->toBe(5)
+                ->and(Location::query()->firstOrFail()->name)->toBe('Summit E-bike Adventures')
+                ->and(Location::query()->firstOrFail()->timezone)->toBe('America/Denver');
+        });
+
+        $familyTenant->run(function (): void {
+            expect(BikeCategory::query()->pluck('name')->all())
+                ->toBe(['Kids Bikes', 'Comfort Bikes'])
+                ->and(Bike::query()->count())->toBe(12)
+                ->and(RentalPackage::query()->orderBy('sort_order')->first()?->variants()->count())->toBe(6);
+        });
+    } finally {
+        deleteTenantSqlite($adventureTenant);
+        deleteTenantSqlite($familyTenant);
+    }
+});
+
+test('a non-interactive demo command requires a profile', function () {
+    expect(fn () => $this->artisan('db:seed-fake-tenant', [
+        '--confirm-demo' => true,
+        '--no-interaction' => true,
+    ]))->toThrow(ValidationException::class, 'Pass --profile');
 });
 
 test('seeding a fake tenant refuses a domain that already exists', function () {

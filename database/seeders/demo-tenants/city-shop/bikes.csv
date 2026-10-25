@@ -1,0 +1,11 @@
+bid,variant_key,serial_number,in_service,self_bookable
+CI-01,commuter-s,DEMO-CI-001,true,true
+CI-02,commuter-s,DEMO-CI-002,true,true
+CI-03,commuter-m,DEMO-CI-003,true,true
+CI-04,commuter-m,DEMO-CI-004,true,true
+CI-05,step-m,DEMO-CI-005,true,true
+CI-06,step-m,DEMO-CI-006,true,true
+CI-07,step-l,DEMO-CI-007,true,true
+CI-08,longtail-m,DEMO-CI-008,true,true
+CI-09,longtail-m,DEMO-CI-009,true,true
+CI-10,longtail-m,DEMO-CI-010,true,true

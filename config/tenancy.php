@@ -14,6 +14,8 @@ use Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLDatabaseManager;
 use Stancl\Tenancy\TenantDatabaseManagers\SQLiteDatabaseManager;
 use Stancl\Tenancy\UUIDGenerator;
 
+$applicationDomain = parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST);
+
 return [
     'tenant_model' => Tenant::class,
     'id_generator' => UUIDGenerator::class,
@@ -26,6 +28,7 @@ return [
      * Only relevant if you're using the domain or subdomain identification middleware.
      */
     'central_domains' => [
+        $applicationDomain,
         '127.0.0.1',
         'localhost',
     ],
@@ -112,7 +115,7 @@ return [
         'disks' => [
             'local',
             'public',
-            // 's3',
+            'private',
         ],
 
         /**
@@ -123,7 +126,7 @@ return [
         'root_override' => [
             // Disks whose roots should be overridden after storage_path() is suffixed.
             'local' => '%storage_path%/app/',
-            'public' => '%storage_path%/app/public/',
+            'public' => '%tenant%/',
         ],
 
         /**

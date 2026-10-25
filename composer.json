@@ -25,6 +25,7 @@
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^3.0",
         "laravel/wayfinder": "^0.1.14",
+        "league/flysystem-aws-s3-v3": "^3.0",
         "lorisleiva/laravel-actions": "^2.12",
         "spatie/laravel-translatable": "^6.15",
         "stancl/tenancy": "^3.10"

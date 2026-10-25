@@ -47,7 +47,7 @@ import { Head, Link } from '@inertiajs/vue3';
                             <span class="mt-2 block text-emerald-200">Keep the day moving.</span>
                         </h1>
                         <p class="mt-6 max-w-xl text-lg leading-8 text-emerald-50/75 sm:text-xl">
-                            Sunny-day rushes. Last-minute size swaps. The bike that just came back. Embiken is being built for the people behind every rental, bringing reservations, bikes, and counter work into one clearer picture.
+                            Rental software for independent bike shops, built to bring reservations, fleet, and counter work together. For sunny-day rushes, last-minute size swaps, and the bike that just came back.
                         </p>
 
                         <div class="mt-9 flex flex-col gap-3 sm:flex-row">
@@ -66,7 +66,7 @@ import { Head, Link } from '@inertiajs/vue3';
                             </Link>
                         </div>
                         <p class="mt-4 text-sm text-emerald-100/60">
-                            Starter has no subscription fee. Workspace signup is available during early access.
+                            Early access: set up your shop and explore the plans. Signup does not collect a subscription payment.
                         </p>
                     </div>
 

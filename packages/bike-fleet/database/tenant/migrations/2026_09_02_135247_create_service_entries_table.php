@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('service_entries', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('service_request_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('service_request_id')->constrained()->restrictOnDelete();
             $table->foreignId('staff_id')->nullable()->constrained('staff')->nullOnDelete();
             $table->text('notes')->nullable();
             $table->unsignedInteger('labor_minutes')->nullable();

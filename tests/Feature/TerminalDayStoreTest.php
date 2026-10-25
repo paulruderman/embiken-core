@@ -89,6 +89,30 @@ test('the day store snapshot includes every bike and today plus occupying reserv
         ]);
 });
 
+test('catalog photos fall back from bike through variant model and category', function () {
+    $bike = Bike::factory()->create();
+    $variant = $bike->variant;
+    $model = $variant->bikeModel;
+    $category = $model->bikeCategory;
+
+    $category->update(['photo' => 'bike-categories/category.webp']);
+    expect($model->displayPhotoPath())->toBe('bike-categories/category.webp')
+        ->and($variant->displayPhotoPath())->toBe('bike-categories/category.webp')
+        ->and($bike->displayPhotoPath())->toBe('bike-categories/category.webp');
+
+    $model->update(['photo' => 'bike-models/model.webp']);
+    expect($model->displayPhotoPath())->toBe('bike-models/model.webp')
+        ->and($variant->displayPhotoPath())->toBe('bike-models/model.webp')
+        ->and($bike->displayPhotoPath())->toBe('bike-models/model.webp');
+
+    $variant->update(['photo' => 'bike-variants/variant.webp']);
+    expect($variant->displayPhotoPath())->toBe('bike-variants/variant.webp')
+        ->and($bike->displayPhotoPath())->toBe('bike-variants/variant.webp');
+
+    $bike->update(['photo' => 'bikes/bike.webp']);
+    expect($bike->displayPhotoPath())->toBe('bikes/bike.webp');
+});
+
 test('saving a bike broadcasts the location bike DTO', function () {
     $bike = Bike::factory()->create(['bid' => 'A-01']);
     $bike->bid = 'Z-99';

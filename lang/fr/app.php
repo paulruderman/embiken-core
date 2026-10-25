@@ -88,6 +88,8 @@ return [
         'template_copy_help' => 'Les éléments sont copiés dans ce programme afin que les modifications ultérieures du modèle ne le changent pas.',
         'scheduled_checklist' => 'Liste de contrôle planifiée', 'add_checklist_item' => 'Ajouter un élément',
         'checklist_items' => 'Éléments de la liste de contrôle', 'items' => 'Éléments',
+        'complete' => 'Terminer la maintenance', 'work_notes' => 'Travail effectué', 'labor_minutes' => 'Minutes de main-d’œuvre',
+        'work_history' => 'Historique des interventions',
         'statuses' => ['scheduled' => 'Planifié', 'completed' => 'Terminé', 'cancelled' => 'Annulé'],
     ],
     'resource_labels' => [
@@ -214,7 +216,7 @@ return [
         'recommendations' => [
             'catalog_photos' => [
                 'label' => 'Ajouter des photos au catalogue',
-                'description' => 'Les photos aident les clients à reconnaître vos vélos. Ajoutez-en aux vélos, aux variantes ou aux modèles. La photo du vélo est prioritaire à l’affichage.',
+                'description' => 'Les photos aident les clients à reconnaître vos vélos. Ajoutez-en aux vélos, aux variantes, aux modèles ou aux catégories. Les images suivent la hiérarchie du catalogue lorsqu’un vélo n’a pas de photo.',
                 'bikes' => 'Vélos',
                 'variants' => 'Variantes',
                 'models' => 'Modèles',

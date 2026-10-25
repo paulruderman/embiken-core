@@ -29,7 +29,7 @@ Day store and CFD ticket payloads include every bike_reservation on a reservatio
 ## Location-channel day-store DTO
 Location-channel DTOs (Inertia props, Echo broadcastWith, Action jsonResponse) are never Eloquent graphs.
 
-Bike: id, bid, in_service, self_bookable, bike_situation_state, bike_situation_reservation_id, model (BikeModel name), variant (size), photo_url (bike then variant then model).
+Bike: id, bid, in_service, self_bookable, bike_situation_state, bike_situation_reservation_id, model (BikeModel name), variant (size), photo_url (bike then variant then model then category).
 
 Line: id, product_id, product_label, bike_id, status (assigned/out/in), rider_name, rider_height_cm.
 

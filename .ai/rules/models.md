@@ -30,7 +30,7 @@ Reservation holds starts_at and ends_at. In v1 every bike_reservation row shares
 Renter charges use Stripe Connect to the shop, never the platform SaaS Stripe account. Platform shop subscriptions are ordinary Stripe (Cashier later), a different customer. Reservation has owed and paid columns as caches: owed is the current quote, paid is the sum of captured transactions. Money history is a transactions table belonging to the reservation (Connect, cash, other, refunds). Do not use is_paid as source of truth. Outstanding is owed minus paid (negative means refund).
 
 ## Catalog tree, product_id is variant, optional package on header
-Catalog is BikeCategory → BikeModel → BikeModelVariant → Bike; Bike cannot skip layers. product_id on bike_reservation FKs to bike_model_variants; product() returns BikeModelVariant. Do not add a Product table or an add-ons table in v1. RentalPackage belongs to the Reservation, never to bike_reservation lines. Do not add an Allocation model; Bike has required bid (letter/number, unique in the tenant), in_service, and self_bookable. Optional photo on Bike, BikeModelVariant, and BikeModel; resolve display photo bike then variant then model. Do not add manufacturer serial, barcode, RFID, or QR in v1.
+Catalog is BikeCategory → BikeModel → BikeModelVariant → Bike; Bike cannot skip layers. product_id on bike_reservation FKs to bike_model_variants; product() returns BikeModelVariant. Do not add a Product table or an add-ons table in v1. RentalPackage belongs to the Reservation, never to bike_reservation lines. Do not add an Allocation model; Bike has required bid (letter/number, unique in the tenant), in_service, and self_bookable. Optional photos on Bike, BikeModelVariant, BikeModel, and BikeCategory; display falls back Bike → Variant → Model → Category. Do not add manufacturer serial, barcode, RFID, or QR in v1.
 
 ## Turnaround buffer: Location minimum, model may be longer
 Location holds the shop-wide minimum turnaround buffer minutes (default 10). A BikeModel may set its own padding minutes; effective buffer is max(location minimum, model padding or 0). Availability blocks the next rental until after ends_at plus that buffer. Do not put buffer on the reservation interval or on Bike. Do not allow a model padding below the Location minimum to shrink the shop floor.
@@ -75,7 +75,7 @@ Location hours are one or more open intervals per weekday; an interval may close
 owed is the package quote in Location currency (default usd). Do not add tax in v1. Do not add add-on or helmet line tables. Book reuses Customer on email match.
 
 ## Bike bid and photo fallback
-Bike has required bid: a shop-facing letter/number code, unique in the tenant. Do not add manufacturer serial, barcode, RFID, or QR in v1. Optional photo on Bike, BikeModelVariant, and BikeModel. Resolve the display photo bike then variant then model.
+Bike has required bid: a shop-facing letter/number code, unique in the tenant. Do not add manufacturer serial, barcode, RFID, or QR in v1. Optional photo on Bike, BikeModelVariant, BikeModel, and BikeCategory. Resolve bike photos Bike → Variant → Model → Category, variant photos Variant → Model → Category, and model photos Model → Category.
 
 ## No Device model until Device slice
 Do not add a Device model in shop-operable schema. When the Device slice lands, Device is not Authenticatable and Sanctum tokens belong on Device. Occupancy models are unchanged.

@@ -5,7 +5,6 @@ namespace Embiken\BikeFleet\Filament\Resources\ServiceRequests\Pages;
 use Embiken\BikeFleet\Filament\Resources\ServiceRequests\ServiceRequestResource;
 use Embiken\BikeFleet\Models\ServiceRequest;
 use Embiken\BikeFleet\Services\FleetMutationLock;
-use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -16,19 +15,7 @@ class EditServiceRequest extends EditRecord
 
     protected function getHeaderActions(): array
     {
-        return [
-            DeleteAction::make()->using(function (Model $record): bool {
-                return DB::transaction(function () use ($record): bool {
-                    $serviceRequest = ServiceRequest::query()
-                        ->whereKey($record->getKey())
-                        ->lockForUpdate()
-                        ->firstOrFail();
-                    app(FleetMutationLock::class)->lockBikeForMutation($serviceRequest->bike);
-
-                    return (bool) $serviceRequest->delete();
-                }, attempts: 5);
-            }),
-        ];
+        return [];
     }
 
     /**

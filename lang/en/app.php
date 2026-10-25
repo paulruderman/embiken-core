@@ -88,6 +88,8 @@ return [
         'template_copy_help' => 'Items are copied to this schedule so later template edits do not change it.',
         'scheduled_checklist' => 'Scheduled checklist', 'add_checklist_item' => 'Add checklist item',
         'checklist_items' => 'Checklist items', 'items' => 'Items',
+        'complete' => 'Complete maintenance', 'work_notes' => 'Work performed', 'labor_minutes' => 'Labor minutes',
+        'work_history' => 'Work history',
         'statuses' => ['scheduled' => 'Scheduled', 'completed' => 'Completed', 'cancelled' => 'Cancelled'],
     ],
     'resource_labels' => [
@@ -214,7 +216,7 @@ return [
         'recommendations' => [
             'catalog_photos' => [
                 'label' => 'Add catalog photos',
-                'description' => 'Photos help customers recognize your bikes. Add them to bikes, variants, or models; bike photos take precedence when displaying an image.',
+                'description' => 'Photos help customers recognize your bikes. Add them to bikes, variants, models, or categories. Images fall back through the catalog hierarchy when a bike has no photo.',
                 'bikes' => 'Bikes',
                 'variants' => 'Variants',
                 'models' => 'Models',

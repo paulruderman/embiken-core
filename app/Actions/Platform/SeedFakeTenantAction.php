@@ -41,9 +41,10 @@ class SeedFakeTenantAction extends Action
         'e-bike-adventure' => ['label' => 'E-bike adventure and trail shop'],
         'family-rentals' => ['label' => 'Family and kids rental shop'],
         'jimbos' => ['label' => "Jimbo's multi-category rental shop"],
+        'showroom-demo' => ['label' => 'Retail showroom with test-ride bikes'],
     ];
 
-    public string $commandSignature = 'db:seed-fake-tenant {--profile=} {--domain=} {--name=} {--timezone=} {--confirm-demo} {--resume}';
+    public string $commandSignature = 'db:seed-fake-tenant {--profile=} {--all} {--domain=} {--name=} {--timezone=} {--confirm-demo} {--resume}';
 
     public string $commandDescription = 'Provision a demo shop Tenant with profile data, catalog, fleet, Customers, and Reservations.';
 
@@ -151,6 +152,21 @@ class SeedFakeTenantAction extends Action
 
     public function asCommand(Command $command): int
     {
+        $allProfiles = (bool) $command->option('all');
+        $profile = $command->option('profile');
+
+        if ($allProfiles && (
+            (is_string($profile) && $profile !== '')
+            || $this->optionalStringValue($command->option('domain'), 'Domain') !== null
+            || $this->optionalStringValue($command->option('name'), 'Name') !== null
+            || $this->optionalStringValue($command->option('timezone'), 'Timezone') !== null
+            || $command->option('resume')
+        )) {
+            throw ValidationException::withMessages([
+                'all' => 'Use --all by itself; do not combine it with --profile, --domain, --name, --timezone, or --resume.',
+            ]);
+        }
+
         $confirmed = (bool) $command->option('confirm-demo');
 
         if (! $confirmed) {
@@ -161,7 +177,7 @@ class SeedFakeTenantAction extends Action
             }
 
             $confirmed = \Laravel\Prompts\confirm(
-                'Create a fully seeded demo Tenant in '.app()->environment().'? Payments stay disabled; demo Staff use password 11111111.',
+                'Create '.($allProfiles ? 'fully seeded demo Tenants for every profile' : 'a fully seeded demo Tenant').' in '.app()->environment().'? Payments stay disabled; demo Staff use password 11111111.',
                 false,
             );
         }
@@ -172,7 +188,25 @@ class SeedFakeTenantAction extends Action
             return self::SUCCESS;
         }
 
-        $profile = $command->option('profile');
+        config()->set('broadcasting.default', 'null');
+
+        if ($allProfiles) {
+            $command->info('Creating one demo Tenant for each profile:');
+
+            foreach (self::PROFILES as $profile => $profileConfig) {
+                $tenant = $this->handle(
+                    confirmed: true,
+                    profile: $profile,
+                );
+
+                $command->info("{$profileConfig['label']}: {$tenant->domains->first()?->domain}");
+            }
+
+            $command->info('Demo Shop Manager: manager@example.com / 11111111');
+            $command->info('Demo Shop Counter: counter@example.com / 11111111');
+
+            return self::SUCCESS;
+        }
 
         if (! is_string($profile) || $profile === '') {
             if ($command->option('no-interaction')) {
@@ -193,8 +227,6 @@ class SeedFakeTenantAction extends Action
                 'profile' => 'Choose a supported demo Tenant profile.',
             ]);
         }
-
-        config()->set('broadcasting.default', 'null');
 
         $tenant = $this->handle(
             $this->optionalStringValue($command->option('domain'), 'Domain') ?? '',

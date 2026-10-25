@@ -42,7 +42,7 @@ The customer may edit name, email, and phone on the CFD. Terminal and CFD patch 
 Book shows the empty not-configured state when there is no Book-visible package or Location hours are empty. Counter and Manager may refund and park bikes on Terminal. Early return UI does not lower owed.
 
 ## Photo fallback and bid labels
-Book and Terminal show catalog photos with fallback bike then variant then model. Terminal and Screen label a bike by bid. Do not scan barcode, RFID, or QR in v1.
+Book and Terminal show catalog photos with fallback bike then variant then model then category. Variant and model images fall back through their catalog parents. Terminal and Screen label a bike by bid. Do not scan barcode, RFID, or QR in v1.
 
 ## Shop-operable Terminal is staff session
 Terminal pages require a Staff password session only. Do not add Device pairing chrome or require a Sanctum device token. CFD pairing and Terminal listening on a CFD channel wait for a later Device slice. Occupancy and the location-channel day store do not depend on Device.

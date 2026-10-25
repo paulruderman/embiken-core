@@ -82,6 +82,11 @@ class Bike extends Model
         return $this->belongsTo(BikeModelVariant::class, 'bike_model_variant_id');
     }
 
+    public function displayPhotoPath(): ?string
+    {
+        return $this->photo ?? $this->variant?->displayPhotoPath();
+    }
+
     /**
      * @return HasMany<ServiceRequest, $this>
      */

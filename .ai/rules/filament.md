@@ -15,7 +15,7 @@ Only Manager staff access /manage. Counter staff do not. Do not add a Devices re
 If a Reservation or Customer is viewed in Filament, show the same owed vs paid reminder. Reservation may write stage and owed via Actions. Managers may refund via RefundAction. Still never take Connect charges or cash checkout in Shop Filament. Platform billing is not rental Connect.
 
 ## Shop Filament configures catalog layers and packages
-Shop Filament at /manage configures BikeCategory, BikeModel (optional photo, optional padding minutes), BikeModelVariant (optional photo), Bike (required bid, optional photo, in_service, self_bookable), and RentalPackage. Display photo falls back bike → variant → model. Do not add serial, barcode, RFID, or QR fields. Do not add an Allocation resource. Still never checkout.
+Shop Filament at /manage configures BikeCategory (optional photo), BikeModel (optional photo, optional padding minutes), BikeModelVariant (optional photo), Bike (required bid, optional photo, in_service, self_bookable), and RentalPackage. Display photo falls back bike → variant → model → category. Do not add serial, barcode, RFID, or QR fields. Do not add an Allocation resource. Still never checkout.
 
 ## Packages configure Book confirm threshold
 Shop Filament configures RentalPackage including which are Book-visible and what payment Book needs to leave Provisional (none through full). Still never checkout.
@@ -51,7 +51,7 @@ Shop Filament Location edits multiple open intervals per weekday (optional next-
 New Location hours start empty. Do not seed shop hours or a demo catalog. Book is not-configured until hours and a Book-visible package exist. Platform sets Location timezone (and currency) at tenant create.
 
 ## Staff invite and catalog photos
-Platform tenant create takes a Manager email and sends a set-password invite. Do not type a Staff password on that form. Shop Filament invites Counter and additional Managers the same way. Bike resource requires bid; optional photos on Bike, variant, and model.
+Platform tenant create takes a Manager email and sends a set-password invite. Do not type a Staff password on that form. Shop Filament invites Counter and additional Managers the same way. Bike resource requires bid; optional photos on Bike, variant, model, and category. Shop Branding accepts a shop logo upload.
 
 ## No Devices resource until Device slice
 Shop Filament v1 does not include a Devices resource or pairing codes. CFD paired_terminal_device_id waits. Manager-only /manage and no DB drop on tenant delete stay.

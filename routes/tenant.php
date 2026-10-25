@@ -10,6 +10,7 @@ use App\Http\Controllers\MyRentalController;
 use App\Http\Controllers\ShopLandingPageController;
 use App\Http\Middleware\EnsureModuleEnabled;
 use Embiken\BikeRentals\Actions\RequestMyRentalLinkAction;
+use Embiken\Maintenance\Actions\CompleteMaintenanceScheduleAction;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
@@ -68,6 +69,13 @@ Route::middleware([
                 $class::routes(app('router'));
             }
         }
+    });
+
+    Route::middleware([
+        'auth:staff',
+        EnsureModuleEnabled::class.':embiken/maintenance',
+    ])->group(function (): void {
+        CompleteMaintenanceScheduleAction::routes(app('router'));
     });
 
     Route::middleware([

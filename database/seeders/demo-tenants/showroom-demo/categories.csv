@@ -1,0 +1,9 @@
+key,name,description,interface_color
+road,Road Bikes,Performance road bikes for customer test rides,red
+gravel,Gravel Bikes,All-road and gravel models for local routes,orange
+mountain,Mountain Bikes,Trail and cross-country mountain bikes,green
+electric,Electric Bikes,Electric mountain and utility bikes,blue
+commuter,Commuter Bikes,"Urban, touring, and folding bikes",cyan
+cargo,Cargo Bikes,Utility and family cargo models,purple
+youth,Youth Bikes,A small selection of youth test bikes,yellow
+adaptive,Adaptive Bikes,Specialty bikes requiring staff orientation,pink

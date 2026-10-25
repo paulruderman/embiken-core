@@ -65,4 +65,9 @@ class BikeModel extends Model
     {
         return $this->hasMany(BikeModelVariant::class);
     }
+
+    public function displayPhotoPath(): ?string
+    {
+        return $this->photo ?? $this->bikeCategory?->displayPhotoPath();
+    }
 }

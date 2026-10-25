@@ -88,6 +88,8 @@ return [
         'template_copy_help' => 'Los elementos se copian en este programa para que los cambios posteriores en la plantilla no lo modifiquen.',
         'scheduled_checklist' => 'Lista de verificación programada', 'add_checklist_item' => 'Añadir elemento',
         'checklist_items' => 'Elementos de la lista', 'items' => 'Elementos',
+        'complete' => 'Completar mantenimiento', 'work_notes' => 'Trabajo realizado', 'labor_minutes' => 'Minutos de mano de obra',
+        'work_history' => 'Historial de trabajo',
         'statuses' => ['scheduled' => 'Programado', 'completed' => 'Completado', 'cancelled' => 'Cancelado'],
     ],
     'resource_labels' => [
@@ -214,7 +216,7 @@ return [
         'recommendations' => [
             'catalog_photos' => [
                 'label' => 'Añadir fotos al catálogo',
-                'description' => 'Las fotos ayudan a los clientes a reconocer tus bicicletas. Añádelas a las bicicletas, variantes o modelos. Al mostrar una imagen, se prioriza la foto de la bicicleta.',
+                'description' => 'Las fotos ayudan a los clientes a reconocer tus bicicletas. Añádelas a bicicletas, variantes, modelos o categorías. Si una bicicleta no tiene foto, se usa la imagen del siguiente nivel del catálogo.',
                 'bikes' => 'Bicicletas',
                 'variants' => 'Variantes',
                 'models' => 'Modelos',

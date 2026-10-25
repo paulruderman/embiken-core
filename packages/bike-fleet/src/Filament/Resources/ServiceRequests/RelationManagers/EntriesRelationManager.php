@@ -6,7 +6,6 @@ use App\Filament\Tables\Columns\LocalizedDateTimeColumn;
 use Embiken\BikeFleet\Models\Part;
 use Embiken\BikeFleet\Models\ServiceEntryPart;
 use Filament\Actions\CreateAction;
-use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Repeater;
@@ -101,6 +100,7 @@ class EntriesRelationManager extends RelationManager
                             ->maxLength(32),
                     ])
                     ->columns(3)
+                    ->deletable(false)
                     ->addActionLabel('Add part'),
             ]);
     }
@@ -130,7 +130,6 @@ class EntriesRelationManager extends RelationManager
             ])
             ->recordActions([
                 EditAction::make(),
-                DeleteAction::make(),
             ]);
     }
 }

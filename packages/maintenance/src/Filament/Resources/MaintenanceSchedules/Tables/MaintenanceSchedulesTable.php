@@ -2,8 +2,7 @@
 
 namespace Embiken\Maintenance\Filament\Resources\MaintenanceSchedules\Tables;
 
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
+use Embiken\BikeFleet\Filament\Resources\ServiceRequests\ServiceRequestResource;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -22,6 +21,10 @@ class MaintenanceSchedulesTable
                     'cancelled' => 'gray',
                     default => 'warning',
                 }),
+                TextColumn::make('serviceRequest.description')
+                    ->label(__('app.maintenance_ui.work_history'))
+                    ->url(fn ($record): ?string => $record->service_request_id === null ? null : ServiceRequestResource::getUrl('edit', ['record' => $record->service_request_id]))
+                    ->openUrlInNewTab(),
             ])
             ->filters([
                 //
@@ -29,10 +32,6 @@ class MaintenanceSchedulesTable
             ->recordActions([
                 EditAction::make(),
             ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
-            ]);
+            ->toolbarActions([]);
     }
 }

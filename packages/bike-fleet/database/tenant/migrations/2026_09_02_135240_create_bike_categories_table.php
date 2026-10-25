@@ -13,6 +13,7 @@ return new class extends Migration
             $table->json('name');
             $table->json('description')->nullable();
             $table->string('interface_color')->nullable();
+            $table->string('photo')->nullable();
             $table->timestamps();
         });
     }

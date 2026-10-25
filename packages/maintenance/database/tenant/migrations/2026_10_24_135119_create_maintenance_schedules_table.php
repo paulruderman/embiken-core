@@ -15,11 +15,14 @@ return new class extends Migration
             $table->id();
             $table->foreignId('bike_id')->constrained()->cascadeOnDelete();
             $table->foreignId('maintenance_checklist_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('service_request_id')->nullable()->unique()->constrained()->restrictOnDelete();
+            $table->foreignId('completed_by')->nullable()->constrained('staff')->nullOnDelete();
             $table->string('title');
             $table->date('due_at');
             $table->string('status')->default('scheduled');
             $table->json('checklist_items')->nullable();
             $table->text('notes')->nullable();
+            $table->timestamp('completed_at')->nullable();
             $table->timestamps();
             $table->index(['bike_id', 'due_at']);
             $table->index(['status', 'due_at']);

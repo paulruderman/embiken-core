@@ -15,10 +15,11 @@ use Spatie\Translatable\HasTranslations;
  * @property string $name
  * @property string|null $description
  * @property string|null $interface_color
+ * @property string|null $photo
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  */
-#[Fillable(['name', 'description', 'interface_color'])]
+#[Fillable(['name', 'description', 'interface_color', 'photo'])]
 class BikeCategory extends Model
 {
     public const string SETUP_DESCRIPTION = 'Categories organize the kinds of bikes in your catalog.';
@@ -42,5 +43,10 @@ class BikeCategory extends Model
     public function bikeModels(): HasMany
     {
         return $this->hasMany(BikeModel::class);
+    }
+
+    public function displayPhotoPath(): ?string
+    {
+        return $this->photo;
     }
 }

@@ -9,6 +9,8 @@ use App\Models\Tenant;
 use App\Models\User;
 use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeFleet\Models\BikeCategory;
+use Embiken\BikeFleet\Models\BikeModel;
+use Embiken\BikeFleet\Models\BikeModelVariant;
 use Embiken\BikeRentals\Enums\ReservationStage;
 use Embiken\BikeRentals\Models\BikeReservation;
 use Embiken\BikeRentals\Models\Customer;
@@ -62,6 +64,43 @@ test('the fake tenant artisan command exits successfully', function () {
     expect($tenant)->not->toBeNull();
 
     deleteTenantSqlite($tenant);
+});
+
+test('the fake tenant artisan command can seed every demo profile', function () {
+    $this->artisan('db:seed-fake-tenant', [
+        '--all' => true,
+        '--confirm-demo' => true,
+    ])
+        ->expectsOutputToContain('Retail showroom with test-ride bikes')
+        ->assertSuccessful();
+
+    $tenants = Tenant::query()
+        ->whereHas('domains', fn ($query) => $query->where('domain', 'like', 'demo-%'))
+        ->with('domains')
+        ->get();
+
+    try {
+        expect($tenants)->toHaveCount(5);
+
+        foreach (['city-shop', 'e-bike-adventure', 'family-rentals', 'jimbos', 'showroom-demo'] as $profile) {
+            expect($tenants->contains(fn (Tenant $tenant): bool => str_starts_with(
+                (string) $tenant->domains->first()?->domain,
+                "demo-{$profile}-",
+            )))->toBeTrue();
+        }
+    } finally {
+        foreach ($tenants as $tenant) {
+            deleteTenantSqlite($tenant);
+        }
+    }
+});
+
+test('the fake tenant artisan command refuses all profiles combined with a single profile', function () {
+    expect(fn () => $this->artisan('db:seed-fake-tenant', [
+        '--all' => true,
+        '--profile' => 'city-shop',
+        '--confirm-demo' => true,
+    ]))->toThrow(ValidationException::class, 'Use --all by itself');
 });
 
 test('seeding a fake tenant creates a shop the platform user and staff can use', function () {
@@ -163,6 +202,36 @@ test('Jimbo demo seeds a large specialty fleet with shop-specific bids and usabl
                 ->and(Customer::query()->count())->toBeGreaterThan(100)
                 ->and(Hash::check('11111111', Staff::query()->where('email', 'manager@example.com')->firstOrFail()->password))->toBeTrue()
                 ->and(Hash::check('11111111', Staff::query()->where('email', 'counter@example.com')->firstOrFail()->password))->toBeTrue();
+        });
+    } finally {
+        deleteTenantSqlite($tenant);
+    }
+});
+
+test('showroom demo seeds a broad catalog with a small tryout fleet for each size', function () {
+    $tenant = seedFakeTenantAndCleanup('', 'showroom-demo');
+
+    try {
+        expect($tenant->name)->toBe('Northline Cycle Studio')
+            ->and($tenant->domains->first()?->domain)->toStartWith('demo-showroom-demo-');
+
+        $tenant->run(function (): void {
+            $bikeCountsByVariant = Bike::query()
+                ->selectRaw('bike_model_variant_id, COUNT(*) AS bikes_per_variant')
+                ->groupBy('bike_model_variant_id')
+                ->pluck('bikes_per_variant');
+
+            expect(BikeCategory::query()->count())->toBe(8)
+                ->and(BikeModel::query()->count())->toBe(21)
+                ->and(BikeModelVariant::query()->count())->toBe(57)
+                ->and(Bike::query()->count())->toBe(67)
+                ->and($bikeCountsByVariant->max())->toBeLessThanOrEqual(2)
+                ->and(RentalPackage::query()->orderBy('sort_order')->firstOrFail()->variants()->count())->toBe(57)
+                ->and(Bike::query()->where('bid', 'like', 'RD-%')->exists())->toBeTrue()
+                ->and(Bike::query()->where('bid', 'like', 'GR-%')->exists())->toBeTrue()
+                ->and(Bike::query()->where('bid', 'like', 'MT-%')->exists())->toBeTrue()
+                ->and(Bike::query()->where('bid', 'like', 'EB-%')->exists())->toBeTrue()
+                ->and(Bike::query()->where('bid', 'like', 'AD-%')->exists())->toBeTrue();
         });
     } finally {
         deleteTenantSqlite($tenant);

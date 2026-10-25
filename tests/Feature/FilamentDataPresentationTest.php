@@ -9,6 +9,8 @@ use Embiken\BikeRentals\Enums\ReservationStage;
 use Embiken\BikeRentals\Filament\Resources\Reservations\Pages\ListReservations;
 use Embiken\BikeRentals\Filament\Resources\Reservations\Pages\ViewReservation;
 use Embiken\BikeRentals\Filament\Resources\Reservations\RelationManagers\TransactionsRelationManager;
+use Embiken\BikeRentals\Filament\Resources\Reservations\Widgets\TodayReservationLinesWidget;
+use Embiken\BikeRentals\Models\BikeReservation;
 use Embiken\BikeRentals\Models\Reservation;
 use Embiken\BikeRentals\Models\Transaction;
 use Filament\Facades\Filament;
@@ -63,18 +65,32 @@ it('filters reservations by their current stage', function () {
     $confirmed = Reservation::factory()->confirmed()->create();
 
     Livewire::test(ListReservations::class)
-        ->filterTable('stage', ['value' => ReservationStage::Confirmed->value])
+        ->set('activeTab', ReservationStage::Confirmed->value)
         ->assertCanSeeTableRecords([$confirmed])
         ->assertCanNotSeeTableRecords([$provisional]);
 });
 
 it('renders reservation stage badges with their enum colors', function () {
     Reservation::factory()->confirmed()->create();
+    Reservation::factory()->confirmed()->create();
 
     Livewire::test(ListReservations::class)
         ->assertSeeHtml('fi-badge fi-size-sm fi-color fi-color-blue')
         ->assertSeeHtml('fi-striped')
         ->assertSee('Confirmed');
+});
+
+it('shows today’s assigned reservation lines in the shop timezone', function () {
+    Carbon::setTestNow(Carbon::parse('2026-10-23 15:00:00', 'UTC'));
+    $location = Location::factory()->create(['timezone' => 'America/New_York']);
+    $reservation = Reservation::factory()->confirmed()->recycle($location)->create([
+        'starts_at' => Carbon::parse('2026-10-23 14:00:00', 'UTC'),
+        'ends_at' => Carbon::parse('2026-10-23 16:00:00', 'UTC'),
+    ]);
+    $line = BikeReservation::factory()->recycle($reservation)->create();
+
+    Livewire::test(TodayReservationLinesWidget::class)
+        ->assertCanSeeTableRecords([$line]);
 });
 
 it('shows the latest service work entry and its date in the service request list', function () {

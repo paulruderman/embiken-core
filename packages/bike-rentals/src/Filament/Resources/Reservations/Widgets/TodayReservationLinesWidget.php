@@ -33,12 +33,8 @@ class TodayReservationLinesWidget extends TableWidget
                             ->whereIn('stage', [ReservationStage::Confirmed, ReservationStage::Out])
                             ->where(static function (Builder $query) use ($dayStart, $dayEnd): void {
                                 $query
-                                    ->where(static fn (Builder $query): Builder => $query
-                                        ->where('starts_at', '>=', $dayStart)
-                                        ->where('starts_at', '<', $dayEnd))
-                                    ->orWhere(static fn (Builder $query): Builder => $query
-                                        ->where('ends_at', '>=', $dayStart)
-                                        ->where('ends_at', '<', $dayEnd));
+                                    ->where('starts_at', '<', $dayEnd)
+                                    ->where('ends_at', '>=', $dayStart);
                             });
                     })
                     ->with([

@@ -6,8 +6,10 @@ use App\Actions\Platform\ConsumeImpersonationAction;
 use App\Actions\Shop\SaveShopLandingPageAction;
 use App\Actions\Shop\UpdateShopBrandingAction;
 use App\Actions\Staff\SignInAction;
+use App\Http\Controllers\MyRentalController;
 use App\Http\Controllers\ShopLandingPageController;
 use App\Http\Middleware\EnsureModuleEnabled;
+use Embiken\BikeRentals\Actions\RequestMyRentalLinkAction;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
@@ -19,6 +21,14 @@ Route::middleware([
 ])->group(function () {
     Route::get('/', [ShopLandingPageController::class, 'home'])->name('home');
     Route::get('/book', [ShopLandingPageController::class, 'booking'])->name('book');
+
+    Route::middleware(EnsureModuleEnabled::class.':embiken/bike-rentals')->group(function (): void {
+        Route::get('/myrental', [MyRentalController::class, 'requestLink'])->name('myrental.request');
+        Route::get('/myrental/{reservation}/{token}', [MyRentalController::class, 'show'])
+            ->middleware('signed')
+            ->name('myrental.show');
+        RequestMyRentalLinkAction::routes(app('router'));
+    });
 
     Route::get('/impersonate/{staff}', ConsumeImpersonationAction::class)
         ->middleware('signed')
@@ -41,7 +51,7 @@ Route::middleware([
         foreach (glob(base_path('packages/bike-rentals/src/Actions/*.php')) ?: [] as $file) {
             $class = 'Embiken\\BikeRentals\\Actions\\'.basename($file, '.php');
 
-            if (is_callable([$class, 'routes'])) {
+            if ($class !== RequestMyRentalLinkAction::class && is_callable([$class, 'routes'])) {
                 $class::routes(app('router'));
             }
         }

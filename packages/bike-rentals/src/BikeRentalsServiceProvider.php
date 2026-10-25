@@ -7,6 +7,8 @@ namespace Embiken\BikeRentals;
 use Embiken\BikeRentals\Actions\CreateWalkInReservationAction;
 use Embiken\BikeRentals\Actions\ImportPackageRatesAction;
 use Embiken\BikeRentals\Actions\PickupAction;
+use Embiken\BikeRentals\Actions\RequestMyRentalLinkAction;
+use Embiken\BikeRentals\Actions\RevokeCustomerMyRentalAccessAction;
 use Embiken\BikeRentals\Actions\ShowTerminalAction;
 use Embiken\BikeRentals\Actions\TickReservationLifecycleAction;
 use Illuminate\Support\ServiceProvider;
@@ -20,6 +22,8 @@ class BikeRentalsServiceProvider extends ServiceProvider
             Actions::registerCommandsForAction(CreateWalkInReservationAction::class);
             Actions::registerCommandsForAction(ImportPackageRatesAction::class);
             Actions::registerCommandsForAction(PickupAction::class);
+            Actions::registerCommandsForAction(RequestMyRentalLinkAction::class);
+            Actions::registerCommandsForAction(RevokeCustomerMyRentalAccessAction::class);
             Actions::registerCommandsForAction(TickReservationLifecycleAction::class);
             Actions::registerCommandsForAction(ShowTerminalAction::class);
         }

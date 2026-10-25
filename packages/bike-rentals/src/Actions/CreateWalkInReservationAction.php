@@ -12,12 +12,15 @@ use Embiken\BikeRentals\Enums\ReservationChannel;
 use Embiken\BikeRentals\Enums\ReservationStage;
 use Embiken\BikeRentals\Exceptions\OccupancyUnavailable;
 use Embiken\BikeRentals\Http\Resources\DayPatchResource;
+use Embiken\BikeRentals\Mail\MyRentalReservationNotice;
 use Embiken\BikeRentals\Models\Customer;
 use Embiken\BikeRentals\Models\Reservation;
+use Embiken\BikeRentals\Services\MyRentalLink;
 use Illuminate\Console\Command;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -45,7 +48,7 @@ class CreateWalkInReservationAction extends Action
         $availability = app(AllocateLineAction::class);
         $pickupOnly = $location->bike_assignment_policy === BikeAssignmentPolicy::PickupOnly;
 
-        return DB::transaction(function () use ($location, $availability, $bikeIds, $name, $email, $phone, $owedMinorUnits, $startsAtLocal, $endsAtLocal, $pickupOnly): Reservation {
+        $reservation = DB::transaction(function () use ($location, $availability, $bikeIds, $name, $email, $phone, $owedMinorUnits, $startsAtLocal, $endsAtLocal, $pickupOnly): Reservation {
             $customer = Customer::query()->create([
                 'name' => $name,
                 'email' => $email,
@@ -91,6 +94,17 @@ class CreateWalkInReservationAction extends Action
 
             return $reservation->refresh()->load(['customer', 'bikeReservations.product.bikeModel', 'bikeReservations.bike']);
         });
+
+        $reservation->load(['customer', 'location']);
+        $url = app(MyRentalLink::class)->for($reservation);
+
+        if ($url !== null) {
+            Mail::to($reservation->customer->email)->queue(
+                (new MyRentalReservationNotice($reservation, $url))->afterCommit(),
+            );
+        }
+
+        return $reservation;
     }
 
     /**

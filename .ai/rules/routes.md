@@ -10,6 +10,7 @@ Identify tenants by domain or subdomain. Central routes stay on the apex host. T
 
 ## Surface paths
 GET / 302-redirects to /book. Book is /book, MyRental /myrental, Terminal /terminal, CFD /cfd, Screen /screen, shop Filament /manage. Do not add a kiosk or pad path.
+MyRental /myrental accepts an email-only link request; the emailed reservation URL is a separately signed `/myrental/{reservation}/{token}` route and must retain tenant-host routing.
 
 ## Custom domains and ops tenant path
 New tenants get a subdomain; custom domains are added later as Domain rows. Apex /t/{tenant}/… is ops-only (platform auth or local) and clones tenant surface paths. Do not register /t/ as a customer surface. Wayfinder for Book, MyRental, Terminal, Cfd, and Screen stays unprefixed on the tenant host.

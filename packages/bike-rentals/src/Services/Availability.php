@@ -138,7 +138,7 @@ class Availability
     }
 
     /**
-     * @return Collection<int, array{bike: Bike, conflict_reason: string|null}>
+     * @return Collection<int, array{bike: Bike, conflict_reason: 'blocking_service'|'cancelled_out'|'currently_out'|'parked'|'reservation_conflict'|'variant_sold_out'|null}>
      */
     public function bikeCandidatesForInterval(
         CarbonInterface $startsAt,

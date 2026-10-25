@@ -7,12 +7,15 @@ use App\Actions\Concerns\AuthorizesStaff;
 use Embiken\BikeRentals\Enums\BikeReservationStatus;
 use Embiken\BikeRentals\Enums\ReservationStage;
 use Embiken\BikeRentals\Http\Resources\DayPatchResource;
+use Embiken\BikeRentals\Mail\MyRentalReservationNotice;
 use Embiken\BikeRentals\Models\Reservation;
 use Embiken\BikeRentals\Services\Availability;
+use Embiken\BikeRentals\Services\MyRentalLink;
 use Illuminate\Console\Command;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 use InvalidArgumentException;
 
@@ -32,10 +35,11 @@ class SetReservationStageAction extends Action
             return app(CancelAction::class)($reservation, $confirmOutBikesInShop);
         }
 
-        return DB::transaction(function () use ($reservation, $stage): Reservation {
+        [$reservation, $shouldNotify] = DB::transaction(function () use ($reservation, $stage): array {
             $availability = app(Availability::class);
             $lines = $availability->lockReservationLines($reservation);
             $reservation = $availability->lockReservation($reservation);
+            $wasConfirmed = $reservation->stage === ReservationStage::Confirmed;
 
             if ($lines->contains(fn ($line): bool => $line->status === BikeReservationStatus::Out)) {
                 throw new InvalidArgumentException('A reservation with an Out line must keep its Out stage.');
@@ -49,8 +53,21 @@ class SetReservationStageAction extends Action
 
             $reservation->save();
 
-            return $reservation;
+            return [$reservation, $stage === ReservationStage::Confirmed && ! $wasConfirmed];
         }, attempts: 5);
+
+        if ($shouldNotify) {
+            $reservation->load(['customer', 'location']);
+            $url = app(MyRentalLink::class)->for($reservation);
+
+            if ($url !== null) {
+                Mail::to($reservation->customer->email)->queue(
+                    (new MyRentalReservationNotice($reservation, $url))->afterCommit(),
+                );
+            }
+        }
+
+        return $reservation;
     }
 
     public function asController(Request $request, Reservation $reservation): DayPatchResource

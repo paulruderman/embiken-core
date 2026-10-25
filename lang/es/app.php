@@ -36,6 +36,8 @@ return [
         'notifications' => ['updated' => 'Tiempo actualizado'],
     ],
     'location_ui' => [
+        'customer_email' => 'Correo para respuestas de clientes',
+        'customer_email_help' => 'Los correos de reserva muestran el nombre de tu tienda y se envían desde Embiken. Las respuestas de los clientes llegarán a esta dirección.',
         'site_languages' => 'Idiomas del sitio',
         'site_languages_help' => 'Elige los idiomas que los clientes pueden usar en tu sitio.',
         'default_site_language' => 'Idioma predeterminado del sitio',

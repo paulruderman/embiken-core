@@ -5,6 +5,7 @@ use App\Actions\Shop\UpdateShopBrandingAction;
 use App\Enums\StaffRole;
 use App\Filament\Shop\Pages\Branding;
 use App\Filament\Shop\Resources\Locations\LocationResource;
+use App\Filament\Shop\Resources\Locations\Pages\EditLocation;
 use App\Filament\Shop\Resources\Locations\Pages\ListLocations;
 use App\Filament\Shop\Resources\Staff\StaffResource;
 use App\Models\Location;
@@ -85,6 +86,25 @@ test('a manager can open the location list', function () {
 
     Livewire::test(ListLocations::class)
         ->assertOk();
+});
+
+test('a manager can configure the customer reply email for the shop', function () {
+    $location = Location::factory()->create(['name' => 'River Bikes']);
+    $staff = Staff::factory()->create(['location_id' => $location->id]);
+
+    $this->actingAs($staff, 'staff');
+
+    Livewire::test(EditLocation::class, ['record' => $location->id])
+        ->assertOk()
+        ->assertSee(__('app.location_ui.customer_email'))
+        ->fillForm(['customer_contact_email' => 'not-an-email'])
+        ->call('save')
+        ->assertHasFormErrors(['customer_contact_email' => 'email'])
+        ->fillForm(['customer_contact_email' => 'rentals@riverbikes.example'])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect($location->fresh()->customer_contact_email)->toBe('rentals@riverbikes.example');
 });
 
 test('the location list displays currency codes in uppercase', function () {

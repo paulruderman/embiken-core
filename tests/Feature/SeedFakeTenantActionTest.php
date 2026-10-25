@@ -48,7 +48,8 @@ function deleteTenantSqlite(?Tenant $tenant): void
         unlink($path);
     }
 
-    File::deleteDirectory(storage_path('tenant'.$tenant->getKey()));
+    File::deleteDirectory(base_path('storage/tenants/'.$tenant->getKey()));
+    File::deleteDirectory(base_path($tenant->getKey()));
 }
 
 beforeEach(function () {

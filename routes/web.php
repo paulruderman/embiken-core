@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\Platform\DeprovisionLocalTenantAction;
 use App\Actions\Platform\ImpersonatePlatformManagerAction;
 use App\Actions\Platform\PublicSignupAction;
 use App\Actions\Shop\ImportLocationMetadataAction;
@@ -63,6 +64,11 @@ foreach (array_slice($centralDomains, 1) as $domain) {
 }
 
 foreach ($centralDomains as $domain) {
+    Route::domain($domain)
+        ->middleware('auth:web')
+        ->post('/platform/tenants/{tenant}/deprovision', DeprovisionLocalTenantAction::class)
+        ->name('platform.tenants.deprovision.'.str_replace('.', '_', $domain));
+
     Route::domain($domain)
         ->middleware('auth:web')
         ->get('/platform/tenants/{tenant}/impersonate', ImpersonatePlatformManagerAction::class)

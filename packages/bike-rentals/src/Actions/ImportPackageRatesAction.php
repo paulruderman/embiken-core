@@ -34,7 +34,7 @@ class ImportPackageRatesAction extends Action
         }
         $runId = (string) Str::uuid();
         $directory = "package-rate-imports/{$runId}";
-        $disk = Storage::disk('local');
+        $disk = Storage::disk();
         try {
             foreach ($files as $file => $contents) {
                 if (! $disk->put("{$directory}/{$file}.csv", $contents)) {
@@ -48,7 +48,7 @@ class ImportPackageRatesAction extends Action
                 'duplicate_strategy' => $duplicateStrategy,
                 'partial_strategy' => $partialStrategy,
             ]);
-            ProcessPackageRateImport::dispatch($runId)->afterCommit();
+            ProcessPackageRateImport::dispatch($runId)->onQueue('imports')->afterCommit();
         } catch (\Throwable $exception) {
             $disk->deleteDirectory($directory);
             throw $exception;

@@ -36,6 +36,8 @@ return [
         'notifications' => ['updated' => 'Météo actualisée'],
     ],
     'location_ui' => [
+        'customer_email' => 'E-mail de réponse aux clients',
+        'customer_email_help' => 'Les e-mails de réservation affichent le nom de votre boutique et sont envoyés par Embiken. Les réponses des clients arrivent à cette adresse.',
         'site_languages' => 'Langues du site',
         'site_languages_help' => 'Choisissez les langues que les clients peuvent utiliser sur votre site.',
         'default_site_language' => 'Langue par défaut du site',

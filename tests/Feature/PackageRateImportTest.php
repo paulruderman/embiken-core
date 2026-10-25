@@ -131,19 +131,22 @@ it('queues package and rate imports for background processing', function () {
     $staff = Staff::factory()->create();
     $this->actingAs($staff, 'staff');
     Queue::fake([ProcessPackageRateImport::class]);
-    Storage::fake('local');
+    Storage::fake(config('filesystems.default'));
 
     $queued = app(ImportPackageRatesAction::class)(packageRateCsvs(), 'report', 'all-or-nothing', true);
     $run = PackageRateImportRun::query()->findOrFail($queued['run_id']);
 
     expect($run->status)->toBe(PackageRateImportRun::STATUS_QUEUED)
         ->and(RentalPackage::query()->count())->toBe(0);
-    Queue::assertPushed(ProcessPackageRateImport::class, fn (ProcessPackageRateImport $job): bool => $job->runId === $run->id);
+    Queue::assertPushed(ProcessPackageRateImport::class, fn (ProcessPackageRateImport $job): bool => $job->runId === $run->id && $job->queue === 'imports');
 
-    app(ProcessPackageRateImport::class, ['runId' => $run->id])->handle(app(PackageRateImport::class));
+    $job = app(ProcessPackageRateImport::class, ['runId' => $run->id]);
+    $job->handle(app(PackageRateImport::class));
+    $job->handle(app(PackageRateImport::class));
 
     expect($run->fresh()->status)->toBe(PackageRateImportRun::STATUS_COMPLETED)
-        ->and(RentalPackage::query()->count())->toBe(1);
+        ->and(RentalPackage::query()->count())->toBe(1)
+        ->and(Storage::disk()->exists("package-rate-imports/{$run->id}/packages.csv"))->toBeFalse();
 });
 
 it('shows both package rate templates to a Manager', function () {

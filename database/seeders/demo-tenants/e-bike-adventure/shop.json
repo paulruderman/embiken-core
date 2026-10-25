@@ -1,6 +1,7 @@
 {
   "shop": {
     "name": "Summit E-bike Adventures",
+    "customer_contact_email": "hello@summit-e-bike-adventures.example",
     "timezone": "America/Denver",
     "currency": "usd",
     "minimum_turnaround_buffer_minutes": 20,

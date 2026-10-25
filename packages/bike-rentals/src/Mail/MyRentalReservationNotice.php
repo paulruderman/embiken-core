@@ -6,6 +6,7 @@ use Embiken\BikeRentals\Models\Reservation;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -23,7 +24,18 @@ class MyRentalReservationNotice extends Mailable implements ShouldQueue
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: $this->notice);
+        $location = $this->reservation->location;
+
+        return new Envelope(
+            from: new Address(
+                (string) config('mail.from.address'),
+                $location->name ?: (string) config('mail.from.name'),
+            ),
+            replyTo: filled($location->customer_contact_email)
+                ? [new Address($location->customer_contact_email, $location->name)]
+                : [],
+            subject: $this->notice,
+        );
     }
 
     public function content(): Content

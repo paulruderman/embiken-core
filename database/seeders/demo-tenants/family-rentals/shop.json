@@ -1,6 +1,7 @@
 {
   "shop": {
     "name": "Little Wheel Family Rentals",
+    "customer_contact_email": "families@little-wheel-rentals.example",
     "timezone": "America/New_York",
     "currency": "usd",
     "minimum_turnaround_buffer_minutes": 10,

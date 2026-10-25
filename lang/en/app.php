@@ -36,6 +36,8 @@ return [
         'notifications' => ['updated' => 'Weather updated'],
     ],
     'location_ui' => [
+        'customer_email' => 'Customer reply email',
+        'customer_email_help' => 'Reservation emails show your shop name and are sent from Embiken. Customer replies go to this address.',
         'site_languages' => 'Site languages',
         'site_languages_help' => 'Choose which languages customers can use on your site.',
         'default_site_language' => 'Default site language',

@@ -11,6 +11,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
 
@@ -32,32 +33,35 @@ class ProcessPackageRateImport implements ShouldQueue
 
     public function handle(PackageRateImport $import): void
     {
-        $run = PackageRateImportRun::query()->findOrFail($this->runId);
-        if (in_array($run->status, [PackageRateImportRun::STATUS_COMPLETED, PackageRateImportRun::STATUS_NOT_APPLIED], true)) {
-            return;
-        }
-        $run->update(['status' => PackageRateImportRun::STATUS_PROCESSING]);
-        $directory = $this->runDirectory();
-        $disk = Storage::disk('local');
-        $files = [];
-        foreach (['packages', 'package_rates'] as $file) {
-            $path = "{$directory}/{$file}.csv";
-            if (! $disk->exists($path)) {
-                throw new \RuntimeException("The staged {$file} CSV file is missing.");
+        DB::transaction(function () use ($import): void {
+            $run = PackageRateImportRun::query()->lockForUpdate()->findOrFail($this->runId);
+            if (in_array($run->status, [PackageRateImportRun::STATUS_COMPLETED, PackageRateImportRun::STATUS_NOT_APPLIED], true)) {
+                return;
             }
-            $contents = $disk->get($path);
-            if (! is_string($contents)) {
-                throw new \RuntimeException("The staged {$file} CSV file could not be read.");
+            $run->update(['status' => PackageRateImportRun::STATUS_PROCESSING]);
+            $directory = $this->runDirectory();
+            $disk = Storage::disk();
+            $files = [];
+            foreach (['packages', 'package_rates'] as $file) {
+                $path = "{$directory}/{$file}.csv";
+                if (! $disk->exists($path)) {
+                    throw new \RuntimeException("The staged {$file} CSV file is missing.");
+                }
+                $contents = $disk->get($path);
+                if (! is_string($contents)) {
+                    throw new \RuntimeException("The staged {$file} CSV file could not be read.");
+                }
+                $files[$file] = $contents;
             }
-            $files[$file] = $contents;
-        }
-        $report = $import->apply($files, $run->duplicate_strategy, $run->partial_strategy);
-        $run->update([
-            'status' => $report['applied'] ? PackageRateImportRun::STATUS_COMPLETED : PackageRateImportRun::STATUS_NOT_APPLIED,
-            'report' => $report,
-            'completed_at' => now(),
-        ]);
-        $disk->deleteDirectory($directory);
+            $report = $import->apply($files, $run->duplicate_strategy, $run->partial_strategy);
+            $run->update([
+                'status' => $report['applied'] ? PackageRateImportRun::STATUS_COMPLETED : PackageRateImportRun::STATUS_NOT_APPLIED,
+                'report' => $report,
+                'completed_at' => now(),
+            ]);
+        }, attempts: 3);
+
+        Storage::disk()->deleteDirectory($this->runDirectory());
     }
 
     public function failed(?Throwable $exception): void
@@ -66,7 +70,7 @@ class ProcessPackageRateImport implements ShouldQueue
             'status' => PackageRateImportRun::STATUS_FAILED,
             'completed_at' => now(),
         ]);
-        Storage::disk('local')->deleteDirectory($this->runDirectory());
+        Storage::disk()->deleteDirectory($this->runDirectory());
     }
 
     private function runDirectory(): string

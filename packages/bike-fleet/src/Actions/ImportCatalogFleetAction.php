@@ -46,7 +46,7 @@ class ImportCatalogFleetAction extends Action
 
         $runId = (string) Str::uuid();
         $directory = $this->runDirectory($runId);
-        $disk = Storage::disk('local');
+        $disk = Storage::disk();
 
         try {
             foreach ($files as $file => $contents) {
@@ -71,7 +71,7 @@ class ImportCatalogFleetAction extends Action
                 'partial_strategy' => $partialStrategy,
             ]);
 
-            ProcessCatalogFleetImport::dispatch($runId)->afterCommit();
+            ProcessCatalogFleetImport::dispatch($runId)->onQueue('imports')->afterCommit();
         } catch (\Throwable $exception) {
             $disk->deleteDirectory($directory);
             throw $exception;

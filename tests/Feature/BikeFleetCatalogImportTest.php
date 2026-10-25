@@ -191,7 +191,7 @@ test('the catalog and fleet import page is available to a Manager', function () 
 
 test('applying a catalog and fleet import queues a tenant job and records its result', function () {
     Queue::fake([ProcessCatalogFleetImport::class]);
-    Storage::fake('local');
+    Storage::fake(config('filesystems.default'));
     Storage::fake('public');
     $staff = Staff::query()->firstOrFail();
     $this->actingAs($staff, 'staff');
@@ -212,13 +212,16 @@ test('applying a catalog and fleet import queues a tenant job and records its re
         ->and($run->status)->toBe(CatalogFleetImportRun::STATUS_QUEUED)
         ->and(BikeCategory::query()->count())->toBe(0);
 
-    Queue::assertPushed(ProcessCatalogFleetImport::class, fn (ProcessCatalogFleetImport $job): bool => $job->runId === $run->id);
+    Queue::assertPushed(ProcessCatalogFleetImport::class, fn (ProcessCatalogFleetImport $job): bool => $job->runId === $run->id && $job->queue === 'imports');
 
-    app(ProcessCatalogFleetImport::class, ['runId' => $run->id])->handle(app(CatalogFleetImport::class));
+    $job = app(ProcessCatalogFleetImport::class, ['runId' => $run->id]);
+    $job->handle(app(CatalogFleetImport::class));
+    $job->handle(app(CatalogFleetImport::class));
     $run->refresh();
 
     expect($run->status)->toBe(CatalogFleetImportRun::STATUS_COMPLETED)
         ->and($run->report['applied'])->toBeTrue()
         ->and(Bike::query()->where('bid', 'BIKE-001')->exists())->toBeTrue()
-        ->and(Storage::disk('public')->exists(BikeModel::query()->firstOrFail()->photo))->toBeTrue();
+        ->and(Storage::disk('public')->exists(BikeModel::query()->firstOrFail()->photo))->toBeTrue()
+        ->and(Storage::disk()->exists("catalog-fleet-imports/{$run->id}/categories.csv"))->toBeFalse();
 });

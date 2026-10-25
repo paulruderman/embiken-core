@@ -29,6 +29,12 @@ class LocationForm
                     ->maxLength(255),
                 TextInput::make('timezone')
                     ->required(),
+                TextInput::make('customer_contact_email')
+                    ->label(__('app.location_ui.customer_email'))
+                    ->helperText(__('app.location_ui.customer_email_help'))
+                    ->email()
+                    ->maxLength(254)
+                    ->nullable(),
                 TextInput::make('currency')
                     ->required()
                     ->default('USD')

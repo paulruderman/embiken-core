@@ -7,6 +7,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.3",
+        "aws/aws-sdk-php": "^3.322.9",
         "batistackapp/filament-map-picker": "^1.0",
         "bezhansalleh/filament-language-switch": "^5.0",
         "embiken/bike-fleet": "@dev",

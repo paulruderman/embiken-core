@@ -1,6 +1,7 @@
 {
   "shop": {
     "name": "Grand Isle State Park",
+    "customer_contact_email": "bike-rentals@grand-isle-park.example",
     "timezone": "America/New_York",
     "currency": "usd",
     "minimum_turnaround_buffer_minutes": 10,

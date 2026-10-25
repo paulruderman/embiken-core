@@ -86,6 +86,31 @@ test('requesting a MyRental link emails the existing signed link for eligible re
     });
 });
 
+test('customer reservation emails use the shop identity and reply address', function (): void {
+    $reservation = Reservation::factory()->create();
+    $reservation->location->update([
+        'name' => 'River Bikes',
+        'customer_contact_email' => 'rentals@riverbikes.example',
+    ]);
+    $envelope = (new MyRentalReservationNotice($reservation, 'https://example.test/myrental'))->envelope();
+
+    expect($envelope->from?->address)->toBe(config('mail.from.address'))
+        ->and($envelope->from?->name)->toBe('River Bikes')
+        ->and($envelope->replyTo)->toHaveCount(1)
+        ->and($envelope->replyTo[0]->address)->toBe('rentals@riverbikes.example')
+        ->and($envelope->replyTo[0]->name)->toBe('River Bikes');
+});
+
+test('customer reservation email replies fall back to the Embiken sender when no shop contact is set', function (): void {
+    $reservation = Reservation::factory()->create();
+    $reservation->location->update(['name' => 'River Bikes', 'customer_contact_email' => null]);
+    $envelope = (new MyRentalReservationNotice($reservation, 'https://example.test/myrental'))->envelope();
+
+    expect($envelope->from?->address)->toBe(config('mail.from.address'))
+        ->and($envelope->from?->name)->toBe('River Bikes')
+        ->and($envelope->replyTo)->toBe([]);
+});
+
 test('revoking MyRental access invalidates every saved link for the customer', function (): void {
     $customer = Customer::factory()->create();
     $reservations = Reservation::factory()->count(2)->confirmed()->recycle($customer)->create();

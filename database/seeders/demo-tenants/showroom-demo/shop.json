@@ -1,6 +1,7 @@
 {
   "shop": {
     "name": "Northline Cycle Studio",
+    "customer_contact_email": "hello@northline-cycle-studio.example",
     "timezone": "America/Chicago",
     "currency": "usd",
     "minimum_turnaround_buffer_minutes": 15,

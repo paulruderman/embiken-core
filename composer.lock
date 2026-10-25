@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "930bdfbcfcaceefc8f97708d6ac456e1",
+    "content-hash": "57944d9370fc70f63b7a3b7afb33d675",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -1562,7 +1562,7 @@
         },
         {
             "name": "embiken/bike-fleet",
-            "version": "dev-9e59c0aa1bf1bf497e628c5e03ca13a65226cb12",
+            "version": "dev-main",
             "dist": {
                 "type": "path",
                 "url": "packages/bike-fleet",
@@ -1596,7 +1596,7 @@
         },
         {
             "name": "embiken/bike-rental-self-booking",
-            "version": "dev-9e59c0aa1bf1bf497e628c5e03ca13a65226cb12",
+            "version": "dev-main",
             "dist": {
                 "type": "path",
                 "url": "packages/bike-rental-self-booking",
@@ -1630,7 +1630,7 @@
         },
         {
             "name": "embiken/bike-rentals",
-            "version": "dev-9e59c0aa1bf1bf497e628c5e03ca13a65226cb12",
+            "version": "dev-main",
             "dist": {
                 "type": "path",
                 "url": "packages/bike-rentals",
@@ -1665,7 +1665,7 @@
         },
         {
             "name": "embiken/brm",
-            "version": "dev-9e59c0aa1bf1bf497e628c5e03ca13a65226cb12",
+            "version": "dev-main",
             "dist": {
                 "type": "path",
                 "url": "packages/brm",
@@ -1698,7 +1698,7 @@
         },
         {
             "name": "embiken/maintenance",
-            "version": "dev-9e59c0aa1bf1bf497e628c5e03ca13a65226cb12",
+            "version": "dev-main",
             "dist": {
                 "type": "path",
                 "url": "packages/maintenance",
@@ -1733,7 +1733,7 @@
         },
         {
             "name": "embiken/platform-landing-page",
-            "version": "dev-9e59c0aa1bf1bf497e628c5e03ca13a65226cb12",
+            "version": "dev-main",
             "dist": {
                 "type": "path",
                 "url": "packages/platform-landing-page",
@@ -1766,7 +1766,7 @@
         },
         {
             "name": "embiken/stripe-connect",
-            "version": "dev-9e59c0aa1bf1bf497e628c5e03ca13a65226cb12",
+            "version": "dev-main",
             "dist": {
                 "type": "path",
                 "url": "packages/stripe-connect",
@@ -1800,7 +1800,7 @@
         },
         {
             "name": "embiken/weather",
-            "version": "dev-9e59c0aa1bf1bf497e628c5e03ca13a65226cb12",
+            "version": "dev-main",
             "dist": {
                 "type": "path",
                 "url": "packages/weather",

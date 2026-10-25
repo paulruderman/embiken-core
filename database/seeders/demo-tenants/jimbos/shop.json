@@ -1,6 +1,7 @@
 {
   "shop": {
     "name": "Jimbo's Bike Barn",
+    "customer_contact_email": "jimbo@jimbos-bike-barn.example",
     "timezone": "America/New_York",
     "currency": "usd",
     "minimum_turnaround_buffer_minutes": 15,

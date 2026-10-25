@@ -33,7 +33,7 @@ class ImportLocationMetadataAction extends Action
 
         $runId = (string) Str::uuid();
         $directory = $this->runDirectory($runId);
-        $disk = Storage::disk('local');
+        $disk = Storage::disk();
 
         try {
             if (! $disk->put("{$directory}/shop.json", $json)) {
@@ -47,7 +47,7 @@ class ImportLocationMetadataAction extends Action
                 'report' => $report,
             ]);
 
-            ProcessLocationMetadataImport::dispatch($runId)->afterCommit();
+            ProcessLocationMetadataImport::dispatch($runId)->onQueue('imports')->afterCommit();
         } catch (\Throwable $exception) {
             $disk->deleteDirectory($directory);
             throw $exception;

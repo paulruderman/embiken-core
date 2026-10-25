@@ -44,3 +44,9 @@ Do not call useEcho during SSR. useEcho instantiates Pusher in setup (not onMoun
 
 ## Shared enum meta for SPA badges
 Inertia shares enums.* lookup tables. Use getEnumLabel / getStatusBadgeClasses from @/lib/enums and value consts from @/types/domain for comparisons. Do not hardcode production situation/stage labels or colors in Vue.
+
+## Show Reservation context and readiness separately
+When a bike is shown in a Reservation context, display its occupying Reservation only when it differs from the Reservation being viewed; without a specific Reservation context, show it for every non-home situation. Never flag a bike as wrong merely because its situation belongs to another Reservation. During preparation, a bike is ready for the target Reservation only when its situation is linked to that Reservation and Availability plus physical-readiness checks pass; another Reservation's staged/prepping state is not ready for this one. Screen must continue to omit customer PII and money.
+
+## Show readiness for active prep and upcoming starts
+Show line-level readiness while staff actively prepare a Reservation and when its start falls within the configurable Location readiness window (default 45 minutes). Display the situation's owning Reservation only when it differs from the Reservation represented by the current view; a bike staged/prepping for another Reservation is not ready for this one. Readiness also honors Availability and physical state. Screen omits customer PII and money.

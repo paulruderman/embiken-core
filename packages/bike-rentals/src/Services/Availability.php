@@ -209,8 +209,6 @@ class Availability
             throw new LogicException('Availability checks that reserve capacity must run inside a transaction.');
         }
 
-        $honorBuffer = $channel === ReservationChannel::Book;
-
         if ($product === null) {
             $reservation->loadMissing('bikeReservations.product', 'bikeReservations.bike');
 
@@ -239,10 +237,10 @@ class Availability
             $this->assertBikeAssignable($bike, $product, $channel);
         }
 
-        $this->assertClassCapacity($product, $startsAt, $endsAt, $honorBuffer, $channel, $reservation->id, $ignoreLine?->id);
+        $this->assertClassCapacity($product, $startsAt, $endsAt, $channel, $reservation->id, $ignoreLine?->id);
 
         if ($bike !== null) {
-            $this->assertBikeInterval($bike, $startsAt, $endsAt, $honorBuffer, $reservation->id, $ignoreLine?->id);
+            $this->assertBikeInterval($bike, $startsAt, $endsAt, $reservation->id, $ignoreLine?->id);
         }
     }
 
@@ -282,7 +280,6 @@ class Availability
         Bike $bike,
         CarbonInterface $startsAt,
         CarbonInterface $endsAt,
-        bool $honorBuffer,
         int $ignoreReservationId,
         ?int $ignoreLineId,
     ): void {
@@ -296,7 +293,7 @@ class Availability
             throw new OccupancyUnavailable('That bike is still Out on a Cancelled reservation.');
         }
 
-        $buffer = $honorBuffer ? $this->effectiveBufferMinutes($bike) : 0;
+        $buffer = $this->effectiveBufferMinutes($bike);
 
         $conflict = BikeReservation::query()
             ->with('reservation')
@@ -321,7 +318,6 @@ class Availability
         BikeModelVariant $product,
         CarbonInterface $startsAt,
         CarbonInterface $endsAt,
-        bool $honorBuffer,
         ReservationChannel $channel,
         int $ignoreReservationId,
         ?int $ignoreLineId,
@@ -334,7 +330,7 @@ class Availability
             ->reject(fn (Bike $bike): bool => $this->bikeHasBlockingService($bike))
             ->count();
 
-        $buffer = $honorBuffer ? $this->effectiveBufferMinutesForProduct($product) : 0;
+        $buffer = $this->effectiveBufferMinutesForProduct($product);
 
         $held = BikeReservation::query()
             ->with('reservation')

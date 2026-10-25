@@ -53,6 +53,23 @@ test('filament terminal allocate refuses an overlapping interval on the same bik
         ->toThrow(OccupancyUnavailable::class);
 });
 
+test('terminal allocation honors the turnaround buffer after a reservation', function () {
+    $bike = Bike::factory()->create();
+    $first = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create([
+        'starts_at' => '2026-10-26 10:00:00',
+        'ends_at' => '2026-10-26 11:00:00',
+    ]);
+    app(Availability::class)->allocate($first, $bike->variant, ReservationChannel::Terminal, $bike);
+
+    $second = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create([
+        'starts_at' => '2026-10-26 11:05:00',
+        'ends_at' => '2026-10-26 12:00:00',
+    ]);
+
+    expect(fn () => app(Availability::class)->allocate($second, $bike->variant, ReservationChannel::Terminal, $bike))
+        ->toThrow(OccupancyUnavailable::class);
+});
+
 test('cancel releases assigned lines and refuses to auto-return out bikes', function () {
     $bike = Bike::factory()->create();
     $reservation = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create();

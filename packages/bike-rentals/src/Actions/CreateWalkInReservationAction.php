@@ -27,7 +27,7 @@ class CreateWalkInReservationAction extends Action
 {
     use AuthorizesStaff;
 
-    public string $commandSignature = 'reservations:walk-in {--tenant=} {--name=} {--email=} {--phone=} {--bike=*} {--owed-minor-units=}';
+    public string $commandSignature = 'reservations:walk-in {--tenant=} {--name=} {--email=} {--phone=} {--bike=*} {--owed-minor-units=} {--starts-at=} {--ends-at=}';
 
     /**
      * @param  list<int>  $bikeIds
@@ -38,20 +38,22 @@ class CreateWalkInReservationAction extends Action
         string $phone,
         array $bikeIds,
         int $owedMinorUnits,
+        string $startsAtLocal,
+        string $endsAtLocal,
     ): Reservation {
         $location = Location::query()->firstOrFail();
         $availability = app(AllocateLineAction::class);
         $pickupOnly = $location->bike_assignment_policy === BikeAssignmentPolicy::PickupOnly;
 
-        return DB::transaction(function () use ($location, $availability, $bikeIds, $name, $email, $phone, $owedMinorUnits, $pickupOnly): Reservation {
+        return DB::transaction(function () use ($location, $availability, $bikeIds, $name, $email, $phone, $owedMinorUnits, $startsAtLocal, $endsAtLocal, $pickupOnly): Reservation {
             $customer = Customer::query()->create([
                 'name' => $name,
                 'email' => $email,
                 'phone' => $phone,
             ]);
 
-            $startsAt = Carbon::now($location->timezone);
-            $endsAt = $startsAt->copy()->addHours(2);
+            $startsAt = Carbon::parse($startsAtLocal, $location->timezone)->utc();
+            $endsAt = Carbon::parse($endsAtLocal, $location->timezone)->utc();
 
             $reservation = $location->reservations()->create([
                 'customer_id' => $customer->id,
@@ -103,12 +105,14 @@ class CreateWalkInReservationAction extends Action
             'bike_ids' => ['required', 'array', 'min:1'],
             'bike_ids.*' => ['required', 'integer', 'distinct', 'exists:bikes,id'],
             'owed_minor_units' => ['required', 'integer', 'min:0'],
+            'starts_at_local' => ['required', 'date_format:Y-m-d\\TH:i'],
+            'ends_at_local' => ['required', 'date_format:Y-m-d\\TH:i', 'after:starts_at_local'],
         ];
     }
 
     public function asController(ActionRequest $request): DayPatchResource
     {
-        /** @var array{name: string, email: string, phone: string, bike_ids: list<int>, owed_minor_units: int} $data */
+        /** @var array{name: string, email: string, phone: string, bike_ids: list<int>, owed_minor_units: int, starts_at_local: string, ends_at_local: string} $data */
         $data = $request->validated();
 
         $reservation = $this->handle(
@@ -117,6 +121,8 @@ class CreateWalkInReservationAction extends Action
             $data['phone'],
             $data['bike_ids'],
             $data['owed_minor_units'],
+            $data['starts_at_local'],
+            $data['ends_at_local'],
         );
 
         $bikes = $reservation->bikeReservations->pluck('bike')->filter();
@@ -144,6 +150,8 @@ class CreateWalkInReservationAction extends Action
             ? array_map('intval', $bikeInput)
             : array_map('intval', explode(',', $bikeInput));
         $owedInput = $this->requiredStringInput($command, $command->option('owed-minor-units'), 'Owed minor units');
+        $startsAtInput = $this->requiredStringInput($command, $command->option('starts-at'), 'Start time in the shop timezone');
+        $endsAtInput = $this->requiredStringInput($command, $command->option('ends-at'), 'End time in the shop timezone');
 
         $validated = Validator::make([
             'name' => $this->requiredStringInput($command, $command->option('name'), 'Name'),
@@ -151,6 +159,8 @@ class CreateWalkInReservationAction extends Action
             'phone' => $this->requiredStringInput($command, $command->option('phone'), 'Phone'),
             'bike_ids' => $bikeIds,
             'owed_minor_units' => $owedInput,
+            'starts_at_local' => $startsAtInput,
+            'ends_at_local' => $endsAtInput,
         ], $this->rules())->validate();
 
         $reservation = $this->handle(
@@ -159,6 +169,8 @@ class CreateWalkInReservationAction extends Action
             $validated['phone'],
             $validated['bike_ids'],
             (int) $validated['owed_minor_units'],
+            $validated['starts_at_local'],
+            $validated['ends_at_local'],
         );
         $command->info("Walk-in {$reservation->id}");
 

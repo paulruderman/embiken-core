@@ -237,7 +237,7 @@ test('pickup return walk-in cash and waiver write through staff HTTP', function 
 
     $this->postJson('http://desk-writes.localhost/reservations/walk-in')
         ->assertUnprocessable()
-        ->assertJsonValidationErrors(['name', 'email', 'phone', 'bike_ids', 'owed_minor_units'])
+        ->assertJsonValidationErrors(['name', 'email', 'phone', 'bike_ids', 'owed_minor_units', 'starts_at_local', 'ends_at_local'])
         ->assertJsonPath('errors.name.0', 'The name field is required.')
         ->assertJsonPath('errors.email.0', 'The email field is required.')
         ->assertJsonPath('errors.phone.0', 'The phone field is required.')
@@ -250,10 +250,25 @@ test('pickup return walk-in cash and waiver write through staff HTTP', function 
         'phone' => '+1 555 0100',
         'bike_ids' => $walkInBikeIds,
         'owed_minor_units' => 7500,
+        'starts_at_local' => '2026-06-01T10:30',
+        'ends_at_local' => '2026-06-01T10:29',
+    ])->assertUnprocessable()
+        ->assertJsonValidationErrors('ends_at_local');
+
+    $this->postJson('http://desk-writes.localhost/reservations/walk-in', [
+        'name' => 'Avery Rider',
+        'email' => 'avery@example.test',
+        'phone' => '+1 555 0100',
+        'bike_ids' => $walkInBikeIds,
+        'owed_minor_units' => 7500,
+        'starts_at_local' => '2026-06-01T10:30',
+        'ends_at_local' => '2026-06-01T12:45',
     ])
         ->assertOk()
         ->assertJsonPath('reservation.customer.name', 'Avery Rider')
         ->assertJsonPath('reservation.owed_minor_units', 7500)
+        ->assertJsonPath('reservation.starts_at', '2026-06-01T14:30:00+00:00')
+        ->assertJsonPath('reservation.ends_at', '2026-06-01T16:45:00+00:00')
         ->assertJsonPath('reservation.currency', 'jpy')
         ->assertJsonCount(2, 'reservation.lines');
 
@@ -282,6 +297,8 @@ test('walk-in reservations and cash payments retain the configured currency', fu
         'phone' => '+81 90 1234 5678',
         'bike_ids' => $bikeIds,
         'owed_minor_units' => 1250,
+        'starts_at_local' => '2026-06-01T10:30',
+        'ends_at_local' => '2026-06-01T12:30',
     ])->assertOk()
         ->assertJsonPath('reservation.currency', 'jpy')
         ->assertJsonPath('reservation.owed_minor_units', 1250);
@@ -371,6 +388,8 @@ test('pickup-only walk-ins keep bikes unassigned until pickup', function () {
             'phone' => '+1 555 0101',
             'bike_ids' => $bikeIds,
             'owed_minor_units' => 0,
+            'starts_at_local' => '2026-06-01T10:30',
+            'ends_at_local' => '2026-06-01T12:30',
         ])
         ->assertOk()
         ->assertJsonPath('reservation.stage', ReservationStage::Confirmed->value)

@@ -35,6 +35,8 @@ type WalkInForm = {
     phone: string;
     bike_ids: number[];
     owed_minor_units: number;
+    starts_at_local: string;
+    ends_at_local: string;
 };
 type PickupForm = { bike_id?: number };
 
@@ -56,6 +58,8 @@ const walkInRequest = useHttp<WalkInForm, DayPatchResponse>({
     phone: '',
     bike_ids: [],
     owed_minor_units: 0,
+    starts_at_local: '',
+    ends_at_local: '',
 });
 
 const selectedReservation = computed(() =>
@@ -221,7 +225,29 @@ function errorMessage(errors: object): string {
 
 function startWalkIn(): void {
     walkInError.value = '';
+    const startsAt = new Date();
+    const endsAt = new Date(startsAt.getTime() + 2 * 60 * 60 * 1000);
+    walkInRequest.starts_at_local = dateTimeInTimezone(startsAt, day.timezone);
+    walkInRequest.ends_at_local = dateTimeInTimezone(endsAt, day.timezone);
     walkInOpen.value = true;
+}
+
+function dateTimeInTimezone(value: Date, timezone: string): string {
+    const parts = Object.fromEntries(
+        new Intl.DateTimeFormat('en-CA', {
+            timeZone: timezone,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hourCycle: 'h23',
+        })
+            .formatToParts(value)
+            .map(({ type, value: part }) => [type, part]),
+    );
+
+    return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
 }
 
 function submitWalkIn(): void {
@@ -269,6 +295,8 @@ function submitWalkIn(): void {
                 walkInRequest.email = '';
                 walkInRequest.phone = '';
                 walkInRequest.bike_ids = [];
+                walkInRequest.starts_at_local = '';
+                walkInRequest.ends_at_local = '';
                 walkInError.value = '';
             },
             onError: (errors) => {
@@ -390,6 +418,37 @@ function bikesForLine(line: DayLine): DayBike[] {
                                 required
                                 type="tel"
                                 autocomplete="tel"
+                                class="h-14 rounded-xl border border-zinc-700 bg-zinc-950 px-4 text-lg text-white focus:border-emerald-400 focus:outline-none"
+                            />
+                        </label>
+                    </div>
+                </section>
+
+                <section
+                    class="rounded-2xl border border-zinc-800 bg-zinc-900 p-5"
+                >
+                    <h2 class="text-xl font-bold">Rental interval</h2>
+                    <p class="mt-1 text-zinc-400">
+                        Times use the shop timezone: {{ day.timezone }}. The
+                        default is now for two hours.
+                    </p>
+                    <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                        <label class="flex flex-col gap-2 text-sm font-semibold">
+                            Starts
+                            <input
+                                v-model="walkInRequest.starts_at_local"
+                                required
+                                type="datetime-local"
+                                class="h-14 rounded-xl border border-zinc-700 bg-zinc-950 px-4 text-lg text-white focus:border-emerald-400 focus:outline-none"
+                            />
+                        </label>
+                        <label class="flex flex-col gap-2 text-sm font-semibold">
+                            Expected return
+                            <input
+                                v-model="walkInRequest.ends_at_local"
+                                required
+                                type="datetime-local"
+                                :min="walkInRequest.starts_at_local"
                                 class="h-14 rounded-xl border border-zinc-700 bg-zinc-950 px-4 text-lg text-white focus:border-emerald-400 focus:outline-none"
                             />
                         </label>

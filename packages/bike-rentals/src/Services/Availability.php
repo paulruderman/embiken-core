@@ -409,6 +409,33 @@ class Availability
         return app(FleetMutationLock::class)->lockBikeForMutation($bike);
     }
 
+    public function assertPickupReady(Bike $bike, Reservation $reservation): Bike
+    {
+        if (DB::transactionLevel() === 0) {
+            throw new LogicException('Pickup availability checks must run inside a transaction.');
+        }
+
+        $bike = $this->lockBike($bike);
+
+        if (! $bike->in_service) {
+            throw new OccupancyUnavailable('That bike is parked.');
+        }
+
+        if ($this->bikeHasBlockingService($bike)) {
+            throw new OccupancyUnavailable('That bike has blocking service.');
+        }
+
+        if (! in_array($bike->bike_situation_state, [BikeSituation::Home, BikeSituation::Prepping, BikeSituation::Staged], true)) {
+            throw new OccupancyUnavailable('That bike is not physically available for pickup.');
+        }
+
+        if ($bike->bike_situation_reservation_id !== null && $bike->bike_situation_reservation_id !== $reservation->id) {
+            throw new OccupancyUnavailable('That bike is prepared for another reservation.');
+        }
+
+        return $bike;
+    }
+
     public function lockReservation(Reservation $reservation): Reservation
     {
         if (DB::transactionLevel() === 0) {

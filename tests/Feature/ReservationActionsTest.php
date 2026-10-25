@@ -135,6 +135,24 @@ test('pickup and return serialize reservation state transitions', function () {
         ->and($bike->fresh()->bike_situation_state)->toBe(BikeSituation::Home);
 });
 
+test('pickup remains blocked while the assigned bike is physically unavailable', function () {
+    $bike = Bike::factory()->create();
+    $otherReservation = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create();
+    $reservation = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create();
+    $line = new BikeReservation;
+    $line->reservation()->associate($reservation);
+    $line->product()->associate($bike->variant);
+    $line->bike()->associate($bike);
+    $line->status = BikeReservationStatus::Assigned;
+    $line->save();
+    $bike->bike_situation_state = BikeSituation::RentedOut;
+    $bike->bike_situation_reservation_id = $otherReservation->id;
+    $bike->save();
+
+    expect(fn () => app(PickupAction::class)->handle($line))
+        ->toThrow(OccupancyUnavailable::class);
+});
+
 test('swapAsset moves the line to another in-service bike', function () {
     $from = Bike::factory()->create();
     $to = Bike::factory()->recycle($from->location)->recycle($from->variant)->create();

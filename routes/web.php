@@ -3,11 +3,25 @@
 use App\Actions\Platform\ImpersonatePlatformManagerAction;
 use App\Actions\Platform\PublicSignupAction;
 use App\Http\Controllers\MarketingPageController;
+use Embiken\BikeFleet\Actions\ImportCatalogFleetAction;
+use Embiken\BikeFleet\Actions\ValidateCatalogFleetImportAction;
+use Embiken\BikeRentals\Actions\ImportPackageRatesAction;
 use Illuminate\Support\Facades\Route;
+
+Route::post('/fleet/import/catalog', ImportCatalogFleetAction::class)
+    ->middleware('auth:staff')
+    ->name('fleet.import.catalog');
+
+Route::post('/rentals/import/package-rates', ImportPackageRatesAction::class)
+    ->middleware('auth:staff')
+    ->name('rentals.import.package-rates');
 
 $centralDomains = config('tenancy.central_domains');
 
 Route::domain($centralDomains[0] ?? 'localhost')->group(function (): void {
+    Route::post('/platform/catalog-import/validate', ValidateCatalogFleetImportAction::class)
+        ->middleware('auth:web')
+        ->name('platform.catalog-import.validate');
     Route::get('/', [MarketingPageController::class, 'home'])->name('marketing.home');
     Route::get('/pricing', [MarketingPageController::class, 'pricing'])->name('marketing.pricing');
     Route::get('/features', [MarketingPageController::class, 'show'])->defaults('slug', 'features')->name('marketing.features');

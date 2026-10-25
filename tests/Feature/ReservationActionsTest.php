@@ -1,5 +1,6 @@
 <?php
 
+use Carbon\CarbonImmutable;
 use Embiken\BikeFleet\Enums\BikeSituation;
 use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeRentals\Actions\AllocateLineAction;
@@ -68,6 +69,73 @@ test('terminal allocation honors the turnaround buffer after a reservation', fun
 
     expect(fn () => app(Availability::class)->allocate($second, $bike->variant, ReservationChannel::Terminal, $bike))
         ->toThrow(OccupancyUnavailable::class);
+});
+
+test('terminal allocation can explicitly override a reservation time conflict', function () {
+    $bike = Bike::factory()->create();
+    $first = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create([
+        'starts_at' => '2026-10-26 10:00:00',
+        'ends_at' => '2026-10-26 11:00:00',
+    ]);
+    app(Availability::class)->allocate($first, $bike->variant, ReservationChannel::Terminal, $bike);
+    $second = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create([
+        'starts_at' => '2026-10-26 10:30:00',
+        'ends_at' => '2026-10-26 12:00:00',
+    ]);
+
+    $line = app(Availability::class)->allocate(
+        $second,
+        $bike->variant,
+        ReservationChannel::Terminal,
+        $bike,
+        allowOverride: true,
+    );
+
+    expect($line->bike_id)->toBe($bike->id)
+        ->and(BikeReservation::query()->where('bike_id', $bike->id)->count())->toBe(2);
+});
+
+test('terminal allocation can explicitly override a bike level hard block', function () {
+    $bike = Bike::factory()->outOfService()->create();
+    $reservation = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create();
+
+    expect(fn () => app(Availability::class)->allocate($reservation, $bike->variant, ReservationChannel::Terminal, $bike))
+        ->toThrow(OccupancyUnavailable::class);
+
+    $line = app(Availability::class)->allocate(
+        $reservation,
+        $bike->variant,
+        ReservationChannel::Terminal,
+        $bike,
+        allowOverride: true,
+    );
+
+    expect($line->bike_id)->toBe($bike->id)
+        ->and($bike->fresh()->in_service)->toBeFalse();
+});
+
+test('bike candidates use reservation buffers and can expose conflicts for overrides', function () {
+    $reservedBike = Bike::factory()->create();
+    $availableBike = Bike::factory()->recycle($reservedBike->location)->recycle($reservedBike->variant)->create();
+    $reservation = Reservation::factory()->confirmed()->terminal()->recycle($reservedBike->location)->create([
+        'starts_at' => '2026-10-26 10:00:00',
+        'ends_at' => '2026-10-26 11:00:00',
+    ]);
+    app(Availability::class)->allocate($reservation, $reservedBike->variant, ReservationChannel::Terminal, $reservedBike);
+
+    $availability = app(Availability::class);
+    $available = $availability->bikeCandidatesForInterval(
+        CarbonImmutable::parse('2026-10-26 11:05:00'),
+        CarbonImmutable::parse('2026-10-26 12:00:00'),
+    );
+    $withConflicts = $availability->bikeCandidatesForInterval(
+        CarbonImmutable::parse('2026-10-26 11:05:00'),
+        CarbonImmutable::parse('2026-10-26 12:00:00'),
+        includeUnavailable: true,
+    );
+
+    expect($available->pluck('bike.id')->all())->toBe([$availableBike->id])
+        ->and($withConflicts->firstWhere('bike.id', $reservedBike->id)['conflict_reason'])->toBe('reservation_conflict');
 });
 
 test('cancel releases assigned lines and refuses to auto-return out bikes', function () {

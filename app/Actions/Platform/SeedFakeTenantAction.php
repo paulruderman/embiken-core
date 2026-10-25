@@ -3,13 +3,13 @@
 namespace App\Actions\Platform;
 
 use App\Actions\Action;
+use App\Actions\Staff\InviteStaffAction;
+use App\Enums\StaffRole;
 use App\Enums\Weekday;
 use App\Models\Domain;
 use App\Models\Location;
 use App\Models\LocationHour;
-use App\Models\Staff;
 use App\Models\Tenant;
-use App\Models\User;
 use Embiken\BikeFleet\Enums\BikeSituation;
 use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeFleet\Models\BikeCategory;
@@ -36,7 +36,7 @@ use Illuminate\Validation\ValidationException;
 
 class SeedFakeTenantAction extends Action
 {
-    public string $commandSignature = 'db:seed-fake-tenant {--domain=demo.localhost} {--name=Harbor Demo Bikes} {--timezone=America/New_York}';
+    public string $commandSignature = 'db:seed-fake-tenant {--domain=demo.localhost} {--name=Harbor Demo Bikes} {--timezone=America/New_York} {--confirm-demo}';
 
     public string $commandDescription = 'Provision a demo shop Tenant with catalog, hours, packages, and upcoming Reservations.';
 
@@ -49,7 +49,14 @@ class SeedFakeTenantAction extends Action
         string $domain = 'demo.localhost',
         string $name = 'Harbor Demo Bikes',
         string $timezone = 'America/New_York',
+        bool $confirmed = false,
     ): Tenant {
+        if (! $confirmed) {
+            throw ValidationException::withMessages([
+                'confirm_demo' => 'Explicit confirmation is required to create a demo Tenant.',
+            ]);
+        }
+
         Notification::fake();
         fake()->seed(20260902);
 
@@ -59,15 +66,6 @@ class SeedFakeTenantAction extends Action
             ]);
         }
 
-        User::query()->firstOrCreate(
-            ['email' => 'test@example.com'],
-            [
-                'name' => 'Test User',
-                'password' => 'password',
-                'email_verified_at' => now(),
-            ],
-        );
-
         $tenant = ($this->createTenant)(
             $name,
             $domain,
@@ -76,10 +74,6 @@ class SeedFakeTenantAction extends Action
             'Mina Manager',
             'manager@example.com',
         );
-
-        $tenant->charges_enabled = true;
-        $tenant->transfers_active = true;
-        $tenant->save();
 
         $tenant->run(function () use ($timezone): void {
             $this->seedShop($timezone);
@@ -96,6 +90,7 @@ class SeedFakeTenantAction extends Action
             $data['domain'],
             $data['name'],
             $data['timezone'],
+            $data['confirm_demo'],
         ));
     }
 
@@ -106,16 +101,38 @@ class SeedFakeTenantAction extends Action
 
     public function asCommand(Command $command): int
     {
+        $confirmed = (bool) $command->option('confirm-demo');
+
+        if (! $confirmed) {
+            if ($command->option('no-interaction')) {
+                throw ValidationException::withMessages([
+                    'confirm_demo' => 'Pass --confirm-demo to create a demo Tenant in a non-interactive run.',
+                ]);
+            }
+
+            $confirmed = \Laravel\Prompts\confirm(
+                'Create a fully seeded demo Tenant in '.app()->environment().'? Payments will remain disabled.',
+                false,
+            );
+        }
+
+        if (! $confirmed) {
+            $command->info('Demo Tenant creation cancelled.');
+
+            return self::SUCCESS;
+        }
+
         $tenant = $this->handle(
             $this->requiredStringInput($command, $command->option('domain'), 'Domain', 'demo.localhost'),
             $this->requiredStringInput($command, $command->option('name'), 'Name', 'Harbor Demo Bikes'),
             $this->requiredStringInput($command, $command->option('timezone'), 'Timezone', 'America/New_York'),
+            true,
         );
 
         $command->info("Fake tenant {$tenant->id} at {$tenant->domains->first()?->domain}");
-        $command->info('Platform User: test@example.com / password');
-        $command->info('Shop Manager: manager@example.com / password');
-        $command->info('Shop Counter: counter@example.com / password');
+        $command->info('Platform Users are not created by demo Tenant seeding.');
+        $command->info('Shop Manager: manager@example.com (set password through the invite or reset flow).');
+        $command->info('Shop Counter: counter@example.com (set password through the reset flow).');
 
         return self::SUCCESS;
     }
@@ -129,22 +146,19 @@ class SeedFakeTenantAction extends Action
             'domain' => ['required', 'string', 'max:255', 'unique:domains,domain'],
             'name' => ['required', 'string', 'max:255'],
             'timezone' => ['required', 'timezone'],
+            'confirm_demo' => ['required', 'accepted'],
         ];
     }
 
     private function seedShop(string $timezone): void
     {
         $location = Location::query()->firstOrFail();
-
-        $manager = Staff::query()->where('email', 'manager@example.com')->firstOrFail();
-        $manager->password = 'password';
-        $manager->save();
-
-        Staff::factory()->counter()->recycle($location)->create([
-            'name' => 'Casey Counter',
-            'email' => 'counter@example.com',
-            'password' => 'password',
-        ]);
+        app(InviteStaffAction::class)(
+            location: $location,
+            name: 'Casey Counter',
+            email: 'counter@example.com',
+            role: StaffRole::Counter,
+        );
 
         foreach (Weekday::cases() as $weekday) {
             LocationHour::query()->create([
@@ -444,6 +458,7 @@ class SeedFakeTenantAction extends Action
             $line->status = BikeReservationStatus::Out;
             $line->checked_out_at = now();
             $line->save();
+            $reservation->unsetRelation('bikeReservations');
             $reservation->recomputeStageCache();
         }
 
@@ -451,6 +466,7 @@ class SeedFakeTenantAction extends Action
             $line->status = BikeReservationStatus::In;
             $line->checked_in_at = now();
             $line->save();
+            $reservation->unsetRelation('bikeReservations');
             $reservation->recomputeStageCache();
         }
 

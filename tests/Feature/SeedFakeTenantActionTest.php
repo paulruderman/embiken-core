@@ -12,12 +12,11 @@ use Embiken\BikeRentals\Models\BikeReservation;
 use Embiken\BikeRentals\Models\RentalPackage;
 use Embiken\BikeRentals\Models\Reservation;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 function seedFakeTenantAndCleanup(string $domain): Tenant
 {
-    return app(SeedFakeTenantAction::class)($domain);
+    return app(SeedFakeTenantAction::class)($domain, confirmed: true);
 }
 
 function deleteTenantSqlite(?Tenant $tenant): void
@@ -39,8 +38,13 @@ test('the fake tenant seeder is registered as an artisan command', function () {
     expect(Artisan::all())->toHaveKey('db:seed-fake-tenant');
 });
 
+test('direct fake tenant creation requires explicit confirmation', function () {
+    expect(fn () => app(SeedFakeTenantAction::class)('harbor-unconfirmed.test'))
+        ->toThrow(ValidationException::class);
+});
+
 test('the fake tenant artisan command exits successfully', function () {
-    $this->artisan('db:seed-fake-tenant', ['--domain' => 'harbor-exit.test'])
+    $this->artisan('db:seed-fake-tenant', ['--domain' => 'harbor-exit.test', '--confirm-demo' => true])
         ->expectsOutputToContain('Fake tenant')
         ->assertSuccessful();
 
@@ -59,29 +63,28 @@ test('seeding a fake tenant creates a shop the platform user and staff can use',
     try {
         $user = User::query()->where('email', 'test@example.com')->first();
 
-        expect($user)->not->toBeNull()
-            ->and(Hash::check('password', $user->password))->toBeTrue()
+        expect($user)->toBeNull()
             ->and(Domain::query()->where('domain', 'harbor-demo.test')->exists())->toBeTrue()
-            ->and($tenant->charges_enabled)->toBeTrue()
-            ->and($tenant->transfers_active)->toBeTrue();
+            ->and($tenant->charges_enabled)->toBeFalse()
+            ->and($tenant->transfers_active)->toBeFalse();
 
         $tenant->run(function (): void {
             $manager = Staff::query()->where('email', 'manager@example.com')->first();
             $counter = Staff::query()->where('email', 'counter@example.com')->first();
 
             expect($manager)->not->toBeNull()
-                ->and(Hash::check('password', $manager->password))->toBeTrue()
+                ->and($manager->password)->toBeNull()
                 ->and($counter)->not->toBeNull()
-                ->and(Hash::check('password', $counter->password))->toBeTrue()
+                ->and($counter->password)->toBeNull()
                 ->and(LocationHour::query()->count())->toBe(7)
                 ->and(Bike::query()->count())->toBe(42)
                 ->and(RentalPackage::query()->where('book_visible', true)->count())->toBe(3)
-                ->and(Reservation::query()->where('stage', ReservationStage::Confirmed)->count())->toBe(32)
+                ->and(Reservation::query()->where('stage', ReservationStage::Confirmed)->count())->toBe(31)
                 ->and(Reservation::query()->whereIn('stage', [
                     ReservationStage::Out,
                     ReservationStage::Returned,
                     ReservationStage::Completed,
-                ])->count())->toBe(1)
+                ])->count())->toBe(2)
                 ->and(Reservation::query()->where('stage', ReservationStage::Provisional)->count())->toBe(2)
                 ->and(BikeReservation::query()->count())->toBeGreaterThan(28)
                 ->and(Bike::query()->where('in_service', false)->count())->toBe(1)
@@ -96,7 +99,7 @@ test('seeding a fake tenant refuses a domain that already exists', function () {
     $tenant = seedFakeTenantAndCleanup('harbor-taken.test');
 
     try {
-        expect(fn () => app(SeedFakeTenantAction::class)('harbor-taken.test'))
+        expect(fn () => app(SeedFakeTenantAction::class)('harbor-taken.test', confirmed: true))
             ->toThrow(ValidationException::class);
     } finally {
         deleteTenantSqlite($tenant);

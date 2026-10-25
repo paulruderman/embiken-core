@@ -6,6 +6,8 @@ SaaS for independent bike rental shops. Tenancy is stancl/tenancy: **database-pe
 
 Production uses PostgreSQL for the central database and each tenant database. SQLite is for tests and local development only.
 
+Project repo is on github, use 'gh' CLI to access.  Production is deployed on Laravel Cloud, use 'cloud' CLI to access.
+
 ## Real-time reactive app
 Most interface pages will update in real-time.
 Apart from Filament panels, the interface shall be mostly written using vue.

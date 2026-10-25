@@ -3,6 +3,7 @@
 namespace Embiken\BikeRentals\Services;
 
 use App\Models\Location;
+use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Embiken\BikeFleet\Enums\BikeSituation;
 use Embiken\BikeFleet\Models\Bike;
@@ -28,8 +29,13 @@ class Availability
         ?Bike $bike = null,
         ?string $riderName = null,
         ?int $riderHeightCm = null,
+        bool $allowOverride = false,
     ): BikeReservation {
-        return DB::transaction(function () use ($reservation, $product, $channel, $bike, $riderName, $riderHeightCm): BikeReservation {
+        if ($allowOverride && $channel !== ReservationChannel::Terminal) {
+            throw new OccupancyUnavailable('Availability overrides are only available to Terminal staff.');
+        }
+
+        return DB::transaction(function () use ($reservation, $product, $channel, $bike, $riderName, $riderHeightCm, $allowOverride): BikeReservation {
             $product = $this->lockProduct($product);
             $this->healStaleOutLines($product);
             $this->lockReservationLines($reservation, $bike === null ? [] : [$bike]);
@@ -40,7 +46,15 @@ class Availability
             }
 
             $this->assertPackageMembership($reservation, $product);
-            $this->assertIntervalFree($reservation, $reservation->starts_at, $reservation->ends_at, $channel, $product, $bike);
+            $this->assertIntervalFree(
+                $reservation,
+                $reservation->starts_at,
+                $reservation->ends_at,
+                $channel,
+                $product,
+                $bike,
+                allowOverride: $allowOverride,
+            );
 
             $line = new BikeReservation;
             $line->reservation()->associate($reservation);
@@ -123,9 +137,130 @@ class Availability
             ->values();
     }
 
-    public function swapAsset(BikeReservation $line, Bike $bike, ReservationChannel $channel): BikeReservation
+    /**
+     * @return Collection<int, array{bike: Bike, conflict_reason: string|null}>
+     */
+    public function bikeCandidatesForInterval(
+        CarbonInterface $startsAt,
+        CarbonInterface $endsAt,
+        ReservationChannel $channel = ReservationChannel::Terminal,
+        bool $includeUnavailable = false,
+    ): Collection {
+        $bikes = Bike::query()
+            ->with(['location', 'variant.bikeModel.bikeCategory'])
+            ->orderBy('bid')
+            ->orderBy('id')
+            ->get();
+
+        if ($bikes->isEmpty()) {
+            return collect();
+        }
+
+        $bikeIds = $bikes->modelKeys();
+        $productIds = $bikes->pluck('bike_model_variant_id')->unique()->all();
+        $locationMinimum = (int) Location::query()->value('minimum_turnaround_buffer_minutes');
+        $maximumPadding = (int) BikeModelVariant::query()
+            ->whereIn('bike_model_variants.id', $productIds)
+            ->join('bike_models', 'bike_models.id', '=', 'bike_model_variants.bike_model_id')
+            ->max('bike_models.padding_minutes');
+        $maximumBuffer = max($locationMinimum, $maximumPadding);
+        $reservationWindowStart = CarbonImmutable::instance($startsAt)->subMinutes($maximumBuffer);
+
+        $lines = BikeReservation::query()
+            ->with('reservation')
+            ->where(function ($query) use ($bikeIds, $productIds): void {
+                $query->whereIn('bike_id', $bikeIds)
+                    ->orWhereIn('product_id', $productIds);
+            })
+            ->where(function ($query) use ($reservationWindowStart, $endsAt): void {
+                $query->where('status', BikeReservationStatus::Out)
+                    ->orWhereHas('reservation', fn ($reservation) => $reservation
+                        ->where('stage', '!=', ReservationStage::Cancelled)
+                        ->where('starts_at', '<=', $endsAt)
+                        ->where('ends_at', '>=', $reservationWindowStart));
+            })
+            ->get();
+
+        $linesByBike = $lines->filter(fn (BikeReservation $line): bool => $line->bike_id !== null)
+            ->groupBy('bike_id');
+        $blockingServiceBikeIds = ServiceRequest::query()
+            ->whereIn('bike_id', $bikeIds)
+            ->where('blocks_usage', true)
+            ->get(['bike_id', 'stage'])
+            ->filter(fn (ServiceRequest $serviceRequest): bool => $serviceRequest->stage->occupiesWhenBlocking())
+            ->pluck('bike_id')
+            ->map(fn (int|string $bikeId): int => (int) $bikeId)
+            ->all();
+
+        $bufferByProductId = $bikes
+            ->groupBy('bike_model_variant_id')
+            ->map(fn (Collection $variantBikes): int => max(
+                $locationMinimum,
+                (int) ($variantBikes->first()->variant->bikeModel->padding_minutes ?? 0),
+            ));
+        $eligibleBikesByProductId = $bikes
+            ->filter(fn (Bike $bike): bool => $bike->in_service
+                && ! in_array($bike->id, $blockingServiceBikeIds, true)
+                && ($channel !== ReservationChannel::Book || $bike->self_bookable))
+            ->groupBy('bike_model_variant_id')
+            ->map(fn (Collection $variantBikes): int => $variantBikes->count());
+        $heldByProductId = $lines
+            ->filter(fn (BikeReservation $line): bool => $line->reservation->stage !== ReservationStage::Cancelled
+                && $this->reservationOccupiesInterval(
+                    $line->reservation,
+                    $startsAt,
+                    $endsAt,
+                    $bufferByProductId->get($line->product_id, $maximumBuffer),
+                ))
+            ->countBy('product_id');
+
+        return $bikes
+            ->map(function (Bike $bike) use (
+                $startsAt,
+                $endsAt,
+                $blockingServiceBikeIds,
+                $linesByBike,
+                $eligibleBikesByProductId,
+                $heldByProductId,
+            ): array {
+                $conflictReason = null;
+
+                if (! $bike->in_service) {
+                    $conflictReason = 'parked';
+                } elseif (in_array($bike->id, $blockingServiceBikeIds, true)) {
+                    $conflictReason = 'blocking_service';
+                } else {
+                    $bikeLines = $linesByBike->get($bike->id, collect());
+
+                    if ($bikeLines->contains(fn (BikeReservation $line): bool => $line->reservation->stage === ReservationStage::Cancelled
+                        && $line->status === BikeReservationStatus::Out)) {
+                        $conflictReason = 'cancelled_out';
+                    } elseif ($bike->bike_situation_state === BikeSituation::RentedOut
+                        || $bikeLines->contains(fn (BikeReservation $line): bool => $line->status === BikeReservationStatus::Out)) {
+                        $conflictReason = 'currently_out';
+                    } elseif ($bikeLines->contains(fn (BikeReservation $line): bool => $line->reservation->stage !== ReservationStage::Cancelled
+                        && $this->reservationOccupiesInterval(
+                            $line->reservation,
+                            $startsAt,
+                            $endsAt,
+                            $this->effectiveBufferMinutes($bike),
+                        ))) {
+                        $conflictReason = 'reservation_conflict';
+                    } elseif ($heldByProductId->get($bike->bike_model_variant_id, 0)
+                        >= $eligibleBikesByProductId->get($bike->bike_model_variant_id, 0)) {
+                        $conflictReason = 'variant_sold_out';
+                    }
+                }
+
+                return ['bike' => $bike, 'conflict_reason' => $conflictReason];
+            })
+            ->filter(fn (array $candidate): bool => $includeUnavailable || $candidate['conflict_reason'] === null)
+            ->values();
+    }
+
+    public function swapAsset(BikeReservation $line, Bike $bike, ReservationChannel $channel, bool $allowOverride = false): BikeReservation
     {
-        return DB::transaction(function () use ($line, $bike, $channel): BikeReservation {
+        return DB::transaction(function () use ($line, $bike, $channel, $allowOverride): BikeReservation {
             $line->loadMissing('reservation');
             $lockedLines = $this->lockReservationLines($line->reservation, [$bike]);
             $line = $lockedLines->firstWhere('id', $line->getKey());
@@ -155,6 +290,7 @@ class Availability
                 $product,
                 $bike,
                 $line,
+                $allowOverride,
             );
 
             if ($from !== null && $from->id !== $bike->id && $from->bike_situation_reservation_id === $reservation->id) {
@@ -168,10 +304,14 @@ class Availability
             $line->save();
 
             if ($line->status === BikeReservationStatus::Out) {
+                $bike = $this->assertPickupReady($bike, $reservation);
                 $bike->bike_situation_state = BikeSituation::RentedOut;
                 $bike->bike_situation_reservation_id = $reservation->id;
                 $bike->save();
-            } elseif ($line->status === BikeReservationStatus::Assigned) {
+            } elseif (
+                $line->status === BikeReservationStatus::Assigned
+                && $bike->bike_situation_state === BikeSituation::Home
+            ) {
                 $bike->bike_situation_state = BikeSituation::Prepping;
                 $bike->bike_situation_reservation_id = $reservation->id;
                 $bike->save();
@@ -204,7 +344,12 @@ class Availability
         ?BikeModelVariant $product = null,
         ?Bike $bike = null,
         ?BikeReservation $ignoreLine = null,
+        bool $allowOverride = false,
     ): void {
+        if ($allowOverride && $channel !== ReservationChannel::Terminal) {
+            throw new OccupancyUnavailable('Availability overrides are only available to Terminal staff.');
+        }
+
         if (DB::transactionLevel() === 0) {
             throw new LogicException('Availability checks that reserve capacity must run inside a transaction.');
         }
@@ -224,6 +369,7 @@ class Availability
                     $line->product,
                     $line->bike,
                     $line,
+                    $allowOverride,
                 );
             }
 
@@ -234,13 +380,13 @@ class Availability
 
         if ($bike !== null) {
             $bike = $this->lockBike($bike);
-            $this->assertBikeAssignable($bike, $product, $channel);
+            $this->assertBikeAssignable($bike, $product, $channel, $allowOverride);
         }
 
-        $this->assertClassCapacity($product, $startsAt, $endsAt, $channel, $reservation->id, $ignoreLine?->id);
+        $this->assertClassCapacity($product, $startsAt, $endsAt, $channel, $reservation->id, $ignoreLine?->id, $allowOverride);
 
         if ($bike !== null) {
-            $this->assertBikeInterval($bike, $startsAt, $endsAt, $reservation->id, $ignoreLine?->id);
+            $this->assertBikeInterval($bike, $startsAt, $endsAt, $reservation->id, $ignoreLine?->id, $allowOverride);
         }
     }
 
@@ -257,13 +403,13 @@ class Availability
         }
     }
 
-    private function assertBikeAssignable(Bike $bike, BikeModelVariant $product, ReservationChannel $channel): void
+    private function assertBikeAssignable(Bike $bike, BikeModelVariant $product, ReservationChannel $channel, bool $allowOverride): void
     {
         if ($bike->bike_model_variant_id !== $product->id) {
             throw new OccupancyUnavailable('That bike is not this variant.');
         }
 
-        if (! $bike->in_service) {
+        if (! $bike->in_service && ! ($allowOverride && $channel === ReservationChannel::Terminal)) {
             throw new OccupancyUnavailable('That bike is parked.');
         }
 
@@ -271,7 +417,7 @@ class Availability
             throw new OccupancyUnavailable('That bike is not self-bookable.');
         }
 
-        if ($this->bikeHasBlockingService($bike)) {
+        if ($this->bikeHasBlockingService($bike) && ! ($allowOverride && $channel === ReservationChannel::Terminal)) {
             throw new OccupancyUnavailable('That bike has blocking service.');
         }
     }
@@ -282,6 +428,7 @@ class Availability
         CarbonInterface $endsAt,
         int $ignoreReservationId,
         ?int $ignoreLineId,
+        bool $allowOverride,
     ): void {
         $cancelledOut = BikeReservation::query()
             ->where('bike_id', $bike->id)
@@ -289,7 +436,7 @@ class Availability
             ->whereHas('reservation', fn ($builder) => $builder->where('stage', ReservationStage::Cancelled))
             ->exists();
 
-        if ($cancelledOut) {
+        if ($cancelledOut && ! $allowOverride) {
             throw new OccupancyUnavailable('That bike is still Out on a Cancelled reservation.');
         }
 
@@ -309,7 +456,7 @@ class Availability
                 return $line->reservation->starts_at->lte($endsAt) && $occupiedUntil->gte($startsAt);
             });
 
-        if ($conflict) {
+        if ($conflict && ! $allowOverride) {
             throw new OccupancyUnavailable('That interval overlaps another reservation.');
         }
     }
@@ -321,6 +468,7 @@ class Availability
         ReservationChannel $channel,
         int $ignoreReservationId,
         ?int $ignoreLineId,
+        bool $allowOverride,
     ): void {
         $fleetCount = Bike::query()
             ->where('bike_model_variant_id', $product->id)
@@ -350,7 +498,7 @@ class Availability
             })
             ->count();
 
-        if ($held >= $fleetCount) {
+        if ($held >= $fleetCount && ! $allowOverride) {
             throw new OccupancyUnavailable('No remaining bikes of that variant for the interval.');
         }
     }
@@ -378,6 +526,17 @@ class Availability
         $padding = $product->bikeModel->padding_minutes ?? 0;
 
         return max($locationMinimum, $padding);
+    }
+
+    private function reservationOccupiesInterval(
+        Reservation $reservation,
+        CarbonInterface $startsAt,
+        CarbonInterface $endsAt,
+        int $bufferMinutes,
+    ): bool {
+        $occupiedUntil = $reservation->ends_at->copy()->addMinutes($bufferMinutes);
+
+        return $reservation->starts_at->lte($endsAt) && $occupiedUntil->gte($startsAt);
     }
 
     private function bumpExpiresAt(Reservation $reservation): void

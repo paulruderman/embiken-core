@@ -1,0 +1,7 @@
+key,model_key,size,color_name,color_value,min_ideal_rider_height,max_ideal_rider_height,min_extended_rider_height,max_extended_rider_height
+treadwell-s,treadwell,S,Midnight Blue,#1E3A8A,150,170,,
+treadwell-m,treadwell,M,Midnight Blue,#1E3A8A,165,185,,
+treadwell-l,treadwell,L,Midnight Blue,#1E3A8A,180,200,,
+fazer-16,fazer,16 inch,Blue,#2563EB,100,120,,
+fazer-20,fazer,20 inch,Blue,#2563EB,115,135,,
+fazer-24,fazer,24 inch,Blue,#2563EB,130,150,,

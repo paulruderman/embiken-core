@@ -1,10 +1,7 @@
 <script setup lang="ts">
+import { onMounted, onUnmounted } from 'vue';
 import { useEcho } from '@laravel/echo-vue';
-import {
-    useDayStore,
-    type DayBike,
-    type DayReservation,
-} from '@/stores/day';
+import { useDayStore, type DayBike, type DayReservation } from '@/stores/day';
 
 const props = defineProps<{
     tenantId: string;
@@ -13,6 +10,26 @@ const props = defineProps<{
 
 const day = useDayStore();
 const channel = `tenant.${props.tenantId}.location.${props.locationId}`;
+const allEvents = useEcho<unknown>(channel, [], () => {});
+type GlobalEventChannel = {
+    listenToAll(callback: (event: string, payload: unknown) => void): void;
+    stopListeningToAll(
+        callback: (event: string, payload: unknown) => void,
+    ): void;
+};
+const eventChannel = allEvents.channel() as unknown as GlobalEventChannel;
+
+const logEveryEvent = (event: string, payload: unknown): void => {
+    day.logBroadcast(event, payload);
+};
+
+onMounted(() => {
+    eventChannel.listenToAll(logEveryEvent);
+});
+
+onUnmounted(() => {
+    eventChannel.stopListeningToAll(logEveryEvent);
+});
 
 useEcho<DayBike>(channel, ['.BikeCreated', '.BikeUpdated'], (payload) => {
     day.patchBike(payload);

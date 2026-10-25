@@ -1,0 +1,8 @@
+bid,variant_key,serial_number,in_service,self_bookable
+LM-T001,treadwell-s,DEMO-LM-0001,true,true
+LM-T002,treadwell-s,DEMO-LM-0002,true,true
+LM-T003,treadwell-m,DEMO-LM-0003,true,true
+LM-T004,treadwell-l,DEMO-LM-0004,true,true
+LM-C001,coda-s,DEMO-LM-0005,true,true
+LM-C002,coda-m,DEMO-LM-0006,true,true
+LM-F001,tagalong-one,DEMO-LM-0007,true,true

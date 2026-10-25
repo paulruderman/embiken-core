@@ -1,0 +1,19 @@
+package_key,category_name,model_name,variant_size,variant_color_name,variant_color_value,rate_minor_units
+causeway-ride,Comfort and Trail,Cannondale Treadwell,S,Rainbow Trout,#2563EB,2500
+causeway-ride,Comfort and Trail,Cannondale Treadwell,M,Rainbow Trout,#2563EB,2500
+causeway-ride,Comfort and Trail,Cannondale Treadwell,L,Rainbow Trout,#2563EB,2500
+causeway-ride,Sport and Touring,Jamis Coda,S,Blue,#0F766E,3500
+causeway-ride,Sport and Touring,Jamis Coda,M,Blue,#0F766E,3500
+causeway-ride,Family Attachments,Trailside Tagalong,One Size,Red,#DC2626,4500
+champlain-day,Comfort and Trail,Cannondale Treadwell,S,Rainbow Trout,#2563EB,3500
+champlain-day,Comfort and Trail,Cannondale Treadwell,M,Rainbow Trout,#2563EB,3500
+champlain-day,Comfort and Trail,Cannondale Treadwell,L,Rainbow Trout,#2563EB,3500
+champlain-day,Sport and Touring,Jamis Coda,S,Blue,#0F766E,4500
+champlain-day,Sport and Touring,Jamis Coda,M,Blue,#0F766E,4500
+champlain-day,Family Attachments,Trailside Tagalong,One Size,Red,#DC2626,6400
+guided-fit,Comfort and Trail,Cannondale Treadwell,S,Rainbow Trout,#2563EB,0
+guided-fit,Comfort and Trail,Cannondale Treadwell,M,Rainbow Trout,#2563EB,0
+guided-fit,Comfort and Trail,Cannondale Treadwell,L,Rainbow Trout,#2563EB,0
+guided-fit,Sport and Touring,Jamis Coda,S,Blue,#0F766E,0
+guided-fit,Sport and Touring,Jamis Coda,M,Blue,#0F766E,0
+guided-fit,Family Attachments,Trailside Tagalong,One Size,Red,#DC2626,0

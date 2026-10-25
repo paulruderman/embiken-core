@@ -18,6 +18,7 @@ import {
     type DayPatch,
     type DayReservation,
     type DaySnapshot,
+    type BroadcastLogEntry,
 } from '@/stores/day';
 import {
     BikeReservationStatus,
@@ -39,11 +40,31 @@ type WalkInForm = {
     ends_at_local: string;
 };
 type PickupForm = { bike_id?: number };
+type TerminalUi = {
+    event_log: string;
+    event_log_title: string;
+    event_log_description: string;
+    event_log_clear: string;
+    event_log_close: string;
+    event_log_waiting: string;
+    event_summary_generic: string;
+    event_summary_bike_created: string;
+    event_summary_bike_updated: string;
+    event_summary_bike_deleted: string;
+    event_summary_reservation_created: string;
+    event_summary_reservation_updated: string;
+    event_summary_reservation_deleted: string;
+    event_summary_id: string;
+    event_log_raw_json: string;
+};
 
 const props = defineProps<DaySnapshot>();
-const locale = usePage().props.locale;
+const page = usePage();
+const locale = page.props.locale;
+const terminalUi = page.props.terminal_ui as TerminalUi;
 const day = useDayStore();
 const search = ref('');
+const eventLogOpen = ref(false);
 const selectedReservationId = ref<number | null>(null);
 const walkInOpen = ref(false);
 const pendingLineId = ref<number | null>(null);
@@ -424,6 +445,35 @@ function bikesForLine(line: DayLine): DayBike[] {
         )
         .sort((left, right) => left.bid.localeCompare(right.bid));
 }
+
+function eventSummary(entry: BroadcastLogEntry): string {
+    const eventName = entry.event.split(/[\\.:]/).pop() ?? entry.event;
+    const summaries: Record<string, string> = {
+        BikeCreated: terminalUi.event_summary_bike_created,
+        BikeUpdated: terminalUi.event_summary_bike_updated,
+        BikeDeleted: terminalUi.event_summary_bike_deleted,
+        ReservationCreated: terminalUi.event_summary_reservation_created,
+        ReservationUpdated: terminalUi.event_summary_reservation_updated,
+        ReservationDeleted: terminalUi.event_summary_reservation_deleted,
+    };
+    const summary = summaries[eventName];
+
+    if (summary === undefined) {
+        return `${terminalUi.event_summary_generic} · ${entry.event}`;
+    }
+
+    const payload = entry.payload;
+
+    if (typeof payload === 'object' && payload !== null && 'id' in payload) {
+        const id = payload.id;
+
+        if (typeof id === 'string' || typeof id === 'number') {
+            return `${summary} · ${terminalUi.event_summary_id} ${id}`;
+        }
+    }
+
+    return summary;
+}
 </script>
 
 <template>
@@ -460,9 +510,16 @@ function bikesForLine(line: DayLine): DayBike[] {
                 </p>
             </div>
             <button
+                type="button"
+                class="ml-auto min-h-14 rounded-xl border border-zinc-600 bg-zinc-800 px-5 text-lg font-bold text-white"
+                @click="eventLogOpen = true"
+            >
+                {{ terminalUi.event_log }} · {{ day.broadcastLog.length }}
+            </button>
+            <button
                 v-if="!selectedReservation && !walkInOpen"
                 type="button"
-                class="ml-auto min-h-14 rounded-xl bg-emerald-400 px-5 text-lg font-bold text-zinc-950"
+                class="min-h-14 rounded-xl bg-emerald-400 px-5 text-lg font-bold text-zinc-950"
                 @click="startWalkIn"
             >
                 New walk-in
@@ -1082,5 +1139,100 @@ function bikesForLine(line: DayLine): DayBike[] {
                 </article>
             </section>
         </main>
+
+        <div
+            v-if="eventLogOpen"
+            class="fixed inset-0 z-50 flex justify-end bg-black/70"
+            @keydown.esc="eventLogOpen = false"
+        >
+            <section
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="broadcast-log-title"
+                class="flex h-full w-full max-w-3xl flex-col border-l border-zinc-700 bg-zinc-950 shadow-2xl"
+            >
+                <header
+                    class="flex items-center gap-3 border-b border-zinc-800 p-4 sm:p-6"
+                >
+                    <div class="min-w-0 flex-1">
+                        <h2 id="broadcast-log-title" class="text-2xl font-bold">
+                            {{ terminalUi.event_log_title }}
+                        </h2>
+                        <p class="mt-1 text-sm text-zinc-400">
+                            {{ terminalUi.event_log_description }}
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        class="min-h-14 rounded-xl border border-zinc-600 px-4 text-base font-semibold"
+                        @click="day.clearBroadcastLog()"
+                    >
+                        {{ terminalUi.event_log_clear }}
+                    </button>
+                    <button
+                        type="button"
+                        class="min-h-14 rounded-xl bg-zinc-800 px-4 text-base font-semibold"
+                        @click="eventLogOpen = false"
+                    >
+                        {{ terminalUi.event_log_close }}
+                    </button>
+                </header>
+                <ol
+                    v-if="day.broadcastLog.length > 0"
+                    class="flex-1 space-y-3 overflow-y-auto p-4 sm:p-6"
+                    aria-label="Received broadcast events"
+                    aria-live="polite"
+                >
+                    <li
+                        v-for="entry in day.broadcastLog"
+                        :key="entry.id"
+                        class="rounded-xl border border-zinc-800 bg-zinc-900 p-4"
+                    >
+                        <div
+                            class="flex flex-wrap items-start justify-between gap-2"
+                        >
+                            <code
+                                class="font-semibold break-all text-emerald-300"
+                                >{{ entry.event }}</code
+                            >
+                            <time
+                                class="text-sm text-zinc-400"
+                                :datetime="entry.receivedAt"
+                            >
+                                {{
+                                    new Date(
+                                        entry.receivedAt,
+                                    ).toLocaleTimeString(locale, {
+                                        timeZone: day.timezone,
+                                    })
+                                }}
+                            </time>
+                        </div>
+                        <p class="mt-2 text-sm text-zinc-300">
+                            {{ eventSummary(entry) }}
+                        </p>
+                        <details
+                            class="mt-3 rounded-lg border border-zinc-800 bg-zinc-950"
+                        >
+                            <summary
+                                class="min-h-12 cursor-pointer px-3 py-3 text-sm font-semibold text-zinc-300"
+                            >
+                                {{ terminalUi.event_log_raw_json }}
+                            </summary>
+                            <pre
+                                class="max-h-72 overflow-auto border-t border-zinc-800 p-3 text-xs break-all whitespace-pre-wrap text-zinc-300"
+                                >{{ JSON.stringify(entry.payload, null, 2) }}</pre
+                            >
+                        </details>
+                    </li>
+                </ol>
+                <p
+                    v-else
+                    class="flex flex-1 items-center justify-center p-8 text-center text-lg text-zinc-400"
+                >
+                    {{ terminalUi.event_log_waiting }}
+                </p>
+            </section>
+        </div>
     </div>
 </template>

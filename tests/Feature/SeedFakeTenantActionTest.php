@@ -87,6 +87,7 @@ test('the fake tenant artisan command can seed every demo profile', function () 
         '--confirm-demo' => true,
     ])
         ->expectsOutputToContain('Retail showroom with test-ride bikes')
+        ->expectsOutputToContain('Grand Isle State Park bike rentals')
         ->assertSuccessful();
 
     $tenants = Tenant::query()
@@ -95,9 +96,9 @@ test('the fake tenant artisan command can seed every demo profile', function () 
         ->get();
 
     try {
-        expect($tenants)->toHaveCount(5);
+        expect($tenants)->toHaveCount(7);
 
-        foreach (['city-shop', 'e-bike-adventure', 'family-rentals', 'jimbos', 'showroom-demo'] as $profile) {
+        foreach (['city-shop', 'e-bike-adventure', 'family-rentals', 'grand-isle-park', 'jimbos', 'local-motion-trailside', 'showroom-demo'] as $profile) {
             expect($tenants->contains(fn (Tenant $tenant): bool => str_starts_with(
                 (string) $tenant->domains->first()?->domain,
                 "{$profile}.localhost",
@@ -205,6 +206,34 @@ test('demo profiles import different catalog and rate fixtures and get distinct 
     } finally {
         deleteTenantSqlite($adventureTenant);
         deleteTenantSqlite($familyTenant);
+    }
+});
+
+test('legacy inspired Vermont shop profiles seed their own catalogs and rental offers', function () {
+    $localMotion = seedFakeTenantAndCleanup('', 'local-motion-trailside');
+    $grandIsle = null;
+
+    try {
+        $grandIsle = app(SeedFakeTenantAction::class)(confirmed: true, profile: 'grand-isle-park');
+
+        $localMotion->run(function (): void {
+            expect(Location::query()->firstOrFail()->name)->toBe('Local Motion Trailside Center')
+                ->and(BikeCategory::query()->pluck('name')->all())->toBe(['Comfort and Trail', 'Sport and Touring', 'Family Attachments'])
+                ->and(Bike::query()->count())->toBe(7)
+                ->and(RentalPackage::query()->where('book_visible', true)->count())->toBe(2)
+                ->and(RentalPackage::query()->orderBy('sort_order')->firstOrFail()->variants()->count())->toBe(6);
+        });
+
+        $grandIsle->run(function (): void {
+            expect(Location::query()->firstOrFail()->name)->toBe('Grand Isle State Park')
+                ->and(BikeCategory::query()->pluck('name')->all())->toBe(['Island Cruisers', 'Kids Bikes'])
+                ->and(Bike::query()->count())->toBe(7)
+                ->and(RentalPackage::query()->where('book_visible', true)->count())->toBe(3)
+                ->and(RentalPackage::query()->orderBy('sort_order')->firstOrFail()->variants()->count())->toBe(6);
+        });
+    } finally {
+        deleteTenantSqlite($localMotion);
+        deleteTenantSqlite($grandIsle);
     }
 });
 

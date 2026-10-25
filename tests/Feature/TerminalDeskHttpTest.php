@@ -115,6 +115,7 @@ test('staff can open terminal with the location bike assignment policy', functio
         ->assertInertia(fn (Assert $page) => $page
             ->component('Terminal/Index')
             ->where('bike_assignment_policy', BikeAssignmentPolicy::Terminal->value)
+            ->where('terminal_ui.event_log_title', __('app.terminal_ui.event_log_title'))
             ->has('bikes', 1, fn (Assert $bike) => $bike
                 ->where('bid', 'T-02')
                 ->has('variant_id')

@@ -49,7 +49,10 @@ class ShowTerminalAction extends Action
      */
     public function htmlResponse(array $snapshot): InertiaResponse
     {
-        return Inertia::render('Terminal/Index', $snapshot);
+        return Inertia::render('Terminal/Index', [
+            ...$snapshot,
+            'terminal_ui' => __('app.terminal_ui'),
+        ]);
     }
 
     public static function routes(Router $router): void

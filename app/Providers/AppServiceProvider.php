@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Listeners\LogBroadcastEvent;
 use App\Models\Staff;
 use App\Models\User;
 use App\Support\Locales;
@@ -42,6 +43,7 @@ class AppServiceProvider extends ServiceProvider
         }
 
         $this->configureDefaults();
+        Event::listen('*', LogBroadcastEvent::class);
         Table::configureUsing(static function (Table $table): void {
             $table->striped();
         });

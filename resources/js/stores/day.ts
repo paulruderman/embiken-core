@@ -61,6 +61,13 @@ export type DayPatch = {
     bikes?: DayBike[];
 };
 
+export type BroadcastLogEntry = {
+    id: number;
+    receivedAt: string;
+    event: string;
+    payload: unknown;
+};
+
 function indexById<T extends { id: number }>(rows: T[]): Record<number, T> {
     return Object.fromEntries(rows.map((row) => [row.id, row]));
 }
@@ -76,6 +83,7 @@ export const useDayStore = defineStore('day', {
         reservationReadinessWindowMinutes: 45,
         bikes: {} as Record<number, DayBike>,
         reservations: {} as Record<number, DayReservation>,
+        broadcastLog: [] as BroadcastLogEntry[],
     }),
     getters: {
         bikeList: (state) => Object.values(state.bikes),
@@ -126,6 +134,21 @@ export const useDayStore = defineStore('day', {
             for (const bike of patch.bikes ?? []) {
                 this.patchBike(bike);
             }
+        },
+        logBroadcast(event: string, payload: unknown): void {
+            this.broadcastLog.unshift({
+                id: Date.now() + Math.random(),
+                receivedAt: new Date().toISOString(),
+                event,
+                payload,
+            });
+
+            if (this.broadcastLog.length > 500) {
+                this.broadcastLog.length = 500;
+            }
+        },
+        clearBroadcastLog(): void {
+            this.broadcastLog = [];
         },
     },
 });

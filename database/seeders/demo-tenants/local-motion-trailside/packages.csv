@@ -1,0 +1,4 @@
+key,name,tagline,blurb,description,meter,confirm_threshold,deposit_minor_units,deposit_percent,min_duration_minutes,max_duration_minutes,book_visible,sort_order
+causeway-ride,Island Line Ride,Follow the Burlington waterfront,,A few hours on the waterfront and Island Line Trail.,per_hour,deposit,,25,120,480,true,1
+champlain-day,Champlain Islands Day,Take the ferry and explore,,A full day for the Causeway and a bike-ferry trip to the Champlain Islands.,per_calendar_day,full,,,240,720,true,2
+guided-fit,Staff Fitting Ride,Try a fitted bike,,Complimentary supervised fitting ride.,none,none,,,60,180,false,3

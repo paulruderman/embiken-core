@@ -41,6 +41,8 @@ class SeedFakeTenantAction extends Action
         'city-shop' => ['label' => 'City commuter and cargo shop'],
         'e-bike-adventure' => ['label' => 'E-bike adventure and trail shop'],
         'family-rentals' => ['label' => 'Family and kids rental shop'],
+        'local-motion-trailside' => ['label' => 'Local Motion Burlington trail rentals'],
+        'grand-isle-park' => ['label' => 'Grand Isle State Park bike rentals'],
         'jimbos' => ['label' => "Jimbo's multi-category rental shop"],
         'showroom-demo' => ['label' => 'Retail showroom with test-ride bikes'],
     ];

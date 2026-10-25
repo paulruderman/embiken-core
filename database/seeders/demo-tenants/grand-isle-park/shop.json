@@ -1,0 +1,20 @@
+{
+  "shop": {
+    "name": "Grand Isle State Park",
+    "timezone": "America/New_York",
+    "currency": "usd",
+    "minimum_turnaround_buffer_minutes": 10,
+    "bike_assignment_policy": "terminal",
+    "return_situation": "home",
+    "hours": {
+      "sunday": [{"opens_at": "10:00", "closes_at": "17:00", "closes_next_day": false}],
+      "monday": [{"opens_at": "10:00", "closes_at": "17:00", "closes_next_day": false}],
+      "tuesday": [],
+      "wednesday": [],
+      "thursday": [{"opens_at": "09:00", "closes_at": "14:00", "closes_next_day": false}],
+      "friday": [{"opens_at": "10:00", "closes_at": "17:00", "closes_next_day": false}],
+      "saturday": [{"opens_at": "10:00", "closes_at": "17:00", "closes_next_day": false}]
+    },
+    "closed_dates": []
+  }
+}

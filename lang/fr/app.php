@@ -86,6 +86,7 @@ return [
         'gray_shades' => 'Nuances de gris',
         'panel_logo' => 'Logo du panneau',
         'favicon' => 'Favicon',
+        'favicon_help' => 'Utilisez un PNG carré (512 × 512 px recommandé). Il apparaît dans les onglets du navigateur et lorsque la boutique est enregistrée comme raccourci.',
         'color_help' => 'Saisissez le nom d’une famille de couleurs Tailwind pour utiliser toutes ses nuances, ou une valeur HEX à six chiffres comme #336699.',
         'choose_color_family' => 'Choisir une famille de couleurs Tailwind',
         'color_families' => 'Familles de couleurs Tailwind',

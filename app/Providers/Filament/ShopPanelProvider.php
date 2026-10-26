@@ -4,11 +4,13 @@ namespace App\Providers\Filament;
 
 use App\Filament\Shop\Widgets\ShopSetupChecklistWidget;
 use App\Http\Middleware\ApplyFilamentTranslationLocale;
+use App\Models\Location;
 use App\Models\ShopSetting;
 use App\Support\BrandColor;
 use App\Support\EnumColorPalettes;
 use App\Support\Locales;
 use App\Support\ModuleRegistry;
+use Filament\Facades\Filament;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -24,6 +26,7 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\HtmlString;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use LaraZeus\SpatieTranslatable\SpatieTranslatablePlugin;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
@@ -36,12 +39,20 @@ class ShopPanelProvider extends PanelProvider
         $panel
             ->id('shop')
             ->path('manage')
-            ->brandName(fn (): string => $this->shopSetting()?->brand_name ?: (tenant()->name ?? (string) config('app.name')))
-            ->brandLogo(function (): ?string {
+            ->brandName(fn (): string => $this->shopSetting()?->brand_name ?: (Location::query()->value('name') ?: (tenant()->name ?? (string) config('app.name'))))
+            ->brandLogo(function (): ?HtmlString {
                 $logoPath = $this->shopSetting()?->logo_path;
 
-                return $logoPath === null ? null : tenant_asset($logoPath);
+                if ($logoPath === null) {
+                    return null;
+                }
+
+                $logoUrl = e(tenant_asset($logoPath));
+                $shopName = e((string) Filament::getBrandName());
+
+                return new HtmlString("<span style=\"display:inline-flex;align-items:center;gap:.75rem;height:100%\"><img src=\"{$logoUrl}\" alt=\"\" style=\"max-height:100%;width:auto\"><span style=\"font-weight:600;white-space:nowrap\">{$shopName}</span></span>");
             })
+            ->brandLogoHeight('3rem')
             ->favicon(function (): string {
                 $faviconPath = $this->shopSetting()?->favicon_path;
 

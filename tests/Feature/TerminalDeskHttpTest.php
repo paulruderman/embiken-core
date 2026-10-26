@@ -2,6 +2,7 @@
 
 use App\Enums\BikeAssignmentPolicy;
 use App\Models\Location;
+use App\Models\ShopSetting;
 use App\Models\Staff;
 use App\Models\Tenant;
 use Embiken\BikeFleet\Enums\BikeSituation;
@@ -69,6 +70,27 @@ test('guests are redirected away from the terminal prototype', function () {
 
     $this->get('http://desk-guest.localhost/prototype/terminal')
         ->assertRedirect('/terminal/login');
+});
+
+test('terminal sign in uses the shop logo and favicon', function () {
+    $shop = provisionDeskShop('desk-branding.localhost');
+    $this->deskTenant = $shop['tenant'];
+
+    $shop['tenant']->run(function (): void {
+        ShopSetting::query()->create([
+            'logo_path' => 'branding/shop-logo.png',
+            'favicon_path' => 'branding/shop-icon.png',
+        ]);
+    });
+
+    $this->withoutVite()
+        ->get('http://desk-branding.localhost/terminal/login')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Terminal/Login')
+            ->where('logoUrl', 'http://desk-branding.localhost/tenancy/assets/branding/shop-logo.png'))
+        ->assertSee('href="http://desk-branding.localhost/tenancy/assets/branding/shop-icon.png" type="image/png"', false)
+        ->assertSee('rel="apple-touch-icon" href="http://desk-branding.localhost/tenancy/assets/branding/shop-icon.png"', false);
 });
 
 test('staff can open the terminal prototype with the day-store DTO', function () {

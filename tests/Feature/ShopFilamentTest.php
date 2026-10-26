@@ -152,10 +152,12 @@ test('the branding form previews generated primary color shades when the color c
         ->assertSee(Color::convertToHex(Color::hex('#667788')[500]));
 });
 
-test('the shop panel falls back to the application brand and default palette without tenant settings', function () {
+test('the shop panel uses the location name and default palette without custom branding', function () {
+    Location::factory()->create(['name' => 'River Bikes']);
+
     $panel = Filament::getPanel('shop');
 
-    expect($panel->getBrandName())->toBe((string) config('app.name'))
+    expect($panel->getBrandName())->toBe('River Bikes')
         ->and($panel->getBrandLogo())->toBeNull()
         ->and($panel->getFavicon())->toBe(global_asset('favicon.svg'))
         ->and($panel->getColors()['primary'])->toBe(Color::hex(ShopSetting::DEFAULT_PRIMARY_COLOR))
@@ -165,6 +167,7 @@ test('the shop panel falls back to the application brand and default palette wit
 test('a manager can upload a tenant logo for shop branding', function () {
     Storage::fake('public');
     $staff = Staff::factory()->create();
+    $staff->location->update(['name' => 'River Bikes']);
 
     $this->actingAs($staff, 'staff');
 

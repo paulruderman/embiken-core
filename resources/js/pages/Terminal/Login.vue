@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
 import { store } from '@/routes/staff/login';
+
+defineProps<{
+    logoUrl: string | null;
+}>();
 </script>
 
 <template>
@@ -11,8 +15,18 @@ import { store } from '@/routes/staff/login';
             class="w-full max-w-md space-y-4 rounded-3xl bg-zinc-900 p-8"
             #default="{ errors, processing }"
         >
-            <h1 class="text-2xl font-semibold">Terminal</h1>
-            <p class="text-sm text-zinc-400">Staff sign in</p>
+            <div class="flex items-center gap-4">
+                <img
+                    v-if="logoUrl"
+                    :src="logoUrl"
+                    alt=""
+                    class="h-12 w-auto max-w-44 object-contain"
+                />
+                <div>
+                    <h1 class="text-2xl font-semibold">Terminal</h1>
+                    <p class="text-sm text-zinc-400">Staff sign in</p>
+                </div>
+            </div>
             <label class="block text-sm">
                 Email
                 <input

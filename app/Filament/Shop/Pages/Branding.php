@@ -94,7 +94,10 @@ class Branding extends Page
                             )),
                     ]),
                 self::brandingImageUpload('logo_path', __('app.branding_ui.panel_logo'), ['image/png', 'image/jpeg', 'image/webp'], 2048),
-                self::brandingImageUpload('favicon_path', __('app.branding_ui.favicon'), ['image/png'], 1024),
+                self::brandingImageUpload('favicon_path', __('app.branding_ui.favicon'), ['image/png'], 1024)
+                    ->helperText(__('app.branding_ui.favicon_help'))
+                    ->imageAspectRatio('1:1')
+                    ->automaticallyOpenImageEditorForAspectRatio(),
             ])
             ->statePath('data');
     }

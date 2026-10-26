@@ -54,7 +54,7 @@ const text = copy[props.contentLocale];
                     v-if="logoUrl"
                     :src="logoUrl"
                     :alt="shopName"
-                    class="max-h-10 max-w-40 object-contain"
+                    class="h-12 w-auto max-w-44 object-contain sm:h-14 sm:max-w-56"
                 />
                 <span v-else>{{ shopName }}</span>
             </div>

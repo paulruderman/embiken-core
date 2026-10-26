@@ -86,6 +86,7 @@ return [
         'gray_shades' => 'Gray shades',
         'panel_logo' => 'Panel logo',
         'favicon' => 'Favicon',
+        'favicon_help' => 'Use a square PNG (512 × 512 px recommended). It appears in browser tabs and when the shop is saved as a shortcut.',
         'color_help' => 'Enter a Tailwind color family name to use all its shades, or a six-digit HEX value such as #336699.',
         'choose_color_family' => 'Choose a Tailwind color family',
         'color_families' => 'Tailwind color families',

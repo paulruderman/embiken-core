@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Embiken\BikeRentals;
 
+use Embiken\BikeRentals\Actions\BrowseTerminalBikeCandidatesAction;
 use Embiken\BikeRentals\Actions\CreateWalkInReservationAction;
 use Embiken\BikeRentals\Actions\ImportPackageRatesAction;
 use Embiken\BikeRentals\Actions\PickupAction;
@@ -20,6 +21,7 @@ class BikeRentalsServiceProvider extends ServiceProvider
     {
         if ($this->app->runningInConsole()) {
             Actions::registerCommandsForAction(CreateWalkInReservationAction::class);
+            Actions::registerCommandsForAction(BrowseTerminalBikeCandidatesAction::class);
             Actions::registerCommandsForAction(ImportPackageRatesAction::class);
             Actions::registerCommandsForAction(PickupAction::class);
             Actions::registerCommandsForAction(RequestMyRentalLinkAction::class);

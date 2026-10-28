@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { Head, usePage } from '@inertiajs/vue3';
+import BrowseTerminalBikeCandidatesAction from '@/actions/Embiken/BikeRentals/Actions/BrowseTerminalBikeCandidatesAction';
 import CreateWalkInReservationAction from '@/actions/Embiken/BikeRentals/Actions/CreateWalkInReservationAction';
 import PickupAction from '@/actions/Embiken/BikeRentals/Actions/PickupAction';
 import TerminalLayout from '@/layouts/TerminalLayout.vue';
@@ -35,9 +36,38 @@ type WalkInForm = {
     email: string;
     phone: string;
     bike_ids: number[];
+    rider_names: (string | null)[];
+    rider_heights_cm: (number | null)[];
+    allow_availability_override: boolean;
+    confirm_availability_override: boolean;
     owed_minor_units: number;
     starts_at_local: string;
     ends_at_local: string;
+};
+type BikeCandidate = {
+    id: number;
+    bid: string;
+    model: string;
+    variant: string;
+    category_id: number;
+    category: string;
+    in_service: boolean;
+    bike_situation_state: DayBike['bike_situation_state'];
+    bike_situation_reservation_id: number | null;
+    min_ideal_rider_height: number | null;
+    max_ideal_rider_height: number | null;
+    conflict_reason: string | null;
+};
+type BikeCandidateResponse = {
+    candidates: BikeCandidate[];
+    categories: { id: number; name: string }[];
+};
+type WalkInRider = {
+    rider_name: string;
+    rider_height_cm: string;
+    category_id: number | null;
+    bike_id: number | null;
+    show_all_sizes: boolean;
 };
 type PickupForm = { bike_id?: number };
 type TerminalUi = {
@@ -56,6 +86,36 @@ type TerminalUi = {
     event_summary_reservation_deleted: string;
     event_summary_id: string;
     event_log_raw_json: string;
+    bike_category: string;
+    rider_height_cm: string;
+    recommended_fit: string;
+    show_all_sizes: string;
+    hide_all_sizes: string;
+    show_unavailable_bikes: string;
+    unavailable_override_warning: string;
+    confirm_availability_override: string;
+    no_available_candidates: string;
+    loading_candidates: string;
+    rider: string;
+    add_rider: string;
+    remove_rider: string;
+    candidate_parked: string;
+    candidate_blocking_service: string;
+    candidate_cancelled_out: string;
+    candidate_currently_out: string;
+    candidate_reservation_conflict: string;
+    candidate_variant_sold_out: string;
+    candidate_available: string;
+    candidate_outside_height: string;
+    candidate_no_reservation_owner: string;
+    candidate_reservation_owner: string;
+    bike: string;
+    all_categories: string;
+    choose_bike: string;
+    choose_bike_for_each_rider: string;
+    availability_buffer_note: string;
+    availability_refresh_error: string;
+    cm: string;
 };
 
 const props = defineProps<DaySnapshot>();
@@ -80,10 +140,25 @@ const walkInRequest = useHttp<WalkInForm, DayPatchResponse>({
     email: '',
     phone: '',
     bike_ids: [],
+    rider_names: [],
+    rider_heights_cm: [],
+    allow_availability_override: false,
+    confirm_availability_override: false,
     owed_minor_units: 0,
     starts_at_local: '',
     ends_at_local: '',
 });
+const bikeCandidateHttp = useHttp({});
+const bikeCandidateResults = ref<BikeCandidateResponse>({
+    candidates: [],
+    categories: [],
+});
+const bikeCandidatesLoading = ref(false);
+const bikeCandidatesError = ref('');
+const showUnavailableBikes = ref(false);
+const availabilityOverrideConfirmed = ref(false);
+const walkInRiders = ref<WalkInRider[]>([newWalkInRider()]);
+let bikeCandidateRequestSequence = 0;
 
 const selectedReservation = computed(() =>
     selectedReservationId.value === null
@@ -129,6 +204,18 @@ onUnmounted(() => {
         clearInterval(readinessClockInterval);
     }
 });
+
+watch(
+    [
+        walkInOpen,
+        () => walkInRequest.starts_at_local,
+        () => walkInRequest.ends_at_local,
+        showUnavailableBikes,
+    ],
+    () => {
+        refreshBikeCandidates();
+    },
+);
 
 const todayLabel = computed(() =>
     new Intl.DateTimeFormat(locale, {
@@ -349,7 +436,192 @@ function startWalkIn(): void {
     const endsAt = new Date(startsAt.getTime() + 2 * 60 * 60 * 1000);
     walkInRequest.starts_at_local = dateTimeInTimezone(startsAt, day.timezone);
     walkInRequest.ends_at_local = dateTimeInTimezone(endsAt, day.timezone);
+    walkInRiders.value = [newWalkInRider()];
+    showUnavailableBikes.value = false;
+    availabilityOverrideConfirmed.value = false;
     walkInOpen.value = true;
+}
+
+function newWalkInRider(): WalkInRider {
+    return {
+        rider_name: '',
+        rider_height_cm: '',
+        category_id: null,
+        bike_id: null,
+        show_all_sizes: false,
+    };
+}
+
+function refreshBikeCandidates(): void {
+    if (
+        !walkInOpen.value ||
+        walkInRequest.starts_at_local === '' ||
+        walkInRequest.ends_at_local === ''
+    ) {
+        return;
+    }
+
+    bikeCandidatesLoading.value = true;
+    bikeCandidatesError.value = '';
+    const requestSequence = ++bikeCandidateRequestSequence;
+
+    bikeCandidateHttp.get(
+        BrowseTerminalBikeCandidatesAction.url({
+            query: {
+                starts_at_local: walkInRequest.starts_at_local,
+                ends_at_local: walkInRequest.ends_at_local,
+                include_unavailable: showUnavailableBikes.value ? 1 : 0,
+            },
+        }),
+        {
+            onSuccess: (response) => {
+                if (requestSequence !== bikeCandidateRequestSequence) {
+                    return;
+                }
+
+                const candidateResponse = response as {
+                    data?: BikeCandidateResponse;
+                    candidates?: BikeCandidateResponse['candidates'];
+                    categories?: BikeCandidateResponse['categories'];
+                };
+                bikeCandidateResults.value = candidateResponse.data ?? {
+                    candidates: candidateResponse.candidates ?? [],
+                    categories: candidateResponse.categories ?? [],
+                };
+            },
+            onError: () => {
+                if (requestSequence !== bikeCandidateRequestSequence) {
+                    return;
+                }
+
+                bikeCandidatesError.value = terminalUi.availability_refresh_error;
+            },
+            onFinish: () => {
+                if (requestSequence === bikeCandidateRequestSequence) {
+                    bikeCandidatesLoading.value = false;
+                }
+            },
+        },
+    );
+}
+
+function riderHeight(rider: WalkInRider): number | null {
+    const height = Number.parseInt(rider.rider_height_cm, 10);
+
+    return Number.isFinite(height) ? height : null;
+}
+
+function candidateFitsHeight(
+    candidate: BikeCandidate,
+    rider: WalkInRider,
+): boolean {
+    const height = riderHeight(rider);
+
+    return (
+        height === null ||
+        ((candidate.min_ideal_rider_height === null ||
+            height >= candidate.min_ideal_rider_height) &&
+            (candidate.max_ideal_rider_height === null ||
+                height <= candidate.max_ideal_rider_height))
+    );
+}
+
+function candidatesForRider(index: number): BikeCandidate[] {
+    const rider = walkInRiders.value[index];
+    const selectedByOtherRiders = new Set(
+        walkInRiders.value
+            .filter((_, riderIndex) => riderIndex !== index)
+            .map((otherRider) => otherRider.bike_id)
+            .filter((bikeId): bikeId is number => bikeId !== null),
+    );
+
+    return bikeCandidateResults.value.candidates
+        .filter((candidate) =>
+            rider.category_id === null ||
+            candidate.category_id === rider.category_id,
+        )
+        .filter((candidate) => !selectedByOtherRiders.has(candidate.id))
+        .filter((candidate) =>
+            rider.show_all_sizes || candidateFitsHeight(candidate, rider),
+        )
+        .sort((left, right) => {
+            const leftRecommended = candidateFitsHeight(left, rider) ? 0 : 1;
+            const rightRecommended = candidateFitsHeight(right, rider) ? 0 : 1;
+
+            return leftRecommended - rightRecommended || left.bid.localeCompare(right.bid);
+        });
+}
+
+function candidateConflictLabel(reason: string | null): string {
+    if (reason === null) {
+        return terminalUi.candidate_available;
+    }
+
+    const labels: Record<string, string> = {
+        parked: terminalUi.candidate_parked,
+        blocking_service: terminalUi.candidate_blocking_service,
+        cancelled_out: terminalUi.candidate_cancelled_out,
+        currently_out: terminalUi.candidate_currently_out,
+        reservation_conflict: terminalUi.candidate_reservation_conflict,
+        variant_sold_out: terminalUi.candidate_variant_sold_out,
+    };
+
+    return labels[reason] ?? reason;
+}
+
+function candidateOptionLabel(
+    candidate: BikeCandidate,
+    rider: WalkInRider,
+): string {
+    const availability = candidateConflictLabel(candidate.conflict_reason);
+    const fit = candidateFitsHeight(candidate, rider)
+        ? ''
+        : ` · ${terminalUi.candidate_outside_height}`;
+
+    return `${candidate.bid} · ${candidate.model} · ${candidate.variant} · ${availability}${fit}`;
+}
+
+function hasSelectedUnavailableBike(): boolean {
+    return walkInRiders.value.some((rider) =>
+        bikeCandidateResults.value.candidates.some(
+            (candidate) =>
+                candidate.id === rider.bike_id &&
+                candidate.conflict_reason !== null,
+        ),
+    );
+}
+
+function candidateOwningReservationLabel(bikeId: number): string {
+    const candidate = bikeCandidateResults.value.candidates.find(
+        (bikeCandidate) => bikeCandidate.id === bikeId,
+    );
+
+    if (
+        candidate === undefined ||
+        candidate.bike_situation_state === BikeSituation.Home
+    ) {
+        return '';
+    }
+
+    const owner = candidate.bike_situation_reservation_id === null
+        ? undefined
+        : day.reservationById(candidate.bike_situation_reservation_id);
+
+    return owner === undefined
+        ? terminalUi.candidate_no_reservation_owner
+        : terminalUi.candidate_reservation_owner.replace(':name', owner.customer.name);
+}
+
+function addWalkInRider(): void {
+    walkInRiders.value.push(newWalkInRider());
+}
+
+function removeWalkInRider(index: number): void {
+    if (walkInRiders.value.length <= 1) {
+        return;
+    }
+
+    walkInRiders.value.splice(index, 1);
 }
 
 function dateTimeInTimezone(value: Date, timezone: string): string {
@@ -371,7 +643,23 @@ function dateTimeInTimezone(value: Date, timezone: string): string {
 }
 
 function submitWalkIn(): void {
-    const selectedBikes = [...walkInRequest.bike_ids];
+    const selectedRiders = walkInRiders.value.filter(
+        (rider): rider is WalkInRider & { bike_id: number } =>
+            rider.bike_id !== null,
+    );
+    const selectedBikes = selectedRiders.map((rider) => rider.bike_id);
+    const hasUnavailableSelection = hasSelectedUnavailableBike();
+
+    if (selectedRiders.length !== walkInRiders.value.length) {
+        walkInError.value = terminalUi.choose_bike_for_each_rider;
+        return;
+    }
+
+    if (hasUnavailableSelection && !availabilityOverrideConfirmed.value) {
+        walkInError.value = terminalUi.confirm_availability_override;
+        return;
+    }
+
     let owedMinorUnits: number;
     try {
         owedMinorUnits = parseMoneyInput(
@@ -386,7 +674,19 @@ function submitWalkIn(): void {
     }
 
     walkInRequest
-        .transform((data) => ({ ...data, owed_minor_units: owedMinorUnits }))
+        .transform((data) => ({
+            ...data,
+            bike_ids: selectedBikes,
+            rider_names: selectedRiders.map((rider) =>
+                rider.rider_name.trim() === '' ? null : rider.rider_name.trim(),
+            ),
+            rider_heights_cm: selectedRiders.map((rider) =>
+                riderHeight(rider),
+            ),
+            allow_availability_override: hasUnavailableSelection,
+            confirm_availability_override: hasUnavailableSelection && availabilityOverrideConfirmed.value,
+            owed_minor_units: owedMinorUnits,
+        }))
         .post(CreateWalkInReservationAction.url(), {
             onSuccess: (response) => {
                 const patch = response.data ?? response;
@@ -415,8 +715,16 @@ function submitWalkIn(): void {
                 walkInRequest.email = '';
                 walkInRequest.phone = '';
                 walkInRequest.bike_ids = [];
+                walkInRequest.rider_names = [];
+                walkInRequest.rider_heights_cm = [];
+                walkInRequest.allow_availability_override = false;
+                walkInRequest.confirm_availability_override = false;
                 walkInRequest.starts_at_local = '';
                 walkInRequest.ends_at_local = '';
+                walkInRiders.value = [newWalkInRider()];
+                bikeCandidateResults.value = { candidates: [], categories: [] };
+                showUnavailableBikes.value = false;
+                availabilityOverrideConfirmed.value = false;
                 walkInError.value = '';
             },
             onError: (errors) => {
@@ -431,12 +739,6 @@ function submitWalkIn(): void {
             },
         });
 }
-
-const walkInBikes = computed(() =>
-    day.bikeList
-        .filter((bike) => bike.in_service)
-        .sort((left, right) => left.bid.localeCompare(right.bid)),
-);
 
 function bikesForLine(line: DayLine): DayBike[] {
     return day.bikeList
@@ -618,9 +920,18 @@ function eventSummary(entry: BroadcastLogEntry): string {
                 <section
                     class="rounded-2xl border border-zinc-800 bg-zinc-900 p-5"
                 >
-                    <h2 class="text-xl font-bold">Bikes</h2>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <h2 class="min-w-0 flex-1 text-xl font-bold">Bikes</h2>
+                        <button
+                            type="button"
+                            class="min-h-12 rounded-xl bg-emerald-400 px-4 text-base font-bold text-zinc-950"
+                            @click="addWalkInRider"
+                        >
+                            {{ terminalUi.add_rider }}
+                        </button>
+                    </div>
                     <p class="mt-1 text-zinc-400">
-                        Choose one bike for each person in the party.
+                        {{ terminalUi.availability_buffer_note }}
                     </p>
                     <p
                         v-if="props.bike_assignment_policy === 'pickup_only'"
@@ -628,55 +939,149 @@ function eventSummary(entry: BroadcastLogEntry): string {
                     >
                         Bikes stay unassigned until pickup.
                     </p>
-                    <div
-                        v-if="walkInBikes.length > 0"
-                        class="mt-4 grid gap-3 sm:grid-cols-2"
-                    >
-                        <label
-                            v-for="bike in walkInBikes"
-                            :key="bike.id"
-                            class="flex min-h-20 cursor-pointer items-center gap-4 rounded-xl border border-zinc-700 bg-zinc-950 p-4 has-checked:border-emerald-400 has-checked:bg-emerald-950/40"
+                    <label class="mt-4 flex min-h-12 items-center gap-3 text-sm font-semibold">
+                        <input
+                            v-model="showUnavailableBikes"
+                            type="checkbox"
+                            class="size-6 accent-amber-400"
+                        />
+                        {{ terminalUi.show_unavailable_bikes }}
+                    </label>
+                    <div class="mt-4 flex flex-col gap-4">
+                        <section
+                            v-for="(rider, index) in walkInRiders"
+                            :key="index"
+                            class="flex flex-col gap-3 rounded-xl border border-zinc-700 bg-zinc-950 p-4"
                         >
-                            <input
-                                v-model="walkInRequest.bike_ids"
-                                type="checkbox"
-                                :value="bike.id"
-                                class="size-6 accent-emerald-400"
-                            />
-                            <span class="min-w-0 flex-1">
-                                <span class="block text-lg font-bold"
-                                    >{{ bike.bid }} · {{ bike.model }} ·
-                                    {{ bike.variant }}</span
+                            <div class="flex items-center gap-3">
+                                <h3 class="min-w-0 flex-1 text-lg font-bold">
+                                    {{ terminalUi.rider }} {{ index + 1 }}
+                                </h3>
+                                <button
+                                    v-if="walkInRiders.length > 1"
+                                    type="button"
+                                    class="min-h-12 rounded-xl bg-zinc-800 px-4 text-sm font-semibold text-zinc-100"
+                                    @click="removeWalkInRider(index)"
                                 >
-                                <span class="block text-sm text-zinc-400">
-                                    {{
-                                        getEnumLabel(
-                                            'bikeSituation',
-                                            bike.bike_situation_state,
-                                        )
-                                    }}
-                                    <template
-                                        v-if="occupyingReservationLabel(bike)"
+                                    {{ terminalUi.remove_rider }}
+                                </button>
+                            </div>
+                            <div class="grid gap-3 sm:grid-cols-3">
+                                <label class="flex flex-col gap-2 text-sm font-semibold">
+                                    {{ terminalUi.rider }}
+                                    <input
+                                        v-model="rider.rider_name"
+                                        type="text"
+                                        class="h-14 rounded-xl border border-zinc-700 bg-zinc-900 px-4 text-base text-white focus:border-emerald-400 focus:outline-none"
+                                    />
+                                </label>
+                                <label class="flex flex-col gap-2 text-sm font-semibold">
+                                    {{ terminalUi.rider_height_cm }}
+                                    <input
+                                        v-model="rider.rider_height_cm"
+                                        type="number"
+                                        min="0"
+                                        max="250"
+                                        inputmode="numeric"
+                                        :placeholder="terminalUi.cm"
+                                        class="h-14 rounded-xl border border-zinc-700 bg-zinc-900 px-4 text-base text-white focus:border-emerald-400 focus:outline-none"
+                                    />
+                                </label>
+                                <label class="flex flex-col gap-2 text-sm font-semibold">
+                                    {{ terminalUi.bike_category }}
+                                    <select
+                                        v-model="rider.category_id"
+                                        class="h-14 rounded-xl border border-zinc-700 bg-zinc-900 px-4 text-base text-white focus:border-emerald-400 focus:outline-none"
                                     >
-                                        · {{ occupyingReservationLabel(bike) }}
-                                    </template>
-                                    <template
-                                        v-else-if="
-                                            bike.bike_situation_state !==
-                                            BikeSituation.Home
-                                        "
+                                        <option :value="null">{{ terminalUi.all_categories }}</option>
+                                        <option
+                                            v-for="category in bikeCandidateResults.categories"
+                                            :key="category.id"
+                                            :value="category.id"
+                                        >
+                                            {{ category.name }}
+                                        </option>
+                                    </select>
+                                </label>
+                            </div>
+                            <div
+                                v-if="riderHeight(rider) !== null"
+                                class="flex flex-wrap items-center gap-3"
+                            >
+                                <p class="min-w-0 flex-1 text-sm text-zinc-300">
+                                    {{ terminalUi.recommended_fit }}
+                                </p>
+                                <button
+                                    type="button"
+                                    class="min-h-12 rounded-xl bg-zinc-800 px-4 text-sm font-semibold text-white"
+                                    @click="rider.show_all_sizes = !rider.show_all_sizes"
+                                >
+                                    {{ rider.show_all_sizes ? terminalUi.hide_all_sizes : terminalUi.show_all_sizes }}
+                                </button>
+                            </div>
+                            <label class="flex flex-col gap-2 text-sm font-semibold">
+                                {{ terminalUi.bike }}
+                                <select
+                                    v-model="rider.bike_id"
+                                    class="h-16 rounded-xl border border-zinc-700 bg-zinc-900 px-4 text-base text-white focus:border-emerald-400 focus:outline-none"
+                                >
+                                    <option :value="null">{{ terminalUi.choose_bike }}</option>
+                                    <option
+                                        v-for="candidate in candidatesForRider(index)"
+                                        :key="candidate.id"
+                                        :value="candidate.id"
                                     >
-                                        · no occupying reservation is linked
-                                    </template>
-                                </span>
-                            </span>
-                        </label>
+                                        {{ candidateOptionLabel(candidate, rider) }}
+                                    </option>
+                                </select>
+                            </label>
+                            <p
+                                v-if="rider.bike_id !== null && candidatesForRider(index).some((candidate) => candidate.id === rider.bike_id && candidate.conflict_reason !== null)"
+                                role="alert"
+                                class="rounded-xl border border-amber-500 bg-amber-950 p-3 text-sm font-semibold text-amber-100"
+                            >
+                                {{ terminalUi.unavailable_override_warning }}
+                            </p>
+                            <p
+                                v-if="rider.bike_id !== null"
+                                class="text-sm text-zinc-400"
+                            >
+                                {{ getEnumLabel('bikeSituation', bikeCandidateResults.candidates.find((candidate) => candidate.id === rider.bike_id)?.bike_situation_state ?? BikeSituation.Home) }}
+                                <template v-if="candidateOwningReservationLabel(rider.bike_id)">
+                                    · {{ candidateOwningReservationLabel(rider.bike_id) }}
+                                </template>
+                            </p>
+                        </section>
                     </div>
+                    <label
+                        v-if="hasSelectedUnavailableBike()"
+                        class="mt-4 flex min-h-16 items-center gap-3 rounded-xl border-2 border-amber-400 bg-amber-950 p-4 text-base font-bold text-amber-100"
+                    >
+                        <input
+                            v-model="availabilityOverrideConfirmed"
+                            type="checkbox"
+                            class="size-7 accent-amber-400"
+                        />
+                        {{ terminalUi.confirm_availability_override }}
+                    </label>
                     <p
-                        v-else
+                        v-if="bikeCandidatesLoading"
+                        class="mt-4 rounded-xl border border-dashed border-zinc-700 p-4 text-zinc-300"
+                    >
+                        {{ terminalUi.loading_candidates }}
+                    </p>
+                    <p
+                        v-else-if="bikeCandidateResults.candidates.length === 0"
                         class="mt-4 rounded-xl border border-dashed border-zinc-700 p-4 text-zinc-400"
                     >
-                        No in-service bikes are configured for walk-ins yet.
+                        {{ terminalUi.no_available_candidates }}
+                    </p>
+                    <p
+                        v-if="bikeCandidatesError"
+                        role="alert"
+                        class="mt-4 rounded-xl border border-rose-700 bg-rose-950 p-4 text-rose-100"
+                    >
+                        {{ bikeCandidatesError }}
                     </p>
                 </section>
 
@@ -723,8 +1128,8 @@ function eventSummary(entry: BroadcastLogEntry): string {
                     class="min-h-16 rounded-xl bg-emerald-400 px-6 text-xl font-bold text-zinc-950 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
                     :disabled="
                         walkInRequest.processing ||
-                        walkInRequest.bike_ids.length === 0 ||
-                        walkInBikes.length === 0
+                        walkInRiders.some((rider) => rider.bike_id === null) ||
+                        (hasSelectedUnavailableBike() && !availabilityOverrideConfirmed)
                     "
                 >
                     {{

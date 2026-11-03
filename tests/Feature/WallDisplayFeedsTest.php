@@ -10,6 +10,7 @@ use App\Models\Tenant;
 use App\Support\WallDisplayPageData;
 use Embiken\BikeFleet\Models\BikeModelVariant;
 use Embiken\BikeRentals\Models\RentalPackage;
+use Embiken\Weather\Models\WeatherSite;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -103,6 +104,44 @@ test('standby without a selected standby Feed resolves to the built-in standby s
         ->assertInertia(fn (Assert $page) => $page
             ->where('feed.slug', 'standby')
             ->where('feed.component', 'core:standby'));
+});
+
+test('Weather Feed shows a placeholder when the tenant has no configured weather sites', function (): void {
+    $shop = provisionWallDisplayFeedShop('wall-feed-weather-empty.localhost');
+    $this->wallDisplayFeedTenant = $shop['tenant'];
+    $shop['tenant']->run(fn () => $shop['display']->update(['feed_slug' => 'weather']));
+
+    $this->withoutVite()
+        ->withToken($shop['token'])
+        ->get('http://wall-feed-weather-empty.localhost/wall-display')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('feed.slug', 'weather')
+            ->has('feed.data.sites', 0)
+            ->where('feed.data.not_configured', __('app.weather_ui.not_configured')));
+});
+
+test('Weather Feed shows configured Weather Sites for the tenant', function (): void {
+    $shop = provisionWallDisplayFeedShop('wall-feed-weather-configured.localhost');
+    $this->wallDisplayFeedTenant = $shop['tenant'];
+
+    $shop['tenant']->run(function () use ($shop): void {
+        WeatherSite::factory()->create([
+            'code' => 'BTV',
+            'label' => 'Burlington',
+        ]);
+        $shop['display']->update(['feed_slug' => 'weather']);
+    });
+
+    $this->withoutVite()
+        ->withToken($shop['token'])
+        ->get('http://wall-feed-weather-configured.localhost/wall-display')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('feed.slug', 'weather')
+            ->has('feed.data.sites', 1)
+            ->where('feed.data.sites.0.code', 'BTV')
+            ->where('feed.data.sites.0.label', 'Burlington'));
 });
 
 test('paired Wall Displays assigned to one Display receive its shared Feed and standby state', function (): void {

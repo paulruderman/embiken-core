@@ -28,12 +28,17 @@ class TerminalAssistantTools
                 'type' => 'function',
                 'function' => [
                     'name' => 'summarize_reservations_period',
-                    'description' => 'Summarize Reservations intersecting a requested shop-local date or date range of up to 7 days, plus the current fleet situation and service availability. Use exact YYYY-MM-DD dates from the current shop-local date. Omit both dates only for today. Report facts; do not classify the shop as busy or quiet.',
+                    'description' => 'Summarize Reservations intersecting a requested shop-local period, plus the current fleet situation and service availability. Use today, tomorrow, rest_of_week, next_week, or next_seven_days for those requests. Use custom for one or more exact dates, with a maximum of 7 inclusive dates. Report facts; do not classify the shop as busy or quiet.',
                     'parameters' => [
                         'type' => 'object',
                         'properties' => [
-                            'start_date' => ['type' => 'string', 'description' => 'First shop-local date, inclusive, in YYYY-MM-DD format. Omit only when asking about today.'],
-                            'end_date' => ['type' => 'string', 'description' => 'Last shop-local date, inclusive, in YYYY-MM-DD format. Omit for a single date.'],
+                            'period' => [
+                                'type' => 'string',
+                                'enum' => ['today', 'tomorrow', 'rest_of_week', 'next_week', 'next_seven_days', 'custom'],
+                                'description' => 'Use custom for exact dates or date ranges. Defaults to today.',
+                            ],
+                            'start_date' => ['type' => 'string', 'description' => 'First shop-local date, inclusive, in YYYY-MM-DD format. Required for custom.'],
+                            'end_date' => ['type' => 'string', 'description' => 'Last shop-local date, inclusive, in YYYY-MM-DD format. Optional for a single custom date.'],
                         ],
                     ],
                 ],
@@ -104,8 +109,9 @@ class TerminalAssistantTools
     {
         $location = Location::query()->firstOrFail();
         $checkedAt = CarbonImmutable::now($location->timezone);
-        $startDate = $this->parseShopDate($arguments['start_date'] ?? $checkedAt->toDateString(), $location->timezone);
-        $endDate = $this->parseShopDate($arguments['end_date'] ?? $startDate->toDateString(), $location->timezone);
+        $periodDates = $this->resolveSummaryPeriod($arguments, $location, $checkedAt);
+        $startDate = $periodDates['start_date'];
+        $endDate = $periodDates['end_date'];
         $startCalendarDate = CarbonImmutable::parse($startDate->toDateString(), 'UTC');
         $endCalendarDate = CarbonImmutable::parse($endDate->toDateString(), 'UTC');
 
@@ -240,6 +246,7 @@ class TerminalAssistantTools
         }
 
         return [
+            'period' => $periodDates['period'],
             'start_date' => $periodStart->toDateString(),
             'end_date' => $endDate->toDateString(),
             'timezone' => $location->timezone,
@@ -266,6 +273,54 @@ class TerminalAssistantTools
                 'situation_counts' => $situationCounts,
                 'affected_bikes' => $affectedBikes,
             ],
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array{period: string, start_date: CarbonImmutable, end_date: CarbonImmutable}
+     */
+    private function resolveSummaryPeriod(array $arguments, Location $location, CarbonImmutable $checkedAt): array
+    {
+        $period = $arguments['period'] ?? (isset($arguments['start_date']) || isset($arguments['end_date']) ? 'custom' : 'today');
+        $today = $checkedAt->startOfDay();
+
+        if (! is_string($period)) {
+            throw ValidationException::withMessages(['period' => 'Choose a supported reservation summary period.']);
+        }
+
+        if ($period === 'custom') {
+            if (! isset($arguments['start_date'])) {
+                throw ValidationException::withMessages(['start_date' => 'Provide a start date for a custom period.']);
+            }
+
+            $startDate = $this->parseShopDate($arguments['start_date'], $location->timezone);
+            $endDate = $this->parseShopDate($arguments['end_date'] ?? $startDate->toDateString(), $location->timezone);
+        } else {
+            $weekStartDay = match ($location->week_start_day) {
+                'saturday' => 6,
+                'monday' => 1,
+                default => 0,
+            };
+            $daysSinceWeekStart = ($today->dayOfWeek - $weekStartDay + 7) % 7;
+            $currentWeekStart = $today->subDays($daysSinceWeekStart);
+
+            [$startDate, $endDate] = match ($period) {
+                'today' => [$today, $today],
+                'tomorrow' => [$today->addDay(), $today->addDay()],
+                'rest_of_week' => [$today, $currentWeekStart->addDays(6)],
+                'next_week' => [$currentWeekStart->addDays(7), $currentWeekStart->addDays(13)],
+                'next_seven_days' => [$today, $today->addDays(6)],
+                default => throw ValidationException::withMessages([
+                    'period' => 'Choose a supported reservation summary period.',
+                ]),
+            };
+        }
+
+        return [
+            'period' => $period,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
         ];
     }
 

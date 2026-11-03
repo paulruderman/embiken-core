@@ -65,6 +65,7 @@ test('provisioning a shop creates a location, invitible manager, and platform ma
     );
 
     expect($location->name)->toBe('River Bikes')
+        ->and($location->week_start_day)->toBe('sunday')
         ->and($location->minimum_turnaround_buffer_minutes)->toBe(10)
         ->and($location->reservation_readiness_window_minutes)->toBe(45)
         ->and($location->hours)->toHaveCount(0)
@@ -105,6 +106,22 @@ test('a manager can configure the customer reply email for the shop', function (
         ->assertHasNoFormErrors();
 
     expect($location->fresh()->customer_contact_email)->toBe('rentals@riverbikes.example');
+});
+
+test('a manager can configure the first day of the shop week', function () {
+    $location = Location::factory()->create(['name' => 'River Bikes']);
+    $staff = Staff::factory()->create(['location_id' => $location->id]);
+
+    $this->actingAs($staff, 'staff');
+
+    Livewire::test(EditLocation::class, ['record' => $location->id])
+        ->assertOk()
+        ->assertSee(__('app.location_ui.week_start_day'))
+        ->fillForm(['week_start_day' => 'monday'])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect($location->fresh()->week_start_day)->toBe('monday');
 });
 
 test('the location list displays currency codes in uppercase', function () {

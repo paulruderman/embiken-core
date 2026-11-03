@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $id
  * @property string $name
  * @property string $timezone
+ * @property string $week_start_day
  * @property string|null $customer_contact_email
  * @property string $currency
  * @property int $minimum_turnaround_buffer_minutes
@@ -32,6 +33,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable([
     'name',
     'timezone',
+    'week_start_day',
     'customer_contact_email',
     'currency',
     'minimum_turnaround_buffer_minutes',

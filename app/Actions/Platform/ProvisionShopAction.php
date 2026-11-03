@@ -30,6 +30,7 @@ class ProvisionShopAction extends Action
             $location = Location::query()->create([
                 'name' => $shopName,
                 'timezone' => $timezone,
+                'week_start_day' => 'sunday',
                 'currency' => strtolower($currency),
                 'minimum_turnaround_buffer_minutes' => 10,
                 'reservation_readiness_window_minutes' => 45,

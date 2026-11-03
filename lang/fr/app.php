@@ -109,6 +109,13 @@ return [
         'site_languages' => 'Langues du site',
         'site_languages_help' => 'Choisissez les langues que les clients peuvent utiliser sur votre site.',
         'default_site_language' => 'Langue par défaut du site',
+        'week_start_day' => 'Premier jour de la semaine',
+        'week_start_day_help' => 'Utilisé dans Terminal pour interpréter « le reste de la semaine » et « la semaine prochaine ».',
+        'week_start_days' => [
+            'saturday' => 'Samedi',
+            'sunday' => 'Dimanche',
+            'monday' => 'Lundi',
+        ],
         'hours_empty_heading' => 'Les horaires d’ouverture ne sont pas configurés',
         'hours_empty_description' => 'Ajoutez les plages horaires pendant lesquelles les clients peuvent commencer et terminer leur location. Book ne peut pas accepter de réservations tant que les horaires ne sont pas configurés.',
         'add_hours' => 'Ajouter des horaires d’ouverture',

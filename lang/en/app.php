@@ -109,6 +109,13 @@ return [
         'site_languages' => 'Site languages',
         'site_languages_help' => 'Choose which languages customers can use on your site.',
         'default_site_language' => 'Default site language',
+        'week_start_day' => 'First day of the week',
+        'week_start_day_help' => 'Used by Terminal Assistant to understand “rest of the week” and “next week”.',
+        'week_start_days' => [
+            'saturday' => 'Saturday',
+            'sunday' => 'Sunday',
+            'monday' => 'Monday',
+        ],
         'hours_empty_heading' => 'Opening hours are not set up',
         'hours_empty_description' => 'Add the intervals when customers can start and finish rentals. Book cannot accept reservations until opening hours are configured.',
         'add_hours' => 'Add opening hours',

@@ -29,6 +29,16 @@ class LocationForm
                     ->maxLength(255),
                 TextInput::make('timezone')
                     ->required(),
+                Select::make('week_start_day')
+                    ->label(__('app.location_ui.week_start_day'))
+                    ->helperText(__('app.location_ui.week_start_day_help'))
+                    ->options([
+                        'saturday' => __('app.location_ui.week_start_days.saturday'),
+                        'sunday' => __('app.location_ui.week_start_days.sunday'),
+                        'monday' => __('app.location_ui.week_start_days.monday'),
+                    ])
+                    ->required()
+                    ->default('sunday'),
                 TextInput::make('customer_contact_email')
                     ->label(__('app.location_ui.customer_email'))
                     ->helperText(__('app.location_ui.customer_email_help'))

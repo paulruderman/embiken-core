@@ -149,7 +149,9 @@ test('terminal assistant returns sanitized read-only reservation information', f
     expect($systemPrompt)
         ->toContain('The current date in the shop timezone '.$shop['location']->timezone.' is '.now($shop['location']->timezone)->toDateString())
         ->toContain('Never classify a shop as busy or quiet without a staff-provided threshold.')
-        ->toContain('Do not guess an ambiguous date range such as “the rest of the week”');
+        ->toContain('The configured first day of the shop week is '.$shop['location']->week_start_day)
+        ->toContain('For “rest of the week”, use period rest_of_week')
+        ->toContain('ask for clarification if wording could reasonably mean more than one period.');
 });
 
 test('terminal assistant preserves empty tool arguments as an object on the follow-up request', function (): void {
@@ -267,6 +269,7 @@ test('terminal assistant summarizes a requested date range and current fleet wit
         ServiceRequest::factory()->for($blockingServiceBike)->create();
 
         return app(TerminalAssistantTools::class)->execute('summarize_reservations_period', [
+            'period' => 'custom',
             'start_date' => $today->toDateString(),
             'end_date' => $today->copy()->addDay()->toDateString(),
         ]);
@@ -314,21 +317,67 @@ test('terminal assistant limits reservation summaries to valid ranges of seven d
     $shop['tenant']->run(function () use ($shop): void {
         $startDate = now($shop['location']->timezone)->toDateString();
         $validSevenDateSummary = app(TerminalAssistantTools::class)->execute('summarize_reservations_period', [
-            'start_date' => $startDate,
-            'end_date' => now($shop['location']->timezone)->addDays(6)->toDateString(),
+            'period' => 'custom',
+            'start_date' => '2026-10-31',
+            'end_date' => '2026-11-06',
         ]);
 
         expect($validSevenDateSummary['end_date'])
-            ->toBe(now($shop['location']->timezone)->addDays(6)->toDateString());
+            ->toBe('2026-11-06');
 
         expect(fn () => app(TerminalAssistantTools::class)->execute('summarize_reservations_period', [
+            'period' => 'custom',
             'start_date' => $startDate,
             'end_date' => now($shop['location']->timezone)->addDays(7)->toDateString(),
         ]))->toThrow(ValidationException::class);
 
         expect(fn () => app(TerminalAssistantTools::class)->execute('summarize_reservations_period', [
+            'period' => 'custom',
             'start_date' => '2026-02-30',
         ]))->toThrow(ValidationException::class);
+    });
+});
+
+test('terminal assistant resolves relative reservation periods using the location week start', function (): void {
+    $shop = provisionTerminalAssistantShop('assistant-relative-periods.localhost');
+    $this->terminalAssistantTenant = $shop['tenant'];
+
+    $shop['tenant']->run(function () use ($shop): void {
+        $today = now($shop['location']->timezone)->startOfDay();
+        $weekStartDays = [
+            'saturday' => 6,
+            'sunday' => 0,
+            'monday' => 1,
+        ];
+
+        foreach ($weekStartDays as $weekStartDay => $dayOfWeek) {
+            $shop['location']->update(['week_start_day' => $weekStartDay]);
+            $currentWeekStart = $today->copy()->subDays(($today->dayOfWeek - $dayOfWeek + 7) % 7);
+
+            $restOfWeek = app(TerminalAssistantTools::class)->execute('summarize_reservations_period', [
+                'period' => 'rest_of_week',
+            ]);
+            $nextWeek = app(TerminalAssistantTools::class)->execute('summarize_reservations_period', [
+                'period' => 'next_week',
+            ]);
+
+            expect($restOfWeek['start_date'])->toBe($today->toDateString())
+                ->and($restOfWeek['end_date'])->toBe($currentWeekStart->copy()->addDays(6)->toDateString())
+                ->and($nextWeek['start_date'])->toBe($currentWeekStart->copy()->addDays(7)->toDateString())
+                ->and($nextWeek['end_date'])->toBe($currentWeekStart->copy()->addDays(13)->toDateString());
+        }
+
+        $tomorrow = app(TerminalAssistantTools::class)->execute('summarize_reservations_period', [
+            'period' => 'tomorrow',
+        ]);
+        $nextSevenDays = app(TerminalAssistantTools::class)->execute('summarize_reservations_period', [
+            'period' => 'next_seven_days',
+        ]);
+
+        expect($tomorrow['start_date'])->toBe($today->copy()->addDay()->toDateString())
+            ->and($tomorrow['end_date'])->toBe($today->copy()->addDay()->toDateString())
+            ->and($nextSevenDays['start_date'])->toBe($today->toDateString())
+            ->and($nextSevenDays['end_date'])->toBe($today->copy()->addDays(6)->toDateString());
     });
 });
 

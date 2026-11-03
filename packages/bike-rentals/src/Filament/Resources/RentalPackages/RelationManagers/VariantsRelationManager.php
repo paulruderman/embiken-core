@@ -7,6 +7,7 @@ use App\Support\Money;
 use Embiken\BikeFleet\Filament\Forms\Components\BikeModelVariantSelect;
 use Embiken\BikeFleet\Models\BikeModelVariant;
 use Embiken\BikeRentals\Filament\Support\MoneyInput;
+use Embiken\BikeRentalSelfBooking\WallDisplay\CustomerMenuFeedRefresher;
 use Filament\Actions\Action;
 use Filament\Actions\AttachAction;
 use Filament\Actions\DetachAction;
@@ -82,6 +83,7 @@ class VariantsRelationManager extends RelationManager
                     ->visible(fn (): bool => ! BikeModelVariant::query()->exists()),
                 AttachAction::make()
                     ->visible(fn (): bool => BikeModelVariant::query()->exists())
+                    ->after(fn () => $this->refreshCustomerMenuFeed())
                     ->preloadRecordSelect()
                     ->recordTitle(fn (BikeModelVariant $record): string => BikeModelVariantSelect::labelFor($record))
                     ->recordSelectOptionsQuery(fn (Builder $query): Builder => $query->with('bikeModel'))
@@ -104,8 +106,17 @@ class VariantsRelationManager extends RelationManager
                     ]),
             ])
             ->recordActions([
-                EditAction::make(),
-                DetachAction::make(),
+                EditAction::make()
+                    ->after(fn () => $this->refreshCustomerMenuFeed()),
+                DetachAction::make()
+                    ->after(fn () => $this->refreshCustomerMenuFeed()),
             ]);
+    }
+
+    private function refreshCustomerMenuFeed(): void
+    {
+        app(CustomerMenuFeedRefresher::class)->refresh(
+            (int) $this->getOwnerRecord()->getAttribute('location_id'),
+        );
     }
 }

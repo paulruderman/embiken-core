@@ -8,7 +8,9 @@ use Embiken\BikeFleet\Models\BikeModelVariant;
 use Embiken\BikeRentals\Database\Factories\RentalPackageFactory;
 use Embiken\BikeRentals\Enums\ConfirmThreshold;
 use Embiken\BikeRentals\Enums\PackageMeter;
+use Embiken\BikeRentalSelfBooking\Observers\CustomerMenuFeedObserver;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -51,6 +53,7 @@ use Spatie\Translatable\HasTranslations;
     'book_visible',
     'sort_order',
 ])]
+#[ObservedBy(CustomerMenuFeedObserver::class)]
 class RentalPackage extends Model
 {
     public const string SETUP_DESCRIPTION = 'Packages define rental pricing and Book payment requirements.';

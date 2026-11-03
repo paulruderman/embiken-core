@@ -82,11 +82,11 @@ function clearConversation(): void {
 </script>
 
 <template>
-    <div class="fixed bottom-4 right-4 z-40">
+    <div class="fixed right-4 bottom-4 z-40">
         <button
             v-if="!isOpen"
             type="button"
-            class="min-h-16 rounded-full bg-brand-primary-600 px-6 text-lg font-bold text-white shadow-xl hover:bg-brand-primary-700 dark:bg-brand-primary-400 dark:text-brand-gray-950"
+            class="bg-brand-primary-600 hover:bg-brand-primary-700 dark:bg-brand-primary-400 dark:text-brand-gray-950 min-h-16 rounded-full px-6 text-lg font-bold text-white shadow-xl"
             @click="isOpen = true"
         >
             {{ ui.assistant_open }}
@@ -94,21 +94,25 @@ function clearConversation(): void {
 
         <section
             v-else
-            class="flex h-[min(78vh,44rem)] w-[min(94vw,30rem)] flex-col overflow-hidden rounded-2xl border border-brand-gray-300 bg-brand-gray-50 shadow-2xl dark:border-brand-gray-700 dark:bg-brand-gray-950"
+            class="border-brand-gray-300 bg-brand-gray-50 dark:border-brand-gray-700 dark:bg-brand-gray-950 flex h-[min(78vh,44rem)] w-[min(94vw,30rem)] flex-col overflow-hidden rounded-2xl border shadow-2xl"
             :aria-label="ui.assistant_title"
         >
-            <header class="flex min-h-16 items-center gap-3 border-b border-brand-gray-300 bg-brand-gray-100 px-4 dark:border-brand-gray-800 dark:bg-brand-gray-900">
-                <h2 class="flex-1 text-lg font-bold">{{ ui.assistant_title }}</h2>
+            <header
+                class="border-brand-gray-300 bg-brand-gray-100 dark:border-brand-gray-800 dark:bg-brand-gray-900 flex min-h-16 items-center gap-3 border-b px-4"
+            >
+                <h2 class="flex-1 text-lg font-bold">
+                    {{ ui.assistant_title }}
+                </h2>
                 <button
                     type="button"
-                    class="min-h-12 rounded-xl px-3 text-sm font-semibold text-brand-gray-700 hover:bg-brand-gray-200 dark:text-brand-gray-200 dark:hover:bg-brand-gray-800"
+                    class="text-brand-gray-700 hover:bg-brand-gray-200 dark:text-brand-gray-200 dark:hover:bg-brand-gray-800 min-h-12 rounded-xl px-3 text-sm font-semibold"
                     @click="clearConversation"
                 >
                     {{ ui.assistant_clear }}
                 </button>
                 <button
                     type="button"
-                    class="min-h-12 min-w-12 rounded-xl bg-brand-gray-200 text-xl font-bold dark:bg-brand-gray-800"
+                    class="bg-brand-gray-200 dark:bg-brand-gray-800 min-h-12 min-w-12 rounded-xl text-xl font-bold"
                     :aria-label="ui.assistant_close"
                     @click="isOpen = false"
                 >
@@ -124,23 +128,25 @@ function clearConversation(): void {
             >
                 <li
                     v-if="messages.length === 0"
-                    class="rounded-xl bg-brand-gray-100 p-4 text-sm text-brand-gray-700 dark:bg-brand-gray-900 dark:text-brand-gray-300"
+                    class="bg-brand-gray-100 text-brand-gray-700 dark:bg-brand-gray-900 dark:text-brand-gray-300 rounded-xl p-4 text-sm"
                 >
                     {{ ui.assistant_intro }}
                 </li>
                 <li
                     v-for="(message, index) in messages"
                     :key="index"
-                    class="max-w-[92%] whitespace-pre-wrap break-words rounded-2xl px-4 py-3 text-base"
-                    :class="message.role === 'user'
-                        ? 'self-end bg-brand-primary-600 text-white dark:bg-brand-primary-400 dark:text-brand-gray-950'
-                        : 'self-start bg-brand-gray-200 text-brand-gray-950 dark:bg-brand-gray-800 dark:text-brand-gray-50'"
+                    class="max-w-[92%] rounded-2xl px-4 py-3 text-base break-words whitespace-pre-wrap"
+                    :class="
+                        message.role === 'user'
+                            ? 'bg-brand-primary-600 dark:bg-brand-primary-400 dark:text-brand-gray-950 self-end text-white'
+                            : 'bg-brand-gray-200 text-brand-gray-950 dark:bg-brand-gray-800 dark:text-brand-gray-50 self-start'
+                    "
                 >
                     {{ message.content }}
                 </li>
                 <li
                     v-if="request.processing"
-                    class="self-start rounded-2xl bg-brand-gray-200 px-4 py-3 text-base dark:bg-brand-gray-800"
+                    class="bg-brand-gray-200 dark:bg-brand-gray-800 self-start rounded-2xl px-4 py-3 text-base"
                 >
                     {{ ui.assistant_thinking }}
                 </li>
@@ -153,8 +159,12 @@ function clearConversation(): void {
                 </li>
             </ol>
 
-            <div class="border-t border-brand-gray-300 p-3 dark:border-brand-gray-800">
-                <p class="mb-2 text-xs text-brand-gray-600 dark:text-brand-gray-400">
+            <div
+                class="border-brand-gray-300 dark:border-brand-gray-800 border-t p-3"
+            >
+                <p
+                    class="text-brand-gray-600 dark:text-brand-gray-400 mb-2 text-xs"
+                >
                     {{ ui.assistant_privacy }}
                 </p>
                 <form class="flex items-end gap-2" @submit.prevent="send">
@@ -164,7 +174,7 @@ function clearConversation(): void {
                     <textarea
                         id="terminal-assistant-input"
                         v-model="input"
-                        class="min-h-14 max-h-32 flex-1 resize-y rounded-xl border border-brand-gray-400 bg-white p-3 text-base text-brand-gray-950 placeholder:text-brand-gray-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary-600 dark:border-brand-gray-700 dark:bg-brand-gray-900 dark:text-brand-gray-50"
+                        class="border-brand-gray-400 text-brand-gray-950 placeholder:text-brand-gray-500 focus-visible:outline-brand-primary-600 dark:border-brand-gray-700 dark:bg-brand-gray-900 dark:text-brand-gray-50 max-h-32 min-h-14 flex-1 resize-y rounded-xl border bg-white p-3 text-base focus-visible:outline-2 focus-visible:outline-offset-2"
                         :placeholder="ui.assistant_input"
                         maxlength="2000"
                         rows="2"
@@ -172,7 +182,7 @@ function clearConversation(): void {
                     />
                     <button
                         type="submit"
-                        class="min-h-14 rounded-xl bg-brand-primary-600 px-4 text-base font-bold text-white disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-primary-400 dark:text-brand-gray-950"
+                        class="bg-brand-primary-600 dark:bg-brand-primary-400 dark:text-brand-gray-950 min-h-14 rounded-xl px-4 text-base font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
                         :disabled="request.processing || input.trim() === ''"
                     >
                         {{ ui.assistant_send }}

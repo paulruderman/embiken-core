@@ -5,7 +5,9 @@ namespace App\Models;
 use App\Enums\Weekday;
 use Carbon\CarbonImmutable;
 use Database\Factories\LocationHourFactory;
+use Embiken\BikeRentalSelfBooking\Observers\CustomerMenuFeedObserver;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -21,6 +23,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property CarbonImmutable|null $updated_at
  */
 #[Fillable(['location_id', 'weekday', 'opens_at', 'closes_at', 'closes_next_day'])]
+#[ObservedBy(CustomerMenuFeedObserver::class)]
 class LocationHour extends Model
 {
     /** @use HasFactory<LocationHourFactory> */

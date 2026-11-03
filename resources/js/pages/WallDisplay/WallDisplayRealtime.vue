@@ -8,7 +8,12 @@ type DisplayUpdate = {
     display: { id: number; name: string; dark_mode: boolean };
     feed: { slug: string; name: string; component: string; data: Record<string, unknown> } | null;
 };
-const emit = defineEmits<{ displayUpdated: [payload: DisplayUpdate] }>();
+type FeedUpdate = { feed: NonNullable<DisplayUpdate['feed']> };
+const emit = defineEmits<{
+    displayUpdated: [payload: DisplayUpdate];
+    feedUpdated: [payload: FeedUpdate];
+    weatherUpdated: [payload: Record<string, unknown>];
+}>();
 const day = useDayStore();
 const channel = `tenant.${props.tenantId}.location.${props.locationId}`;
 const patchReservation = (reservation: DayReservation): void => {
@@ -33,6 +38,8 @@ useEcho<{ id: number }>(channel, '.ReservationDeleted', ({ id }) => day.removeRe
 useEcho<DisplayUpdate>(channel, '.DisplayUpdated', (payload) => {
     if (payload.display.id === props.displayId) emit('displayUpdated', payload);
 });
+useEcho<FeedUpdate>(channel, '.WallDisplayFeedUpdated', (payload) => emit('feedUpdated', payload));
+useEcho<Record<string, unknown>>(channel, '.WeatherUpdated', (payload) => emit('weatherUpdated', payload));
 </script>
 
 <template><span class="hidden" /></template>

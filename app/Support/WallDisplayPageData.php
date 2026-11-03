@@ -18,15 +18,15 @@ class WallDisplayPageData
     public function forDevice(Device $device): array
     {
         $location = $device->location()->firstOrFail();
-        $fullDayStore = $this->dayStore($location);
         $display = $device->display;
+        $fullDayStore = $display === null ? null : $this->dayStore($location);
         $displayState = $display === null
             ? ['state' => 'no_display', 'display' => null, 'feed' => null]
             : $this->forDisplay($display, $fullDayStore);
 
         return [
             ...$displayState,
-            'dayStore' => $this->wallDisplaySnapshot($fullDayStore),
+            'dayStore' => $fullDayStore === null ? null : $this->wallDisplaySnapshot($fullDayStore),
             'copy' => [
                 'page_title' => __('app.wall_display_ui.page_title'),
                 'not_configured' => __('app.wall_display_ui.not_configured'),

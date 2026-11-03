@@ -69,7 +69,7 @@ class RefreshWeatherAction extends Action
         $locationId = Location::query()->value('id');
 
         if (is_int($locationId)) {
-            event(new LocationWeatherPatched($snapshot, $locationId));
+            event(new LocationWeatherPatched($this->reader->snapshot(), $locationId));
         }
 
         return $snapshot;

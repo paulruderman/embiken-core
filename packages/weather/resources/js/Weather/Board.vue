@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import WeatherStrip from '../components/WeatherStrip.vue';
+import type { WeatherSiteSnapshot } from '@weather/stores/weather';
 
-defineProps<{ feed: { name: string; data: { sites: never[]; coverage_notice: string } } }>();
+defineProps<{ feed: { name: string; data: { sites: WeatherSiteSnapshot[]; coverage_notice: string } } }>();
 </script>
 
 <template>

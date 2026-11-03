@@ -66,12 +66,13 @@ test('a manager can configure a Display from registered Feeds and share standby 
         ->and($display->standby)->toBeTrue();
 });
 
-test('Display management explains when no code-owned Feeds are available', function (): void {
+test('Display management offers the built-in core Feed when optional modules are disabled', function (): void {
     $manager = Staff::factory()->create();
     $this->actingAs($manager, 'staff');
 
     Livewire::test(CreateDisplay::class)
-        ->assertSee(__('app.display_ui.no_feeds'));
+        ->assertSee(__('app.wall_display_ui.today_shop_board'))
+        ->assertDontSee(__('app.display_ui.no_feeds'));
 });
 
 test('only Managers can open Device management', function (): void {

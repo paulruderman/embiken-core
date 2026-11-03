@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Embiken\BikeRentals\Services\TerminalAssistant;
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 class OllamaChatModel implements ChatModel
@@ -34,8 +35,21 @@ class OllamaChatModel implements ChatModel
                 'tools' => $tools,
                 'stream' => false,
                 'think' => false,
-            ])
-            ->throw();
+            ]);
+
+        if ($response->status() === 400) {
+            Log::warning('Local assistant provider rejected a tool-call request.', [
+                'status' => $response->status(),
+                'model' => $model,
+            ]);
+
+            throw new AssistantUnavailable(
+                'The local model rejected a tool-call request.',
+                __('app.terminal_ui.assistant_tool_call_rejected'),
+            );
+        }
+
+        $response->throw();
 
         $payload = $response->json();
 
@@ -84,7 +98,9 @@ class OllamaChatModel implements ChatModel
                 'type' => 'function',
                 'function' => [
                     'name' => $toolCall['name'],
-                    'arguments' => $toolCall['arguments'],
+                    'arguments' => $toolCall['arguments'] === []
+                        ? new \stdClass
+                        : $toolCall['arguments'],
                 ],
             ], $message['tool_calls']);
         }

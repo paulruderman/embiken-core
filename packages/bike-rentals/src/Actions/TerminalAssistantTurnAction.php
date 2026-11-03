@@ -6,8 +6,10 @@ namespace Embiken\BikeRentals\Actions;
 
 use App\Actions\Action;
 use App\Actions\Concerns\AuthorizesStaff;
+use Embiken\BikeRentals\Services\TerminalAssistant\AssistantUnavailable;
 use Embiken\BikeRentals\Services\TerminalAssistant\TerminalAssistant;
 use Illuminate\Console\Command;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Router;
 use Illuminate\Validation\ValidationException;
 use Lorisleiva\Actions\ActionRequest;
@@ -46,12 +48,20 @@ class TerminalAssistantTurnAction extends Action
     /**
      * @return array{message: string}
      */
-    public function asController(ActionRequest $request, TerminalAssistant $assistant): array
+    public function asController(ActionRequest $request, TerminalAssistant $assistant): array|JsonResponse
     {
         /** @var array{messages: list<array{role: 'user'|'assistant', content: string}>} $data */
         $data = $request->validated();
 
-        return $this->handle($data['messages'], $assistant);
+        try {
+            return $this->handle($data['messages'], $assistant);
+        } catch (AssistantUnavailable $exception) {
+            if ($exception->userMessage === null) {
+                throw $exception;
+            }
+
+            return response()->json(['message' => $exception->userMessage], 503);
+        }
     }
 
     public static function routes(Router $router): void

@@ -64,8 +64,27 @@ function send(): void {
                 messages.value.push(assistantMessage);
                 conversation.value.push(assistantMessage);
             },
-            onHttpException: () => {
-                error.value = props.ui.assistant_unavailable;
+            onHttpException: (response) => {
+                let responseData: unknown = response.data;
+
+                if (typeof responseData === 'string') {
+                    try {
+                        responseData = JSON.parse(responseData) as unknown;
+                    } catch {
+                        responseData = null;
+                    }
+                }
+
+                const responseMessage =
+                    typeof responseData === 'object' &&
+                    responseData !== null &&
+                    'message' in responseData
+                        ? responseData.message
+                        : undefined;
+                error.value =
+                    typeof responseMessage === 'string'
+                        ? responseMessage
+                        : props.ui.assistant_unavailable;
             },
             onNetworkError: () => {
                 error.value = props.ui.assistant_unavailable;

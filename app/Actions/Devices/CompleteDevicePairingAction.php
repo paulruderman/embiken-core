@@ -6,6 +6,7 @@ namespace App\Actions\Devices;
 
 use App\Actions\Action;
 use App\Models\Device;
+use App\Support\DevicePairingCode;
 use App\Support\DevicePairingResource;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -21,7 +22,7 @@ class CompleteDevicePairingAction extends Action
     /** @return array{paired: false}|array{paired: true, device: Device, token: string} */
     public function handle(string $code): array
     {
-        $codeHash = hash('sha256', mb_strtoupper(trim($code)));
+        $codeHash = DevicePairingCode::hash($code);
 
         try {
             return DB::transaction(function () use ($codeHash): array {
@@ -72,7 +73,7 @@ class CompleteDevicePairingAction extends Action
     /** @return array<string, list<mixed>> */
     public function rules(): array
     {
-        return ['code' => ['required', 'string', 'max:32']];
+        return ['code' => ['required', 'string', 'regex:/^(?:\d{6}|\d{2}-\d{2}-\d{2})$/']];
     }
 
     /** @param array{paired: false}|array{paired: true, device: Device, token: string} $result */

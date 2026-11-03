@@ -114,7 +114,7 @@ test('pairing redemption places the Device token in an HttpOnly cookie and omits
     $this->deviceSurfaceTenant = $shop['tenant'];
     $pairing = $shop['tenant']->run(fn () => RequestDevicePairingCodeAction::run(DeviceSurface::WallDisplay));
     $shop['tenant']->run(function () use ($pairing): void {
-        PairDeviceAction::run(Device::query()->findOrFail($pairing['device']->id), $pairing['code']);
+        PairDeviceAction::run($pairing['code']);
         expect(Device::query()->findOrFail($pairing['device']->id)->paired_at)->not->toBeNull();
     });
 
@@ -126,6 +126,24 @@ test('pairing redemption places the Device token in an HttpOnly cookie and omits
 
     expect($response->headers->get('set-cookie'))->toContain('device_token=')
         ->toContain('httponly');
+});
+
+test('pair Device endpoint resolves the code and requires a Manager', function (): void {
+    $shop = provisionDeviceSurfaceShop('device-pair-manager.localhost');
+    $this->deviceSurfaceTenant = $shop['tenant'];
+    $pairing = $shop['tenant']->run(fn () => RequestDevicePairingCodeAction::run(DeviceSurface::Terminal));
+
+    $this->actingAs($shop['staff'], 'staff')
+        ->postJson('http://device-pair-manager.localhost/devices/pair', ['code' => $pairing['code']])
+        ->assertOk()
+        ->assertJsonPath('paired', true);
+
+    $counter = $shop['tenant']->run(fn () => Staff::factory()->counter()->create());
+    $anotherPairing = $shop['tenant']->run(fn () => RequestDevicePairingCodeAction::run(DeviceSurface::Terminal));
+
+    $this->actingAs($counter, 'staff')
+        ->postJson('http://device-pair-manager.localhost/devices/pair', ['code' => $anotherPairing['code']])
+        ->assertForbidden();
 });
 
 test('device pairing has a tenant-host page for each supported device surface', function (): void {

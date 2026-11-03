@@ -8,6 +8,7 @@ use App\Actions\Action;
 use App\Enums\DeviceSurface;
 use App\Models\Device;
 use App\Models\Location;
+use App\Support\DevicePairingCode;
 use App\Support\DevicePairingResource;
 use Illuminate\Console\Command;
 use Illuminate\Http\JsonResponse;
@@ -30,8 +31,8 @@ class RequestDevicePairingCodeAction extends Action
             $location = Location::query()->firstOrFail();
 
             do {
-                $code = Str::upper(Str::random(10));
-                $codeHash = hash('sha256', $code);
+                $code = DevicePairingCode::generate();
+                $codeHash = DevicePairingCode::hash($code);
             } while (Device::query()->where('pairing_code_hash', $codeHash)->exists());
 
             $device = Device::query()->create([

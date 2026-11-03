@@ -28,7 +28,7 @@ class TerminalAssistantTools
                     'description' => 'List Reservations intersecting today in the shop timezone. Contact details are never returned.',
                     'parameters' => [
                         'type' => 'object',
-                        'properties' => [],
+                        'properties' => new \stdClass,
                     ],
                 ],
             ],

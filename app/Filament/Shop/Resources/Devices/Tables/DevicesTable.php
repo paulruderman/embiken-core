@@ -6,11 +6,17 @@ use App\Actions\Devices\DeleteDeviceAction;
 use App\Actions\Devices\PairDeviceAction;
 use App\Enums\DeviceSurface;
 use App\Models\Device;
+use App\Models\Display;
+use App\Support\DevicePairingCode;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -45,8 +51,8 @@ class DevicesTable
                     ->placeholder('—')
                     ->toggleable(),
             ])
-            ->recordActions([
-                Action::make('pair')
+            ->headerActions([
+                Action::make('pairDevice')
                     ->label(__('app.device_ui.pair'))
                     ->icon('heroicon-o-key')
                     ->schema([
@@ -54,18 +60,46 @@ class DevicesTable
                             ->label(__('app.device_ui.pairing_code'))
                             ->helperText(__('app.device_ui.pairing_code_help'))
                             ->required()
-                            ->maxLength(32)
-                            ->autocomplete('off'),
+                            ->maxLength(8)
+                            ->autocomplete('off')
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function (Set $set, ?string $state): void {
+                                $device = filled($state) ? DevicePairingCode::findPending($state) : null;
+                                $set('device_surface', $device?->surface->value);
+                            }),
+                        Hidden::make('device_surface')->dehydrated(false),
+                        Select::make('paired_terminal_device_id')
+                            ->label(__('app.device_ui.paired_terminal'))
+                            ->helperText(__('app.device_ui.paired_terminal_help'))
+                            ->options(fn (): array => Device::query()
+                                ->where('surface', DeviceSurface::Terminal->value)
+                                ->whereNotNull('paired_at')
+                                ->orderBy('name')
+                                ->pluck('name', 'id')
+                                ->all())
+                            ->required(fn (Get $get): bool => $get('device_surface') === DeviceSurface::CustomerDisplay->value)
+                            ->visible(fn (Get $get): bool => $get('device_surface') === DeviceSurface::CustomerDisplay->value),
+                        Select::make('display_id')
+                            ->label(__('app.device_ui.display'))
+                            ->helperText(__('app.device_ui.display_help'))
+                            ->options(fn (): array => Display::query()->orderBy('name')->pluck('name', 'id')->all())
+                            ->visible(fn (Get $get): bool => $get('device_surface') === DeviceSurface::WallDisplay->value),
                     ])
-                    ->visible(fn (Device $record): bool => $record->paired_at === null)
-                    ->action(function (Device $record, array $data): void {
-                        PairDeviceAction::run($record, $data['code']);
+                    ->action(function (array $data): void {
+                        $device = PairDeviceAction::run(
+                            $data['code'],
+                            $data['paired_terminal_device_id'] ?? null,
+                            $data['display_id'] ?? null,
+                        );
 
                         Notification::make()
                             ->title(__('app.device_ui.paired'))
+                            ->body($device->name)
                             ->success()
                             ->send();
                     }),
+            ])
+            ->recordActions([
                 EditAction::make(),
                 DeleteAction::make()
                     ->label(__('app.device_ui.delete'))

@@ -124,6 +124,10 @@ test('terminal assistant returns sanitized read-only reservation information', f
     $requests = Http::recorded()->pluck(0)->all();
     $requestBodies = array_map(fn ($request) => $request->data(), $requests);
     $encodedBodies = json_encode($requestBodies, JSON_THROW_ON_ERROR);
+    $systemPrompt = $requestBodies[0]['messages'][0]['content'];
+
+    expect($requestBodies[0]['tools'][0]['function']['parameters']['properties'])
+        ->toBeInstanceOf(stdClass::class);
 
     expect($encodedBodies)
         ->not->toContain($customerName)
@@ -133,6 +137,76 @@ test('terminal assistant returns sanitized read-only reservation information', f
         ->toContain('[email removed]')
         ->toContain('[phone removed]')
         ->toContain($reservation->public_id);
+
+    expect($systemPrompt)
+        ->toContain('The current date in the shop timezone '.$shop['location']->timezone.' is '.now($shop['location']->timezone)->toDateString())
+        ->toContain('Never rely on prior model knowledge for the current date or Reservation counts.');
+});
+
+test('terminal assistant preserves empty tool arguments as an object on the follow-up request', function (): void {
+    $shop = provisionTerminalAssistantShop('assistant-empty-tool-arguments.localhost');
+    $this->terminalAssistantTenant = $shop['tenant'];
+    config()->set('services.terminal_assistant.driver', 'ollama');
+    config()->set('services.terminal_assistant.ollama_url', 'http://127.0.0.1:11434');
+    config()->set('services.terminal_assistant.ollama_model', 'gemma4:e2b');
+
+    Http::fake([
+        'http://127.0.0.1:11434/api/chat' => Http::sequence()
+            ->push([
+                'message' => [
+                    'role' => 'assistant',
+                    'content' => '',
+                    'tool_calls' => [[
+                        'function' => [
+                            'name' => 'list_todays_reservations',
+                            'arguments' => [],
+                        ],
+                    ]],
+                ],
+            ])
+            ->push([
+                'message' => [
+                    'role' => 'assistant',
+                    'content' => 'There are no reservations today.',
+                ],
+            ]),
+    ]);
+
+    $this->withToken($shop['token'])
+        ->actingAs($shop['staff'], 'staff')
+        ->postJson('http://assistant-empty-tool-arguments.localhost/terminal/assistant', [
+            'messages' => [['role' => 'user', 'content' => 'Many reservations today?']],
+        ])
+        ->assertOk()
+        ->assertJsonPath('message', 'There are no reservations today.');
+
+    $requests = Http::recorded()->pluck(0)->all();
+    $followUpMessages = $requests[1]->data()['messages'];
+
+    expect($followUpMessages[2]['tool_calls'][0]['function']['arguments'])
+        ->toBeInstanceOf(stdClass::class);
+});
+
+test('terminal assistant explains when Ollama rejects a tool-call request', function (): void {
+    $shop = provisionTerminalAssistantShop('assistant-tool-rejected.localhost');
+    $this->terminalAssistantTenant = $shop['tenant'];
+    config()->set('services.terminal_assistant.driver', 'ollama');
+    config()->set('services.terminal_assistant.ollama_url', 'http://127.0.0.1:11434');
+    config()->set('services.terminal_assistant.ollama_model', 'gemma4:e2b');
+
+    Http::fake([
+        'http://127.0.0.1:11434/api/chat' => Http::response([
+            'error' => "Value looks like object, but can't find closing '}' symbol",
+        ], 400),
+    ]);
+
+    $this->withToken($shop['token'])
+        ->actingAs($shop['staff'], 'staff')
+        ->postJson('http://assistant-tool-rejected.localhost/terminal/assistant', [
+            'messages' => [['role' => 'user', 'content' => 'Many reservations today?']],
+        ])
+        ->assertStatus(503)
+        ->assertJsonPath('message', __('app.terminal_ui.assistant_tool_call_rejected'));
 });
 
 test('terminal assistant requires both staff and a paired terminal device', function (): void {

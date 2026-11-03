@@ -8,6 +8,8 @@ use App\Actions\Action;
 use App\Enums\DeviceSurface;
 use App\Enums\StaffRole;
 use App\Models\Device;
+use App\Models\Display;
+use App\Support\DevicePairingCode;
 use App\Support\DevicePairingResource;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -19,18 +21,24 @@ use Illuminate\Validation\ValidationException;
 
 class PairDeviceAction extends Action
 {
-    public string $commandSignature = 'device:pair {device} {code?} {--tenant=}';
+    public string $commandSignature = 'device:pair {code?} {--tenant=}';
 
-    public function handle(Device $device, string $code): Device
+    public function handle(string $code, ?string $pairedTerminalDeviceId = null, ?string $displayId = null): Device
     {
+        if (! preg_match('/^(?:\d{6}|\d{2}-\d{2}-\d{2})$/', trim($code))) {
+            throw ValidationException::withMessages([
+                'code' => 'This pairing code is invalid or expired.',
+            ]);
+        }
+
         try {
-            return DB::transaction(function () use ($device, $code): Device {
-                $lockedDevice = Device::query()->whereKey($device->getKey())->lockForUpdate()->firstOrFail();
-                $codeHash = hash('sha256', mb_strtoupper(trim($code)));
+            return DB::transaction(function () use ($code, $pairedTerminalDeviceId, $displayId): Device {
+                $lockedDevice = Device::query()
+                    ->where('pairing_code_hash', DevicePairingCode::hash($code))
+                    ->lockForUpdate()
+                    ->firstOrFail();
 
                 if ($lockedDevice->paired_at !== null
-                    || $lockedDevice->pairing_code_hash === null
-                    || ! hash_equals($lockedDevice->pairing_code_hash, $codeHash)
                     || $lockedDevice->pairing_expires_at === null
                     || $lockedDevice->pairing_expires_at->isPast()) {
                     throw ValidationException::withMessages([
@@ -38,15 +46,36 @@ class PairDeviceAction extends Action
                     ]);
                 }
 
-                if ($lockedDevice->surface === DeviceSurface::CustomerDisplay
-                    && ! $lockedDevice->pairedTerminalDevice()
+                if ($lockedDevice->surface === DeviceSurface::CustomerDisplay) {
+                    $pairedTerminal = Device::query()
+                        ->whereKey($pairedTerminalDeviceId)
                         ->where('location_id', $lockedDevice->location_id)
                         ->where('surface', DeviceSurface::Terminal->value)
                         ->whereNotNull('paired_at')
-                        ->exists()) {
-                    throw ValidationException::withMessages([
-                        'device' => 'Choose an already paired Terminal for this Customer Display before pairing it.',
-                    ]);
+                        ->first();
+
+                    if ($pairedTerminal === null) {
+                        throw ValidationException::withMessages([
+                            'paired_terminal_device_id' => 'Choose an already paired Terminal for this Customer Display.',
+                        ]);
+                    }
+
+                    $lockedDevice->paired_terminal_device_id = $pairedTerminal->id;
+                }
+
+                if ($lockedDevice->surface === DeviceSurface::WallDisplay && $displayId !== null) {
+                    $display = Display::query()
+                        ->whereKey($displayId)
+                        ->where('location_id', $lockedDevice->location_id)
+                        ->first();
+
+                    if ($display === null) {
+                        throw ValidationException::withMessages([
+                            'display_id' => 'Choose a Display for this Wall Display Device.',
+                        ]);
+                    }
+
+                    $lockedDevice->display_id = $display->id;
                 }
 
                 $lockedDevice->paired_at = now();
@@ -61,19 +90,23 @@ class PairDeviceAction extends Action
         }
     }
 
-    public function asController(Request $request, Device $device): Device
+    public function asController(Request $request): Device
     {
         abort_unless(tenant() !== null, 404);
         abort_unless(Auth::guard('staff')->user()?->role === StaffRole::Manager, 403);
         $data = $request->validate($this->rules());
 
-        return $this->handle($device, $data['code']);
+        return $this->handle($data['code'], $data['paired_terminal_device_id'] ?? null, $data['display_id'] ?? null);
     }
 
     /** @return array<string, list<mixed>> */
     public function rules(): array
     {
-        return ['code' => ['required', 'string', 'max:32']];
+        return [
+            'code' => ['required', 'string', 'regex:/^(?:\d{6}|\d{2}-\d{2}-\d{2})$/'],
+            'paired_terminal_device_id' => ['nullable', 'string'],
+            'display_id' => ['nullable', 'string'],
+        ];
     }
 
     public function jsonResponse(Device $device): JsonResponse
@@ -87,7 +120,6 @@ class PairDeviceAction extends Action
     public function asCommand(Command $command): int
     {
         $this->initializeTenancyFromCommand($command);
-        $deviceId = $this->requiredStringInput($command, $command->argument('device'), 'Device ID');
         $code = $command->argument('code');
         $code = $this->optionalStringValue($code, 'code');
 
@@ -95,9 +127,8 @@ class PairDeviceAction extends Action
             $code = $this->requiredStringInput($command, null, 'Pairing code', secret: true);
         }
 
-        $device = Device::query()->findOrFail($deviceId);
-        $this->handle($device, $code);
-        $command->info("Device {$deviceId} paired; it can now redeem its token.");
+        $device = $this->handle($code);
+        $command->info("Device {$device->id} paired; it can now redeem its token.");
 
         return self::SUCCESS;
     }

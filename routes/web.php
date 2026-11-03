@@ -22,7 +22,7 @@ Route::post('/devices/pairing', CompleteDevicePairingAction::class)
     ->middleware('throttle:30,1')
     ->name('devices.pairing.complete');
 
-Route::post('/devices/{device}/pair', PairDeviceAction::class)
+Route::post('/devices/pair', PairDeviceAction::class)
     ->middleware(['auth:staff', 'throttle:10,1'])
     ->name('devices.pair');
 

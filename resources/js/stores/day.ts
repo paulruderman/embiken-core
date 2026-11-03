@@ -52,6 +52,7 @@ export type DaySnapshot = {
     schedule_date: string;
     schedule_starts_at: string;
     schedule_ends_at: string;
+    business_hours: { starts_at: string; ends_at: string }[];
     minimum_turnaround_buffer_minutes: number;
     bike_assignment_policy: string;
     reservation_readiness_window_minutes: number;
@@ -87,6 +88,7 @@ export const useDayStore = defineStore('day', {
         scheduleDate: '',
         scheduleStartsAt: '',
         scheduleEndsAt: '',
+        businessHours: [] as { starts_at: string; ends_at: string }[],
         minimumTurnaroundBufferMinutes: 10,
         bikeAssignmentPolicy: 'terminal',
         currency: 'usd',
@@ -119,9 +121,11 @@ export const useDayStore = defineStore('day', {
             this.scheduleDate = snapshot.schedule_date;
             this.scheduleStartsAt = snapshot.schedule_starts_at;
             this.scheduleEndsAt = snapshot.schedule_ends_at;
+            this.businessHours = snapshot.business_hours;
             this.timezone = snapshot.timezone;
             this.currency = snapshot.currency;
-            this.minimumTurnaroundBufferMinutes = snapshot.minimum_turnaround_buffer_minutes;
+            this.minimumTurnaroundBufferMinutes =
+                snapshot.minimum_turnaround_buffer_minutes;
             this.bikeAssignmentPolicy = snapshot.bike_assignment_policy;
             this.returnSituation = snapshot.return_situation;
             this.reservationReadinessWindowMinutes =

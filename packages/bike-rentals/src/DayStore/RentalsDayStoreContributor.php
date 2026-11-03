@@ -6,6 +6,7 @@ namespace Embiken\BikeRentals\DayStore;
 
 use App\Contracts\DayStoreContributor;
 use App\Models\Location;
+use App\Support\DayStore;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Embiken\BikeFleet\Enums\BikeSituation;
@@ -27,6 +28,9 @@ class RentalsDayStoreContributor implements DayStoreContributor
             ->setTimezone($location->timezone)
             ->startOfDay();
         $dayEnd = $dayStart->addDay();
+        foreach (DayStore::businessHoursForDate($location, $dayStart) as $interval) {
+            $dayEnd = $dayEnd->max(CarbonImmutable::parse($interval['ends_at'])->addHour());
+        }
 
         $occupyingIds = Bike::query()
             ->where('bike_situation_state', '!=', BikeSituation::Home)

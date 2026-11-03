@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Support;
 
 use App\Contracts\DayStoreContributor;
+use App\Enums\Weekday;
 use App\Models\Location;
+use App\Models\LocationHour;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 
@@ -20,6 +22,7 @@ class DayStore
             ->setTimezone($location->timezone)
             ->startOfDay();
         $scheduleEndsAt = $scheduleDate->addDay();
+        $businessHours = self::businessHoursForDate($location, $scheduleDate);
         $modules = [];
 
         $registry = app(ModuleRegistry::class);
@@ -45,6 +48,7 @@ class DayStore
             'schedule_date' => $scheduleDate->toDateString(),
             'schedule_starts_at' => $scheduleDate->utc()->toIso8601String(),
             'schedule_ends_at' => $scheduleEndsAt->utc()->toIso8601String(),
+            'business_hours' => $businessHours,
             'timezone' => $location->timezone,
             'currency' => strtolower($location->currency),
             'minimum_turnaround_buffer_minutes' => $location->minimum_turnaround_buffer_minutes,
@@ -52,5 +56,36 @@ class DayStore
             'reservation_readiness_window_minutes' => $location->reservation_readiness_window_minutes,
             'modules' => $modules,
         ];
+    }
+
+    /**
+     * @return list<array{starts_at: string, ends_at: string}>
+     */
+    public static function businessHoursForDate(Location $location, CarbonImmutable $scheduleDate): array
+    {
+        if ($location->closedDates()->whereDate('date', $scheduleDate->toDateString())->exists()) {
+            return [];
+        }
+
+        $businessHours = $location->hours()
+            ->where('weekday', Weekday::from($scheduleDate->dayOfWeek)->value)
+            ->orderBy('opens_at')
+            ->get()
+            ->map(static function (LocationHour $hour) use ($scheduleDate, $location): array {
+                $startsAt = CarbonImmutable::parse($scheduleDate->toDateString().' '.$hour->opens_at, $location->timezone);
+                $endsAt = CarbonImmutable::parse($scheduleDate->toDateString().' '.$hour->closes_at, $location->timezone);
+
+                if ($hour->closes_next_day) {
+                    $endsAt = $endsAt->addDay();
+                }
+
+                return [
+                    'starts_at' => $startsAt->utc()->toIso8601String(),
+                    'ends_at' => $endsAt->utc()->toIso8601String(),
+                ];
+            })
+            ->all();
+
+        return array_values($businessHours);
     }
 }

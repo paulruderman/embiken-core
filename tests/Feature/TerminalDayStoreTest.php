@@ -3,6 +3,8 @@
 use App\Events\LocationBikePatched;
 use App\Events\LocationReservationPatched;
 use App\Models\Location;
+use App\Models\LocationClosedDate;
+use App\Models\LocationHour;
 use App\Support\DayStore;
 use Carbon\CarbonImmutable;
 use Embiken\BikeFleet\Enums\BikeSituation;
@@ -108,6 +110,36 @@ test('the day store can hydrate reservations for a selected shop date', function
     expect($snapshot['schedule_date'])->toBe('2026-11-05')
         ->and($reservationIds)->toContain($selectedReservation->id)
         ->and($reservationIds)->not->toContain($otherReservation->id);
+});
+
+test('the day store includes selected date business hours as UTC intervals', function () {
+    $location = Location::factory()->create(['timezone' => 'America/New_York']);
+    $selectedDay = CarbonImmutable::parse('2026-11-05 00:00:00', $location->timezone);
+    LocationHour::factory()->for($location)->create([
+        'weekday' => 4,
+        'opens_at' => '09:00:00',
+        'closes_at' => '17:00:00',
+    ]);
+
+    $snapshot = DayStore::forLocation($location, $selectedDay);
+
+    expect($snapshot['business_hours'])->toBe([
+        [
+            'starts_at' => '2026-11-05T14:00:00+00:00',
+            'ends_at' => '2026-11-05T22:00:00+00:00',
+        ],
+    ]);
+});
+
+test('the day store has no business hours on a closed date', function () {
+    $location = Location::factory()->create(['timezone' => 'America/New_York']);
+    $selectedDay = CarbonImmutable::parse('2026-11-05 00:00:00', $location->timezone);
+    LocationHour::factory()->for($location)->create(['weekday' => 4]);
+    LocationClosedDate::factory()->for($location)->create(['date' => '2026-11-05']);
+
+    $snapshot = DayStore::forLocation($location, $selectedDay);
+
+    expect($snapshot['business_hours'])->toBe([]);
 });
 
 test('catalog photos fall back from bike through variant model and category', function () {

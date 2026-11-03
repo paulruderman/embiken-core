@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { getEnumLabel, getStatusBadgeClasses } from '@/lib/enums';
 import {
@@ -59,10 +59,24 @@ const emit = defineEmits<{
 }>();
 
 const day = useDayStore();
+const nowTimestamp = ref(Date.now());
+let clockInterval: number | undefined;
+
+onMounted(() => {
+    clockInterval = window.setInterval(() => {
+        nowTimestamp.value = Date.now();
+    }, 60_000);
+});
+
+onUnmounted(() => {
+    if (clockInterval !== undefined) {
+        window.clearInterval(clockInterval);
+    }
+});
 
 const scheduleHours = computed(() => {
-    const start = Date.parse(day.scheduleStartsAt);
-    const end = Date.parse(day.scheduleEndsAt);
+    const start = plannerWindow.value.startsAt;
+    const end = plannerWindow.value.endsAt;
     const hours: { timestamp: number; label: string }[] = [];
 
     for (let timestamp = start; timestamp < end; timestamp += 60 * 60 * 1000) {
@@ -73,6 +87,121 @@ const scheduleHours = computed(() => {
     }
 
     return hours;
+});
+
+const scheduleColumnTemplate = computed(() => {
+    const hour = 60 * 60 * 1000;
+
+    return scheduleHours.value
+        .map((slot) => {
+            const slotDuration =
+                Math.min(slot.timestamp + hour, plannerWindow.value.endsAt) -
+                slot.timestamp;
+
+            return `${slotDuration / hour}fr`;
+        })
+        .join(' ');
+});
+
+const scheduleGridSize = computed(() => {
+    const duration = plannerWindow.value.endsAt - plannerWindow.value.startsAt;
+
+    return `${((60 * 60 * 1000) / duration) * 100}% 100%`;
+});
+
+const plannerWindow = computed(() => {
+    const calendarStart = Date.parse(day.scheduleStartsAt);
+    const calendarEnd = Date.parse(day.scheduleEndsAt);
+    const businessStart =
+        day.businessHours.length > 0
+            ? Math.min(
+                  ...day.businessHours.map((interval) =>
+                      Date.parse(interval.starts_at),
+                  ),
+              )
+            : calendarStart;
+    const businessClose =
+        day.businessHours.length > 0
+            ? Math.max(
+                  ...day.businessHours.map((interval) =>
+                      Date.parse(interval.ends_at),
+                  ),
+              )
+            : calendarEnd;
+    const hour = 60 * 60 * 1000;
+    const endsAt =
+        day.businessHours.length > 0 ? businessClose + hour : calendarEnd;
+    let startsAt = Math.floor(businessStart / hour) * hour;
+
+    if (props.assignment !== undefined && isViewingToday.value) {
+        const currentHour = Math.floor(nowTimestamp.value / hour) * hour;
+        startsAt = Math.max(startsAt, currentHour);
+
+        if (startsAt >= endsAt) {
+            startsAt = Math.max(
+                Math.floor(businessStart / hour) * hour,
+                endsAt - hour,
+            );
+        }
+    }
+
+    return { startsAt, endsAt };
+});
+
+const businessHighlightStyles = computed(() => {
+    if (day.businessHours.length === 0) {
+        return [];
+    }
+
+    const now = nowTimestamp.value;
+    const isToday = isViewingToday.value;
+    const today = new Intl.DateTimeFormat('en-CA', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        timeZone: day.timezone,
+    }).format(new Date());
+
+    if (day.scheduleDate < today) {
+        return [];
+    }
+
+    const duration = plannerWindow.value.endsAt - plannerWindow.value.startsAt;
+
+    return day.businessHours.flatMap((interval) => {
+        const intervalStart = Date.parse(interval.starts_at);
+        const intervalEnd = Date.parse(interval.ends_at);
+        const start = Math.max(
+            isToday ? Math.max(now, intervalStart) : intervalStart,
+            plannerWindow.value.startsAt,
+        );
+        const end = Math.min(intervalEnd, plannerWindow.value.endsAt);
+
+        if (end <= start) {
+            return [];
+        }
+
+        return [
+            {
+                left: `${((start - plannerWindow.value.startsAt) / duration) * 100}%`,
+                width: `${((end - start) / duration) * 100}%`,
+            },
+        ];
+    });
+});
+
+const currentTimeMarkerStyle = computed(() => {
+    const startsAt = plannerWindow.value.startsAt;
+    const endsAt = plannerWindow.value.endsAt;
+    const now = nowTimestamp.value;
+
+    if (!isViewingToday.value || now < startsAt || now >= endsAt) {
+        return undefined;
+    }
+
+    return {
+        left: `${((now - startsAt) / (endsAt - startsAt)) * 100}%`,
+    };
 });
 
 const plannerBoard = computed(() =>
@@ -171,8 +300,8 @@ function reservationOverlapsSchedule(
     reservation: DayReservation,
     bufferMinutes: number,
 ): boolean {
-    const scheduleStart = Date.parse(day.scheduleStartsAt);
-    const scheduleEnd = Date.parse(day.scheduleEndsAt);
+    const scheduleStart = plannerWindow.value.startsAt;
+    const scheduleEnd = plannerWindow.value.endsAt;
     const reservationStart = Date.parse(reservation.starts_at);
     const occupiedUntil =
         Date.parse(reservation.ends_at) + bufferMinutes * 60_000;
@@ -185,8 +314,8 @@ function plannerSegmentStyle(
     endsAt: string,
     laneIndex: number,
 ): Record<string, string> {
-    const dayStart = Date.parse(day.scheduleStartsAt);
-    const dayEnd = Date.parse(day.scheduleEndsAt);
+    const dayStart = plannerWindow.value.startsAt;
+    const dayEnd = plannerWindow.value.endsAt;
     const duration = Math.max(dayEnd - dayStart, 1);
     const segmentStart = Math.max(Date.parse(startsAt), dayStart);
     const segmentEnd = Math.min(Math.max(Date.parse(endsAt), dayStart), dayEnd);
@@ -238,8 +367,8 @@ function reservationRentalOverlapsSchedule(
     reservation: DayReservation,
 ): boolean {
     return (
-        Date.parse(reservation.starts_at) < Date.parse(day.scheduleEndsAt) &&
-        Date.parse(reservation.ends_at) >= Date.parse(day.scheduleStartsAt)
+        Date.parse(reservation.starts_at) < plannerWindow.value.endsAt &&
+        Date.parse(reservation.ends_at) >= plannerWindow.value.startsAt
     );
 }
 
@@ -377,15 +506,28 @@ function selectReservation(reservation: DayReservation): void {
                         {{ ui.planner_situation }}
                     </div>
                     <div
-                        class="grid min-h-8"
+                        class="relative grid min-h-8"
                         :style="{
-                            gridTemplateColumns: `repeat(${scheduleHours.length}, minmax(3rem, 1fr))`,
+                            gridTemplateColumns: scheduleColumnTemplate,
                         }"
                     >
                         <div
+                            v-for="(
+                                highlight, index
+                            ) in businessHighlightStyles"
+                            :key="`header-highlight-${index}`"
+                            class="pointer-events-none absolute inset-y-0 z-0 bg-white/[0.025]"
+                            :style="highlight"
+                        ></div>
+                        <div
+                            v-if="currentTimeMarkerStyle"
+                            class="pointer-events-none absolute inset-y-0 z-20 w-0.5 bg-emerald-400"
+                            :style="currentTimeMarkerStyle"
+                        ></div>
+                        <div
                             v-for="hour in scheduleHours"
                             :key="hour.timestamp"
-                            class="flex items-center border-l border-zinc-800 px-2 text-xs font-semibold text-zinc-400"
+                            class="relative z-10 flex items-center border-l border-zinc-800 px-2 text-xs font-semibold text-zinc-400"
                         >
                             {{ hour.label }}
                         </div>
@@ -483,9 +625,22 @@ function selectReservation(reservation: DayReservation): void {
                             height: plannerLaneHeight(lines),
                             backgroundImage:
                                 'linear-gradient(to right, rgba(63, 63, 70, 0.45) 1px, transparent 1px)',
-                            backgroundSize: `${100 / Math.max(scheduleHours.length, 1)}% 100%`,
+                            backgroundSize: scheduleGridSize,
                         }"
                     >
+                        <div
+                            v-for="(
+                                highlight, index
+                            ) in businessHighlightStyles"
+                            :key="`lane-highlight-${index}`"
+                            class="pointer-events-none absolute inset-y-0 z-0 bg-white/[0.025]"
+                            :style="highlight"
+                        ></div>
+                        <div
+                            v-if="currentTimeMarkerStyle"
+                            class="pointer-events-none absolute inset-y-0 z-20 w-0.5 bg-emerald-400"
+                            :style="currentTimeMarkerStyle"
+                        ></div>
                         <template
                             v-for="(item, index) in lines"
                             :key="item.line.id"
@@ -494,10 +649,10 @@ function selectReservation(reservation: DayReservation): void {
                                 v-if="
                                     item.buffer_minutes > 0 &&
                                     Date.parse(item.reservation.ends_at) <
-                                        Date.parse(day.scheduleEndsAt) &&
+                                        plannerWindow.endsAt &&
                                     Date.parse(item.reservation.ends_at) +
                                         item.buffer_minutes * 60000 >=
-                                        Date.parse(day.scheduleStartsAt)
+                                        plannerWindow.startsAt
                                 "
                                 class="absolute z-0 rounded-r border-y border-r border-amber-300/50 bg-amber-300/20"
                                 :style="plannerBufferStyle(item, index)"
@@ -599,17 +754,30 @@ function selectReservation(reservation: DayReservation): void {
                             :style="{
                                 backgroundImage:
                                     'linear-gradient(to right, rgba(63, 63, 70, 0.45) 1px, transparent 1px)',
-                                backgroundSize: `${100 / Math.max(scheduleHours.length, 1)}% 100%`,
+                                backgroundSize: scheduleGridSize,
                             }"
                         >
+                            <div
+                                v-for="(
+                                    highlight, highlightIndex
+                                ) in businessHighlightStyles"
+                                :key="`unassigned-highlight-${highlightIndex}`"
+                                class="pointer-events-none absolute inset-y-0 z-0 bg-white/[0.025]"
+                                :style="highlight"
+                            ></div>
+                            <div
+                                v-if="currentTimeMarkerStyle"
+                                class="pointer-events-none absolute inset-y-0 z-20 w-0.5 bg-emerald-400"
+                                :style="currentTimeMarkerStyle"
+                            ></div>
                             <div
                                 v-if="
                                     item.buffer_minutes > 0 &&
                                     Date.parse(item.reservation.ends_at) <
-                                        Date.parse(day.scheduleEndsAt) &&
+                                        plannerWindow.endsAt &&
                                     Date.parse(item.reservation.ends_at) +
                                         item.buffer_minutes * 60000 >=
-                                        Date.parse(day.scheduleStartsAt)
+                                        plannerWindow.startsAt
                                 "
                                 class="absolute z-0 h-8 rounded-r border-y border-r border-amber-300/50 bg-amber-300/20"
                                 :style="plannerBufferStyle(item, index)"

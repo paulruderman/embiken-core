@@ -221,7 +221,7 @@ function submit(): void {
                         </label>
                         <label class="grid gap-2 text-sm font-medium">
                             {{ ui.country_code }}
-                            <input v-model="form.country_code" maxlength="2" pattern="[A-Za-z]{2}" autocomplete="country" class="rounded-xl border border-zinc-300 bg-white px-4 py-3 uppercase outline-none focus:ring-4 focus:ring-emerald-700/20" />
+                            <input v-model="form.country_code" maxlength="2" pattern="[A-Za-z]{2}" placeholder="US" autocomplete="off" class="rounded-xl border border-zinc-300 bg-white px-4 py-3 uppercase outline-none focus:ring-4 focus:ring-emerald-700/20" />
                             <span v-if="form.errors.country_code" class="text-sm font-normal text-red-700">{{ form.errors.country_code }}</span>
                         </label>
                     </fieldset>

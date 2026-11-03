@@ -204,7 +204,7 @@ test('the Location address merge tag publishes the address only when the Manager
             ->where('isConfigured', true));
 
     $shop['tenant']->run(function (): void {
-        ShopLandingPage::current()->update([
+        ShopLandingPage::query()->firstOrFail()->update([
             'custom_content' => [
                 'type' => 'doc',
                 'content' => [[

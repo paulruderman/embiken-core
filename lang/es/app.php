@@ -263,7 +263,7 @@ return [
     ],
     'shop_content_ui' => [
         'location_address_tag' => 'Dirección de la ubicación',
-        'merge_tags_help' => 'Inserta una etiqueta de contenido para mostrar los datos actuales de la ubicación. Las etiquetas sin un valor configurado se omiten de la página pública.',
+        'merge_tags_help' => 'Inserta una etiqueta de contenido para mostrar los datos actuales de la ubicación. Una etiqueta sin valor configurado aparece como texto vacío.',
         'configure_feature_block' => 'Configurar el bloque de características de la tienda',
         'configure_callout_block' => 'Configurar el bloque destacado de la tienda',
         'save_home_page' => 'Guardar página de inicio',

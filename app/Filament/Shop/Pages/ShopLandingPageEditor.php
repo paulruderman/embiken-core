@@ -9,6 +9,7 @@ use App\Filament\Forms\Components\RichEditor\RichContentCustomBlocks\ShopFeature
 use App\Models\ShopLandingPage;
 use App\Models\Staff;
 use App\Support\Locales;
+use App\Support\ShopContentTags;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
@@ -237,9 +238,7 @@ class ShopLandingPageEditor extends Page
         return RichEditor::make("custom_content.{$locale}")
             ->label(__('app.shop_home.page_sections'))
             ->helperText(__('app.shop_content_ui.merge_tags_help'))
-            ->mergeTags([
-                'location_address' => __('app.shop_content_ui.location_address_tag'),
-            ])
+            ->mergeTags(ShopContentTags::editorLabels())
             ->customBlocks([ShopCalloutBlock::class, ShopFeatureBlock::class]);
     }
 

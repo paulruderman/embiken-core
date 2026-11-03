@@ -263,7 +263,7 @@ return [
     ],
     'shop_content_ui' => [
         'location_address_tag' => 'Adresse de l’établissement',
-        'merge_tags_help' => 'Insérez un contenu dynamique pour afficher les données actuelles de l’établissement. Les contenus sans valeur configurée sont omis de la page publique.',
+        'merge_tags_help' => 'Insérez un contenu dynamique pour afficher les données actuelles de l’établissement. Un contenu sans valeur configurée apparaît comme un texte vide.',
         'configure_feature_block' => 'Configurer le bloc de fonctionnalités de la boutique',
         'configure_callout_block' => 'Configurer le bloc d’appel de la boutique',
         'save_home_page' => 'Enregistrer la page d’accueil',

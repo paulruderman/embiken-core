@@ -263,7 +263,7 @@ return [
     ],
     'shop_content_ui' => [
         'location_address_tag' => 'Location address',
-        'merge_tags_help' => 'Insert a content tag to show current Location data. Tags with no configured value are omitted from the public page.',
+        'merge_tags_help' => 'Insert a content tag to show current Location data. A tag with no configured value renders as empty text.',
         'configure_feature_block' => 'Configure the shop feature block',
         'configure_callout_block' => 'Configure the shop callout block',
         'save_home_page' => 'Save home page',

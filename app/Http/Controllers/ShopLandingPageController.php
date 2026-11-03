@@ -9,6 +9,7 @@ use App\Models\ShopLandingPage;
 use App\Models\ShopSetting;
 use App\Support\BrandColor;
 use App\Support\Locales;
+use App\Support\ShopContentTags;
 use Filament\Forms\Components\RichEditor\RichContentRenderer;
 use Inertia\Response as InertiaResponse;
 use Symfony\Component\HtmlSanitizer\HtmlSanitizer;
@@ -20,7 +21,8 @@ class ShopLandingPageController extends Controller
     {
         $page = ShopLandingPage::current();
         $settings = ShopSetting::query()->first();
-        $shopName = $settings?->brand_name ?: Location::query()->value('name') ?: (string) tenant()->name;
+        $location = Location::query()->first();
+        $shopName = $settings?->brand_name ?: $location?->name ?: (string) tenant()->name;
         $locale = app()->getLocale();
         $storedLayoutData = $page->layout_data ?? [];
         $defaultLocale = Locales::tenantDefaultContentLocale();
@@ -40,9 +42,7 @@ class ShopLandingPageController extends Controller
             : $customContent;
         $contentHtml = $customContent
             ? RichContentRenderer::make($customContent)
-                ->mergeTags([
-                    'location_address' => Location::query()->first()?->formattedAddress() ?? '',
-                ])
+                ->mergeTags(ShopContentTags::values($location))
                 ->customBlocks([ShopCalloutBlock::class, ShopFeatureBlock::class])
                 ->toHtml()
             : '';

@@ -7,9 +7,9 @@ use App\Support\ModuleRegistry;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
-use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\GridDirection;
 use Illuminate\Support\HtmlString;
@@ -29,6 +29,7 @@ class TenantForm
                     ->maxLength(255)
                     ->visibleOn('create'),
                 TextInput::make('timezone')
+                    ->label(__('app.location_ui.timezone'))
                     ->required()
                     ->default('America/New_York')
                     ->visibleOn('create'),

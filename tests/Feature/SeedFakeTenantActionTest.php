@@ -129,6 +129,7 @@ test('seeding a fake tenant creates a shop the platform user and staff can use',
 
         expect($user)->toBeNull()
             ->and(Domain::query()->where('domain', 'harbor-demo.test')->exists())->toBeTrue()
+            ->and($tenant->moduleIds())->toContain('embiken/weather')
             ->and($tenant->charges_enabled)->toBeFalse()
             ->and($tenant->transfers_active)->toBeFalse();
 

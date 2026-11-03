@@ -38,6 +38,10 @@ _Avoid_: account, shop (when you mean the Tenant row), organization
 A store in the tenant database. v1: exactly one per Tenant.
 _Avoid_: tenant, station, branch as a second tenancy
 
+**Content tag**:
+A named reference to supported shop data that a Manager inserts into shop-managed public content; it resolves when the page is rendered.
+_Avoid_: arbitrary template code
+
 **Domain**:
 A host name row for a Tenant (subdomain at create; custom hosts added later).
 _Avoid_: URL, site

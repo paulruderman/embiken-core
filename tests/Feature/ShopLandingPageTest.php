@@ -182,6 +182,60 @@ test('the tenant home renders rich editor custom blocks as safe html', function 
                 && ! str_contains($html, '<script>')));
 });
 
+test('the Location address merge tag publishes the address only when the Manager inserts it', function () {
+    $shop = makeShopLandingTenant('landing-address-tag.localhost');
+    $this->landingTenant = $shop['tenant'];
+
+    $shop['tenant']->run(function (): void {
+        Location::query()->firstOrFail()->update([
+            'address_line_1' => '42 Atlantic Avenue',
+            'city' => 'Boston',
+            'administrative_area' => 'MA',
+            'postal_code' => '02110',
+            'country_code' => 'US',
+        ]);
+        ShopLandingPage::factory()->create(['custom_content' => null]);
+    });
+
+    $this->withoutVite()
+        ->get('http://landing-address-tag.localhost')
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('contentHtml', '')
+            ->where('isConfigured', true));
+
+    $shop['tenant']->run(function (): void {
+        ShopLandingPage::current()->update([
+            'custom_content' => [
+                'type' => 'doc',
+                'content' => [[
+                    'type' => 'paragraph',
+                    'content' => [[
+                        'type' => 'text',
+                        'text' => 'Visit us at {{ location_address }}.',
+                    ]],
+                ]],
+            ],
+        ]);
+    });
+
+    $this->withoutVite()
+        ->get('http://landing-address-tag.localhost')
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('contentHtml', fn (mixed $html): bool => is_string($html)
+                && str_contains($html, 'Visit us at 42 Atlantic Avenue, Boston, MA 02110, US.')));
+
+    $shop['tenant']->run(function (): void {
+        Location::query()->firstOrFail()->update(['address_line_1' => '<script>alert(1)</script>']);
+    });
+
+    $this->withoutVite()
+        ->get('http://landing-address-tag.localhost')
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('contentHtml', fn (mixed $html): bool => is_string($html)
+                && ! str_contains($html, '<script>')
+                && str_contains($html, '&lt;script&gt;')));
+});
+
 test('the booking page renders tenant booking notices', function () {
     $shop = makeShopLandingTenant('landing-book.localhost');
     $this->landingTenant = $shop['tenant'];

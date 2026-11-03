@@ -236,6 +236,10 @@ class ShopLandingPageEditor extends Page
     {
         return RichEditor::make("custom_content.{$locale}")
             ->label(__('app.shop_home.page_sections'))
+            ->helperText(__('app.shop_content_ui.merge_tags_help'))
+            ->mergeTags([
+                'location_address' => __('app.shop_content_ui.location_address_tag'),
+            ])
             ->customBlocks([ShopCalloutBlock::class, ShopFeatureBlock::class]);
     }
 

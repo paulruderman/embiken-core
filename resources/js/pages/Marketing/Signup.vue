@@ -15,13 +15,24 @@ interface Plan {
     features: string[];
 }
 
-const props = defineProps<{ plan: Plan; domainSuffix: string; contactEmail: string }>();
+const props = defineProps<{
+    plan: Plan;
+    domainSuffix: string;
+    contactEmail: string;
+    ui: Record<string, string>;
+}>();
 const form = useForm({
     plan: props.plan.slug,
     name: '',
     shop_slug: '',
     timezone: 'America/New_York',
     currency: 'usd',
+    address_line_1: '',
+    address_line_2: '',
+    city: '',
+    administrative_area: '',
+    postal_code: '',
+    country_code: '',
     manager_name: '',
     manager_email: '',
 });
@@ -141,7 +152,7 @@ function submit(): void {
                         >
                     </label>
                     <label class="grid gap-2 text-sm font-medium"
-                        >Shop address
+                        >{{ ui.shop_web_address }}
                         <div
                             class="flex items-center rounded-xl border border-zinc-300 bg-white focus-within:ring-4 focus-within:ring-emerald-700/20"
                         >
@@ -168,6 +179,52 @@ function submit(): void {
                             >Your shop will be at {{ shopSlugLabel }}</span
                         >
                     </label>
+                    <label class="grid gap-2 text-sm font-medium">
+                        {{ ui.timezone }}
+                        <input
+                            v-model="form.timezone"
+                            required
+                            maxlength="64"
+                            autocomplete="off"
+                            class="rounded-xl border border-zinc-300 bg-white px-4 py-3 outline-none focus:ring-4 focus:ring-emerald-700/20"
+                        />
+                        <span class="text-xs font-normal text-zinc-500">{{ ui.timezone_help }}</span>
+                        <span v-if="form.errors.timezone" class="text-sm font-normal text-red-700">{{ form.errors.timezone }}</span>
+                    </label>
+                    <fieldset class="grid gap-4 rounded-2xl border border-zinc-200 p-4 sm:grid-cols-2">
+                        <legend class="px-2 text-sm font-semibold">{{ ui.location_address_optional }}</legend>
+                        <p class="text-xs font-normal leading-5 text-zinc-500 sm:col-span-2">{{ ui.location_address_help }}</p>
+                        <label class="grid gap-2 text-sm font-medium sm:col-span-2">
+                            {{ ui.address_line_1 }}
+                            <input v-model="form.address_line_1" maxlength="255" autocomplete="address-line1" class="rounded-xl border border-zinc-300 bg-white px-4 py-3 outline-none focus:ring-4 focus:ring-emerald-700/20" />
+                            <span v-if="form.errors.address_line_1" class="text-sm font-normal text-red-700">{{ form.errors.address_line_1 }}</span>
+                        </label>
+                        <label class="grid gap-2 text-sm font-medium sm:col-span-2">
+                            {{ ui.address_line_2 }}
+                            <input v-model="form.address_line_2" maxlength="255" autocomplete="address-line2" class="rounded-xl border border-zinc-300 bg-white px-4 py-3 outline-none focus:ring-4 focus:ring-emerald-700/20" />
+                            <span v-if="form.errors.address_line_2" class="text-sm font-normal text-red-700">{{ form.errors.address_line_2 }}</span>
+                        </label>
+                        <label class="grid gap-2 text-sm font-medium">
+                            {{ ui.city }}
+                            <input v-model="form.city" maxlength="255" autocomplete="address-level2" class="rounded-xl border border-zinc-300 bg-white px-4 py-3 outline-none focus:ring-4 focus:ring-emerald-700/20" />
+                            <span v-if="form.errors.city" class="text-sm font-normal text-red-700">{{ form.errors.city }}</span>
+                        </label>
+                        <label class="grid gap-2 text-sm font-medium">
+                            {{ ui.administrative_area }}
+                            <input v-model="form.administrative_area" maxlength="255" autocomplete="address-level1" class="rounded-xl border border-zinc-300 bg-white px-4 py-3 outline-none focus:ring-4 focus:ring-emerald-700/20" />
+                            <span v-if="form.errors.administrative_area" class="text-sm font-normal text-red-700">{{ form.errors.administrative_area }}</span>
+                        </label>
+                        <label class="grid gap-2 text-sm font-medium">
+                            {{ ui.postal_code }}
+                            <input v-model="form.postal_code" maxlength="32" autocomplete="postal-code" class="rounded-xl border border-zinc-300 bg-white px-4 py-3 outline-none focus:ring-4 focus:ring-emerald-700/20" />
+                            <span v-if="form.errors.postal_code" class="text-sm font-normal text-red-700">{{ form.errors.postal_code }}</span>
+                        </label>
+                        <label class="grid gap-2 text-sm font-medium">
+                            {{ ui.country_code }}
+                            <input v-model="form.country_code" maxlength="2" pattern="[A-Za-z]{2}" autocomplete="country" class="rounded-xl border border-zinc-300 bg-white px-4 py-3 uppercase outline-none focus:ring-4 focus:ring-emerald-700/20" />
+                            <span v-if="form.errors.country_code" class="text-sm font-normal text-red-700">{{ form.errors.country_code }}</span>
+                        </label>
+                    </fieldset>
                     <label class="grid gap-2 text-sm font-medium"
                         >Manager name
                         <input

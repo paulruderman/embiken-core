@@ -2,6 +2,12 @@
   "shop": {
     "name": "Harbor City Bikes",
     "customer_contact_email": "rentals@harbor-city-bikes.example",
+    "address_line_1": "42 Atlantic Avenue",
+    "address_line_2": null,
+    "city": "Boston",
+    "administrative_area": "MA",
+    "postal_code": "02110",
+    "country_code": "US",
     "timezone": "America/New_York",
     "currency": "usd",
     "minimum_turnaround_buffer_minutes": 10,

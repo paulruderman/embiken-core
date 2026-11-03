@@ -6,6 +6,7 @@ namespace Embiken\BikeRentals\Filament\Pages;
 
 use App\Enums\StaffRole;
 use App\Models\Staff;
+use App\Support\ModuleRegistry;
 use Embiken\BikeRentals\Actions\ImportPackageRatesAction;
 use Embiken\BikeRentals\BikeRentalsModule;
 use Embiken\BikeRentals\Models\PackageRateImportRun;
@@ -27,7 +28,7 @@ class PackageRateImportPage extends Page
 {
     protected static string|\BackedEnum|null $navigationIcon = Heroicon::OutlinedCurrencyDollar;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Rentals';
+    protected static string|\UnitEnum|null $navigationGroup = 'Data Imports';
 
     protected static ?int $navigationSort = 6;
 
@@ -54,7 +55,14 @@ class PackageRateImportPage extends Page
     {
         $staff = Filament::auth()->user();
 
-        return $staff instanceof Staff && $staff->role === StaffRole::Manager;
+        return $staff instanceof Staff
+            && $staff->role === StaffRole::Manager
+            && app(ModuleRegistry::class)->isEnabled(static::tenantModuleId());
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
     }
 
     public function mount(): void

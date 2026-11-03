@@ -83,6 +83,7 @@ class ShopPanelProvider extends PanelProvider
             ->navigationGroups([
                 'Fleet' => NavigationGroup::make()->label(fn (): string => __('app.navigation.fleet')),
                 'Rentals' => NavigationGroup::make()->label(fn (): string => __('app.navigation.rentals')),
+                'Data Imports' => NavigationGroup::make()->label(fn (): string => __('app.navigation.data_imports')),
                 'Online Book' => NavigationGroup::make()->label(fn (): string => __('app.navigation.online_book')),
                 'Weather' => NavigationGroup::make()->label(fn (): string => __('app.navigation.weather')),
                 'Shop settings' => NavigationGroup::make()->label(fn (): string => __('app.navigation.shop_settings')),

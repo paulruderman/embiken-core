@@ -18,6 +18,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $id
  * @property string $name
  * @property string $timezone
+ * @property string|null $address_line_1
+ * @property string|null $address_line_2
+ * @property string|null $city
+ * @property string|null $administrative_area
+ * @property string|null $postal_code
+ * @property string|null $country_code
  * @property string $week_start_day
  * @property string|null $customer_contact_email
  * @property string $currency
@@ -33,6 +39,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable([
     'name',
     'timezone',
+    'address_line_1',
+    'address_line_2',
+    'city',
+    'administrative_area',
+    'postal_code',
+    'country_code',
     'week_start_day',
     'customer_contact_email',
     'currency',
@@ -54,6 +66,22 @@ class Location extends Model
     {
         static::saving(function (Location $location): void {
             $location->currency = strtolower(trim($location->currency));
+
+            foreach ([
+                'address_line_1',
+                'address_line_2',
+                'city',
+                'administrative_area',
+                'postal_code',
+            ] as $attribute) {
+                $value = $location->getAttribute($attribute);
+                $location->setAttribute($attribute, is_string($value) && trim($value) !== '' ? trim($value) : null);
+            }
+
+            $countryCode = $location->country_code;
+            $location->country_code = is_string($countryCode) && trim($countryCode) !== ''
+                ? strtoupper(trim($countryCode))
+                : null;
         });
     }
 
@@ -87,6 +115,28 @@ class Location extends Model
     public function getDefaultContentLocaleAttribute(mixed $value): string
     {
         return in_array($value, $this->enabled_content_locales, true) ? $value : $this->enabled_content_locales[0];
+    }
+
+    public function formattedAddress(): string
+    {
+        $street = array_values(array_filter([
+            trim((string) $this->address_line_1),
+            trim((string) $this->address_line_2),
+        ]));
+        $locality = trim(implode(', ', array_filter([
+            trim((string) $this->city),
+            trim((string) $this->administrative_area),
+        ])));
+        $locality = trim(implode(' ', array_filter([
+            $locality,
+            trim((string) $this->postal_code),
+        ])));
+
+        return implode(', ', array_values(array_filter([
+            ...$street,
+            $locality,
+            strtoupper(trim((string) $this->country_code)),
+        ])));
     }
 
     /**

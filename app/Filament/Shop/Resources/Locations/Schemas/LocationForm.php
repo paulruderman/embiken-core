@@ -11,6 +11,7 @@ use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Text;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Schema as SchemaFacade;
@@ -28,7 +29,38 @@ class LocationForm
                     ->required()
                     ->maxLength(255),
                 TextInput::make('timezone')
+                    ->label(__('app.location_ui.timezone'))
                     ->required(),
+                Section::make(__('app.location_ui.address'))
+                    ->description(__('app.location_ui.address_help'))
+                    ->columns(2)
+                    ->schema([
+                        TextInput::make('address_line_1')
+                            ->label(__('app.location_ui.address_line_1'))
+                            ->maxLength(255)
+                            ->nullable(),
+                        TextInput::make('address_line_2')
+                            ->label(__('app.location_ui.address_line_2'))
+                            ->maxLength(255)
+                            ->nullable(),
+                        TextInput::make('city')
+                            ->label(__('app.location_ui.city'))
+                            ->maxLength(255)
+                            ->nullable(),
+                        TextInput::make('administrative_area')
+                            ->label(__('app.location_ui.administrative_area'))
+                            ->maxLength(255)
+                            ->nullable(),
+                        TextInput::make('postal_code')
+                            ->label(__('app.location_ui.postal_code'))
+                            ->maxLength(32)
+                            ->nullable(),
+                        TextInput::make('country_code')
+                            ->label(__('app.location_ui.country_code'))
+                            ->length(2)
+                            ->regex('/^[A-Za-z]{2}$/')
+                            ->nullable(),
+                    ]),
                 Select::make('week_start_day')
                     ->label(__('app.location_ui.week_start_day'))
                     ->helperText(__('app.location_ui.week_start_day_help'))

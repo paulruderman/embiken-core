@@ -108,6 +108,34 @@ test('a manager can configure the customer reply email for the shop', function (
     expect($location->fresh()->customer_contact_email)->toBe('rentals@riverbikes.example');
 });
 
+test('a manager can configure the physical Location address', function () {
+    $location = Location::factory()->create(['name' => 'River Bikes']);
+    $staff = Staff::factory()->create(['location_id' => $location->id]);
+
+    $this->actingAs($staff, 'staff');
+
+    Livewire::test(EditLocation::class, ['record' => $location->id])
+        ->assertOk()
+        ->assertSee(__('app.location_ui.address'))
+        ->fillForm([
+            'address_line_1' => '42 Atlantic Avenue',
+            'address_line_2' => 'Suite 8',
+            'city' => 'Boston',
+            'administrative_area' => 'MA',
+            'postal_code' => '02110',
+            'country_code' => 'us',
+        ])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect($location->fresh()->address_line_1)->toBe('42 Atlantic Avenue')
+        ->and($location->fresh()->address_line_2)->toBe('Suite 8')
+        ->and($location->fresh()->city)->toBe('Boston')
+        ->and($location->fresh()->administrative_area)->toBe('MA')
+        ->and($location->fresh()->postal_code)->toBe('02110')
+        ->and($location->fresh()->country_code)->toBe('US');
+});
+
 test('a manager can configure the first day of the shop week', function () {
     $location = Location::factory()->create(['name' => 'River Bikes']);
     $staff = Staff::factory()->create(['location_id' => $location->id]);

@@ -10,6 +10,7 @@ use App\Models\Location;
 use App\Models\Staff;
 use App\Models\Tenant;
 use App\Services\LocationMetadataImport;
+use App\Support\ModuleRegistry;
 use Embiken\BikeFleet\Enums\BikeSituation;
 use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeFleet\Models\BikeModelVariant;
@@ -33,6 +34,7 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Embiken\Weather\Models\WeatherSite;
 use RuntimeException;
 
 class SeedFakeTenantAction extends Action
@@ -128,6 +130,13 @@ class SeedFakeTenantAction extends Action
             'Mina Manager',
             'manager@example.com',
         );
+
+        $tenant->forceFill([
+            'modules' => app(ModuleRegistry::class)->normalizeModuleIds([
+                ...$tenant->moduleIds(),
+                'embiken/weather',
+            ]),
+        ])->save();
 
         $tenant->run(function () use ($timezone, $profile, $metadataJson, $resume): void {
             $this->seedShop($timezone, $profile, $metadataJson, $resume);
@@ -266,6 +275,7 @@ class SeedFakeTenantAction extends Action
     private function seedShop(string $timezone, string $profile, string $metadataJson, bool $resume): void
     {
         $location = Location::query()->firstOrFail();
+        $this->seedWeatherSites($profile);
 
         if ($resume && (Customer::query()->exists() || Reservation::query()->exists())) {
             $catalogFiles = $this->readDemoCsvFiles($profile, ['categories', 'models', 'variants']);
@@ -322,6 +332,63 @@ class SeedFakeTenantAction extends Action
         $parked = $bikes->last();
         $parked->in_service = false;
         $parked->save();
+    }
+
+    private function seedWeatherSites(string $profile): void
+    {
+        $path = database_path("seeders/demo-tenants/{$profile}/weather-sites.json");
+        $contents = file_get_contents($path);
+
+        if ($contents === false) {
+            throw new RuntimeException("The demo weather sites file {$path} could not be read.");
+        }
+
+        $sites = json_decode($contents, true, 512, JSON_THROW_ON_ERROR);
+
+        if (! is_array($sites) || ! array_is_list($sites)) {
+            throw new RuntimeException("The demo weather sites file {$path} must contain a JSON list.");
+        }
+
+        $codes = [];
+
+        WeatherSite::withoutEvents(function () use ($sites, &$codes, $path): void {
+            foreach ($sites as $index => $site) {
+                if (! is_array($site)
+                    || ! is_string($site['code'] ?? null)
+                    || ! is_string($site['label'] ?? null)
+                    || ! is_numeric($site['latitude'] ?? null)
+                    || ! is_numeric($site['longitude'] ?? null)) {
+                    throw new RuntimeException("Weather site row {$index} in {$path} is invalid.");
+                }
+
+                $codes[] = $site['code'];
+                $weatherSite = WeatherSite::query()->firstOrNew(['code' => $site['code']]);
+                $coordinatesChanged = $weatherSite->exists
+                    && ((float) $weatherSite->latitude !== (float) $site['latitude']
+                        || (float) $weatherSite->longitude !== (float) $site['longitude']);
+                $weatherSite->fill([
+                    'label' => $site['label'],
+                    'latitude' => (string) $site['latitude'],
+                    'longitude' => (string) $site['longitude'],
+                    'enabled' => true,
+                    'sort_order' => $index,
+                ]);
+
+                if (! $weatherSite->exists || $coordinatesChanged) {
+                    $weatherSite->forceFill([
+                        'nws_office' => null,
+                        'nws_grid_x' => null,
+                        'nws_grid_y' => null,
+                    ]);
+                }
+
+                $weatherSite->save();
+            }
+
+            if ($codes !== []) {
+                WeatherSite::query()->whereNotIn('code', $codes)->delete();
+            }
+        });
     }
 
     /**

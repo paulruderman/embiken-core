@@ -54,6 +54,7 @@ class MarketingPageController extends Controller
             ],
             'domainSuffix' => config('tenancy.central_domains.0', 'localhost'),
             'contactEmail' => config('marketing.contact_email'),
+            'ui' => __('app.signup_ui'),
         ]);
     }
 

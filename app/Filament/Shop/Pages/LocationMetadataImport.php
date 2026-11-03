@@ -23,7 +23,7 @@ class LocationMetadataImport extends Page
 {
     protected static string|\BackedEnum|null $navigationIcon = Heroicon::OutlinedMapPin;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Shop settings';
+    protected static string|\UnitEnum|null $navigationGroup = 'Data Imports';
 
     protected static ?int $navigationSort = 20;
 

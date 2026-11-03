@@ -71,6 +71,12 @@ it('applies location settings and replaces hours and closed dates atomically', f
     $json = shopMetadataJson(['shop' => [
         'name' => 'Harbor City Bikes',
         'customer_contact_email' => 'rentals@harborcity.example',
+        'address_line_1' => '42 Atlantic Avenue',
+        'address_line_2' => 'Suite 8',
+        'city' => 'Boston',
+        'administrative_area' => 'MA',
+        'postal_code' => '02110',
+        'country_code' => 'us',
         'timezone' => 'America/Chicago',
         'minimum_turnaround_buffer_minutes' => 20,
         'bike_assignment_policy' => BikeAssignmentPolicy::PickupOnly->value,
@@ -85,6 +91,12 @@ it('applies location settings and replaces hours and closed dates atomically', f
     expect($result['applied'])->toBeTrue()
         ->and($location->name)->toBe('Harbor City Bikes')
         ->and($location->customer_contact_email)->toBe('rentals@harborcity.example')
+        ->and($location->address_line_1)->toBe('42 Atlantic Avenue')
+        ->and($location->address_line_2)->toBe('Suite 8')
+        ->and($location->city)->toBe('Boston')
+        ->and($location->administrative_area)->toBe('MA')
+        ->and($location->postal_code)->toBe('02110')
+        ->and($location->country_code)->toBe('US')
         ->and($location->timezone)->toBe('America/Chicago')
         ->and($location->minimum_turnaround_buffer_minutes)->toBe(20)
         ->and($location->bike_assignment_policy)->toBe(BikeAssignmentPolicy::PickupOnly)
@@ -94,16 +106,32 @@ it('applies location settings and replaces hours and closed dates atomically', f
         ->and($location->closedDates()->pluck('date')->map(fn ($date): string => substr((string) $date, 0, 10))->all())->toBe(['2027-12-25']);
 });
 
-it('keeps the existing customer reply email when importing older shop metadata', function () {
+it('keeps existing optional Location details when importing older shop metadata', function () {
     $location = Location::query()->firstOrFail();
-    $location->update(['customer_contact_email' => 'rentals@harborcity.example']);
+    $location->update([
+        'customer_contact_email' => 'rentals@harborcity.example',
+        'address_line_1' => '42 Atlantic Avenue',
+        'city' => 'Boston',
+        'country_code' => 'US',
+    ]);
     $metadata = app(LocationMetadataImport::class)->template();
     unset($metadata['shop']['customer_contact_email']);
+    unset(
+        $metadata['shop']['address_line_1'],
+        $metadata['shop']['address_line_2'],
+        $metadata['shop']['city'],
+        $metadata['shop']['administrative_area'],
+        $metadata['shop']['postal_code'],
+        $metadata['shop']['country_code'],
+    );
 
     $result = app(LocationMetadataImport::class)->apply(json_encode($metadata, JSON_THROW_ON_ERROR));
 
     expect($result['applied'])->toBeTrue()
-        ->and($location->fresh()->customer_contact_email)->toBe('rentals@harborcity.example');
+        ->and($location->fresh()->customer_contact_email)->toBe('rentals@harborcity.example')
+        ->and($location->fresh()->address_line_1)->toBe('42 Atlantic Avenue')
+        ->and($location->fresh()->city)->toBe('Boston')
+        ->and($location->fresh()->country_code)->toBe('US');
 });
 
 it('provides distinct customer reply addresses for every demo shop profile', function () {
@@ -120,6 +148,28 @@ it('provides distinct customer reply addresses for every demo shop profile', fun
     expect($addresses)->toHaveCount(7)
         ->and(array_filter($addresses, fn (string $address): bool => ! str_ends_with($address, '.example')))->toBe([])
         ->and(array_unique($addresses))->toHaveCount(7);
+});
+
+it('provides a Location address for every demo profile', function () {
+    $import = app(LocationMetadataImport::class);
+    $files = glob(database_path('seeders/demo-tenants/*/shop.json'));
+    $addresses = array_map(function (string $path) use ($import): array {
+        $contents = file_get_contents($path);
+
+        expect($contents)->not->toBeFalse();
+
+        return $import->parse($contents)['shop'];
+    }, $files ?: []);
+
+    expect($addresses)->toHaveCount(7);
+
+    foreach ($addresses as $address) {
+        expect($address['address_line_1'])->toBeString()->not->toBe('')
+            ->and($address['city'])->toBeString()->not->toBe('')
+            ->and($address['administrative_area'])->toHaveLength(2)
+            ->and($address['postal_code'])->toBeString()->not->toBe('')
+            ->and($address['country_code'])->toBe('US');
+    }
 });
 
 it('rejects invalid or overlapping metadata without partially changing the location', function () {

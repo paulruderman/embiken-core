@@ -1,6 +1,8 @@
 <?php
 
 use App\Actions\Platform\CreateTenantAction;
+use App\Actions\Platform\PublicSignupAction;
+use App\Models\BillingPlan;
 use App\Models\Location;
 use App\Models\Staff;
 use App\Models\Tenant;
@@ -43,6 +45,35 @@ test('a new tenant starts with the selected site language enabled as its default
 
     expect($settings->enabled_content_locales)->toBe(['fr'])
         ->and($settings->default_content_locale)->toBe('fr');
+});
+
+test('public signup provisions its optional physical address on the Location', function () {
+    Notification::fake();
+    $plan = BillingPlan::factory()->create(['slug' => 'starter']);
+
+    $tenant = app(PublicSignupAction::class)(
+        plan: $plan,
+        name: 'Boston Bikes',
+        domain: 'boston-bikes.localhost',
+        timezone: 'America/New_York',
+        currency: 'usd',
+        managerName: 'Pat',
+        managerEmail: 'pat@example.com',
+        addressLine1: '42 Atlantic Avenue',
+        city: 'Boston',
+        administrativeArea: 'MA',
+        postalCode: '02110',
+        countryCode: 'us',
+    );
+
+    $location = $tenant->run(fn (): Location => Location::query()->firstOrFail());
+
+    expect($location->address_line_1)->toBe('42 Atlantic Avenue')
+        ->and($location->city)->toBe('Boston')
+        ->and($location->administrative_area)->toBe('MA')
+        ->and($location->postal_code)->toBe('02110')
+        ->and($location->country_code)->toBe('US')
+        ->and($location->address_line_2)->toBeNull();
 });
 
 test('existing rental tenants keep Online Book enabled after the module split', function () {

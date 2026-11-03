@@ -17,6 +17,7 @@ use Embiken\BikeRentals\Models\BikeReservation;
 use Embiken\BikeRentals\Models\Customer;
 use Embiken\BikeRentals\Models\RentalPackage;
 use Embiken\BikeRentals\Models\Reservation;
+use Embiken\Weather\Models\WeatherSite;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
@@ -148,6 +149,10 @@ test('seeding a fake tenant creates a shop the platform user and staff can use',
                 ->and($platformManager)->not->toBeNull()
                 ->and($platformManager->password)->toBeNull()
                 ->and(LocationHour::query()->count())->toBe(7)
+                ->and(Location::query()->firstOrFail()->address_line_1)->toBe('42 Atlantic Avenue')
+                ->and(Location::query()->firstOrFail()->city)->toBe('Boston')
+                ->and(WeatherSite::query()->count())->toBe(3)
+                ->and(WeatherSite::query()->ordered()->pluck('label')->all())->toBe(['Boston', 'Cambridge', 'Salem'])
                 ->and(Bike::query()->count())->toBe(36)
                 ->and(BikeCategory::query()->pluck('name')->all())->toBe(['City Bikes', 'Cargo Bikes'])
                 ->and(BikeModel::query()->firstOrFail()->photo)->not->toBeNull()

@@ -40,6 +40,9 @@ class ShopLandingPageController extends Controller
             : $customContent;
         $contentHtml = $customContent
             ? RichContentRenderer::make($customContent)
+                ->mergeTags([
+                    'location_address' => Location::query()->first()?->formattedAddress() ?? '',
+                ])
                 ->customBlocks([ShopCalloutBlock::class, ShopFeatureBlock::class])
                 ->toHtml()
             : '';

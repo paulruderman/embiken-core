@@ -2,6 +2,12 @@
   "shop": {
     "name": "Northline Cycle Studio",
     "customer_contact_email": "hello@northline-cycle-studio.example",
+    "address_line_1": "825 West Fulton Market",
+    "address_line_2": null,
+    "city": "Chicago",
+    "administrative_area": "IL",
+    "postal_code": "60607",
+    "country_code": "US",
     "timezone": "America/Chicago",
     "currency": "usd",
     "minimum_turnaround_buffer_minutes": 15,

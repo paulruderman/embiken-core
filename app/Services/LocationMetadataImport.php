@@ -33,6 +33,12 @@ class LocationMetadataImport
             'shop' => [
                 'name' => 'Example Bike Shop',
                 'customer_contact_email' => 'rentals@example-bike-shop.example',
+                'address_line_1' => null,
+                'address_line_2' => null,
+                'city' => null,
+                'administrative_area' => null,
+                'postal_code' => null,
+                'country_code' => null,
                 'timezone' => 'America/New_York',
                 'currency' => 'usd',
                 'minimum_turnaround_buffer_minutes' => 10,
@@ -51,7 +57,7 @@ class LocationMetadataImport
 
     /**
      * @return array{
-     *     shop: array{name: string, customer_contact_email?: string|null, timezone: string, currency: string, minimum_turnaround_buffer_minutes: int, bike_assignment_policy: string, return_situation: string, hours: array<string, list<array{opens_at: string, closes_at: string, closes_next_day: bool}>>, closed_dates: list<string>}
+     *     shop: array{name: string, customer_contact_email?: string|null, address_line_1?: string|null, address_line_2?: string|null, city?: string|null, administrative_area?: string|null, postal_code?: string|null, country_code?: string|null, timezone: string, currency: string, minimum_turnaround_buffer_minutes: int, bike_assignment_policy: string, return_situation: string, hours: array<string, list<array{opens_at: string, closes_at: string, closes_next_day: bool}>>, closed_dates: list<string>}
      * }
      */
     public function parse(string $json): array
@@ -74,7 +80,7 @@ class LocationMetadataImport
             throw ValidationException::withMessages($validator->errors()->toArray());
         }
 
-        /** @var array{shop: array{name: string, customer_contact_email?: string|null, timezone: string, currency: string, minimum_turnaround_buffer_minutes: int|string, bike_assignment_policy: string, return_situation: string, hours: array<string, list<array{opens_at: string, closes_at: string, closes_next_day: bool|string}>>, closed_dates: list<string>}} $validated */
+        /** @var array{shop: array{name: string, customer_contact_email?: string|null, address_line_1?: string|null, address_line_2?: string|null, city?: string|null, administrative_area?: string|null, postal_code?: string|null, country_code?: string|null, timezone: string, currency: string, minimum_turnaround_buffer_minutes: int|string, bike_assignment_policy: string, return_situation: string, hours: array<string, list<array{opens_at: string, closes_at: string, closes_next_day: bool|string}>>, closed_dates: list<string>}} $validated */
         $validated = $validator->validated();
         $issues = $this->intervalIssues($validated['shop']['hours']);
 
@@ -83,6 +89,9 @@ class LocationMetadataImport
         }
 
         $validated['shop']['currency'] = mb_strtolower($validated['shop']['currency']);
+        if (isset($validated['shop']['country_code'])) {
+            $validated['shop']['country_code'] = strtoupper($validated['shop']['country_code']);
+        }
         $validated['shop']['minimum_turnaround_buffer_minutes'] = (int) $validated['shop']['minimum_turnaround_buffer_minutes'];
         $validated['shop']['hours'] = array_map(
             fn (array $intervals): array => array_map(fn (array $interval): array => [
@@ -174,17 +183,30 @@ class LocationMetadataImport
             }
 
             $shop = $metadata['shop'];
-            $location->fill([
+            $locationAttributes = [
                 'name' => $shop['name'],
                 'timezone' => $shop['timezone'],
                 'currency' => $shop['currency'],
                 'minimum_turnaround_buffer_minutes' => $shop['minimum_turnaround_buffer_minutes'],
                 'bike_assignment_policy' => $shop['bike_assignment_policy'],
                 'return_situation' => $shop['return_situation'],
-                ...(array_key_exists('customer_contact_email', $shop)
-                    ? ['customer_contact_email' => $shop['customer_contact_email']]
-                    : []),
-            ])->save();
+            ];
+
+            foreach ([
+                'customer_contact_email',
+                'address_line_1',
+                'address_line_2',
+                'city',
+                'administrative_area',
+                'postal_code',
+                'country_code',
+            ] as $attribute) {
+                if (array_key_exists($attribute, $shop)) {
+                    $locationAttributes[$attribute] = $shop[$attribute];
+                }
+            }
+
+            $location->fill($locationAttributes)->save();
 
             $location->hours()->delete();
             foreach (Weekday::cases() as $weekday) {
@@ -215,9 +237,15 @@ class LocationMetadataImport
         $weekdays = array_map(fn (Weekday $weekday): string => mb_strtolower($weekday->name), Weekday::cases());
         $allowedHoursKeys = implode(',', $weekdays);
         $rules = [
-            'shop' => ['required', 'array:name,customer_contact_email,timezone,currency,minimum_turnaround_buffer_minutes,bike_assignment_policy,return_situation,hours,closed_dates'],
+            'shop' => ['required', 'array:name,customer_contact_email,address_line_1,address_line_2,city,administrative_area,postal_code,country_code,timezone,currency,minimum_turnaround_buffer_minutes,bike_assignment_policy,return_situation,hours,closed_dates'],
             'shop.name' => ['required', 'string', 'max:255'],
             'shop.customer_contact_email' => ['sometimes', 'nullable', 'email', 'max:254'],
+            'shop.address_line_1' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'shop.address_line_2' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'shop.city' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'shop.administrative_area' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'shop.postal_code' => ['sometimes', 'nullable', 'string', 'max:32'],
+            'shop.country_code' => ['sometimes', 'nullable', 'string', 'size:2', 'alpha'],
             'shop.timezone' => ['required', 'timezone'],
             'shop.currency' => ['required', 'string', 'size:3', 'alpha'],
             'shop.minimum_turnaround_buffer_minutes' => ['required', 'integer', 'min:0', 'max:1440'],

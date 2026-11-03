@@ -6,6 +6,7 @@ namespace Embiken\BikeFleet\Filament\Pages;
 
 use App\Enums\StaffRole;
 use App\Models\Staff;
+use App\Support\ModuleRegistry;
 use Embiken\BikeFleet\Actions\ImportCatalogFleetAction;
 use Embiken\BikeFleet\BikeFleetModule;
 use Embiken\BikeFleet\Models\CatalogFleetImportRun;
@@ -28,7 +29,7 @@ class CatalogFleetImportPage extends Page
 {
     protected static string|\BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowUpTray;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Fleet';
+    protected static string|\UnitEnum|null $navigationGroup = 'Data Imports';
 
     protected static ?int $navigationSort = 5;
 
@@ -53,7 +54,14 @@ class CatalogFleetImportPage extends Page
     {
         $staff = Filament::auth()->user();
 
-        return $staff instanceof Staff && $staff->role === StaffRole::Manager;
+        return $staff instanceof Staff
+            && $staff->role === StaffRole::Manager
+            && app(ModuleRegistry::class)->isEnabled(static::tenantModuleId());
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
     }
 
     public function mount(): void

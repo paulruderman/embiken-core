@@ -5,9 +5,22 @@
 @source not '../../database';
 @source not '../../storage/logs';
 
+@source inline('{bg-,text-,border-,placeholder-}brand-gray-{50,{100..900..100},950}');
+
 @theme inline {
     --font-sans:
         Instrument Sans, ui-sans-serif, system-ui, sans-serif,
         'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
         'Noto Color Emoji';
+    --color-brand-gray-50: var(--tenant-brand-gray-50);
+    --color-brand-gray-100: var(--tenant-brand-gray-100);
+    --color-brand-gray-200: var(--tenant-brand-gray-200);
+    --color-brand-gray-300: var(--tenant-brand-gray-300);
+    --color-brand-gray-400: var(--tenant-brand-gray-400);
+    --color-brand-gray-500: var(--tenant-brand-gray-500);
+    --color-brand-gray-600: var(--tenant-brand-gray-600);
+    --color-brand-gray-700: var(--tenant-brand-gray-700);
+    --color-brand-gray-800: var(--tenant-brand-gray-800);
+    --color-brand-gray-900: var(--tenant-brand-gray-900);
+    --color-brand-gray-950: var(--tenant-brand-gray-950);
 }

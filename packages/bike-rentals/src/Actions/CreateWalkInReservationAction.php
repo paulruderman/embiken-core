@@ -163,7 +163,7 @@ class CreateWalkInReservationAction extends Action
             'rider_names' => ['sometimes', 'array'],
             'rider_names.*' => ['nullable', 'string', 'max:255'],
             'allow_availability_override' => ['sometimes', 'boolean'],
-            'confirm_availability_override' => ['sometimes', 'accepted'],
+            'confirm_availability_override' => ['exclude_unless:allow_availability_override,true', 'sometimes', 'accepted'],
             'owed_minor_units' => ['required', 'integer', 'min:0'],
             'starts_at_local' => ['required', 'date_format:Y-m-d\\TH:i'],
             'ends_at_local' => ['required', 'date_format:Y-m-d\\TH:i', 'after:starts_at_local'],

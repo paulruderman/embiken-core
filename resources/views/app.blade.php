@@ -4,6 +4,17 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
+        @if (tenant() !== null)
+            @php($tenantBrandGray = \App\Support\BrandColor::palette(\App\Models\ShopSetting::query()->value('brand_gray_color'), \App\Models\ShopSetting::DEFAULT_GRAY_COLOR))
+            <style>
+                :root {
+                    @foreach ($tenantBrandGray as $shade => $color)
+                        --tenant-brand-gray-{{ $shade }}: {{ $color }};
+                    @endforeach
+                }
+            </style>
+        @endif
+
         @php($tenantFaviconPath = tenant() ? \App\Models\ShopSetting::query()->value('favicon_path') : null)
         @if (is_string($tenantFaviconPath) && $tenantFaviconPath !== '')
             <link rel="icon" href="{{ tenant_asset($tenantFaviconPath) }}" type="image/png">

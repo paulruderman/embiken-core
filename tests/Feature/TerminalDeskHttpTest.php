@@ -428,6 +428,8 @@ test('pickup return walk-in cash and waiver write through staff HTTP', function 
         'email' => 'avery@example.test',
         'phone' => '+1 555 0100',
         'bike_ids' => $walkInBikeIds,
+        'allow_availability_override' => false,
+        'confirm_availability_override' => false,
         'owed_minor_units' => 7500,
         'starts_at_local' => '2026-06-01T10:30',
         'ends_at_local' => '2026-06-01T12:45',

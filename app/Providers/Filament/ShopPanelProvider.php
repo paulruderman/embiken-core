@@ -10,7 +10,6 @@ use App\Support\BrandColor;
 use App\Support\EnumColorPalettes;
 use App\Support\Locales;
 use App\Support\ModuleRegistry;
-use Filament\Facades\Filament;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -39,7 +38,7 @@ class ShopPanelProvider extends PanelProvider
         $panel
             ->id('shop')
             ->path('manage')
-            ->brandName(fn (): string => $this->shopSetting()?->brand_name ?: (Location::query()->value('name') ?: (tenant()->name ?? (string) config('app.name'))))
+            ->brandName(fn (): string => $this->shopBrandName())
             ->brandLogo(function (): ?HtmlString {
                 $logoPath = $this->shopSetting()?->logo_path;
 
@@ -48,7 +47,7 @@ class ShopPanelProvider extends PanelProvider
                 }
 
                 $logoUrl = e(tenant_asset($logoPath));
-                $shopName = e((string) Filament::getBrandName());
+                $shopName = e($this->shopBrandName());
 
                 return new HtmlString("<span style=\"display:inline-flex;align-items:center;gap:.75rem;height:100%\"><img src=\"{$logoUrl}\" alt=\"\" style=\"max-height:100%;width:auto\"><span style=\"font-weight:600;white-space:nowrap\">{$shopName}</span></span>");
             })
@@ -117,6 +116,12 @@ class ShopPanelProvider extends PanelProvider
     private function shopSetting(): ?ShopSetting
     {
         return tenant() === null ? null : ShopSetting::current();
+    }
+
+    private function shopBrandName(): string
+    {
+        return $this->shopSetting()?->brand_name
+            ?: (Location::query()->value('name') ?: (tenant()->name ?? (string) config('app.name')));
     }
 
     /**

@@ -211,7 +211,13 @@ test('the Location address merge tag publishes the address only when the Manager
                     'type' => 'paragraph',
                     'content' => [[
                         'type' => 'text',
-                        'text' => 'Visit us at {{ location_address }}.',
+                        'text' => 'Visit us at ',
+                    ], [
+                        'type' => 'mergeTag',
+                        'attrs' => ['id' => 'location_address'],
+                    ], [
+                        'type' => 'text',
+                        'text' => '.',
                     ]],
                 ]],
             ],
@@ -222,7 +228,8 @@ test('the Location address merge tag publishes the address only when the Manager
         ->get('http://landing-address-tag.localhost')
         ->assertInertia(fn (Assert $page) => $page
             ->where('contentHtml', fn (mixed $html): bool => is_string($html)
-                && str_contains($html, 'Visit us at 42 Atlantic Avenue, Boston, MA 02110, US.')));
+                && str_contains($html, 'Visit us at ')
+                && str_contains($html, '42 Atlantic Avenue, Boston, MA 02110, US')));
 
     $shop['tenant']->run(function (): void {
         Location::query()->firstOrFail()->update(['address_line_1' => '<script>alert(1)</script>']);

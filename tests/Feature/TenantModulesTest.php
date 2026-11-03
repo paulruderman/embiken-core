@@ -49,7 +49,7 @@ test('a new tenant starts with the selected site language enabled as its default
 
 test('public signup provisions its optional physical address on the Location', function () {
     Notification::fake();
-    $plan = BillingPlan::factory()->create(['slug' => 'starter']);
+    $plan = BillingPlan::query()->where('slug', 'starter')->firstOrFail();
 
     $tenant = app(PublicSignupAction::class)(
         plan: $plan,

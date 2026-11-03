@@ -25,6 +25,7 @@ use Embiken\BikeRentals\Models\Customer;
 use Embiken\BikeRentals\Models\RentalPackage;
 use Embiken\BikeRentals\Models\Reservation;
 use Embiken\BikeRentals\Services\PackageRateImport;
+use Embiken\Weather\Models\WeatherSite;
 use Illuminate\Console\Command;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -34,7 +35,6 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
-use Embiken\Weather\Models\WeatherSite;
 use RuntimeException;
 
 class SeedFakeTenantAction extends Action
@@ -132,10 +132,10 @@ class SeedFakeTenantAction extends Action
         );
 
         $tenant->forceFill([
-            'modules' => app(ModuleRegistry::class)->normalizeModuleIds([
+            'modules' => app(ModuleRegistry::class)->normalizeModuleIds(array_values([
                 ...$tenant->moduleIds(),
                 'embiken/weather',
-            ]),
+            ])),
         ])->save();
 
         $tenant->run(function () use ($timezone, $profile, $metadataJson, $resume): void {

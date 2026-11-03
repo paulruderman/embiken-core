@@ -518,31 +518,31 @@ function selectReservation(reservation: DayReservation): void {
 <template>
     <section class="flex flex-1 flex-col gap-4 p-4 sm:p-6">
         <section
-            class="flex flex-wrap items-center gap-4 rounded-2xl border border-zinc-800 bg-zinc-900 p-4 sm:p-5"
+            class="flex flex-wrap items-center gap-4 rounded-2xl border border-brand-gray-300 dark:border-brand-gray-800 bg-brand-gray-100 dark:bg-brand-gray-900 p-4 sm:p-5"
         >
             <div class="min-w-0 flex-1">
                 <h2 class="text-2xl font-bold">{{ ui.planner_title }}</h2>
-                <p class="mt-1 text-sm text-zinc-400">
+                <p class="mt-1 text-sm text-brand-gray-600 dark:text-brand-gray-400">
                     {{ ui.planner_description }}
                 </p>
             </div>
             <div v-if="!assignment" class="flex items-center gap-2">
                 <Link
                     :href="scheduleUrl(-1)"
-                    class="flex min-h-14 items-center rounded-xl bg-zinc-800 px-4 text-base font-bold"
+                    class="flex min-h-14 items-center rounded-xl bg-brand-gray-200 dark:bg-brand-gray-800 px-4 text-base font-bold"
                 >
                     {{ ui.planner_previous_day }}
                 </Link>
                 <Link
                     v-if="!isViewingToday"
                     :href="terminal.url()"
-                    class="flex min-h-14 items-center rounded-xl bg-emerald-400 px-4 text-base font-bold text-zinc-950"
+                    class="flex min-h-14 items-center rounded-xl bg-emerald-400 px-4 text-base font-bold text-brand-gray-950"
                 >
                     {{ ui.planner_today }}
                 </Link>
                 <Link
                     :href="scheduleUrl(1)"
-                    class="flex min-h-14 items-center rounded-xl bg-zinc-800 px-4 text-base font-bold"
+                    class="flex min-h-14 items-center rounded-xl bg-brand-gray-200 dark:bg-brand-gray-800 px-4 text-base font-bold"
                 >
                     {{ ui.planner_next_day }}
                 </Link>
@@ -550,7 +550,7 @@ function selectReservation(reservation: DayReservation): void {
         </section>
 
         <div
-            class="flex flex-wrap items-center gap-4 text-sm text-zinc-300"
+            class="flex flex-wrap items-center gap-4 text-sm text-brand-gray-700 dark:text-brand-gray-300"
             aria-label="Planner legend"
         >
             <span class="flex items-center gap-2">
@@ -575,15 +575,15 @@ function selectReservation(reservation: DayReservation): void {
         </p>
 
         <div
-            class="flex-1 overflow-x-auto rounded-2xl border border-zinc-800 bg-zinc-900"
+            class="flex-1 overflow-x-auto rounded-2xl border border-brand-gray-300 dark:border-brand-gray-800 bg-brand-gray-100 dark:bg-brand-gray-900"
         >
             <div class="min-w-[1200px]">
                 <div
-                    class="grid border-b border-zinc-800 bg-zinc-900"
+                    class="grid border-b border-brand-gray-300 dark:border-brand-gray-800 bg-brand-gray-100 dark:bg-brand-gray-900"
                     :style="{ gridTemplateColumns: plannerGridTemplate }"
                 >
                     <div
-                        class="sticky z-30 flex min-h-8 items-center border-r border-zinc-800 bg-zinc-900 px-3 text-xs font-bold tracking-wide text-zinc-400 uppercase"
+                        class="sticky z-30 flex min-h-8 items-center border-r border-brand-gray-300 dark:border-brand-gray-800 bg-brand-gray-100 dark:bg-brand-gray-900 px-3 text-xs font-bold tracking-wide text-brand-gray-600 dark:text-brand-gray-400 uppercase"
                         :style="plannerColumnStyle(0)"
                     >
                         {{ ui.planner_bike }}
@@ -611,7 +611,7 @@ function selectReservation(reservation: DayReservation): void {
                         ></div>
                     </div>
                     <div
-                        class="sticky z-30 flex min-h-8 items-center border-r border-zinc-800 bg-zinc-900 px-3 text-xs font-bold tracking-wide text-zinc-400 uppercase"
+                        class="sticky z-30 flex min-h-8 items-center border-r border-brand-gray-300 dark:border-brand-gray-800 bg-brand-gray-100 dark:bg-brand-gray-900 px-3 text-xs font-bold tracking-wide text-brand-gray-600 dark:text-brand-gray-400 uppercase"
                         :style="plannerColumnStyle(1)"
                     >
                         {{ ui.planner_model_size }}
@@ -639,7 +639,7 @@ function selectReservation(reservation: DayReservation): void {
                         ></div>
                     </div>
                     <div
-                        class="sticky z-30 flex min-h-8 items-center border-r border-zinc-800 bg-zinc-900 px-3 text-xs font-bold tracking-wide text-zinc-400 uppercase"
+                        class="sticky z-30 flex min-h-8 items-center border-r border-brand-gray-300 dark:border-brand-gray-800 bg-brand-gray-100 dark:bg-brand-gray-900 px-3 text-xs font-bold tracking-wide text-brand-gray-600 dark:text-brand-gray-400 uppercase"
                         :style="plannerColumnStyle(2)"
                     >
                         {{ ui.planner_situation }}
@@ -688,14 +688,14 @@ function selectReservation(reservation: DayReservation): void {
                         <div
                             v-for="hour in scheduleHours"
                             :key="hour.timestamp"
-                            class="relative z-10 flex items-center border-l border-zinc-800 px-2 text-xs font-semibold text-zinc-400"
+                            class="relative z-10 flex items-center border-l border-brand-gray-300 dark:border-brand-gray-800 px-2 text-xs font-semibold text-brand-gray-600 dark:text-brand-gray-400"
                         >
                             {{ hour.label }}
                         </div>
                     </div>
                 </div>
 
-                <div v-if="plannerBoard.length === 0" class="p-8 text-zinc-400">
+                <div v-if="plannerBoard.length === 0" class="p-8 text-brand-gray-600 dark:text-brand-gray-400">
                     {{
                         assignment
                             ? ui.planner_no_matching_bikes
@@ -706,7 +706,7 @@ function selectReservation(reservation: DayReservation): void {
                 <div
                     v-for="{ bike, lines } in plannerBoard"
                     :key="bike.id"
-                    class="grid border-b border-zinc-800 last:border-b-0"
+                    class="grid border-b border-brand-gray-300 dark:border-brand-gray-800 last:border-b-0"
                     :class="
                         assignment?.selectedBikeId === bike.id
                             ? 'bg-emerald-950/40'
@@ -715,7 +715,7 @@ function selectReservation(reservation: DayReservation): void {
                     :style="{ gridTemplateColumns: plannerGridTemplate }"
                 >
                     <div
-                        class="sticky z-30 flex min-h-8 min-w-0 items-center overflow-hidden border-r border-zinc-800 bg-zinc-900 px-3"
+                        class="sticky z-30 flex min-h-8 min-w-0 items-center overflow-hidden border-r border-brand-gray-300 dark:border-brand-gray-800 bg-brand-gray-100 dark:bg-brand-gray-900 px-3"
                         :style="plannerColumnStyle(0)"
                         :title="plannerBikeBidTooltip(bike)"
                     >
@@ -726,11 +726,11 @@ function selectReservation(reservation: DayReservation): void {
                             :class="
                                 isBikeSelectable(bike.id)
                                     ? bikeHasConflict(bike.id)
-                                        ? 'bg-amber-300 text-zinc-950 hover:bg-amber-200'
-                                        : 'bg-emerald-400 text-zinc-950 hover:bg-emerald-300'
+                                        ? 'bg-amber-300 text-brand-gray-950 hover:bg-amber-200'
+                                        : 'bg-emerald-400 text-brand-gray-950 hover:bg-emerald-300'
                                     : assignment.selectedBikeId === bike.id
-                                      ? 'bg-emerald-700 text-white'
-                                      : 'cursor-not-allowed bg-zinc-800 text-zinc-500'
+                                      ? 'bg-emerald-700 text-brand-gray-950 dark:text-brand-gray-50'
+                                      : 'cursor-not-allowed bg-brand-gray-200 dark:bg-brand-gray-800 text-brand-gray-600 dark:text-brand-gray-500'
                             "
                             :disabled="!isBikeSelectable(bike.id)"
                             :aria-pressed="
@@ -750,23 +750,23 @@ function selectReservation(reservation: DayReservation): void {
                         >
                     </div>
                     <div
-                        class="sticky z-30 flex min-h-8 min-w-0 items-center overflow-hidden border-r border-zinc-800 bg-zinc-900 px-3"
+                        class="sticky z-30 flex min-h-8 min-w-0 items-center overflow-hidden border-r border-brand-gray-300 dark:border-brand-gray-800 bg-brand-gray-100 dark:bg-brand-gray-900 px-3"
                         :style="plannerColumnStyle(1)"
                     >
                         <span
-                            class="block w-full truncate text-xs whitespace-nowrap text-zinc-300"
+                            class="block w-full truncate text-xs whitespace-nowrap text-brand-gray-700 dark:text-brand-gray-300"
                             :title="plannerBikeModelSizeTooltip(bike)"
                         >
                             {{ plannerBikeModelSize(bike) }}
                         </span>
                     </div>
                     <div
-                        class="sticky z-30 flex min-h-8 min-w-0 items-center overflow-hidden border-r border-zinc-800 bg-zinc-900 px-3"
+                        class="sticky z-30 flex min-h-8 min-w-0 items-center overflow-hidden border-r border-brand-gray-300 dark:border-brand-gray-800 bg-brand-gray-100 dark:bg-brand-gray-900 px-3"
                         :style="plannerColumnStyle(2)"
                     >
                         <div class="flex min-w-0 flex-col">
                             <span
-                                class="block w-full truncate text-xs whitespace-nowrap text-zinc-300"
+                                class="block w-full truncate text-xs whitespace-nowrap text-brand-gray-700 dark:text-brand-gray-300"
                                 :title="plannerBikeSituation(bike)"
                             >
                                 {{ plannerBikeSituation(bike) }}
@@ -785,7 +785,7 @@ function selectReservation(reservation: DayReservation): void {
                         </div>
                     </div>
                     <div
-                        class="relative isolate bg-zinc-950/40"
+                        class="relative isolate bg-brand-gray-100/40 dark:bg-brand-gray-950/40"
                         :style="{ height: plannerLaneHeight(lines) }"
                     >
                         <div
@@ -797,7 +797,7 @@ function selectReservation(reservation: DayReservation): void {
                             <div
                                 v-for="hour in scheduleHours"
                                 :key="`bike-hour-${hour.timestamp}`"
-                                class="border-l border-zinc-800"
+                                class="border-l border-brand-gray-300 dark:border-brand-gray-800"
                             ></div>
                         </div>
                         <div
@@ -878,54 +878,54 @@ function selectReservation(reservation: DayReservation): void {
                     class="border-t-2 border-dashed border-amber-500/60"
                 >
                     <div
-                        class="sticky left-0 z-10 bg-zinc-800 px-4 py-1 text-sm font-bold text-amber-100"
+                        class="sticky left-0 z-10 bg-brand-gray-200 dark:bg-brand-gray-800 px-4 py-1 text-sm font-bold text-amber-100"
                     >
                         {{ ui.planner_unassigned_lines }}
                     </div>
                     <div
                         v-for="(item, index) in unassignedLines"
                         :key="`unassigned-${item.line.id}`"
-                        class="grid border-t border-zinc-800"
+                        class="grid border-t border-brand-gray-300 dark:border-brand-gray-800"
                         :style="{ gridTemplateColumns: plannerGridTemplate }"
                     >
                         <button
                             type="button"
-                            class="sticky z-30 flex min-h-8 items-center overflow-hidden border-r border-zinc-800 bg-zinc-900 px-3 text-left"
+                            class="sticky z-30 flex min-h-8 items-center overflow-hidden border-r border-brand-gray-300 dark:border-brand-gray-800 bg-brand-gray-100 dark:bg-brand-gray-900 px-3 text-left"
                             :style="plannerColumnStyle(0)"
                             :disabled="assignment !== undefined"
                             @click="selectReservation(item.reservation)"
                         >
                             <span
-                                class="block w-full truncate text-xs whitespace-nowrap text-zinc-500"
+                                class="block w-full truncate text-xs whitespace-nowrap text-brand-gray-600 dark:text-brand-gray-500"
                                 aria-hidden="true"
                                 >—</span
                             >
                         </button>
                         <button
                             type="button"
-                            class="sticky z-30 flex min-h-8 min-w-0 items-center overflow-hidden border-r border-zinc-800 bg-zinc-900 px-3 text-left"
+                            class="sticky z-30 flex min-h-8 min-w-0 items-center overflow-hidden border-r border-brand-gray-300 dark:border-brand-gray-800 bg-brand-gray-100 dark:bg-brand-gray-900 px-3 text-left"
                             :style="plannerColumnStyle(1)"
                             :title="item.line.product_label"
                             :disabled="assignment !== undefined"
                             @click="selectReservation(item.reservation)"
                         >
                             <span
-                                class="block w-full truncate text-xs whitespace-nowrap text-zinc-300"
+                                class="block w-full truncate text-xs whitespace-nowrap text-brand-gray-700 dark:text-brand-gray-300"
                             >
                                 {{ item.line.product_label }}
                             </span>
                         </button>
                         <div
-                            class="sticky z-30 flex min-h-8 min-w-0 items-center overflow-hidden border-r border-zinc-800 bg-zinc-900 px-3"
+                            class="sticky z-30 flex min-h-8 min-w-0 items-center overflow-hidden border-r border-brand-gray-300 dark:border-brand-gray-800 bg-brand-gray-100 dark:bg-brand-gray-900 px-3"
                             :style="plannerColumnStyle(2)"
                         >
                             <span
-                                class="block w-full truncate text-xs whitespace-nowrap text-zinc-500"
+                                class="block w-full truncate text-xs whitespace-nowrap text-brand-gray-600 dark:text-brand-gray-500"
                             >
                                 {{ ui.planner_unassigned }}
                             </span>
                         </div>
-                        <div class="relative isolate min-h-10 bg-zinc-950/40">
+                        <div class="relative isolate min-h-10 bg-brand-gray-100/40 dark:bg-brand-gray-950/40">
                             <div
                                 class="pointer-events-none absolute inset-0 z-0 grid"
                                 :style="{
@@ -935,7 +935,7 @@ function selectReservation(reservation: DayReservation): void {
                                 <div
                                     v-for="hour in scheduleHours"
                                     :key="`unassigned-hour-${hour.timestamp}`"
-                                    class="border-l border-zinc-800"
+                                    class="border-l border-brand-gray-300 dark:border-brand-gray-800"
                                 ></div>
                             </div>
                             <div

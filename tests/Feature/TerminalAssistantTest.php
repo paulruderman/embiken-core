@@ -147,7 +147,7 @@ test('terminal assistant returns sanitized read-only reservation information', f
 
     expect($systemPrompt)
         ->toContain('The current date in the shop timezone '.$shop['location']->timezone.' is '.now($shop['location']->timezone)->toDateString())
-        ->toContain('Never rely on prior model knowledge for the current date or Reservation counts.');
+        ->toContain('Never classify a shop as busy or quiet without a staff-provided threshold.');
 });
 
 test('terminal assistant preserves empty tool arguments as an object on the follow-up request', function (): void {
@@ -226,7 +226,7 @@ test('terminal assistant summarizes the shop day and current fleet without custo
             ]);
 
         foreach ([2, 1, 0] as $index => $lineCount) {
-            foreach (range(1, $lineCount) as $_) {
+            for ($line = 0; $line < $lineCount; $line++) {
                 BikeReservation::factory()->create([
                     'reservation_id' => $reservations[$index]->id,
                     'product_id' => $variant->id,

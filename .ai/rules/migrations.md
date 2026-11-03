@@ -26,8 +26,8 @@ reservations.rental_package_id is nullable. Book always writes it. Terminal hand
 ## package-variant rate pivot table
 Tenant schema includes a rental_package_product (or equivalent) pivot: rental_package_id, product_id (FK to bike_model_variants), rate_cents. Unique (rental_package_id, product_id). Do not put rate columns on bike_model_variants or a single product price on rental_packages.
 
-## CFD paired_terminal_device_id on devices (later)
-When the Device slice lands, devices include optional paired_terminal_device_id for CFD rows (FK to devices). Do not put paired_terminal_device_id on Screen devices. Do not create a devices table in shop-operable schema.
+## Devices and Displays
+Tenant schema includes devices bound to the single Location and a surface, with optional paired_terminal_device_id for Customer Display rows and optional display_id for Wall Display rows. Tenant schema includes reusable displays with a selected Feed and optional standby Feed and shared standby state. Devices are not Staff or Customers.
 
 ## Hours intervals, customer indexes, waiver timestamp
 locations store return situation and one or more open intervals per weekday (close may be next calendar day). customers email and phone are indexed, not unique. reservations may have waiver_accepted_at. Do not store a signature blob in v1.
@@ -38,5 +38,5 @@ locations include currency default usd. Do not add tax columns. Do not create ad
 ## bikes.bid unique; optional photos
 bikes.bid is required and unique in the tenant. Optional photo on bikes, bike_model_variants, bike_models, and bike_categories. Do not add serial, barcode, RFID, or QR columns in v1.
 
-## No devices table until Device slice
-Do not create a devices table or paired_terminal_device_id in shop-operable tenant schema. Occupancy tables are unchanged.
+## Device tokens are separate from Staff and occupancy
+Sanctum tokens belong to tenant Device models; do not add device credentials to Staff. Device and Display tables do not replace or modify occupancy tables.

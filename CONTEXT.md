@@ -105,13 +105,17 @@ _Avoid_: Part (the workshop catalog record)
 An installed Composer tenant plugin under `packages/` (`embiken/*`). Enablement is per Tenant.
 _Avoid_: package as a RentalPackage, addon, Laravel package in general
 
-**Viewfeed**:
-A named display a Viewscreen can show (core catalog plus enabled modules).
-_Avoid_: wallboard as the type, page, route
+**Device**:
+A paired browser or hardware endpoint bound to a Location and running one Embiken surface, such as Terminal, Customer Display, or Wall Display.
+_Avoid_: Viewscreen
 
-**Viewscreen**:
-A paired display that picks a Viewfeed by slug.
-_Avoid_: Screen (the shop-floor surface), monitor, TV app
+**Display**:
+A reusable Wall Display configuration that selects a Feed and optional standby Feed. Multiple Wall Display Devices may share one Display.
+_Avoid_: Viewscreen, Screen as a domain object
+
+**Feed**:
+Code-owned content provided by Embiken or an enabled module for a Wall Display.
+_Avoid_: Viewfeed
 
 **Weather Site**:
 An observation point with coordinates and an NWS grid. Not a Location.

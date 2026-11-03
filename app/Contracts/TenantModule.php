@@ -46,7 +46,7 @@ interface TenantModule
     /**
      * @return list<array{slug: string, name: string, component: string, inertia_page: string}>
      */
-    public function viewfeeds(): array;
+    public function feeds(): array;
 
     /**
      * @return list<string>

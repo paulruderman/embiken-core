@@ -30,7 +30,7 @@ php artisan boost:update
 
 ## Architecture
 
-The host app owns Staff, Location, viewscreens, and the websocket channel. Shop domain lives in Composer path packages under `packages/*` (`embiken/*`). Each package is a tenant module that can be enabled per Tenant. Filament for a model stays in that model’s package.
+The host app owns Staff, Location, Devices, Displays, and websocket channels. Shop domain lives in Composer path packages under `packages/*` (`embiken/*`). Each package is a tenant module that can be enabled per Tenant and may contribute code-owned Wall Display Feeds through `TenantModule::feeds()`. Filament for a package model stays in that model’s package.
 
 ```mermaid
 flowchart TB

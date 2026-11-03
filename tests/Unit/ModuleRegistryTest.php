@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\ModuleFrontendManifest;
 use App\Support\ModuleRegistry;
 
 test('normalize module ids adds rental fleet dependency', function () {
@@ -37,4 +38,16 @@ test('installed module packages include maintenance', function () {
     $ids = collect(app(ModuleRegistry::class)->installedModules())->map->id()->all();
 
     expect($ids)->toContain('embiken/bike-fleet', 'embiken/bike-rentals', 'embiken/maintenance', 'embiken/weather');
+});
+
+test('frontend manifest exposes module feeds under the feed key', function () {
+    $manifest = app(ModuleFrontendManifest::class)->toArray();
+
+    expect($manifest['feeds'])->toContain([
+        'slug' => 'weather',
+        'name' => 'Weather',
+        'component' => 'Weather/Board',
+        'inertia_page' => 'Weather/prototype/Index',
+    ])
+        ->and($manifest)->not->toHaveKey('viewfeeds');
 });

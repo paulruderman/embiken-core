@@ -100,7 +100,7 @@ class WeatherModule extends AbstractTenantModule
         ];
     }
 
-    public function viewfeeds(): array
+    public function feeds(): array
     {
         return [[
             'slug' => 'weather',

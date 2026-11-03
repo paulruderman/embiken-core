@@ -8,8 +8,8 @@ paths:
 ## Two Filament panels, no HasTenants
 Platform Filament on the central domain manages tenants and billing. Creating a Tenant provisions the tenant DB, one Location (empty hours), and a Manager (email plus set-password invite; do not type a Staff password on the tenant form), and starts Express onboarding. Shop Filament invites Counter and more Managers the same way. Shop Filament empty states (catalog, packages, hours) tell the Manager to create initial records. Do not seed demo bikes or shop hours. Shop Filament at /manage never captures Connect or cash. Do not use Filament HasTenants.
 
-## Manager-only shop panel, no DB drop
-Only Manager staff access /manage. Counter staff do not. Do not add a Devices resource or pairing codes until the Device slice. Platform Filament must not drop the tenant database when deleting a Tenant.
+## Manager-only shop panel, Devices, and no DB drop
+Only Manager staff access /manage. Counter staff do not. Managers manage Devices and Displays in Shop Filament and pair Devices with short-lived one-time codes. Platform Filament must not drop the tenant database when deleting a Tenant.
 
 ## Owed/paid reminder in Filament, still not a register
 If a Reservation or Customer is viewed in Filament, show the same owed vs paid reminder. Reservation may write stage and owed via Actions. Managers may refund via RefundAction. Still never take Connect charges or cash checkout in Shop Filament. Platform billing is not rental Connect.
@@ -29,8 +29,8 @@ Shop Filament attaches variants to a RentalPackage with rate_cents. That list is
 ## Damage is Filament notes, not money
 Damage is notes on the bike and/or reservation in Shop Filament. Do not add owed, transactions, or occupancy from damage. Still never checkout.
 
-## Filament pairs CFD to Terminal (later)
-When the Device slice lands, creating or editing a CFD Device sets paired_terminal_device_id. Still never checkout. Do not add this resource in shop-operable Filament.
+## Filament pairs Customer Displays to Terminals
+Creating or editing a Customer Display Device sets paired_terminal_device_id to its Terminal Device. Wall Display Devices may be assigned to a shared Display. Device pairing and Feed assignment do not add checkout to Filament.
 
 ## Shop Filament v1 resource list and Location hours
 v1 Shop Filament resources: Location (name, timezone, currency default usd, one or more open intervals per weekday with optional next-day close, optional all-day closed dates, minimum turnaround buffer minutes default 10, bike-assignment policy, return situation home or back), BikeCategory, BikeModel (optional padding minutes, optional photo), BikeModelVariant (optional photo), Bike (required bid, optional photo, in_service, self_bookable), RentalPackage (including variant rates), Staff (invite set-password; Manager / Counter), blocking service, Reservation (writable stage, owed, interval, and lines via Actions), Customer (name, email, phone; not unique; read-only owed/paid reminder; Manager can revoke that Customer's MyRental links). Do not add Devices, Allocation, or add-ons. Hours and the shop buffer minimum are on Location, not a separate resource and not config-only. New Location hours start empty. Filament interval edits may ignore hours and the buffer (same as Terminal); they must not overlap another reservation's [starts_at, ends_at]. Filament still never captures Connect or cash checkout. RefundAction is allowed for Managers. Reservation writes must invoke domain Actions, not Eloquent in the resource. CancelAction may run from Filament and must prompt if any line is Out; pickup, return, and put-away stay off Filament.
@@ -52,9 +52,6 @@ New Location hours start empty. Do not seed shop hours or a demo catalog. Book i
 
 ## Staff invite and catalog photos
 Platform tenant create takes a Manager email and sends a set-password invite. Do not type a Staff password on that form. Shop Filament invites Counter and additional Managers the same way. Bike resource requires bid; optional photos on Bike, variant, model, and category. Shop Branding accepts a shop logo upload.
-
-## No Devices resource until Device slice
-Shop Filament v1 does not include a Devices resource or pairing codes. CFD paired_terminal_device_id waits. Manager-only /manage and no DB drop on tenant delete stay.
 
 ## Platform Users, Suspend, delete, Platform Manager
 Platform Filament: User resource (invite set-password, disable not delete, one admin class; first User is Artisan/seeder). Tenant: Domain rows after create, Express status and retry Account Link, Suspend/unsuspend (padlocks Book, Terminal, /manage for Staff), Tenant delete only while suspended without dropping the DB (no restore). Tenant create also inserts a Platform Manager Staff row (locked label Platform; shop cannot edit/disable/delete). Impersonation starts from Platform Filament, lands on the tenant host as that Platform Manager, Exit back to the apex. Do not HasTenants. Do not impersonate a real Manager. Shop Filament still never checkout/pickup/return.

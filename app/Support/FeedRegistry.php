@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace App\Support;
 
-class ViewfeedRegistry
+class FeedRegistry
 {
     /**
      * @return list<array{slug: string, name: string, component: string, inertia_page: string}>
      */
     public function all(): array
     {
-        $feeds = config('embiken.viewfeeds', []);
+        $feeds = config('embiken.feeds', []);
 
         foreach (app(ModuleRegistry::class)->resolvedEnabledModules() as $module) {
-            foreach ($module->viewfeeds() as $feed) {
+            foreach ($module->feeds() as $feed) {
                 $feeds[] = $feed;
             }
         }

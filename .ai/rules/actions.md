@@ -101,8 +101,8 @@ Pickup and return may be a subset of lines. Any Out caches stage Out. All In bef
 ## Counter may refund and park bikes
 Terminal Counter and Manager may RefundAction, set in_service false, open blocking service, and PutAwayAction. Filament RefundAction stays Manager-only. Pickup, return, and put-away stay off Filament.
 
-## Action JSON is SPA and staff Terminal
-jsonResponse serves the SPA and staff Terminal. Device-token callers wait for the Device slice. Occupancy Actions do not take a Device.
+## Action JSON serves SPA, Terminal, and Devices
+jsonResponse serves the SPA, staff Terminal, and authorized Device clients. Terminal writes require Staff authorization and paired Device context; Device-only surfaces use Device authorization. Occupancy Actions do not take a Device.
 
 ## Tenant create includes Platform Manager; Suspend padlock
 Create-tenant Action also inserts the Platform Manager Staff row. Suspend/unsuspend and Tenant delete (no drop DB, only while suspended) are Actions. Impersonation Action starts a Staff session as that Platform Manager on the tenant host. Do not impersonate an invitible Manager.

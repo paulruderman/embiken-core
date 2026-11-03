@@ -19,7 +19,7 @@
             "import": "@weather/stores/weather"
         }
     },
-    "viewfeeds": [
+    "feeds": [
         {
             "slug": "weather",
             "name": "Weather",

@@ -31,6 +31,7 @@ class LocationLineResource extends JsonResource
             'id' => $this->id,
             'product_id' => $this->product_id,
             'product_label' => trim($model.' '.$size),
+            'model_padding_minutes' => (int) ($this->product->bikeModel->padding_minutes ?? 0),
             'bike_id' => $this->bike_id,
             'status' => $this->status->value,
             'rider_name' => $this->rider_name,

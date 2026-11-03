@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
+import LocaleSwitcher from '@/components/LocaleSwitcher.vue';
 import { store } from '@/routes/staff/login';
 
 defineProps<{
@@ -10,6 +11,9 @@ defineProps<{
 <template>
     <div class="flex min-h-screen items-center justify-center bg-zinc-950 p-6 text-zinc-100">
         <Head title="Terminal sign in" />
+        <div class="absolute top-4 right-4">
+            <LocaleSwitcher />
+        </div>
         <Form
             v-bind="store.form()"
             class="w-full max-w-md space-y-4 rounded-3xl bg-zinc-900 p-8"

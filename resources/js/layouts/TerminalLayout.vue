@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import TerminalDayEcho from '@/layouts/TerminalDayEcho.vue';
 import {
@@ -11,11 +11,19 @@ const page = usePage();
 const day = useDayStore();
 const echoReady = ref(false);
 
-const snapshot = page.props as unknown as DaySnapshot;
+const snapshot = computed(() => page.props as unknown as DaySnapshot);
 
-if (!day.hydrated) {
-    day.hydrate(snapshot);
-}
+day.hydrate(snapshot.value);
+
+watch(
+    () => snapshot.value,
+    (nextSnapshot, previousSnapshot) => {
+        if (nextSnapshot !== previousSnapshot) {
+            day.hydrate(nextSnapshot);
+        }
+    },
+    { flush: 'sync' },
+);
 
 onMounted(() => {
     echoReady.value = true;

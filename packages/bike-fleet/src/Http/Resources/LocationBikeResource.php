@@ -28,6 +28,7 @@ class LocationBikeResource extends JsonResource
             'bike_situation_reservation_id' => $this->bike_situation_reservation_id,
             'variant_id' => $this->bike_model_variant_id,
             'model' => $this->variant?->bikeModel->name ?? '',
+            'model_padding_minutes' => (int) ($this->variant?->bikeModel->padding_minutes ?? 0),
             'variant' => $this->variant->size,
             'photo_url' => $photoPath === null ? null : tenant_asset($photoPath),
         ];

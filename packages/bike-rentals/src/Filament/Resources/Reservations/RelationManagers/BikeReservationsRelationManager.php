@@ -19,6 +19,7 @@ use Filament\Actions\CreateAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -36,7 +37,26 @@ class BikeReservationsRelationManager extends RelationManager
                     ->required(),
                 Select::make('bike_id')
                     ->label(__('app.rentals_ui.fields.bike'))
-                    ->options(fn (): array => Bike::query()->orderBy('bid')->pluck('bid', 'id')->all())
+                    ->options(function (Get $get, RelationManager $livewire): array {
+                        $variantId = $get('product_id');
+
+                        if (blank($variantId)) {
+                            return [];
+                        }
+
+                        /** @var Reservation $reservation */
+                        $reservation = $livewire->getOwnerRecord();
+
+                        return app(Availability::class)
+                            ->bikeCandidatesForInterval($reservation->starts_at, $reservation->ends_at)
+                            ->filter(fn (array $candidate): bool => $candidate['conflict_reason'] === null
+                                && $candidate['bike']->bike_model_variant_id === (int) $variantId)
+                            ->mapWithKeys(fn (array $candidate): array => [
+                                $candidate['bike']->id => $candidate['bike']->bid,
+                            ])
+                            ->all();
+                    })
+                    ->live()
                     ->searchable(),
                 TextInput::make('rider_name')->label(__('app.rentals_ui.fields.rider_name')),
                 TextInput::make('rider_height_cm')

@@ -10,6 +10,7 @@ export type DayBike = {
     id: number;
     bid: string;
     variant_id: number;
+    model_padding_minutes: number;
     in_service: boolean;
     self_bookable: boolean;
     bike_situation_state: BikeSituation;
@@ -23,6 +24,7 @@ export type DayLine = {
     id: number;
     product_id: number;
     product_label: string;
+    model_padding_minutes: number;
     bike_id: number | null;
     status: BikeReservationStatus;
     rider_name: string | null;
@@ -47,6 +49,10 @@ export type DayReservation = {
 export type DaySnapshot = {
     tenant_id: string;
     location_id: number;
+    schedule_date: string;
+    schedule_starts_at: string;
+    schedule_ends_at: string;
+    minimum_turnaround_buffer_minutes: number;
     bike_assignment_policy: string;
     reservation_readiness_window_minutes: number;
     timezone: string;
@@ -78,6 +84,11 @@ export const useDayStore = defineStore('day', {
         tenantId: '',
         locationId: 0,
         timezone: 'UTC',
+        scheduleDate: '',
+        scheduleStartsAt: '',
+        scheduleEndsAt: '',
+        minimumTurnaroundBufferMinutes: 10,
+        bikeAssignmentPolicy: 'terminal',
         currency: 'usd',
         returnSituation: 'home',
         reservationReadinessWindowMinutes: 45,
@@ -105,8 +116,13 @@ export const useDayStore = defineStore('day', {
         hydrate(snapshot: DaySnapshot): void {
             this.tenantId = snapshot.tenant_id;
             this.locationId = snapshot.location_id;
+            this.scheduleDate = snapshot.schedule_date;
+            this.scheduleStartsAt = snapshot.schedule_starts_at;
+            this.scheduleEndsAt = snapshot.schedule_ends_at;
             this.timezone = snapshot.timezone;
             this.currency = snapshot.currency;
+            this.minimumTurnaroundBufferMinutes = snapshot.minimum_turnaround_buffer_minutes;
+            this.bikeAssignmentPolicy = snapshot.bike_assignment_policy;
             this.returnSituation = snapshot.return_situation;
             this.reservationReadinessWindowMinutes =
                 snapshot.reservation_readiness_window_minutes;

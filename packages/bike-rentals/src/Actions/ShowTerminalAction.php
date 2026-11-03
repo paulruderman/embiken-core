@@ -8,6 +8,7 @@ use App\Actions\Action;
 use App\Actions\Concerns\AuthorizesStaff;
 use App\Models\Location;
 use App\Support\DayStore;
+use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
@@ -18,15 +19,18 @@ class ShowTerminalAction extends Action
 {
     use AuthorizesStaff;
 
-    public string $commandSignature = 'terminal:show {--tenant=}';
+    public string $commandSignature = 'terminal:show {--tenant=} {--date=}';
 
     /**
      * @return array<string, mixed>
      */
-    public function handle(): array
+    public function handle(?string $scheduleDate = null): array
     {
         $location = Location::query()->firstOrFail();
-        $snapshot = DayStore::forLocation($location);
+        $date = $scheduleDate === null
+            ? CarbonImmutable::now($location->timezone)
+            : CarbonImmutable::createFromFormat('!Y-m-d', $scheduleDate, $location->timezone);
+        $snapshot = DayStore::forLocation($location, $date);
 
         return [
             ...$snapshot,
@@ -41,7 +45,11 @@ class ShowTerminalAction extends Action
      */
     public function asController(Request $request): array
     {
-        return $this->handle();
+        $data = $request->validate([
+            'date' => ['sometimes', 'date_format:Y-m-d'],
+        ]);
+
+        return $this->handle($data['date'] ?? null);
     }
 
     /**
@@ -63,7 +71,8 @@ class ShowTerminalAction extends Action
     public function asCommand(Command $command): int
     {
         $this->initializeTenancyFromCommand($command);
-        $snapshot = $this->handle();
+        $date = $command->option('date');
+        $snapshot = $this->handle(is_string($date) && $date !== '' ? $date : null);
         $command->info('Bikes: '.count($snapshot['bikes']).', reservations: '.count($snapshot['reservations']));
 
         return self::SUCCESS;

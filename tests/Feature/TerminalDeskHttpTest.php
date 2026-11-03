@@ -146,6 +146,34 @@ test('staff can open terminal with the location bike assignment policy', functio
                 ->etc()));
 });
 
+test('staff can open the terminal planner for a selected shop date', function () {
+    $shop = provisionDeskShop('desk-planner-date.localhost');
+    $this->deskTenant = $shop['tenant'];
+    $selectedReservationId = null;
+
+    $shop['tenant']->run(function () use ($shop, &$selectedReservationId): void {
+        $shop['location']->update(['timezone' => 'America/New_York']);
+        $selectedReservation = Reservation::factory()->confirmed()->terminal()->recycle($shop['location'])->create([
+            'starts_at' => '2026-11-05 15:00:00',
+            'ends_at' => '2026-11-05 17:00:00',
+        ]);
+        Reservation::factory()->confirmed()->terminal()->recycle($shop['location'])->create([
+            'starts_at' => '2026-11-06 15:00:00',
+            'ends_at' => '2026-11-06 17:00:00',
+        ]);
+        $selectedReservationId = $selectedReservation->id;
+    });
+
+    $this->withoutVite()
+        ->actingAs($shop['staff'], 'staff')
+        ->get('http://desk-planner-date.localhost/terminal?date=2026-11-05')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('schedule_date', '2026-11-05')
+            ->has('reservations', 1)
+            ->where('reservations.0.id', $selectedReservationId));
+});
+
 test('terminal bike candidates use the requested interval and include catalog fit data', function () {
     $shop = provisionDeskShop('desk-bike-candidates.localhost');
     $this->deskTenant = $shop['tenant'];

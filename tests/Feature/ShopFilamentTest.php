@@ -471,9 +471,32 @@ test('a manager can open the reservation editor', function () {
         ->assertOk()
         ->assertActionExists('setStage')
         ->assertActionExists('setOwed')
+        ->assertActionExists('changeInterval')
         ->assertActionExists('extend')
         ->assertActionExists('refund')
         ->assertActionExists('cancel');
+});
+
+test('a manager edits a reservation interval through the availability action', function () {
+    $staff = Staff::factory()->create();
+    $reservation = Reservation::factory()->confirmed()->recycle($staff->location)->create([
+        'starts_at' => '2026-10-26 10:00:00',
+        'ends_at' => '2026-10-26 12:00:00',
+        'owed' => 5400,
+    ]);
+
+    $this->actingAs($staff, 'staff');
+
+    Livewire::test(EditReservation::class, ['record' => $reservation->public_id])
+        ->callAction('changeInterval', data: [
+            'starts_at' => '2026-10-26 09:30:00',
+            'ends_at' => '2026-10-26 12:30:00',
+        ])
+        ->assertHasNoFormErrors();
+
+    expect($reservation->fresh()->starts_at->toDateTimeString())->toBe('2026-10-26 09:30:00')
+        ->and($reservation->fresh()->ends_at->toDateTimeString())->toBe('2026-10-26 12:30:00')
+        ->and($reservation->fresh()->owed)->toBe(5400);
 });
 
 test('a manager enters owed in the location currency rather than minor units', function () {

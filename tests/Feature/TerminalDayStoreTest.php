@@ -4,6 +4,7 @@ use App\Events\LocationBikePatched;
 use App\Events\LocationReservationPatched;
 use App\Models\Location;
 use App\Support\DayStore;
+use Carbon\CarbonImmutable;
 use Embiken\BikeFleet\Enums\BikeSituation;
 use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeFleet\Observers\BikeObserver;
@@ -87,6 +88,26 @@ test('the day store snapshot includes every bike and today plus occupying reserv
             'rider_name',
             'rider_height_cm',
         ]);
+});
+
+test('the day store can hydrate reservations for a selected shop date', function () {
+    $location = Location::factory()->create(['timezone' => 'America/New_York']);
+    $selectedDay = CarbonImmutable::parse('2026-11-05 00:00:00', $location->timezone);
+    $selectedReservation = Reservation::factory()->confirmed()->recycle($location)->create([
+        'starts_at' => $selectedDay->setTime(10, 0)->utc(),
+        'ends_at' => $selectedDay->setTime(12, 0)->utc(),
+    ]);
+    $otherReservation = Reservation::factory()->confirmed()->recycle($location)->create([
+        'starts_at' => $selectedDay->addDay()->setTime(10, 0)->utc(),
+        'ends_at' => $selectedDay->addDay()->setTime(12, 0)->utc(),
+    ]);
+
+    $snapshot = DayStore::forLocation($location, $selectedDay);
+    $reservationIds = collect($snapshot['modules']['rentals']['reservations'])->pluck('id');
+
+    expect($snapshot['schedule_date'])->toBe('2026-11-05')
+        ->and($reservationIds)->toContain($selectedReservation->id)
+        ->and($reservationIds)->not->toContain($otherReservation->id);
 });
 
 test('catalog photos fall back from bike through variant model and category', function () {

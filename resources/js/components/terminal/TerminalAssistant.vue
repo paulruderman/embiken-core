@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { useHttp } from '@inertiajs/vue3';
 import TerminalAssistantTurnAction from '@/actions/Embiken/BikeRentals/Actions/TerminalAssistantTurnAction';
 
@@ -15,16 +15,31 @@ type AssistantUi = {
     assistant_intro: string;
     assistant_privacy: string;
     assistant_unavailable: string;
+    assistant_taking_longer: string;
+    assistant_waiting: string;
+    assistant_conversation_limit: string;
+    assistant_request_rejected: string;
+    assistant_retry_or_clear: string;
+    assistant_retry: string;
     assistant_clear: string;
 };
 
+const MAX_CONVERSATION_MESSAGES = 12;
+const SLOW_REQUEST_NOTICE_DELAY_MS = 15000;
 const props = defineProps<{ ui: AssistantUi }>();
 const isOpen = ref(false);
 const input = ref('');
 const error = ref('');
 const messages = ref<ChatMessage[]>([]);
 const conversation = ref<ChatMessage[]>([]);
+const retryAvailable = ref(false);
+const failedTurn = ref(false);
+const takingLonger = ref(false);
 const scrollContainer = ref<HTMLElement | null>(null);
+let slowRequestTimer: ReturnType<typeof setTimeout> | undefined;
+const conversationLimitReached = computed(
+    () => conversation.value.length >= MAX_CONVERSATION_MESSAGES,
+);
 const request = useHttp<{ messages: ChatMessage[] }, AssistantResponse>({
     messages: [],
 });
@@ -40,22 +55,16 @@ watch(
     },
 );
 
-function send(): void {
-    const content = input.value.trim();
-
-    if (content === '' || request.processing) {
-        return;
-    }
-
-    const userMessage: ChatMessage = { role: 'user', content };
-    messages.value.push(userMessage);
-    conversation.value.push(userMessage);
-    input.value = '';
-    error.value = '';
-
+function submitConversation(): void {
     request
         .transform(() => ({ messages: conversation.value }))
         .post(TerminalAssistantTurnAction.url(), {
+            onStart: () => {
+                takingLonger.value = false;
+                slowRequestTimer = setTimeout(() => {
+                    takingLonger.value = true;
+                }, SLOW_REQUEST_NOTICE_DELAY_MS);
+            },
             onSuccess: (response) => {
                 const assistantMessage: ChatMessage = {
                     role: 'assistant',
@@ -63,6 +72,14 @@ function send(): void {
                 };
                 messages.value.push(assistantMessage);
                 conversation.value.push(assistantMessage);
+                error.value = '';
+                failedTurn.value = false;
+                retryAvailable.value = false;
+            },
+            onError: () => {
+                error.value = props.ui.assistant_request_rejected;
+                failedTurn.value = true;
+                retryAvailable.value = false;
             },
             onHttpException: (response) => {
                 let responseData: unknown = response.data;
@@ -85,18 +102,82 @@ function send(): void {
                     typeof responseMessage === 'string'
                         ? responseMessage
                         : props.ui.assistant_unavailable;
+                retryAvailable.value = response.status === 429 || response.status >= 500;
+                failedTurn.value = true;
             },
             onNetworkError: () => {
                 error.value = props.ui.assistant_unavailable;
+                retryAvailable.value = true;
+                failedTurn.value = true;
+            },
+            onFinish: () => {
+                if (slowRequestTimer !== undefined) {
+                    clearTimeout(slowRequestTimer);
+                    slowRequestTimer = undefined;
+                }
+                takingLonger.value = false;
             },
         });
 }
 
+function send(): void {
+    const content = input.value.trim();
+
+    if (content === '') {
+        return;
+    }
+
+    if (request.processing) {
+        error.value = props.ui.assistant_waiting;
+        return;
+    }
+
+    if (failedTurn.value) {
+        error.value = props.ui.assistant_retry_or_clear;
+        return;
+    }
+
+    if (conversationLimitReached.value) {
+        return;
+    }
+
+    const userMessage: ChatMessage = { role: 'user', content };
+    messages.value.push(userMessage);
+    conversation.value.push(userMessage);
+    input.value = '';
+    error.value = '';
+    failedTurn.value = false;
+    retryAvailable.value = false;
+    submitConversation();
+}
+
+function retryLastTurn(): void {
+    if (
+        request.processing ||
+        !failedTurn.value ||
+        conversation.value[conversation.value.length - 1]?.role !== 'user'
+    ) {
+        return;
+    }
+
+    error.value = '';
+    failedTurn.value = false;
+    retryAvailable.value = false;
+    submitConversation();
+}
+
 function clearConversation(): void {
+    if (request.processing) {
+        return;
+    }
+
     messages.value = [];
     conversation.value = [];
     error.value = '';
     input.value = '';
+    failedTurn.value = false;
+    retryAvailable.value = false;
+    takingLonger.value = false;
 }
 </script>
 
@@ -125,6 +206,7 @@ function clearConversation(): void {
                 <button
                     type="button"
                     class="text-brand-gray-700 hover:bg-brand-gray-200 dark:text-brand-gray-200 dark:hover:bg-brand-gray-800 min-h-12 rounded-xl px-3 text-sm font-semibold"
+                    :disabled="request.processing"
                     @click="clearConversation"
                 >
                     {{ ui.assistant_clear }}
@@ -167,7 +249,14 @@ function clearConversation(): void {
                     v-if="request.processing"
                     class="bg-brand-gray-200 dark:bg-brand-gray-800 self-start rounded-2xl px-4 py-3 text-base"
                 >
-                    {{ ui.assistant_thinking }}
+                    {{ takingLonger ? ui.assistant_taking_longer : ui.assistant_thinking }}
+                </li>
+                <li
+                    v-if="conversationLimitReached"
+                    class="rounded-xl border border-amber-400 bg-amber-50 p-3 text-sm font-semibold text-amber-950 dark:bg-amber-950 dark:text-amber-100"
+                    role="status"
+                >
+                    {{ ui.assistant_conversation_limit }}
                 </li>
                 <li
                     v-if="error"
@@ -175,6 +264,14 @@ function clearConversation(): void {
                     role="alert"
                 >
                     {{ error }}
+                    <button
+                        v-if="retryAvailable"
+                        type="button"
+                        class="ml-2 min-h-11 rounded-lg border border-red-700 px-3 font-bold dark:border-red-300"
+                        @click="retryLastTurn"
+                    >
+                        {{ ui.assistant_retry }}
+                    </button>
                 </li>
             </ol>
 
@@ -202,7 +299,7 @@ function clearConversation(): void {
                     <button
                         type="submit"
                         class="bg-brand-primary-600 dark:bg-brand-primary-400 dark:text-brand-gray-950 min-h-14 rounded-xl px-4 text-base font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
-                        :disabled="request.processing || input.trim() === ''"
+                        :disabled="request.processing || input.trim() === '' || conversationLimitReached"
                     >
                         {{ ui.assistant_send }}
                     </button>

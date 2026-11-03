@@ -6,10 +6,11 @@ namespace Embiken\BikeRentals\Services\TerminalAssistant;
 
 use App\Models\Location;
 use Carbon\CarbonImmutable;
+use Embiken\BikeFleet\Enums\BikeSituation;
 use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeFleet\Models\ServiceRequest;
-use Embiken\BikeFleet\Enums\BikeSituation;
 use Embiken\BikeRentals\Actions\BrowseTerminalBikeCandidatesAction;
+use Embiken\BikeRentals\Enums\ReservationStage;
 use Embiken\BikeRentals\Models\BikeReservation;
 use Embiken\BikeRentals\Models\Reservation;
 use Illuminate\Support\Collection;
@@ -102,12 +103,20 @@ class TerminalAssistantTools
         $dayStart = $checkedAt->startOfDay();
         $dayEnd = $dayStart->addDay();
 
+        $cancelledReservationCount = Reservation::query()
+            ->where('stage', ReservationStage::Cancelled)
+            ->where('starts_at', '<', $dayEnd->utc())
+            ->where('ends_at', '>=', $dayStart->utc())
+            ->count();
+
         $reservations = Reservation::query()
+            ->select(['id', 'stage', 'starts_at', 'ends_at'])
             ->withCount('bikeReservations')
+            ->where('stage', '!=', ReservationStage::Cancelled)
             ->where('starts_at', '<', $dayEnd->utc())
             ->where('ends_at', '>=', $dayStart->utc())
             ->orderBy('starts_at')
-            ->get(['id', 'stage', 'starts_at', 'ends_at']);
+            ->get();
 
         $reservationLineCount = 0;
         $reservationsStartingByHour = [];
@@ -177,8 +186,8 @@ class TerminalAssistantTools
 
             $affectedBikes[] = [
                 'bid' => $bike->bid,
-                'model' => $bike->variant->bikeModel->name,
-                'variant' => $bike->variant->size,
+                'model' => $bike->variant?->bikeModel?->name,
+                'variant' => $bike->variant?->size,
                 'in_service' => $bike->in_service,
                 'blocking_service_stages' => array_values(array_unique($blockingStages)),
             ];
@@ -190,6 +199,7 @@ class TerminalAssistantTools
             'checked_at_local' => $checkedAt->format('Y-m-d H:i'),
             'reservations' => [
                 'intersecting_today_count' => $reservations->count(),
+                'cancelled_intersecting_today_count' => $cancelledReservationCount,
                 'bike_line_count' => $reservationLineCount,
                 'starts_by_hour' => array_values($reservationsStartingByHour),
                 'schedule' => $schedule,

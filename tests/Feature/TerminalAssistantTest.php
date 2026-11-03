@@ -5,8 +5,15 @@ use App\Models\Device;
 use App\Models\Location;
 use App\Models\Staff;
 use App\Models\Tenant;
+use Embiken\BikeFleet\Enums\BikeSituation;
+use Embiken\BikeFleet\Models\Bike;
+use Embiken\BikeFleet\Models\BikeModelVariant;
+use Embiken\BikeFleet\Models\ServiceRequest;
+use Embiken\BikeRentals\Enums\ReservationStage;
+use Embiken\BikeRentals\Models\BikeReservation;
 use Embiken\BikeRentals\Models\Customer;
 use Embiken\BikeRentals\Models\Reservation;
+use Embiken\BikeRentals\Services\TerminalAssistant\TerminalAssistantTools;
 use Illuminate\Support\Facades\Http;
 use Tests\Concerns\MigratesTenantSchema;
 
@@ -185,6 +192,85 @@ test('terminal assistant preserves empty tool arguments as an object on the foll
 
     expect($followUpMessages[2]['tool_calls'][0]['function']['arguments'])
         ->toBeInstanceOf(stdClass::class);
+});
+
+test('terminal assistant summarizes the shop day and current fleet without customer details', function (): void {
+    $shop = provisionTerminalAssistantShop('assistant-shop-day.localhost');
+    $this->terminalAssistantTenant = $shop['tenant'];
+
+    $summary = $shop['tenant']->run(function () use ($shop): array {
+        $today = now($shop['location']->timezone)->startOfDay();
+        $variant = BikeModelVariant::factory()->create();
+        $customer = Customer::factory()->create([
+            'name' => 'Private Customer Name',
+            'email' => 'private.customer@example.test',
+            'phone' => '212 555 0199',
+        ]);
+        $reservations = collect([9, 9, 16])->map(fn (int $startHour) => Reservation::factory()
+            ->confirmed()
+            ->terminal()
+            ->recycle($shop['location'])
+            ->create([
+                'customer_id' => $customer->id,
+                'starts_at' => $today->copy()->addHours($startHour)->utc(),
+                'ends_at' => $today->copy()->addHours($startHour + 2)->utc(),
+            ]));
+        $cancelledReservation = Reservation::factory()
+            ->terminal()
+            ->recycle($shop['location'])
+            ->create([
+                'customer_id' => $customer->id,
+                'stage' => ReservationStage::Cancelled,
+                'starts_at' => $today->copy()->addHours(11)->utc(),
+                'ends_at' => $today->copy()->addHours(13)->utc(),
+            ]);
+
+        foreach ([2, 1, 0] as $index => $lineCount) {
+            foreach (range(1, $lineCount) as $_) {
+                BikeReservation::factory()->create([
+                    'reservation_id' => $reservations[$index]->id,
+                    'product_id' => $variant->id,
+                ]);
+            }
+        }
+
+        Bike::factory()->for($shop['location'])->count(2)->create([
+            'bike_model_variant_id' => $variant->id,
+        ]);
+        $outOfServiceBike = Bike::factory()->outOfService()->for($shop['location'])->create([
+            'bike_model_variant_id' => $variant->id,
+        ]);
+        $blockingServiceBike = Bike::factory()->for($shop['location'])->create([
+            'bike_model_variant_id' => $variant->id,
+        ]);
+        Bike::factory()->for($shop['location'])->create([
+            'bike_model_variant_id' => $variant->id,
+            'bike_situation_state' => BikeSituation::RentedOut,
+        ]);
+        ServiceRequest::factory()->for($outOfServiceBike)->create();
+        ServiceRequest::factory()->for($blockingServiceBike)->create();
+
+        return app(TerminalAssistantTools::class)->execute('summarize_shop_day', []);
+    });
+
+    expect($summary['reservations']['intersecting_today_count'])->toBe(3)
+        ->and($summary['reservations']['cancelled_intersecting_today_count'])->toBe(1)
+        ->and($summary['reservations']['bike_line_count'])->toBe(3)
+        ->and($summary['reservations']['starts_by_hour'])->toBe([
+            ['hour_local' => '09:00', 'reservation_count' => 2, 'bike_line_count' => 3],
+            ['hour_local' => '16:00', 'reservation_count' => 1, 'bike_line_count' => 0],
+        ])
+        ->and($summary['fleet']['bike_count'])->toBe(5)
+        ->and($summary['fleet']['in_service_bike_count'])->toBe(4)
+        ->and($summary['fleet']['out_of_service_bike_count'])->toBe(1)
+        ->and($summary['fleet']['blocking_service_bike_count'])->toBe(2)
+        ->and($summary['fleet']['unavailable_bike_count'])->toBe(2)
+        ->and($summary['fleet']['situation_counts']['rented_out'])->toBe(1);
+
+    expect(json_encode($summary, JSON_THROW_ON_ERROR))
+        ->not->toContain('Private Customer Name')
+        ->not->toContain('private.customer@example.test')
+        ->not->toContain('212 555 0199');
 });
 
 test('terminal assistant explains when Ollama rejects a tool-call request', function (): void {

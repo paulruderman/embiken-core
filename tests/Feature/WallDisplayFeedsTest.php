@@ -118,7 +118,7 @@ test('Weather Feed shows a placeholder when the tenant has no configured weather
         ->assertInertia(fn (Assert $page) => $page
             ->where('feed.slug', 'weather')
             ->has('feed.data.sites', 0)
-            ->where('feed.data.not_configured', __('app.weather_ui.not_configured')));
+            ->where('feed.data.empty_sites', __('app.weather_ui.empty_sites')));
 });
 
 test('Weather Feed shows configured Weather Sites for the tenant', function (): void {

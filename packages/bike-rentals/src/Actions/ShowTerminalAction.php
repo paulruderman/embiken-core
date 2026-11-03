@@ -59,6 +59,7 @@ class ShowTerminalAction extends Action
     {
         return Inertia::render('Terminal/Index', [
             ...$snapshot,
+            'terminal_assistant_enabled' => config('services.terminal_assistant.driver') === 'ollama',
             'terminal_ui' => __('app.terminal_ui'),
         ]);
     }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import MarketingLayout from '@/components/MarketingLayout.vue';
 import { localRouteUrl } from '@/lib/local-route-url';
-import { contact, pricing, signup } from '@/routes/marketing';
+import marketing from '@/routes/marketing';
 import { Head, Link } from '@inertiajs/vue3';
 </script>
 
@@ -52,14 +52,14 @@ import { Head, Link } from '@inertiajs/vue3';
 
                         <div class="mt-9 flex flex-col gap-3 sm:flex-row">
                             <Link
-                                :href="localRouteUrl(signup({ billingPlan: 'starter' }))"
+                                :href="localRouteUrl(marketing.signup.localhost({ billingPlan: 'starter' }))"
                                 class="inline-flex min-h-12 items-center justify-center rounded-full bg-lime-300 px-6 text-sm font-semibold text-emerald-950 shadow-lg shadow-black/10 transition hover:-translate-y-0.5 hover:bg-lime-200"
                             >
                                 Create a free workspace
                                 <span class="ml-2" aria-hidden="true">→</span>
                             </Link>
                             <Link
-                                :href="localRouteUrl(pricing())"
+                                :href="localRouteUrl(marketing.pricing.localhost())"
                                 class="inline-flex min-h-12 items-center justify-center rounded-full border border-white/25 px-6 text-sm font-semibold text-white transition hover:bg-white/10"
                             >
                                 Explore pricing
@@ -153,8 +153,8 @@ import { Head, Link } from '@inertiajs/vue3';
                         <p class="mt-3 text-sm leading-6 text-zinc-600 sm:text-base">Embiken is in early access. Create a shop workspace, compare plans, and tell us where your rental day gets delightfully complicated. Signup sets up your shop and invites its Manager; it does not collect a subscription payment yet.</p>
                     </div>
                     <div class="flex flex-col gap-3 sm:flex-row">
-                        <Link :href="localRouteUrl(signup({ billingPlan: 'starter' }))" class="inline-flex min-h-12 items-center justify-center rounded-full bg-emerald-900 px-6 text-sm font-semibold text-white transition hover:bg-emerald-800">Create a workspace</Link>
-                        <Link :href="localRouteUrl(contact())" class="inline-flex min-h-12 items-center justify-center rounded-full border border-emerald-900/20 px-6 text-sm font-semibold text-emerald-950 transition hover:bg-white/60">Talk to us</Link>
+                        <Link :href="localRouteUrl(marketing.signup.localhost({ billingPlan: 'starter' }))" class="inline-flex min-h-12 items-center justify-center rounded-full bg-emerald-900 px-6 text-sm font-semibold text-white transition hover:bg-emerald-800">Create a workspace</Link>
+                        <Link :href="localRouteUrl(marketing.contact.localhost())" class="inline-flex min-h-12 items-center justify-center rounded-full border border-emerald-900/20 px-6 text-sm font-semibold text-emerald-950 transition hover:bg-white/60">Talk to us</Link>
                     </div>
                 </div>
             </section>

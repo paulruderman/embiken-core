@@ -95,7 +95,7 @@ function clearConversation(): void {
         <section
             v-else
             class="flex h-[min(78vh,44rem)] w-[min(94vw,30rem)] flex-col overflow-hidden rounded-2xl border border-brand-gray-300 bg-brand-gray-50 shadow-2xl dark:border-brand-gray-700 dark:bg-brand-gray-950"
-            aria-label="Terminal assistant"
+            :aria-label="ui.assistant_title"
         >
             <header class="flex min-h-16 items-center gap-3 border-b border-brand-gray-300 bg-brand-gray-100 px-4 dark:border-brand-gray-800 dark:bg-brand-gray-900">
                 <h2 class="flex-1 text-lg font-bold">{{ ui.assistant_title }}</h2>

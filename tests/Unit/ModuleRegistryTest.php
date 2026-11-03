@@ -47,7 +47,6 @@ test('frontend manifest exposes module feeds under the feed key', function () {
         'slug' => 'weather',
         'name' => 'Weather',
         'component' => 'Weather/Board',
-        'inertia_page' => 'Weather/prototype/Index',
     ])
         ->and($manifest)->not->toHaveKey('viewfeeds');
 });

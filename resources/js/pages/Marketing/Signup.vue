@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { home } from '@/routes/marketing';
-import { pricing } from '@/routes/marketing';
-import signupRoutes from '@/routes/marketing/signup';
+import marketing from '@/routes/marketing';
 import { localRouteUrl } from '@/lib/local-route-url';
 
 interface Plan {
@@ -43,7 +41,7 @@ function updateShopSlug(): void {
 }
 
 function submit(): void {
-    form.post(localRouteUrl(signupRoutes.store().url));
+    form.post(localRouteUrl(marketing.signup.store.localhost().url));
 }
 </script>
 
@@ -53,7 +51,7 @@ function submit(): void {
         <header
             class="mx-auto flex max-w-6xl items-center justify-between px-6 py-6 lg:px-10"
         >
-            <Link :href="localRouteUrl(home())" class="text-xl font-semibold tracking-tight"
+            <Link :href="localRouteUrl(marketing.home.localhost())" class="text-xl font-semibold tracking-tight"
                 >embiken</Link
             >
             <span
@@ -104,7 +102,7 @@ function submit(): void {
                     No subscription payment is collected on this page.
                 </p>
                 <Link
-                    :href="localRouteUrl(pricing())"
+                    :href="localRouteUrl(marketing.pricing.localhost())"
                     class="mt-6 inline-block text-sm font-medium text-zinc-600 underline decoration-zinc-300 underline-offset-4 hover:text-zinc-950"
                     >Back to plan comparison</Link
                 >
@@ -252,7 +250,7 @@ function submit(): void {
                     </p>
                 </div>
                 <Link
-                    :href="localRouteUrl(pricing())"
+                    :href="localRouteUrl(marketing.pricing.localhost())"
                     class="mt-6 inline-block text-sm font-medium text-zinc-600 underline decoration-zinc-300 underline-offset-4 hover:text-zinc-950"
                     >Change plan</Link
                 >

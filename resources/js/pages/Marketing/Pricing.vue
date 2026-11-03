@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { Head, Link, usePage } from '@inertiajs/vue3';
-import { signup } from '@/routes/marketing';
+import marketing from '@/routes/marketing';
 import { localRouteUrl } from '@/lib/local-route-url';
 import MarketingLayout from '@/components/MarketingLayout.vue';
 
@@ -298,14 +298,14 @@ function planDetails(plan: Plan): string[] {
             <div class="mt-8 flex justify-center">
                 <Link
                     v-if="selectedPlan && !selectedPlan.customPricing"
-                    :href="localRouteUrl(signup(selectedPlan.slug))"
+                    :href="localRouteUrl(marketing.signup.localhost(selectedPlan.slug))"
                     class="rounded-full bg-emerald-800 px-7 py-3.5 text-center text-sm font-semibold text-white transition hover:bg-emerald-700"
                 >
                     Continue with {{ selectedPlan.name }}
                 </Link>
                 <Link
                     v-else-if="selectedPlan"
-                    :href="localRouteUrl(signup(selectedPlan.slug))"
+                    :href="localRouteUrl(marketing.signup.localhost(selectedPlan.slug))"
                     class="rounded-full bg-emerald-800 px-7 py-3.5 text-center text-sm font-semibold text-white transition hover:bg-emerald-700"
                 >
                     Explore {{ selectedPlan.name }}

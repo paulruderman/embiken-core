@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import MarketingLayout from '@/components/MarketingLayout.vue';
-import { blog } from '@/routes/marketing';
+import marketing from '@/routes/marketing';
 import { localRouteUrl } from '@/lib/local-route-url';
 
 interface MarketingPage {
@@ -32,7 +32,7 @@ defineProps<{ page: MarketingPage }>();
 
         <main class="mx-auto max-w-5xl px-6 pt-14 pb-4 lg:px-10 lg:pt-20">
             <div v-if="page.isArticle" class="mb-8 flex items-center gap-3 text-sm text-zinc-500">
-                <Link :href="localRouteUrl(blog())" class="font-medium text-emerald-900 hover:underline">Journal</Link>
+                <Link :href="localRouteUrl(marketing.blog.localhost())" class="font-medium text-emerald-900 hover:underline">Journal</Link>
                 <span aria-hidden="true">/</span>
                 <time v-if="page.publishedAt" :datetime="page.publishedAt">{{ page.publishedAt }}</time>
             </div>

@@ -1,0 +1,147 @@
+<?php
+
+use App\Models\Device;
+use App\Models\Display;
+use App\Models\Location;
+use App\Models\LocationHour;
+use App\Models\Tenant;
+use Embiken\BikeFleet\Models\BikeModelVariant;
+use Embiken\BikeRentals\Models\RentalPackage;
+use Illuminate\Support\Facades\Notification;
+use Inertia\Testing\AssertableInertia as Assert;
+use Tests\Concerns\MigratesTenantSchema;
+
+uses(MigratesTenantSchema::class);
+
+function deleteWallDisplayFeedTenant(?Tenant $tenant): void
+{
+    tenancy()->end();
+
+    if ($tenant === null) {
+        return;
+    }
+
+    $path = database_path($tenant->database()->getName());
+
+    if (is_file($path)) {
+        unlink($path);
+    }
+}
+
+/** @return array{tenant: Tenant, location: Location, device: Device, display: Display, token: string} */
+function provisionWallDisplayFeedShop(string $domain): array
+{
+    Notification::fake();
+
+    $tenant = Tenant::create([
+        'name' => 'Wall Display Feed Shop',
+        'modules' => [
+            'embiken/bike-fleet',
+            'embiken/bike-rentals',
+            'embiken/bike-rental-self-booking',
+            'embiken/weather',
+        ],
+    ]);
+    $tenant->domains()->create(['domain' => $domain]);
+
+    $location = null;
+    $device = null;
+    $display = null;
+    $token = null;
+
+    $tenant->run(function () use (&$location, &$device, &$display, &$token): void {
+        $location = Location::factory()->create();
+        $display = Display::factory()->for($location)->create([
+            'name' => 'Main shop board',
+            'feed_slug' => 'today-shop-board',
+        ]);
+        $device = Device::factory()->wallDisplay()->for($location)->for($display)->create([
+            'paired_at' => now(),
+        ]);
+        $token = $device->createToken('wall-display-test')->plainTextToken;
+    });
+
+    return ['tenant' => $tenant, 'location' => $location, 'device' => $device, 'display' => $display, 'token' => $token];
+}
+
+afterEach(function (): void {
+    if (isset($this->wallDisplayFeedTenant)) {
+        deleteWallDisplayFeedTenant($this->wallDisplayFeedTenant);
+    }
+});
+
+test('a paired Wall Display resolves its assigned code-owned Feed and day store', function (): void {
+    $shop = provisionWallDisplayFeedShop('wall-feed-today.localhost');
+    $this->wallDisplayFeedTenant = $shop['tenant'];
+
+    $this->withoutVite()
+        ->withToken($shop['token'])
+        ->get('http://wall-feed-today.localhost/wall-display')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('WallDisplay/Index')
+            ->where('display.id', $shop['display']->id)
+            ->where('feed.slug', 'today-shop-board')
+            ->where('feed.component', 'core:today-shop-board')
+            ->has('dayStore.bikes')
+            ->has('dayStore.reservations'));
+});
+
+test('standby without a selected standby Feed resolves to the built-in standby screen', function (): void {
+    $shop = provisionWallDisplayFeedShop('wall-feed-standby.localhost');
+    $this->wallDisplayFeedTenant = $shop['tenant'];
+    $shop['tenant']->run(fn () => $shop['display']->update(['standby' => true, 'standby_feed_slug' => null]));
+
+    $this->withoutVite()
+        ->withToken($shop['token'])
+        ->get('http://wall-feed-standby.localhost/wall-display')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('feed.slug', 'standby')
+            ->where('feed.component', 'core:standby'));
+});
+
+test('Customer Menu lists only Book-visible offers with their rates and Location hours', function (): void {
+    $shop = provisionWallDisplayFeedShop('wall-feed-menu.localhost');
+    $this->wallDisplayFeedTenant = $shop['tenant'];
+
+    $shop['tenant']->run(function () use ($shop): void {
+        $variant = BikeModelVariant::factory()->create([
+            'size' => 'M',
+        ]);
+        $visiblePackage = RentalPackage::factory()->for($shop['location'])->create([
+            'name' => 'All day rental',
+            'book_visible' => true,
+            'meter' => 'per_calendar_day',
+        ]);
+        $visiblePackage->variants()->attach($variant, ['rate_minor_units' => 4200]);
+
+        $hiddenPackage = RentalPackage::factory()->for($shop['location'])->create([
+            'name' => 'Staff only',
+            'book_visible' => false,
+        ]);
+        $hiddenPackage->variants()->attach($variant, ['rate_minor_units' => 1000]);
+
+        LocationHour::factory()->for($shop['location'])->create([
+            'weekday' => 1,
+            'opens_at' => '09:00:00',
+            'closes_at' => '17:00:00',
+        ]);
+
+        $shop['display']->update(['feed_slug' => 'customer-menu']);
+    });
+
+    $this->withoutVite()
+        ->withToken($shop['token'])
+        ->get('http://wall-feed-menu.localhost/wall-display')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('feed.slug', 'customer-menu')
+            ->where('feed.component', 'BikeRentalSelfBooking/WallDisplay/CustomerMenu')
+            ->has('feed.data.packages', 1)
+            ->where('feed.data.packages.0.name', 'All day rental')
+            ->where('feed.data.packages.0.variants.0.rate_minor_units', 4200)
+            ->where('feed.data.hours.0.weekday', 'Monday')
+            ->where('feed.data.hours.0.opens_at', '09:00')
+            ->where('feed.data.hours.0.closes_at', '17:00'));
+});

@@ -44,7 +44,7 @@ interface TenantModule
     public function filamentPageDiscoveryPaths(): array;
 
     /**
-     * @return list<array{slug: string, name: string, component: string, inertia_page: string}>
+     * @return list<array{slug: string, name: string, component: string, provider?: class-string<WallDisplayFeedDataProvider>}>
      */
     public function feeds(): array;
 

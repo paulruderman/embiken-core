@@ -168,6 +168,7 @@ type TerminalUi = {
 
 const page = usePage();
 const locale = ref(page.props.locale);
+const terminalAssistantEnabled = ref(page.props.terminal_assistant_enabled === true);
 const terminalUi = reactive(page.props.terminal_ui as TerminalUi);
 watch(
     () => page.props.locale,
@@ -2005,6 +2006,6 @@ function eventSummary(entry: BroadcastLogEntry): string {
                 </p>
             </section>
         </div>
-        <TerminalAssistant :ui="terminalUi" />
+        <TerminalAssistant v-if="terminalAssistantEnabled" :ui="terminalUi" />
     </div>
 </template>

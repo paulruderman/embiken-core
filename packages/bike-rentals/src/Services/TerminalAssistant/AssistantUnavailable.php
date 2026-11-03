@@ -6,6 +6,4 @@ namespace Embiken\BikeRentals\Services\TerminalAssistant;
 
 use RuntimeException;
 
-class AssistantUnavailable extends RuntimeException
-{
-}
+class AssistantUnavailable extends RuntimeException {}

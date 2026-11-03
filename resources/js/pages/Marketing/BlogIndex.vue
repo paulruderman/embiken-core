@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import MarketingLayout from '@/components/MarketingLayout.vue';
-import { show as articleRoute } from '@/routes/marketing/blog';
+import marketing from '@/routes/marketing';
 import { localRouteUrl } from '@/lib/local-route-url';
 
 interface CmsPage {
@@ -45,7 +45,7 @@ defineProps<{ page: CmsPage; articles: Article[] }>();
                     <time v-if="article.publishedAt" :datetime="article.publishedAt" class="text-xs font-medium tracking-wide text-zinc-500 uppercase">{{ article.publishedAt }}</time>
                     <h2 class="mt-4 text-xl font-semibold tracking-tight">{{ article.title }}</h2>
                     <p class="mt-3 flex-1 text-sm leading-7 text-zinc-600">{{ article.excerpt }}</p>
-                    <Link :href="localRouteUrl(articleRoute.url(article.slug))" class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-emerald-900 hover:gap-3">
+                    <Link :href="localRouteUrl(marketing.blog.show.localhost(article.slug))" class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-emerald-900 hover:gap-3">
                         Read article <span aria-hidden="true">→</span>
                     </Link>
                 </article>

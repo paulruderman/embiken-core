@@ -36,7 +36,7 @@ return [
     ],
 
     'terminal_assistant' => [
-        'driver' => env('TERMINAL_ASSISTANT_DRIVER', 'disabled'),
+        'driver' => env('TERMINAL_ASSISTANT_DRIVER', env('APP_ENV') === 'local' ? 'ollama' : 'disabled'),
         'ollama_url' => env('OLLAMA_URL', 'http://127.0.0.1:11434'),
         'ollama_model' => env('OLLAMA_MODEL', 'qwen3'),
         'timeout' => (int) env('OLLAMA_TIMEOUT', 90),

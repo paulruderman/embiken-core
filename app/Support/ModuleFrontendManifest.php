@@ -35,7 +35,11 @@ class ModuleFrontendManifest
             }
 
             foreach ($module->feeds() as $feed) {
-                $feeds[] = $feed;
+                $feeds[] = [
+                    'slug' => $feed['slug'],
+                    'name' => $feed['name'],
+                    'component' => $feed['component'],
+                ];
             }
         }
 

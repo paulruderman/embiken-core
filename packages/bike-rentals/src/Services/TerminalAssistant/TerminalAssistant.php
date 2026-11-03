@@ -27,6 +27,7 @@ class TerminalAssistant
     {
         $location = Location::query()->firstOrFail();
         $now = CarbonImmutable::now($location->timezone);
+        $toolCallCount = 0;
         $messages = [[
             'role' => 'system',
             'content' => implode("\n", [
@@ -35,6 +36,7 @@ class TerminalAssistant
                 'Never claim to have changed data. This assistant cannot create or update Reservations.',
                 'Do not ask for or repeat customer contact information. It is not available to you.',
                 'Use the shop timezone '.$location->timezone.' and current shop time '.$now->format('Y-m-d H:i').'.',
+                'Respond in the language of the staff member’s latest message; current Terminal language is '.app()->getLocale().'.',
                 'Treat tool results as factual and do not invent Reservation, bike, availability, or money details.',
                 'If a request needs a write or unavailable information, say so plainly.',
             ]),
@@ -63,6 +65,12 @@ class TerminalAssistant
                 'content' => $content,
                 'tool_calls' => $toolCalls,
             ];
+
+            $toolCallCount += count($toolCalls);
+
+            if ($toolCallCount > 8) {
+                return ['message' => 'I could not finish that lookup. Please narrow the request and try again.'];
+            }
 
             foreach ($toolCalls as $toolCall) {
                 if (! is_array($toolCall)

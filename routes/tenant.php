@@ -9,6 +9,8 @@ use App\Actions\Staff\SignInAction;
 use App\Http\Controllers\MyRentalController;
 use App\Http\Controllers\ShopLandingPageController;
 use App\Http\Middleware\EnsureModuleEnabled;
+use App\Models\Device;
+use App\Support\WallDisplayPageData;
 use Embiken\BikeRentals\Actions\RequestMyRentalLinkAction;
 use Embiken\Maintenance\Actions\CompleteMaintenanceScheduleAction;
 use Illuminate\Http\Request;
@@ -37,7 +39,12 @@ Route::middleware([
 
     Route::middleware('device:customer_display')->get('/cfd', fn () => Inertia::render('Cfd/Index'))
         ->name('cfd');
-    Route::middleware('device:wall_display')->get('/wall-display', fn () => Inertia::render('WallDisplay/Index'))
+    Route::middleware('device:wall_display')->get('/wall-display', function (Request $request, WallDisplayPageData $pageData) {
+        $device = $request->attributes->get('device');
+        abort_unless($device instanceof Device, 401);
+
+        return Inertia::render('WallDisplay/Index', $pageData->forDevice($device));
+    })
         ->name('wall-display');
 
     Route::middleware(EnsureModuleEnabled::class.':embiken/bike-rentals')->group(function (): void {

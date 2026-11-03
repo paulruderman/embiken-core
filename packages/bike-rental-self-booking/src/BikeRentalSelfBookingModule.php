@@ -10,6 +10,7 @@ use Embiken\BikeFleet\Filament\Resources\Bikes\BikeResource;
 use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeRentals\Filament\Resources\RentalPackages\RentalPackageResource;
 use Embiken\BikeRentals\Models\RentalPackage;
+use Embiken\BikeRentalSelfBooking\WallDisplay\CustomerMenuFeedData;
 use Illuminate\Database\Eloquent\Builder;
 
 class BikeRentalSelfBookingModule extends AbstractTenantModule
@@ -34,6 +35,16 @@ class BikeRentalSelfBookingModule extends AbstractTenantModule
     public function dependencies(): array
     {
         return ['embiken/bike-rentals'];
+    }
+
+    public function feeds(): array
+    {
+        return [[
+            'slug' => 'customer-menu',
+            'name' => (string) __('app.wall_display_ui.customer_menu'),
+            'component' => 'BikeRentalSelfBooking/WallDisplay/CustomerMenu',
+            'provider' => CustomerMenuFeedData::class,
+        ]];
     }
 
     public function filamentPageDiscoveryPaths(): array

@@ -100,7 +100,9 @@ class TerminalAssistantTools
         return [
             'date' => $dayStart->toDateString(),
             'timezone' => $location->timezone,
-            'reservations' => $reservations->map(fn (Reservation $reservation): array => $this->reservationSummary($reservation, $location))->all(),
+            'reservations' => array_values($reservations->map(
+                fn (Reservation $reservation): array => $this->reservationSummary($reservation, $location),
+            )->all()),
         ];
     }
 
@@ -144,7 +146,7 @@ class TerminalAssistantTools
         $startsAt = CarbonImmutable::createFromFormat('!Y-m-d\TH:i', $startsAtLocal, $location->timezone);
         $endsAt = CarbonImmutable::createFromFormat('!Y-m-d\TH:i', $endsAtLocal, $location->timezone);
 
-        if ($startsAt === false || $endsAt === false || ! $endsAt->greaterThan($startsAt)) {
+        if ($startsAt === null || $endsAt === null || ! $endsAt->greaterThan($startsAt)) {
             throw ValidationException::withMessages(['interval' => 'The end must be after the start.']);
         }
 
@@ -167,13 +169,13 @@ class TerminalAssistantTools
      */
     private function reservationLines(Collection $lines): array
     {
-        return $lines->map(fn (BikeReservation $line): array => [
+        return array_values($lines->map(fn (BikeReservation $line): array => [
             'model' => $line->product?->bikeModel?->name,
             'variant' => $line->product?->size,
             'bid' => $line->bike?->bid,
             'line_status' => $line->status->value,
             'bike_situation' => $line->bike?->bike_situation_state?->value,
-        ])->all();
+        ])->all());
     }
 
     /**

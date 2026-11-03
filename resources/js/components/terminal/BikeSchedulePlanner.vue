@@ -35,6 +35,7 @@ type PlannerUi = {
     planner_out_of_service: string;
     planner_assigning_to: string;
     planner_select_bike: string;
+    planner_resize_column: string;
 };
 
 type BikeAssignment = {
@@ -60,7 +61,91 @@ const emit = defineEmits<{
 
 const day = useDayStore();
 const nowTimestamp = ref(Date.now());
+const plannerColumnWidths = ref<[number, number, number]>([160, 144, 160]);
+const activeColumnResize = ref<{
+    index: 0 | 1 | 2;
+    startX: number;
+    startWidth: number;
+} | null>(null);
 let clockInterval: number | undefined;
+
+const plannerGridTemplate = computed(
+    () =>
+        `${plannerColumnWidths.value[0]}px ${plannerColumnWidths.value[1]}px ${plannerColumnWidths.value[2]}px minmax(900px, 1fr)`,
+);
+
+function plannerColumnStyle(index: 0 | 1 | 2): Record<string, string> {
+    const left = plannerColumnWidths.value
+        .slice(0, index)
+        .reduce((width, columnWidth) => width + columnWidth, 0);
+
+    return {
+        width: `${plannerColumnWidths.value[index]}px`,
+        left: `${left}px`,
+    };
+}
+
+function beginPlannerColumnResize(event: PointerEvent, index: 0 | 1 | 2): void {
+    if (!(event.currentTarget instanceof HTMLElement)) {
+        return;
+    }
+
+    event.preventDefault();
+    activeColumnResize.value = {
+        index,
+        startX: event.clientX,
+        startWidth: plannerColumnWidths.value[index],
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+}
+
+function updatePlannerColumnResize(event: PointerEvent): void {
+    if (activeColumnResize.value === null) {
+        return;
+    }
+
+    const { index, startX, startWidth } = activeColumnResize.value;
+    const minimumWidth = index === 0 ? 112 : 120;
+    const maximumWidth = index === 2 ? 360 : 320;
+
+    plannerColumnWidths.value[index] = Math.min(
+        Math.max(startWidth + event.clientX - startX, minimumWidth),
+        maximumWidth,
+    );
+}
+
+function endPlannerColumnResize(event: PointerEvent): void {
+    if (
+        event.currentTarget instanceof HTMLElement &&
+        event.currentTarget.hasPointerCapture(event.pointerId)
+    ) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    activeColumnResize.value = null;
+}
+
+function resizePlannerColumnWithKeyboard(
+    event: KeyboardEvent,
+    index: 0 | 1 | 2,
+): void {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
+        return;
+    }
+
+    event.preventDefault();
+    const direction = event.key === 'ArrowRight' ? 1 : -1;
+    const minimumWidth = index === 0 ? 112 : 120;
+    const maximumWidth = index === 2 ? 360 : 320;
+
+    plannerColumnWidths.value[index] = Math.min(
+        Math.max(
+            plannerColumnWidths.value[index] + direction * 16,
+            minimumWidth,
+        ),
+        maximumWidth,
+    );
+}
 
 onMounted(() => {
     clockInterval = window.setInterval(() => {
@@ -488,22 +573,92 @@ function selectReservation(reservation: DayReservation): void {
         >
             <div class="min-w-[1200px]">
                 <div
-                    class="grid grid-cols-[10rem_9rem_10rem_minmax(0,1fr)] border-b border-zinc-800 bg-zinc-900"
+                    class="grid border-b border-zinc-800 bg-zinc-900"
+                    :style="{ gridTemplateColumns: plannerGridTemplate }"
                 >
                     <div
-                        class="sticky left-0 z-20 flex min-h-8 items-center border-r border-zinc-800 bg-zinc-900 px-3 text-xs font-bold tracking-wide text-zinc-400 uppercase"
+                        class="sticky z-30 flex min-h-8 items-center border-r border-zinc-800 bg-zinc-900 px-3 text-xs font-bold tracking-wide text-zinc-400 uppercase"
+                        :style="plannerColumnStyle(0)"
                     >
                         {{ ui.planner_bike }}
+                        <div
+                            role="separator"
+                            aria-orientation="vertical"
+                            tabindex="0"
+                            class="focus-visible:outline-inset absolute top-0 right-0 z-40 h-full w-2 cursor-col-resize touch-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-300"
+                            :aria-label="
+                                ui.planner_resize_column.replace(
+                                    ':column',
+                                    ui.planner_bike,
+                                )
+                            "
+                            :aria-valuemin="112"
+                            :aria-valuemax="320"
+                            :aria-valuenow="plannerColumnWidths[0]"
+                            @pointerdown="beginPlannerColumnResize($event, 0)"
+                            @pointermove="updatePlannerColumnResize"
+                            @pointerup="endPlannerColumnResize"
+                            @pointercancel="endPlannerColumnResize"
+                            @keydown="
+                                resizePlannerColumnWithKeyboard($event, 0)
+                            "
+                        ></div>
                     </div>
                     <div
-                        class="flex min-h-8 items-center border-r border-zinc-800 bg-zinc-900 px-3 text-xs font-bold tracking-wide text-zinc-400 uppercase"
+                        class="sticky z-30 flex min-h-8 items-center border-r border-zinc-800 bg-zinc-900 px-3 text-xs font-bold tracking-wide text-zinc-400 uppercase"
+                        :style="plannerColumnStyle(1)"
                     >
                         {{ ui.planner_model_size }}
+                        <div
+                            role="separator"
+                            aria-orientation="vertical"
+                            tabindex="0"
+                            class="focus-visible:outline-inset absolute top-0 right-0 z-40 h-full w-2 cursor-col-resize touch-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-300"
+                            :aria-label="
+                                ui.planner_resize_column.replace(
+                                    ':column',
+                                    ui.planner_model_size,
+                                )
+                            "
+                            :aria-valuemin="120"
+                            :aria-valuemax="320"
+                            :aria-valuenow="plannerColumnWidths[1]"
+                            @pointerdown="beginPlannerColumnResize($event, 1)"
+                            @pointermove="updatePlannerColumnResize"
+                            @pointerup="endPlannerColumnResize"
+                            @pointercancel="endPlannerColumnResize"
+                            @keydown="
+                                resizePlannerColumnWithKeyboard($event, 1)
+                            "
+                        ></div>
                     </div>
                     <div
-                        class="flex min-h-8 items-center border-r border-zinc-800 bg-zinc-900 px-3 text-xs font-bold tracking-wide text-zinc-400 uppercase"
+                        class="sticky z-30 flex min-h-8 items-center border-r border-zinc-800 bg-zinc-900 px-3 text-xs font-bold tracking-wide text-zinc-400 uppercase"
+                        :style="plannerColumnStyle(2)"
                     >
                         {{ ui.planner_situation }}
+                        <div
+                            role="separator"
+                            aria-orientation="vertical"
+                            tabindex="0"
+                            class="focus-visible:outline-inset absolute top-0 right-0 z-40 h-full w-2 cursor-col-resize touch-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-300"
+                            :aria-label="
+                                ui.planner_resize_column.replace(
+                                    ':column',
+                                    ui.planner_situation,
+                                )
+                            "
+                            :aria-valuemin="120"
+                            :aria-valuemax="360"
+                            :aria-valuenow="plannerColumnWidths[2]"
+                            @pointerdown="beginPlannerColumnResize($event, 2)"
+                            @pointermove="updatePlannerColumnResize"
+                            @pointerup="endPlannerColumnResize"
+                            @pointercancel="endPlannerColumnResize"
+                            @keydown="
+                                resizePlannerColumnWithKeyboard($event, 2)
+                            "
+                        ></div>
                     </div>
                     <div
                         class="relative grid min-h-8"
@@ -545,15 +700,17 @@ function selectReservation(reservation: DayReservation): void {
                 <div
                     v-for="{ bike, lines } in plannerBoard"
                     :key="bike.id"
-                    class="grid grid-cols-[10rem_9rem_10rem_minmax(0,1fr)] border-b border-zinc-800 last:border-b-0"
+                    class="grid border-b border-zinc-800 last:border-b-0"
                     :class="
                         assignment?.selectedBikeId === bike.id
                             ? 'bg-emerald-950/40'
                             : ''
                     "
+                    :style="{ gridTemplateColumns: plannerGridTemplate }"
                 >
                     <div
-                        class="sticky left-0 z-10 flex min-h-8 min-w-0 items-center overflow-hidden border-r border-zinc-800 bg-zinc-900 px-3"
+                        class="sticky z-20 flex min-h-8 min-w-0 items-center overflow-hidden border-r border-zinc-800 bg-zinc-900 px-3"
+                        :style="plannerColumnStyle(0)"
                         :title="plannerBikeBidTooltip(bike)"
                     >
                         <button
@@ -587,7 +744,8 @@ function selectReservation(reservation: DayReservation): void {
                         >
                     </div>
                     <div
-                        class="flex min-h-8 min-w-0 items-center overflow-hidden border-r border-zinc-800 bg-zinc-900 px-3"
+                        class="sticky z-20 flex min-h-8 min-w-0 items-center overflow-hidden border-r border-zinc-800 bg-zinc-900 px-3"
+                        :style="plannerColumnStyle(1)"
                     >
                         <span
                             class="block w-full truncate text-xs whitespace-nowrap text-zinc-300"
@@ -597,7 +755,8 @@ function selectReservation(reservation: DayReservation): void {
                         </span>
                     </div>
                     <div
-                        class="flex min-h-8 min-w-0 items-center overflow-hidden border-r border-zinc-800 bg-zinc-900 px-3"
+                        class="sticky z-20 flex min-h-8 min-w-0 items-center overflow-hidden border-r border-zinc-800 bg-zinc-900 px-3"
+                        :style="plannerColumnStyle(2)"
                     >
                         <div class="flex min-w-0 flex-col">
                             <span
@@ -713,11 +872,13 @@ function selectReservation(reservation: DayReservation): void {
                     <div
                         v-for="(item, index) in unassignedLines"
                         :key="`unassigned-${item.line.id}`"
-                        class="grid grid-cols-[10rem_9rem_10rem_minmax(0,1fr)] border-t border-zinc-800"
+                        class="grid border-t border-zinc-800"
+                        :style="{ gridTemplateColumns: plannerGridTemplate }"
                     >
                         <button
                             type="button"
-                            class="sticky left-0 z-10 flex min-h-8 items-center overflow-hidden border-r border-zinc-800 bg-zinc-900 px-3 text-left"
+                            class="sticky z-20 flex min-h-8 items-center overflow-hidden border-r border-zinc-800 bg-zinc-900 px-3 text-left"
+                            :style="plannerColumnStyle(0)"
                             :disabled="assignment !== undefined"
                             @click="selectReservation(item.reservation)"
                         >
@@ -729,7 +890,8 @@ function selectReservation(reservation: DayReservation): void {
                         </button>
                         <button
                             type="button"
-                            class="flex min-h-8 min-w-0 items-center overflow-hidden border-r border-zinc-800 bg-zinc-900 px-3 text-left"
+                            class="sticky z-20 flex min-h-8 min-w-0 items-center overflow-hidden border-r border-zinc-800 bg-zinc-900 px-3 text-left"
+                            :style="plannerColumnStyle(1)"
                             :title="item.line.product_label"
                             :disabled="assignment !== undefined"
                             @click="selectReservation(item.reservation)"
@@ -741,7 +903,8 @@ function selectReservation(reservation: DayReservation): void {
                             </span>
                         </button>
                         <div
-                            class="flex min-h-8 min-w-0 items-center overflow-hidden border-r border-zinc-800 bg-zinc-900 px-3"
+                            class="sticky z-20 flex min-h-8 min-w-0 items-center overflow-hidden border-r border-zinc-800 bg-zinc-900 px-3"
+                            :style="plannerColumnStyle(2)"
                         >
                             <span
                                 class="block w-full truncate text-xs whitespace-nowrap text-zinc-500"

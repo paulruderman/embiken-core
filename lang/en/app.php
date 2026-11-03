@@ -136,6 +136,7 @@ return [
         'planner_out_of_service' => 'Out of service',
         'planner_assigning_to' => 'Choose a bike for :rider',
         'planner_select_bike' => 'Select bike',
+        'planner_resize_column' => 'Resize :column column',
     ],
     'branding_ui' => [
         'brand_name' => 'Brand name',

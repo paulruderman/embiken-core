@@ -145,6 +145,7 @@ type TerminalUi = {
     planner_out_of_service: string;
     planner_assigning_to: string;
     planner_select_bike: string;
+    planner_resize_column: string;
     planner_assign_from_schedule: string;
     planner_assignment_day_unavailable: string;
     planner_assigned_to_another_rider: string;

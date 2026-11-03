@@ -60,7 +60,8 @@ const emit = defineEmits<{
 }>();
 
 const day = useDayStore();
-const nowTimestamp = ref(Date.now());
+const nowTimestamp = ref(0);
+const plannerClockReady = ref(false);
 const plannerColumnWidths = ref<[number, number, number]>([160, 144, 160]);
 const activeColumnResize = ref<{
     index: 0 | 1 | 2;
@@ -148,6 +149,8 @@ function resizePlannerColumnWithKeyboard(
 }
 
 onMounted(() => {
+    nowTimestamp.value = Date.now();
+    plannerClockReady.value = true;
     clockInterval = window.setInterval(() => {
         nowTimestamp.value = Date.now();
     }, 60_000);
@@ -186,12 +189,6 @@ const scheduleColumnTemplate = computed(() => {
             return `${slotDuration / hour}fr`;
         })
         .join(' ');
-});
-
-const scheduleGridSize = computed(() => {
-    const duration = plannerWindow.value.endsAt - plannerWindow.value.startsAt;
-
-    return `${((60 * 60 * 1000) / duration) * 100}% 100%`;
 });
 
 const plannerWindow = computed(() => {
@@ -251,6 +248,10 @@ const businessHighlightStyles = computed(() => {
         return [];
     }
 
+    if (isToday && !plannerClockReady.value) {
+        return [];
+    }
+
     const duration = plannerWindow.value.endsAt - plannerWindow.value.startsAt;
 
     return day.businessHours.flatMap((interval) => {
@@ -280,7 +281,12 @@ const currentTimeMarkerStyle = computed(() => {
     const endsAt = plannerWindow.value.endsAt;
     const now = nowTimestamp.value;
 
-    if (!isViewingToday.value || now < startsAt || now >= endsAt) {
+    if (
+        !plannerClockReady.value ||
+        !isViewingToday.value ||
+        now < startsAt ||
+        now >= endsAt
+    ) {
         return undefined;
     }
 
@@ -709,7 +715,7 @@ function selectReservation(reservation: DayReservation): void {
                     :style="{ gridTemplateColumns: plannerGridTemplate }"
                 >
                     <div
-                        class="sticky z-20 flex min-h-8 min-w-0 items-center overflow-hidden border-r border-zinc-800 bg-zinc-900 px-3"
+                        class="sticky z-30 flex min-h-8 min-w-0 items-center overflow-hidden border-r border-zinc-800 bg-zinc-900 px-3"
                         :style="plannerColumnStyle(0)"
                         :title="plannerBikeBidTooltip(bike)"
                     >
@@ -744,7 +750,7 @@ function selectReservation(reservation: DayReservation): void {
                         >
                     </div>
                     <div
-                        class="sticky z-20 flex min-h-8 min-w-0 items-center overflow-hidden border-r border-zinc-800 bg-zinc-900 px-3"
+                        class="sticky z-30 flex min-h-8 min-w-0 items-center overflow-hidden border-r border-zinc-800 bg-zinc-900 px-3"
                         :style="plannerColumnStyle(1)"
                     >
                         <span
@@ -755,7 +761,7 @@ function selectReservation(reservation: DayReservation): void {
                         </span>
                     </div>
                     <div
-                        class="sticky z-20 flex min-h-8 min-w-0 items-center overflow-hidden border-r border-zinc-800 bg-zinc-900 px-3"
+                        class="sticky z-30 flex min-h-8 min-w-0 items-center overflow-hidden border-r border-zinc-800 bg-zinc-900 px-3"
                         :style="plannerColumnStyle(2)"
                     >
                         <div class="flex min-w-0 flex-col">
@@ -779,14 +785,21 @@ function selectReservation(reservation: DayReservation): void {
                         </div>
                     </div>
                     <div
-                        class="relative border-l border-zinc-800 bg-zinc-950/40"
-                        :style="{
-                            height: plannerLaneHeight(lines),
-                            backgroundImage:
-                                'linear-gradient(to right, rgba(63, 63, 70, 0.45) 1px, transparent 1px)',
-                            backgroundSize: scheduleGridSize,
-                        }"
+                        class="relative isolate bg-zinc-950/40"
+                        :style="{ height: plannerLaneHeight(lines) }"
                     >
+                        <div
+                            class="pointer-events-none absolute inset-0 z-0 grid"
+                            :style="{
+                                gridTemplateColumns: scheduleColumnTemplate,
+                            }"
+                        >
+                            <div
+                                v-for="hour in scheduleHours"
+                                :key="`bike-hour-${hour.timestamp}`"
+                                class="border-l border-zinc-800"
+                            ></div>
+                        </div>
                         <div
                             v-for="(
                                 highlight, index
@@ -877,7 +890,7 @@ function selectReservation(reservation: DayReservation): void {
                     >
                         <button
                             type="button"
-                            class="sticky z-20 flex min-h-8 items-center overflow-hidden border-r border-zinc-800 bg-zinc-900 px-3 text-left"
+                            class="sticky z-30 flex min-h-8 items-center overflow-hidden border-r border-zinc-800 bg-zinc-900 px-3 text-left"
                             :style="plannerColumnStyle(0)"
                             :disabled="assignment !== undefined"
                             @click="selectReservation(item.reservation)"
@@ -890,7 +903,7 @@ function selectReservation(reservation: DayReservation): void {
                         </button>
                         <button
                             type="button"
-                            class="sticky z-20 flex min-h-8 min-w-0 items-center overflow-hidden border-r border-zinc-800 bg-zinc-900 px-3 text-left"
+                            class="sticky z-30 flex min-h-8 min-w-0 items-center overflow-hidden border-r border-zinc-800 bg-zinc-900 px-3 text-left"
                             :style="plannerColumnStyle(1)"
                             :title="item.line.product_label"
                             :disabled="assignment !== undefined"
@@ -903,7 +916,7 @@ function selectReservation(reservation: DayReservation): void {
                             </span>
                         </button>
                         <div
-                            class="sticky z-20 flex min-h-8 min-w-0 items-center overflow-hidden border-r border-zinc-800 bg-zinc-900 px-3"
+                            class="sticky z-30 flex min-h-8 min-w-0 items-center overflow-hidden border-r border-zinc-800 bg-zinc-900 px-3"
                             :style="plannerColumnStyle(2)"
                         >
                             <span
@@ -912,14 +925,19 @@ function selectReservation(reservation: DayReservation): void {
                                 {{ ui.planner_unassigned }}
                             </span>
                         </div>
-                        <div
-                            class="relative min-h-10 border-l border-zinc-800 bg-zinc-950/40"
-                            :style="{
-                                backgroundImage:
-                                    'linear-gradient(to right, rgba(63, 63, 70, 0.45) 1px, transparent 1px)',
-                                backgroundSize: scheduleGridSize,
-                            }"
-                        >
+                        <div class="relative isolate min-h-10 bg-zinc-950/40">
+                            <div
+                                class="pointer-events-none absolute inset-0 z-0 grid"
+                                :style="{
+                                    gridTemplateColumns: scheduleColumnTemplate,
+                                }"
+                            >
+                                <div
+                                    v-for="hour in scheduleHours"
+                                    :key="`unassigned-hour-${hour.timestamp}`"
+                                    class="border-l border-zinc-800"
+                                ></div>
+                            </div>
                             <div
                                 v-for="(
                                     highlight, highlightIndex

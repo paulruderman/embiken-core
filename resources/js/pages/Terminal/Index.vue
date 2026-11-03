@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
+import {
+    computed,
+    nextTick,
+    onMounted,
+    onUnmounted,
+    reactive,
+    ref,
+    watch,
+} from 'vue';
 import { Head, usePage } from '@inertiajs/vue3';
 import BrowseTerminalBikeCandidatesAction from '@/actions/Embiken/BikeRentals/Actions/BrowseTerminalBikeCandidatesAction';
 import CreateWalkInReservationAction from '@/actions/Embiken/BikeRentals/Actions/CreateWalkInReservationAction';
@@ -132,25 +140,43 @@ type TerminalUi = {
     planner_unassigned_lines: string;
     planner_unassigned: string;
     planner_no_bikes: string;
+    planner_no_matching_bikes: string;
     planner_no_reservations: string;
     planner_out_of_service: string;
+    planner_assigning_to: string;
+    planner_select_bike: string;
+    planner_assign_from_schedule: string;
+    planner_assignment_day_unavailable: string;
+    planner_assigned_to_another_rider: string;
+    planner_rider_height_range: string;
+    planner_rider_height_minimum: string;
+    planner_rider_height_maximum: string;
+    planner_rider_height_unconfigured: string;
 };
 
 const page = usePage();
 const locale = ref(page.props.locale);
 const terminalUi = reactive(page.props.terminal_ui as TerminalUi);
-watch(() => page.props.locale, (nextLocale) => {
-    locale.value = nextLocale;
-});
-watch(() => page.props.terminal_ui, (nextTerminalUi) => {
-    Object.assign(terminalUi, nextTerminalUi);
-});
+watch(
+    () => page.props.locale,
+    (nextLocale) => {
+        locale.value = nextLocale;
+    },
+);
+watch(
+    () => page.props.terminal_ui,
+    (nextTerminalUi) => {
+        Object.assign(terminalUi, nextTerminalUi);
+    },
+);
 const day = useDayStore();
 const search = ref('');
 const activeView = ref<'planner' | 'reservations'>('planner');
 const eventLogOpen = ref(false);
 const selectedReservationId = ref<number | null>(null);
 const walkInOpen = ref(false);
+const walkInPlannerRiderIndex = ref<number | null>(null);
+const walkInPlannerElement = ref<HTMLElement | null>(null);
 const pendingLineId = ref<number | null>(null);
 const pickupError = ref('');
 const pickupBikeByLineId = ref<Record<number, number>>({});
@@ -189,6 +215,72 @@ const selectedReservation = computed(() =>
         ? undefined
         : day.reservationById(selectedReservationId.value),
 );
+
+const walkInPlannerDateMatches = computed(
+    () =>
+        walkInRequest.starts_at_local !== '' &&
+        walkInRequest.ends_at_local !== '' &&
+        walkInRequest.starts_at_local.slice(0, 10) === day.scheduleDate &&
+        walkInRequest.ends_at_local.slice(0, 10) === day.scheduleDate,
+);
+
+const walkInPlannerAssignment = computed(() => {
+    const riderIndex = walkInPlannerRiderIndex.value;
+
+    if (riderIndex === null || !walkInPlannerDateMatches.value) {
+        return undefined;
+    }
+
+    const rider = walkInRiders.value[riderIndex];
+
+    if (rider === undefined) {
+        return undefined;
+    }
+
+    const otherRiderBikeIds = new Set(
+        walkInRiders.value
+            .filter((_, index) => index !== riderIndex)
+            .map((otherRider) => otherRider.bike_id)
+            .filter((bikeId): bikeId is number => bikeId !== null),
+    );
+    const matchingCandidates = candidatesMatchingRiderFilters(riderIndex);
+    const statusByBikeId = Object.fromEntries(
+        matchingCandidates.map((candidate) => {
+            if (otherRiderBikeIds.has(candidate.id)) {
+                return [
+                    candidate.id,
+                    terminalUi.planner_assigned_to_another_rider,
+                ];
+            }
+
+            return [
+                candidate.id,
+                candidateConflictLabel(candidate.conflict_reason),
+            ];
+        }),
+    );
+    const heightRangeByBikeId = Object.fromEntries(
+        matchingCandidates.map((candidate) => [
+            candidate.id,
+            candidateRiderHeightRange(candidate),
+        ]),
+    );
+
+    return {
+        riderLabel:
+            rider.rider_name.trim() || `${terminalUi.rider} ${riderIndex + 1}`,
+        selectableBikeIds: bikeCandidatesLoading.value
+            ? []
+            : candidatesForRider(riderIndex).map((candidate) => candidate.id),
+        matchingBikeIds: matchingCandidates.map((candidate) => candidate.id),
+        selectedBikeId: rider.bike_id,
+        heightRangeByBikeId,
+        conflictingBikeIds: bikeCandidateResults.value.candidates
+            .filter((candidate) => candidate.conflict_reason !== null)
+            .map((candidate) => candidate.id),
+        statusByBikeId,
+    };
+});
 
 const visibleReservations = computed(() => {
     const query = search.value.trim().toLocaleLowerCase();
@@ -246,12 +338,23 @@ watch(
         walkInOpen,
         () => walkInRequest.starts_at_local,
         () => walkInRequest.ends_at_local,
-        showUnavailableBikes,
     ],
     () => {
         refreshBikeCandidates();
     },
 );
+
+watch([() => day.bikeList, () => day.reservationList], () => {
+    if (walkInOpen.value) {
+        refreshBikeCandidates();
+    }
+});
+
+watch(walkInPlannerDateMatches, (matches) => {
+    if (!matches) {
+        walkInPlannerRiderIndex.value = null;
+    }
+});
 
 const todayLabel = computed(() =>
     new Intl.DateTimeFormat(locale.value, {
@@ -267,7 +370,9 @@ function formatTime(value: string): string {
         hour: 'numeric',
         // minute: '2-digit',
         timeZone: day.timezone,
-    }).format(new Date(value)).replace(/ /g, '\u202F');
+    })
+        .format(new Date(value))
+        .replace(/ /g, '\u202F');
 }
 
 function balanceMessage(reservation: DayReservation): string {
@@ -473,6 +578,7 @@ function startWalkIn(): void {
     walkInRequest.starts_at_local = dateTimeInTimezone(startsAt, day.timezone);
     walkInRequest.ends_at_local = dateTimeInTimezone(endsAt, day.timezone);
     walkInRiders.value = [newWalkInRider()];
+    walkInPlannerRiderIndex.value = null;
     showUnavailableBikes.value = false;
     availabilityOverrideConfirmed.value = false;
     walkInOpen.value = true;
@@ -506,7 +612,7 @@ function refreshBikeCandidates(): void {
             query: {
                 starts_at_local: walkInRequest.starts_at_local,
                 ends_at_local: walkInRequest.ends_at_local,
-                include_unavailable: showUnavailableBikes.value ? 1 : 0,
+                include_unavailable: 1,
             },
         }),
         {
@@ -530,7 +636,8 @@ function refreshBikeCandidates(): void {
                     return;
                 }
 
-                bikeCandidatesError.value = terminalUi.availability_refresh_error;
+                bikeCandidatesError.value =
+                    terminalUi.availability_refresh_error;
             },
             onFinish: () => {
                 if (requestSequence === bikeCandidateRequestSequence) {
@@ -571,21 +678,59 @@ function candidatesForRider(index: number): BikeCandidate[] {
             .filter((bikeId): bikeId is number => bikeId !== null),
     );
 
-    return bikeCandidateResults.value.candidates
-        .filter((candidate) =>
-            rider.category_id === null ||
-            candidate.category_id === rider.category_id,
+    return candidatesMatchingRiderFilters(index)
+        .filter(
+            (candidate) =>
+                showUnavailableBikes.value ||
+                candidate.conflict_reason === null,
         )
         .filter((candidate) => !selectedByOtherRiders.has(candidate.id))
-        .filter((candidate) =>
-            rider.show_all_sizes || candidateFitsHeight(candidate, rider),
-        )
         .sort((left, right) => {
             const leftRecommended = candidateFitsHeight(left, rider) ? 0 : 1;
             const rightRecommended = candidateFitsHeight(right, rider) ? 0 : 1;
 
-            return leftRecommended - rightRecommended || left.bid.localeCompare(right.bid);
+            return (
+                leftRecommended - rightRecommended ||
+                left.bid.localeCompare(right.bid)
+            );
         });
+}
+
+function candidatesMatchingRiderFilters(index: number): BikeCandidate[] {
+    const rider = walkInRiders.value[index];
+
+    return bikeCandidateResults.value.candidates
+        .filter(
+            (candidate) =>
+                rider.category_id === null ||
+                candidate.category_id === rider.category_id,
+        )
+        .filter(
+            (candidate) =>
+                rider.show_all_sizes || candidateFitsHeight(candidate, rider),
+        );
+}
+
+function candidateRiderHeightRange(candidate: BikeCandidate): string {
+    const minimum = candidate.min_ideal_rider_height;
+    const maximum = candidate.max_ideal_rider_height;
+    let range = terminalUi.planner_rider_height_unconfigured;
+
+    if (minimum !== null && maximum !== null) {
+        range = `${minimum}–${maximum} ${terminalUi.cm}`;
+    } else if (minimum !== null) {
+        range = terminalUi.planner_rider_height_minimum.replace(
+            ':height',
+            String(minimum),
+        );
+    } else if (maximum !== null) {
+        range = terminalUi.planner_rider_height_maximum.replace(
+            ':height',
+            String(maximum),
+        );
+    }
+
+    return terminalUi.planner_rider_height_range.replace(':range', range);
 }
 
 function candidateConflictLabel(reason: string | null): string {
@@ -639,13 +784,17 @@ function candidateOwningReservationLabel(bikeId: number): string {
         return '';
     }
 
-    const owner = candidate.bike_situation_reservation_id === null
-        ? undefined
-        : day.reservationById(candidate.bike_situation_reservation_id);
+    const owner =
+        candidate.bike_situation_reservation_id === null
+            ? undefined
+            : day.reservationById(candidate.bike_situation_reservation_id);
 
     return owner === undefined
         ? terminalUi.candidate_no_reservation_owner
-        : terminalUi.candidate_reservation_owner.replace(':name', owner.customer.name);
+        : terminalUi.candidate_reservation_owner.replace(
+              ':name',
+              owner.customer.name,
+          );
 }
 
 function addWalkInRider(): void {
@@ -657,7 +806,47 @@ function removeWalkInRider(index: number): void {
         return;
     }
 
+    if (walkInPlannerRiderIndex.value === index) {
+        walkInPlannerRiderIndex.value = null;
+    } else if (
+        walkInPlannerRiderIndex.value !== null &&
+        walkInPlannerRiderIndex.value > index
+    ) {
+        walkInPlannerRiderIndex.value -= 1;
+    }
+
     walkInRiders.value.splice(index, 1);
+}
+
+function activateWalkInPlanner(riderIndex: number): void {
+    if (!walkInPlannerDateMatches.value || bikeCandidatesLoading.value) {
+        return;
+    }
+
+    walkInPlannerRiderIndex.value = riderIndex;
+    nextTick(() => {
+        walkInPlannerElement.value?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+        });
+    });
+}
+
+function assignWalkInPlannerBike(bikeId: number): void {
+    const riderIndex = walkInPlannerRiderIndex.value;
+    const rider =
+        riderIndex === null ? undefined : walkInRiders.value[riderIndex];
+
+    if (
+        riderIndex === null ||
+        rider === undefined ||
+        !walkInPlannerAssignment.value?.selectableBikeIds.includes(bikeId)
+    ) {
+        return;
+    }
+
+    rider.bike_id = bikeId;
+    walkInPlannerRiderIndex.value = null;
 }
 
 function dateTimeInTimezone(value: Date, timezone: string): string {
@@ -679,6 +868,10 @@ function dateTimeInTimezone(value: Date, timezone: string): string {
 }
 
 function submitWalkIn(): void {
+    if (bikeCandidatesLoading.value) {
+        return;
+    }
+
     const selectedRiders = walkInRiders.value.filter(
         (rider): rider is WalkInRider & { bike_id: number } =>
             rider.bike_id !== null,
@@ -716,11 +909,10 @@ function submitWalkIn(): void {
             rider_names: selectedRiders.map((rider) =>
                 rider.rider_name.trim() === '' ? null : rider.rider_name.trim(),
             ),
-            rider_heights_cm: selectedRiders.map((rider) =>
-                riderHeight(rider),
-            ),
+            rider_heights_cm: selectedRiders.map((rider) => riderHeight(rider)),
             allow_availability_override: hasUnavailableSelection,
-            confirm_availability_override: hasUnavailableSelection && availabilityOverrideConfirmed.value,
+            confirm_availability_override:
+                hasUnavailableSelection && availabilityOverrideConfirmed.value,
             owed_minor_units: owedMinorUnits,
         }))
         .post(CreateWalkInReservationAction.url(), {
@@ -851,8 +1043,14 @@ function eventSummary(entry: BroadcastLogEntry): string {
                 <button
                     type="button"
                     class="min-h-14 rounded-xl px-4 text-base font-bold"
-                    :class="activeView === 'planner' ? 'bg-emerald-400 text-zinc-950' : 'bg-zinc-800 text-white'"
-                    :aria-current="activeView === 'planner' ? 'page' : undefined"
+                    :class="
+                        activeView === 'planner'
+                            ? 'bg-emerald-400 text-zinc-950'
+                            : 'bg-zinc-800 text-white'
+                    "
+                    :aria-current="
+                        activeView === 'planner' ? 'page' : undefined
+                    "
                     @click="activeView = 'planner'"
                 >
                     {{ terminalUi.planner_view }}
@@ -860,8 +1058,14 @@ function eventSummary(entry: BroadcastLogEntry): string {
                 <button
                     type="button"
                     class="min-h-14 rounded-xl px-4 text-base font-bold"
-                    :class="activeView === 'reservations' ? 'bg-emerald-400 text-zinc-950' : 'bg-zinc-800 text-white'"
-                    :aria-current="activeView === 'reservations' ? 'page' : undefined"
+                    :class="
+                        activeView === 'reservations'
+                            ? 'bg-emerald-400 text-zinc-950'
+                            : 'bg-zinc-800 text-white'
+                    "
+                    :aria-current="
+                        activeView === 'reservations' ? 'page' : undefined
+                    "
                     @click="activeView = 'reservations'"
                 >
                     {{ terminalUi.reservations_view }}
@@ -889,7 +1093,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
 
         <main
             v-if="walkInOpen"
-            class="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 p-4 sm:p-6"
+            class="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 p-4 sm:p-6"
         >
             <form class="flex flex-col gap-4" @submit.prevent="submitWalkIn">
                 <section
@@ -987,12 +1191,20 @@ function eventSummary(entry: BroadcastLogEntry): string {
                         {{ terminalUi.availability_buffer_note }}
                     </p>
                     <p
+                        v-if="!walkInPlannerDateMatches"
+                        class="mt-3 rounded-xl border border-amber-500/50 bg-amber-950/50 p-3 text-sm font-semibold text-amber-100"
+                    >
+                        {{ terminalUi.planner_assignment_day_unavailable }}
+                    </p>
+                    <p
                         v-if="day.bikeAssignmentPolicy === 'pickup_only'"
                         class="mt-2 text-sm text-zinc-300"
                     >
                         Bikes stay unassigned until pickup.
                     </p>
-                    <label class="mt-4 flex min-h-12 items-center gap-3 text-sm font-semibold">
+                    <label
+                        class="mt-4 flex min-h-12 items-center gap-3 text-sm font-semibold"
+                    >
                         <input
                             v-model="showUnavailableBikes"
                             type="checkbox"
@@ -1011,6 +1223,19 @@ function eventSummary(entry: BroadcastLogEntry): string {
                                     {{ terminalUi.rider }} {{ index + 1 }}
                                 </h3>
                                 <button
+                                    type="button"
+                                    class="min-h-12 rounded-xl bg-emerald-400 px-4 text-sm font-bold text-zinc-950 disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-500"
+                                    :disabled="
+                                        !walkInPlannerDateMatches ||
+                                        bikeCandidatesLoading
+                                    "
+                                    @click="activateWalkInPlanner(index)"
+                                >
+                                    {{
+                                        terminalUi.planner_assign_from_schedule
+                                    }}
+                                </button>
+                                <button
                                     v-if="walkInRiders.length > 1"
                                     type="button"
                                     class="min-h-12 rounded-xl bg-zinc-800 px-4 text-sm font-semibold text-zinc-100"
@@ -1020,7 +1245,9 @@ function eventSummary(entry: BroadcastLogEntry): string {
                                 </button>
                             </div>
                             <div class="grid gap-3 sm:grid-cols-3">
-                                <label class="flex flex-col gap-2 text-sm font-semibold">
+                                <label
+                                    class="flex flex-col gap-2 text-sm font-semibold"
+                                >
                                     {{ terminalUi.rider }}
                                     <input
                                         v-model="rider.rider_name"
@@ -1028,7 +1255,9 @@ function eventSummary(entry: BroadcastLogEntry): string {
                                         class="h-14 rounded-xl border border-zinc-700 bg-zinc-900 px-4 text-base text-white focus:border-emerald-400 focus:outline-none"
                                     />
                                 </label>
-                                <label class="flex flex-col gap-2 text-sm font-semibold">
+                                <label
+                                    class="flex flex-col gap-2 text-sm font-semibold"
+                                >
                                     {{ terminalUi.rider_height_cm }}
                                     <input
                                         v-model="rider.rider_height_cm"
@@ -1040,13 +1269,17 @@ function eventSummary(entry: BroadcastLogEntry): string {
                                         class="h-14 rounded-xl border border-zinc-700 bg-zinc-900 px-4 text-base text-white focus:border-emerald-400 focus:outline-none"
                                     />
                                 </label>
-                                <label class="flex flex-col gap-2 text-sm font-semibold">
+                                <label
+                                    class="flex flex-col gap-2 text-sm font-semibold"
+                                >
                                     {{ terminalUi.bike_category }}
                                     <select
                                         v-model="rider.category_id"
                                         class="h-14 rounded-xl border border-zinc-700 bg-zinc-900 px-4 text-base text-white focus:border-emerald-400 focus:outline-none"
                                     >
-                                        <option :value="null">{{ terminalUi.all_categories }}</option>
+                                        <option :value="null">
+                                            {{ terminalUi.all_categories }}
+                                        </option>
                                         <option
                                             v-for="category in bikeCandidateResults.categories"
                                             :key="category.id"
@@ -1067,29 +1300,55 @@ function eventSummary(entry: BroadcastLogEntry): string {
                                 <button
                                     type="button"
                                     class="min-h-12 rounded-xl bg-zinc-800 px-4 text-sm font-semibold text-white"
-                                    @click="rider.show_all_sizes = !rider.show_all_sizes"
+                                    @click="
+                                        rider.show_all_sizes =
+                                            !rider.show_all_sizes
+                                    "
                                 >
-                                    {{ rider.show_all_sizes ? terminalUi.hide_all_sizes : terminalUi.show_all_sizes }}
+                                    {{
+                                        rider.show_all_sizes
+                                            ? terminalUi.hide_all_sizes
+                                            : terminalUi.show_all_sizes
+                                    }}
                                 </button>
                             </div>
-                            <label class="flex flex-col gap-2 text-sm font-semibold">
+                            <label
+                                class="flex flex-col gap-2 text-sm font-semibold"
+                            >
                                 {{ terminalUi.bike }}
                                 <select
                                     v-model="rider.bike_id"
+                                    :disabled="bikeCandidatesLoading"
                                     class="h-16 rounded-xl border border-zinc-700 bg-zinc-900 px-4 text-base text-white focus:border-emerald-400 focus:outline-none"
                                 >
-                                    <option :value="null">{{ terminalUi.choose_bike }}</option>
+                                    <option :value="null">
+                                        {{ terminalUi.choose_bike }}
+                                    </option>
                                     <option
-                                        v-for="candidate in candidatesForRider(index)"
+                                        v-for="candidate in candidatesForRider(
+                                            index,
+                                        )"
                                         :key="candidate.id"
                                         :value="candidate.id"
                                     >
-                                        {{ candidateOptionLabel(candidate, rider) }}
+                                        {{
+                                            candidateOptionLabel(
+                                                candidate,
+                                                rider,
+                                            )
+                                        }}
                                     </option>
                                 </select>
                             </label>
                             <p
-                                v-if="rider.bike_id !== null && candidatesForRider(index).some((candidate) => candidate.id === rider.bike_id && candidate.conflict_reason !== null)"
+                                v-if="
+                                    rider.bike_id !== null &&
+                                    candidatesForRider(index).some(
+                                        (candidate) =>
+                                            candidate.id === rider.bike_id &&
+                                            candidate.conflict_reason !== null,
+                                    )
+                                "
                                 role="alert"
                                 class="rounded-xl border border-amber-500 bg-amber-950 p-3 text-sm font-semibold text-amber-100"
                             >
@@ -1099,12 +1358,44 @@ function eventSummary(entry: BroadcastLogEntry): string {
                                 v-if="rider.bike_id !== null"
                                 class="text-sm text-zinc-400"
                             >
-                                {{ getEnumLabel('bikeSituation', bikeCandidateResults.candidates.find((candidate) => candidate.id === rider.bike_id)?.bike_situation_state ?? BikeSituation.Home) }}
-                                <template v-if="candidateOwningReservationLabel(rider.bike_id)">
-                                    · {{ candidateOwningReservationLabel(rider.bike_id) }}
+                                {{
+                                    getEnumLabel(
+                                        'bikeSituation',
+                                        bikeCandidateResults.candidates.find(
+                                            (candidate) =>
+                                                candidate.id === rider.bike_id,
+                                        )?.bike_situation_state ??
+                                            BikeSituation.Home,
+                                    )
+                                }}
+                                <template
+                                    v-if="
+                                        candidateOwningReservationLabel(
+                                            rider.bike_id,
+                                        )
+                                    "
+                                >
+                                    ·
+                                    {{
+                                        candidateOwningReservationLabel(
+                                            rider.bike_id,
+                                        )
+                                    }}
                                 </template>
                             </p>
                         </section>
+                    </div>
+                    <div
+                        v-if="walkInPlannerAssignment"
+                        ref="walkInPlannerElement"
+                        class="mt-4 overflow-hidden rounded-2xl border border-emerald-500/60 bg-zinc-950"
+                    >
+                        <BikeSchedulePlanner
+                            :ui="terminalUi"
+                            :format-time="formatTime"
+                            :assignment="walkInPlannerAssignment"
+                            @bike-selected="assignWalkInPlannerBike"
+                        />
                     </div>
                     <label
                         v-if="hasSelectedUnavailableBike()"
@@ -1181,8 +1472,10 @@ function eventSummary(entry: BroadcastLogEntry): string {
                     class="min-h-16 rounded-xl bg-emerald-400 px-6 text-xl font-bold text-zinc-950 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
                     :disabled="
                         walkInRequest.processing ||
+                        bikeCandidatesLoading ||
                         walkInRiders.some((rider) => rider.bike_id === null) ||
-                        (hasSelectedUnavailableBike() && !availabilityOverrideConfirmed)
+                        (hasSelectedUnavailableBike() &&
+                            !availabilityOverrideConfirmed)
                     "
                 >
                     {{
@@ -1686,8 +1979,9 @@ function eventSummary(entry: BroadcastLogEntry): string {
                             </summary>
                             <pre
                                 class="max-h-72 overflow-auto border-t border-zinc-800 p-3 text-xs break-all whitespace-pre-wrap text-zinc-300"
-                                >{{ JSON.stringify(entry.payload, null, 2) }}</pre
-                            >
+                                >{{
+                                    JSON.stringify(entry.payload, null, 2)
+                                }}</pre>
                         </details>
                     </li>
                 </ol>

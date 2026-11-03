@@ -5,6 +5,7 @@ namespace Embiken\BikeFleet\Filament\Resources\ServiceRequests\Tables;
 use App\Enums\StaffRole;
 use App\Filament\Shop\Support\ShopSetupReadiness;
 use App\Filament\Tables\Columns\LocalizedDateTimeColumn;
+use App\Filament\Tables\Columns\NegativeBooleanIconColumn;
 use App\Models\Staff;
 use Embiken\BikeFleet\Actions\AssignServiceRequestToMeAction;
 use Embiken\BikeFleet\Actions\ResolveServiceRequestsAction;
@@ -15,7 +16,6 @@ use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\EditAction;
 use Filament\Notifications\Notification;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
@@ -51,9 +51,8 @@ class ServiceRequestsTable
                     ->label(__('app.fleet.fields.stage'))
                     ->badge()
                     ->color(fn (ServiceRequest $record): string => $record->stage->getColor()),
-                IconColumn::make('blocks_usage')
-                    ->label(__('app.fleet.fields.blocks_usage'))
-                    ->boolean(),
+                NegativeBooleanIconColumn::make('blocks_usage')
+                    ->label(__('app.fleet.fields.blocks_usage')),
                 TextColumn::make('assignedTo.name')
                     ->label(__('app.fleet.fields.assigned_to'))
                     ->sortable()

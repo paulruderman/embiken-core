@@ -4,10 +4,10 @@ namespace App\Filament\Platform\Resources\Users\Tables;
 
 use App\Actions\Platform\DisableUserAction;
 use App\Filament\Tables\Columns\LocalizedDateTimeColumn;
+use App\Filament\Tables\Columns\NegativeBooleanIconColumn;
 use App\Models\User;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -23,9 +23,8 @@ class UsersTable
                 TextColumn::make('email')
                     ->label('Email address')
                     ->searchable(),
-                IconColumn::make('disabled_at')
+                NegativeBooleanIconColumn::make('disabled_at')
                     ->label('Disabled')
-                    ->boolean()
                     ->getStateUsing(fn (User $record): bool => $record->disabled_at !== null),
                 LocalizedDateTimeColumn::make('created_at')
                     ->sortable()

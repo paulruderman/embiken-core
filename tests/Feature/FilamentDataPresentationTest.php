@@ -1,5 +1,6 @@
 <?php
 
+use App\Filament\Tables\Columns\NegativeBooleanIconColumn;
 use App\Models\Location;
 use App\Models\Staff;
 use Embiken\BikeFleet\Filament\Resources\ServiceRequests\Pages\ListServiceRequests;
@@ -14,6 +15,7 @@ use Embiken\BikeRentals\Models\BikeReservation;
 use Embiken\BikeRentals\Models\Reservation;
 use Embiken\BikeRentals\Models\Transaction;
 use Filament\Facades\Filament;
+use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Carbon;
 use Livewire\Livewire;
 use Tests\Concerns\MigratesTenantSchema;
@@ -109,6 +111,21 @@ it('shows the latest service work entry and its date in the service request list
         ->assertSee('Last worked')
         ->assertSee('Replaced brake cable')
         ->assertDontSee('Adjusted rear brake');
+});
+
+it('shows blocking service requests as negative boolean icons', function () {
+    ServiceRequest::factory()->create(['blocks_usage' => true]);
+    ServiceRequest::factory()->nonBlocking()->create();
+
+    $column = NegativeBooleanIconColumn::make('blocks_usage');
+
+    expect($column->getTrueIcon(true))->toBe(Heroicon::OutlinedXCircle)
+        ->and($column->getFalseIcon(false))->toBe(Heroicon::OutlinedMinusCircle)
+        ->and($column->getTrueColor(true))->toBe('danger')
+        ->and($column->getFalseColor(false))->toBe('gray');
+
+    Livewire::test(ListServiceRequests::class)
+        ->assertSeeHtml('fi-color-danger');
 });
 
 it('shows Connect transaction details in a read-only transaction view', function () {

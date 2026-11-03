@@ -6,6 +6,7 @@ use App\Actions\Platform\DeleteTenantAction;
 use App\Actions\Platform\StartExpressAccountLinkAction;
 use App\Actions\Platform\SuspendTenantAction;
 use App\Actions\Platform\UnsuspendTenantAction;
+use App\Filament\Tables\Columns\NegativeBooleanIconColumn;
 use App\Models\Tenant;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
@@ -25,9 +26,8 @@ class TenantsTable
                 TextColumn::make('domains.domain')
                     ->label('Domains')
                     ->badge(),
-                IconColumn::make('suspended_at')
+                NegativeBooleanIconColumn::make('suspended_at')
                     ->label('Suspended')
-                    ->boolean()
                     ->getStateUsing(fn (Tenant $record): bool => $record->isSuspended()),
                 IconColumn::make('charges_enabled')
                     ->label('Express charges')

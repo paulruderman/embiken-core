@@ -19,6 +19,7 @@ class WeatherFeedData implements WallDisplayFeedDataProvider
         return [
             ...($dayStore['modules']['weather'] ?? []),
             'title' => __('app.wall_display_ui.weather'),
+            'empty_sites' => __('app.weather_ui.empty_sites'),
         ];
     }
 }

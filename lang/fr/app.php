@@ -1,6 +1,11 @@
 <?php
 
 return [
+    'device_surface' => [
+        'terminal' => ['label' => 'Terminal', 'description' => 'Appareil du personnel pour le comptoir ou l’atelier.'],
+        'customer_display' => ['label' => 'Écran client', 'description' => 'Écran destiné aux clients et associé à un Terminal.'],
+        'wall_display' => ['label' => 'Écran mural', 'description' => 'Écran partagé de la boutique affichant un flux configuré.'],
+    ],
     'datetime_ui' => [
         'compact_format' => 'EEE d MMM HH:mm',
         'input_format' => 'd M, Y H:i',

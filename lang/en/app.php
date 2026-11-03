@@ -1,6 +1,11 @@
 <?php
 
 return [
+    'device_surface' => [
+        'terminal' => ['label' => 'Terminal', 'description' => 'Staff-operated rental desk or floor device.'],
+        'customer_display' => ['label' => 'Customer display', 'description' => 'Customer-facing display paired with a Terminal.'],
+        'wall_display' => ['label' => 'Wall display', 'description' => 'Shared shop display showing a configured feed.'],
+    ],
     'datetime_ui' => [
         'compact_format' => 'EEE MMM d h:mm a',
         'input_format' => 'M j, Y g:i A',

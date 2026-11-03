@@ -127,6 +127,18 @@ class Location extends Model
         return $this->hasMany(Reservation::class);
     }
 
+    /** @return HasMany<Device, $this> */
+    public function devices(): HasMany
+    {
+        return $this->hasMany(Device::class);
+    }
+
+    /** @return HasMany<Display, $this> */
+    public function displays(): HasMany
+    {
+        return $this->hasMany(Display::class);
+    }
+
     /**
      * @return HasMany<Staff, $this>
      */

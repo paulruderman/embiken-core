@@ -1,6 +1,11 @@
 <?php
 
 return [
+    'device_surface' => [
+        'terminal' => ['label' => 'Terminal', 'description' => 'Dispositivo del personal para el mostrador o la tienda.'],
+        'customer_display' => ['label' => 'Pantalla del cliente', 'description' => 'Pantalla para clientes vinculada a un Terminal.'],
+        'wall_display' => ['label' => 'Pantalla mural', 'description' => 'Pantalla compartida de la tienda que muestra un feed configurado.'],
+    ],
     'datetime_ui' => [
         'compact_format' => 'EEE d MMM HH:mm',
         'input_format' => 'd M, Y H:i',

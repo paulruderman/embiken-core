@@ -51,6 +51,7 @@ return [
         'customer_menu_no_offers' => 'Les options de location ne sont pas encore configurées.',
         'customer_menu_no_hours' => 'Les heures d’ouverture ne sont pas encore configurées.',
         'customer_menu_per' => 'par',
+        'customer_menu_meter_units' => ['hour' => 'heure', 'bike' => 'vélo', 'calendar_day' => 'jour civil'],
         'weekdays' => [
             'sunday' => 'Dimanche', 'monday' => 'Lundi', 'tuesday' => 'Mardi',
             'wednesday' => 'Mercredi', 'thursday' => 'Jeudi', 'friday' => 'Vendredi', 'saturday' => 'Samedi',

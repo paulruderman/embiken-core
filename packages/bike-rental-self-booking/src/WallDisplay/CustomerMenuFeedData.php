@@ -8,6 +8,7 @@ use App\Contracts\WallDisplayFeedDataProvider;
 use App\Enums\Weekday;
 use App\Models\Location;
 use App\Models\LocationHour;
+use Embiken\BikeRentals\Enums\PackageMeter;
 use Embiken\BikeRentals\Models\RentalPackage;
 
 class CustomerMenuFeedData implements WallDisplayFeedDataProvider
@@ -33,6 +34,12 @@ class CustomerMenuFeedData implements WallDisplayFeedDataProvider
                 'blurb' => $package->blurb,
                 'meter' => $package->meter->value,
                 'meter_label' => $package->meter->getLabel(),
+                'meter_unit' => match ($package->meter) {
+                    PackageMeter::PerHour => __('app.wall_display_ui.customer_menu_meter_units.hour'),
+                    PackageMeter::PerLine => __('app.wall_display_ui.customer_menu_meter_units.bike'),
+                    PackageMeter::PerCalendarDay => __('app.wall_display_ui.customer_menu_meter_units.calendar_day'),
+                    PackageMeter::None => null,
+                },
                 'currency' => $package->currency,
                 'variants' => $package->variants->map(fn ($variant): array => [
                     'id' => $variant->id,

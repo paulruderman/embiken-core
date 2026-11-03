@@ -6,6 +6,7 @@ use App\Actions\Devices\RequestDevicePairingCodeAction;
 use App\Enums\DeviceSurface;
 use App\Filament\Shop\Resources\Devices\Pages\ListDevices;
 use App\Models\Device;
+use App\Models\Display;
 use App\Models\Location;
 use App\Models\Staff;
 use App\Support\DevicePairingCode;
@@ -107,6 +108,24 @@ test('a Customer Display is paired by code and linked to an already paired Termi
 
     expect($customerDisplay['device']->fresh()->paired_at)->not->toBeNull()
         ->and($customerDisplay['device']->fresh()->paired_terminal_device_id)->toBe($terminalPairing['device']->id);
+});
+
+test('a Wall Display is paired by code and assigned to a shared Display', function (): void {
+    $manager = Staff::factory()->create();
+    $display = Display::factory()->for($manager->location)->create();
+    $pairing = RequestDevicePairingCodeAction::run(DeviceSurface::WallDisplay);
+    $this->actingAs($manager, 'staff');
+    Filament::setCurrentPanel('shop');
+
+    Livewire::test(ListDevices::class)
+        ->callTableAction('pairDevice', data: [
+            'code' => $pairing['code'],
+            'display_id' => (string) $display->id,
+        ])
+        ->assertHasNoTableActionErrors();
+
+    expect($pairing['device']->fresh()->paired_at)->not->toBeNull()
+        ->and($pairing['device']->fresh()->display_id)->toBe($display->id);
 });
 
 test('device pairing endpoints refuse central-domain requests', function (): void {

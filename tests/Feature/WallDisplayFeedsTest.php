@@ -1,11 +1,13 @@
 <?php
 
+use App\Events\LocationDisplayPatched;
 use App\Events\LocationWallDisplayFeedPatched;
 use App\Models\Device;
 use App\Models\Display;
 use App\Models\Location;
 use App\Models\LocationHour;
 use App\Models\Tenant;
+use App\Support\WallDisplayPageData;
 use Embiken\BikeFleet\Models\BikeModelVariant;
 use Embiken\BikeRentals\Models\RentalPackage;
 use Illuminate\Support\Facades\Event;
@@ -103,6 +105,50 @@ test('standby without a selected standby Feed resolves to the built-in standby s
             ->where('feed.component', 'core:standby'));
 });
 
+test('paired Wall Displays assigned to one Display receive its shared Feed and standby state', function (): void {
+    $shop = provisionWallDisplayFeedShop('wall-feed-shared.localhost');
+    $this->wallDisplayFeedTenant = $shop['tenant'];
+    $secondDevice = null;
+
+    $shop['tenant']->run(function () use ($shop, &$secondDevice): void {
+        $secondDevice = Device::factory()->wallDisplay()->for($shop['location'])->for($shop['display'])->create([
+            'paired_at' => now(),
+        ]);
+    });
+
+    Event::fake([LocationDisplayPatched::class]);
+    $shop['tenant']->run(fn () => $shop['display']->update(['feed_slug' => 'customer-menu']));
+
+    Event::assertDispatched(LocationDisplayPatched::class, fn (LocationDisplayPatched $event): bool => $event->locationId === $shop['location']->id
+        && $event->displayState['display']['id'] === $shop['display']->id
+        && $event->displayState['feed']['slug'] === 'customer-menu'
+    );
+
+    $shop['tenant']->run(function () use ($shop, $secondDevice): void {
+        expect(app(WallDisplayPageData::class)->forDevice($shop['device'])['feed']['slug'])->toBe('customer-menu')
+            ->and(app(WallDisplayPageData::class)->forDevice($secondDevice)['feed']['slug'])->toBe('customer-menu');
+    });
+
+    $shop['tenant']->run(fn () => $shop['display']->update([
+        'standby' => true,
+        'standby_feed_slug' => null,
+    ]));
+
+    Event::assertDispatched(LocationDisplayPatched::class, fn (LocationDisplayPatched $event): bool => $event->locationId === $shop['location']->id
+        && $event->displayState['display']['id'] === $shop['display']->id
+        && $event->displayState['feed']['slug'] === 'standby'
+    );
+
+    $shop['tenant']->run(function () use ($shop, $secondDevice): void {
+        $firstDevice = Device::query()->findOrFail($shop['device']->id);
+        $secondDisplayDevice = Device::query()->findOrFail($secondDevice->id);
+
+        expect($shop['display']->devices()->count())->toBe(2)
+            ->and(app(WallDisplayPageData::class)->forDevice($firstDevice)['feed']['slug'])->toBe('standby')
+            ->and(app(WallDisplayPageData::class)->forDevice($secondDisplayDevice)['feed']['slug'])->toBe('standby');
+    });
+});
+
 test('an unassigned Wall Display does not receive the shop day snapshot', function (): void {
     $shop = provisionWallDisplayFeedShop('wall-feed-unassigned.localhost');
     $this->wallDisplayFeedTenant = $shop['tenant'];
@@ -182,6 +228,22 @@ test('Customer Menu lists only Book-visible offers with their rates and Location
         ]);
         $visiblePackage->variants()->attach($variant, ['rate_minor_units' => 4200]);
 
+        $hourlyPackage = RentalPackage::factory()->for($shop['location'])->create([
+            'name' => 'Hourly rental',
+            'book_visible' => true,
+            'meter' => 'per_hour',
+            'sort_order' => 1,
+        ]);
+        $hourlyPackage->variants()->attach($variant, ['rate_minor_units' => 1200]);
+
+        $freePackage = RentalPackage::factory()->for($shop['location'])->create([
+            'name' => 'Free package',
+            'book_visible' => true,
+            'meter' => 'none',
+            'sort_order' => 2,
+        ]);
+        $freePackage->variants()->attach($variant, ['rate_minor_units' => 0]);
+
         $hiddenPackage = RentalPackage::factory()->for($shop['location'])->create([
             'name' => 'Staff only',
             'book_visible' => false,
@@ -204,9 +266,12 @@ test('Customer Menu lists only Book-visible offers with their rates and Location
         ->assertInertia(fn (Assert $page) => $page
             ->where('feed.slug', 'customer-menu')
             ->where('feed.component', 'BikeRentalSelfBooking/WallDisplay/CustomerMenu')
-            ->has('feed.data.packages', 1)
+            ->has('feed.data.packages', 3)
             ->where('feed.data.packages.0.name', 'All day rental')
             ->where('feed.data.packages.0.variants.0.rate_minor_units', 4200)
+            ->where('feed.data.packages.0.meter_unit', 'calendar day')
+            ->where('feed.data.packages.1.meter_unit', 'hour')
+            ->where('feed.data.packages.2.meter_unit', null)
             ->where('feed.data.hours.0.weekday', 'Monday')
             ->where('feed.data.hours.0.opens_at', '09:00')
             ->where('feed.data.hours.0.closes_at', '17:00'));

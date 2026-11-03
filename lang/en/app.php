@@ -51,6 +51,7 @@ return [
         'customer_menu_no_offers' => 'Rental options are not configured yet.',
         'customer_menu_no_hours' => 'Shop hours are not configured yet.',
         'customer_menu_per' => 'per',
+        'customer_menu_meter_units' => ['hour' => 'hour', 'bike' => 'bike', 'calendar_day' => 'calendar day'],
         'weekdays' => [
             'sunday' => 'Sunday', 'monday' => 'Monday', 'tuesday' => 'Tuesday',
             'wednesday' => 'Wednesday', 'thursday' => 'Thursday', 'friday' => 'Friday', 'saturday' => 'Saturday',

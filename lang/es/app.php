@@ -51,6 +51,7 @@ return [
         'customer_menu_no_offers' => 'Aún no se configuraron opciones de alquiler.',
         'customer_menu_no_hours' => 'Aún no se configuró el horario de la tienda.',
         'customer_menu_per' => 'por',
+        'customer_menu_meter_units' => ['hour' => 'hora', 'bike' => 'bicicleta', 'calendar_day' => 'día calendario'],
         'weekdays' => [
             'sunday' => 'Domingo', 'monday' => 'Lunes', 'tuesday' => 'Martes',
             'wednesday' => 'Miércoles', 'thursday' => 'Jueves', 'friday' => 'Viernes', 'saturday' => 'Sábado',

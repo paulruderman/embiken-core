@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { formatMoney } from '@/lib/money';
 
-type Feed = { data: { currency: string; packages: { id: number; name: string; description: string | null; tagline: string | null; blurb: string | null; meter_label: string; variants: { id: number; label: string; rate_minor_units: number }[] }[]; hours: { weekday: string; opens_at: string; closes_at: string; closes_next_day: boolean }[]; copy: Record<string, string> } };
+type Feed = { data: { currency: string; packages: { id: number; name: string; description: string | null; tagline: string | null; blurb: string | null; meter_label: string; meter_unit: string | null; variants: { id: number; label: string; rate_minor_units: number }[] }[]; hours: { weekday: string; opens_at: string; closes_at: string; closes_next_day: boolean }[]; copy: Record<string, string> } };
 defineProps<{ feed: Feed }>();
 </script>
 
@@ -15,7 +15,7 @@ defineProps<{ feed: Feed }>();
                 <p v-if="item.tagline" class="mt-1 text-lg text-white/70">{{ item.tagline }}</p>
                 <p v-if="item.description" class="mt-3 text-white/70">{{ item.description }}</p>
                 <p v-if="item.blurb" class="mt-3 text-sm text-white/60">{{ item.blurb }}</p>
-                <ul class="mt-5 grid gap-2 sm:grid-cols-2"><li v-for="variant in item.variants" :key="variant.id" class="flex justify-between gap-3 rounded-xl bg-black/20 px-4 py-3"><span>{{ variant.label }}</span><span class="font-medium">{{ formatMoney(variant.rate_minor_units, feed.data.currency) }} <small class="text-white/60">{{ feed.data.copy.per }} {{ item.meter_label }}</small></span></li></ul>
+                <ul class="mt-5 grid gap-2 sm:grid-cols-2"><li v-for="variant in item.variants" :key="variant.id" class="flex justify-between gap-3 rounded-xl bg-black/20 px-4 py-3"><span>{{ variant.label }}</span><span class="font-medium">{{ formatMoney(variant.rate_minor_units, feed.data.currency) }} <small class="text-white/60">{{ item.meter_unit ? `${feed.data.copy.per} ${item.meter_unit}` : item.meter_label }}</small></span></li></ul>
             </article>
         </section>
         <section class="space-y-5">

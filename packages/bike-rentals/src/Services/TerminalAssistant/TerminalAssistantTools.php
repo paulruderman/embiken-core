@@ -27,11 +27,14 @@ class TerminalAssistantTools
             [
                 'type' => 'function',
                 'function' => [
-                    'name' => 'summarize_shop_day',
-                    'description' => 'For shop-wide questions about today, return the reservation count, reservation starts by local hour, and current fleet situation and service availability counts. Report facts; do not classify the shop as busy or quiet.',
+                    'name' => 'summarize_reservations_period',
+                    'description' => 'Summarize Reservations intersecting a requested shop-local date or date range of up to 7 days, plus the current fleet situation and service availability. Use exact YYYY-MM-DD dates from the current shop-local date. Omit both dates only for today. Report facts; do not classify the shop as busy or quiet.',
                     'parameters' => [
                         'type' => 'object',
-                        'properties' => new \stdClass,
+                        'properties' => [
+                            'start_date' => ['type' => 'string', 'description' => 'First shop-local date, inclusive, in YYYY-MM-DD format. Omit only when asking about today.'],
+                            'end_date' => ['type' => 'string', 'description' => 'Last shop-local date, inclusive, in YYYY-MM-DD format. Omit for a single date.'],
+                        ],
                     ],
                 ],
             ],
@@ -85,7 +88,7 @@ class TerminalAssistantTools
     public function execute(string $name, array $arguments): array
     {
         return match ($name) {
-            'summarize_shop_day' => $this->summarizeShopDay(),
+            'summarize_reservations_period' => $this->summarizeReservationsPeriod($arguments),
             'list_todays_reservations' => $this->listTodaysReservations(),
             'get_reservation' => $this->getReservation($arguments),
             'check_bike_availability' => $this->checkBikeAvailability($arguments),
@@ -94,33 +97,65 @@ class TerminalAssistantTools
     }
 
     /**
+     * @param  array<string, mixed>  $arguments
      * @return array<string, mixed>
      */
-    private function summarizeShopDay(): array
+    private function summarizeReservationsPeriod(array $arguments): array
     {
         $location = Location::query()->firstOrFail();
         $checkedAt = CarbonImmutable::now($location->timezone);
-        $dayStart = $checkedAt->startOfDay();
-        $dayEnd = $dayStart->addDay();
+        $startDate = $this->parseShopDate($arguments['start_date'] ?? $checkedAt->toDateString(), $location->timezone);
+        $endDate = $this->parseShopDate($arguments['end_date'] ?? $startDate->toDateString(), $location->timezone);
+        $startCalendarDate = CarbonImmutable::parse($startDate->toDateString(), 'UTC');
+        $endCalendarDate = CarbonImmutable::parse($endDate->toDateString(), 'UTC');
+
+        if ($endDate->lt($startDate) || $startCalendarDate->diffInDays($endCalendarDate) > 6) {
+            throw ValidationException::withMessages(['date_range' => 'Choose an inclusive date range of no more than 7 days.']);
+        }
+
+        $periodStart = $startDate->startOfDay();
+        $periodEnd = $endDate->addDay()->startOfDay();
 
         $cancelledReservationCount = Reservation::query()
             ->where('stage', ReservationStage::Cancelled)
-            ->where('starts_at', '<', $dayEnd->utc())
-            ->where('ends_at', '>=', $dayStart->utc())
+            ->where('starts_at', '<', $periodEnd->utc())
+            ->where('ends_at', '>=', $periodStart->utc())
             ->count();
 
         $reservations = Reservation::query()
             ->select(['id', 'stage', 'starts_at', 'ends_at'])
             ->withCount('bikeReservations')
             ->where('stage', '!=', ReservationStage::Cancelled)
-            ->where('starts_at', '<', $dayEnd->utc())
-            ->where('ends_at', '>=', $dayStart->utc())
+            ->where('starts_at', '<', $periodEnd->utc())
+            ->where('ends_at', '>=', $periodStart->utc())
             ->orderBy('starts_at')
             ->get();
 
         $reservationLineCount = 0;
-        $reservationsStartingByHour = [];
+        /**
+         * @var array<string, array{
+         *     date: string,
+         *     reservation_start_count: int,
+         *     bike_line_start_count: int,
+         *     starts_by_hour: array<string, array{
+         *         hour_local: string,
+         *         reservation_start_count: int,
+         *         bike_line_start_count: int
+         *     }>
+         * }> $reservationsStartingByDate
+         */
+        $reservationsStartingByDate = [];
         $schedule = [];
+
+        for ($date = $periodStart; $date->lt($periodEnd); $date = $date->addDay()) {
+            $dateKey = $date->toDateString();
+            $reservationsStartingByDate[$dateKey] = [
+                'date' => $dateKey,
+                'reservation_start_count' => 0,
+                'bike_line_start_count' => 0,
+                'starts_by_hour' => [],
+            ];
+        }
 
         foreach ($reservations as $reservation) {
             $lineCount = (int) $reservation->getAttribute('bike_reservations_count');
@@ -135,18 +170,29 @@ class TerminalAssistantTools
                 'bike_line_count' => $lineCount,
             ];
 
-            if ($startsAtLocal->lt($dayStart) || $startsAtLocal->gte($dayEnd)) {
+            if ($startsAtLocal->lt($periodStart) || $startsAtLocal->gte($periodEnd)) {
                 continue;
             }
 
+            $dateKey = $startsAtLocal->toDateString();
             $hour = $startsAtLocal->format('H:00');
-            $reservationsStartingByHour[$hour] ??= [
-                'hour_local' => $hour,
-                'reservation_count' => 0,
-                'bike_line_count' => 0,
+            $dateSummary = $reservationsStartingByDate[$dateKey] ?? [
+                'date' => $dateKey,
+                'reservation_start_count' => 0,
+                'bike_line_start_count' => 0,
+                'starts_by_hour' => [],
             ];
-            $reservationsStartingByHour[$hour]['reservation_count']++;
-            $reservationsStartingByHour[$hour]['bike_line_count'] += $lineCount;
+            $hourSummary = $dateSummary['starts_by_hour'][$hour] ?? [
+                'hour_local' => $hour,
+                'reservation_start_count' => 0,
+                'bike_line_start_count' => 0,
+            ];
+            $dateSummary['reservation_start_count']++;
+            $dateSummary['bike_line_start_count'] += $lineCount;
+            $hourSummary['reservation_start_count']++;
+            $hourSummary['bike_line_start_count'] += $lineCount;
+            $dateSummary['starts_by_hour'][$hour] = $hourSummary;
+            $reservationsStartingByDate[$dateKey] = $dateSummary;
         }
 
         $activeBlockingRequests = ServiceRequest::query()
@@ -194,14 +240,21 @@ class TerminalAssistantTools
         }
 
         return [
-            'date' => $dayStart->toDateString(),
+            'start_date' => $periodStart->toDateString(),
+            'end_date' => $endDate->toDateString(),
             'timezone' => $location->timezone,
             'checked_at_local' => $checkedAt->format('Y-m-d H:i'),
             'reservations' => [
-                'intersecting_today_count' => $reservations->count(),
-                'cancelled_intersecting_today_count' => $cancelledReservationCount,
+                'intersecting_period_count' => $reservations->count(),
+                'cancelled_intersecting_period_count' => $cancelledReservationCount,
                 'bike_line_count' => $reservationLineCount,
-                'starts_by_hour' => array_values($reservationsStartingByHour),
+                'starts_by_date' => array_values(array_map(
+                    fn (array $summary): array => [
+                        ...$summary,
+                        'starts_by_hour' => array_values($summary['starts_by_hour']),
+                    ],
+                    $reservationsStartingByDate,
+                )),
                 'schedule' => $schedule,
             ],
             'fleet' => [
@@ -214,6 +267,21 @@ class TerminalAssistantTools
                 'affected_bikes' => $affectedBikes,
             ],
         ];
+    }
+
+    private function parseShopDate(mixed $date, string $timezone): CarbonImmutable
+    {
+        if (! is_string($date) || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            throw ValidationException::withMessages(['date_range' => 'Provide dates in YYYY-MM-DD format.']);
+        }
+
+        $parsedDate = CarbonImmutable::createFromFormat('!Y-m-d', $date, $timezone);
+
+        if ($parsedDate === null || $parsedDate->toDateString() !== $date) {
+            throw ValidationException::withMessages(['date_range' => 'Provide valid calendar dates.']);
+        }
+
+        return $parsedDate;
     }
 
     /**

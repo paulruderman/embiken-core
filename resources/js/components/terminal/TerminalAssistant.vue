@@ -102,7 +102,8 @@ function submitConversation(): void {
                     typeof responseMessage === 'string'
                         ? responseMessage
                         : props.ui.assistant_unavailable;
-                retryAvailable.value = response.status === 429 || response.status >= 500;
+                retryAvailable.value =
+                    response.status === 429 || response.status >= 500;
                 failedTurn.value = true;
             },
             onNetworkError: () => {
@@ -249,7 +250,11 @@ function clearConversation(): void {
                     v-if="request.processing"
                     class="bg-brand-gray-200 dark:bg-brand-gray-800 self-start rounded-2xl px-4 py-3 text-base"
                 >
-                    {{ takingLonger ? ui.assistant_taking_longer : ui.assistant_thinking }}
+                    {{
+                        takingLonger
+                            ? ui.assistant_taking_longer
+                            : ui.assistant_thinking
+                    }}
                 </li>
                 <li
                     v-if="conversationLimitReached"
@@ -299,7 +304,11 @@ function clearConversation(): void {
                     <button
                         type="submit"
                         class="bg-brand-primary-600 dark:bg-brand-primary-400 dark:text-brand-gray-950 min-h-14 rounded-xl px-4 text-base font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
-                        :disabled="request.processing || input.trim() === '' || conversationLimitReached"
+                        :disabled="
+                            request.processing ||
+                            input.trim() === '' ||
+                            conversationLimitReached
+                        "
                     >
                         {{ ui.assistant_send }}
                     </button>

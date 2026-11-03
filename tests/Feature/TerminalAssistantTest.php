@@ -15,6 +15,7 @@ use Embiken\BikeRentals\Models\Customer;
 use Embiken\BikeRentals\Models\Reservation;
 use Embiken\BikeRentals\Services\TerminalAssistant\TerminalAssistantTools;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Validation\ValidationException;
 use Tests\Concerns\MigratesTenantSchema;
 
 uses(MigratesTenantSchema::class);
@@ -134,7 +135,7 @@ test('terminal assistant returns sanitized read-only reservation information', f
     $systemPrompt = $requestBodies[0]['messages'][0]['content'];
 
     expect($requestBodies[0]['tools'][0]['function']['parameters']['properties'])
-        ->toBeInstanceOf(stdClass::class);
+        ->toHaveKeys(['start_date', 'end_date']);
 
     expect($encodedBodies)
         ->not->toContain($customerName)
@@ -147,7 +148,8 @@ test('terminal assistant returns sanitized read-only reservation information', f
 
     expect($systemPrompt)
         ->toContain('The current date in the shop timezone '.$shop['location']->timezone.' is '.now($shop['location']->timezone)->toDateString())
-        ->toContain('Never classify a shop as busy or quiet without a staff-provided threshold.');
+        ->toContain('Never classify a shop as busy or quiet without a staff-provided threshold.')
+        ->toContain('Do not guess an ambiguous date range such as “the rest of the week”');
 });
 
 test('terminal assistant preserves empty tool arguments as an object on the follow-up request', function (): void {
@@ -194,7 +196,7 @@ test('terminal assistant preserves empty tool arguments as an object on the foll
         ->toBeInstanceOf(stdClass::class);
 });
 
-test('terminal assistant summarizes the shop day and current fleet without customer details', function (): void {
+test('terminal assistant summarizes a requested date range and current fleet without customer details', function (): void {
     $shop = provisionTerminalAssistantShop('assistant-shop-day.localhost');
     $this->terminalAssistantTenant = $shop['tenant'];
 
@@ -215,6 +217,15 @@ test('terminal assistant summarizes the shop day and current fleet without custo
                 'starts_at' => $today->copy()->addHours($startHour)->utc(),
                 'ends_at' => $today->copy()->addHours($startHour + 2)->utc(),
             ]));
+        $tomorrowReservation = Reservation::factory()
+            ->confirmed()
+            ->terminal()
+            ->recycle($shop['location'])
+            ->create([
+                'customer_id' => $customer->id,
+                'starts_at' => $today->copy()->addDay()->addHours(10)->utc(),
+                'ends_at' => $today->copy()->addDay()->addHours(12)->utc(),
+            ]);
         $cancelledReservation = Reservation::factory()
             ->terminal()
             ->recycle($shop['location'])
@@ -234,6 +245,11 @@ test('terminal assistant summarizes the shop day and current fleet without custo
             }
         }
 
+        BikeReservation::factory()->create([
+            'reservation_id' => $tomorrowReservation->id,
+            'product_id' => $variant->id,
+        ]);
+
         Bike::factory()->for($shop['location'])->count(2)->create([
             'bike_model_variant_id' => $variant->id,
         ]);
@@ -250,15 +266,33 @@ test('terminal assistant summarizes the shop day and current fleet without custo
         ServiceRequest::factory()->for($outOfServiceBike)->create();
         ServiceRequest::factory()->for($blockingServiceBike)->create();
 
-        return app(TerminalAssistantTools::class)->execute('summarize_shop_day', []);
+        return app(TerminalAssistantTools::class)->execute('summarize_reservations_period', [
+            'start_date' => $today->toDateString(),
+            'end_date' => $today->copy()->addDay()->toDateString(),
+        ]);
     });
 
-    expect($summary['reservations']['intersecting_today_count'])->toBe(3)
-        ->and($summary['reservations']['cancelled_intersecting_today_count'])->toBe(1)
-        ->and($summary['reservations']['bike_line_count'])->toBe(3)
-        ->and($summary['reservations']['starts_by_hour'])->toBe([
-            ['hour_local' => '09:00', 'reservation_count' => 2, 'bike_line_count' => 3],
-            ['hour_local' => '16:00', 'reservation_count' => 1, 'bike_line_count' => 0],
+    expect($summary['reservations']['intersecting_period_count'])->toBe(4)
+        ->and($summary['reservations']['cancelled_intersecting_period_count'])->toBe(1)
+        ->and($summary['reservations']['bike_line_count'])->toBe(4)
+        ->and($summary['reservations']['starts_by_date'])->toBe([
+            [
+                'date' => now($shop['location']->timezone)->toDateString(),
+                'reservation_start_count' => 3,
+                'bike_line_start_count' => 3,
+                'starts_by_hour' => [
+                    ['hour_local' => '09:00', 'reservation_start_count' => 2, 'bike_line_start_count' => 3],
+                    ['hour_local' => '16:00', 'reservation_start_count' => 1, 'bike_line_start_count' => 0],
+                ],
+            ],
+            [
+                'date' => now($shop['location']->timezone)->addDay()->toDateString(),
+                'reservation_start_count' => 1,
+                'bike_line_start_count' => 1,
+                'starts_by_hour' => [
+                    ['hour_local' => '10:00', 'reservation_start_count' => 1, 'bike_line_start_count' => 1],
+                ],
+            ],
         ])
         ->and($summary['fleet']['bike_count'])->toBe(5)
         ->and($summary['fleet']['in_service_bike_count'])->toBe(4)
@@ -271,6 +305,31 @@ test('terminal assistant summarizes the shop day and current fleet without custo
         ->not->toContain('Private Customer Name')
         ->not->toContain('private.customer@example.test')
         ->not->toContain('212 555 0199');
+});
+
+test('terminal assistant limits reservation summaries to valid ranges of seven dates', function (): void {
+    $shop = provisionTerminalAssistantShop('assistant-date-range.localhost');
+    $this->terminalAssistantTenant = $shop['tenant'];
+
+    $shop['tenant']->run(function () use ($shop): void {
+        $startDate = now($shop['location']->timezone)->toDateString();
+        $validSevenDateSummary = app(TerminalAssistantTools::class)->execute('summarize_reservations_period', [
+            'start_date' => $startDate,
+            'end_date' => now($shop['location']->timezone)->addDays(6)->toDateString(),
+        ]);
+
+        expect($validSevenDateSummary['end_date'])
+            ->toBe(now($shop['location']->timezone)->addDays(6)->toDateString());
+
+        expect(fn () => app(TerminalAssistantTools::class)->execute('summarize_reservations_period', [
+            'start_date' => $startDate,
+            'end_date' => now($shop['location']->timezone)->addDays(7)->toDateString(),
+        ]))->toThrow(ValidationException::class);
+
+        expect(fn () => app(TerminalAssistantTools::class)->execute('summarize_reservations_period', [
+            'start_date' => '2026-02-30',
+        ]))->toThrow(ValidationException::class);
+    });
 });
 
 test('terminal assistant explains when Ollama rejects a tool-call request', function (): void {

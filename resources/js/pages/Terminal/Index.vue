@@ -105,6 +105,12 @@ type TerminalUi = {
     assistant_intro: string;
     assistant_privacy: string;
     assistant_unavailable: string;
+    assistant_taking_longer: string;
+    assistant_waiting: string;
+    assistant_conversation_limit: string;
+    assistant_request_rejected: string;
+    assistant_retry_or_clear: string;
+    assistant_retry: string;
     assistant_clear: string;
     bike_category: string;
     rider_height_cm: string;
@@ -168,7 +174,9 @@ type TerminalUi = {
 
 const page = usePage();
 const locale = ref(page.props.locale);
-const terminalAssistantEnabled = ref(page.props.terminal_assistant_enabled === true);
+const terminalAssistantEnabled = ref(
+    page.props.terminal_assistant_enabled === true,
+);
 const terminalUi = reactive(page.props.terminal_ui as TerminalUi);
 watch(
     () => page.props.locale,
@@ -1020,16 +1028,18 @@ function eventSummary(entry: BroadcastLogEntry): string {
 </script>
 
 <template>
-    <div class="flex min-h-screen flex-col bg-brand-gray-50 dark:bg-brand-gray-950 text-brand-gray-900 dark:text-brand-gray-100">
+    <div
+        class="bg-brand-gray-50 dark:bg-brand-gray-950 text-brand-gray-900 dark:text-brand-gray-100 flex min-h-screen flex-col"
+    >
         <Head title="Terminal" />
 
         <header
-            class="flex min-h-20 items-center gap-4 border-b border-brand-gray-300 dark:border-brand-gray-800 bg-brand-gray-100 dark:bg-brand-gray-900 px-4 py-3 sm:px-6"
+            class="border-brand-gray-300 dark:border-brand-gray-800 bg-brand-gray-100 dark:bg-brand-gray-900 flex min-h-20 items-center gap-4 border-b px-4 py-3 sm:px-6"
         >
             <button
                 v-if="selectedReservation || walkInOpen"
                 type="button"
-                class="min-h-14 min-w-24 rounded-xl bg-brand-gray-300 dark:bg-brand-gray-700 px-4 text-lg font-semibold"
+                class="bg-brand-gray-300 dark:bg-brand-gray-700 min-h-14 min-w-24 rounded-xl px-4 text-lg font-semibold"
                 @click="backToQueue"
             >
                 Back
@@ -1044,7 +1054,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                               : 'Terminal'
                     }}
                 </h1>
-                <p class="text-sm text-brand-gray-600 dark:text-brand-gray-400">
+                <p class="text-brand-gray-600 dark:text-brand-gray-400 text-sm">
                     {{ scheduleDateLabel }} · {{ day.timezone }}
                 </p>
             </div>
@@ -1058,7 +1068,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                     class="min-h-14 rounded-xl px-4 text-base font-bold"
                     :class="
                         activeView === 'planner'
-                            ? 'bg-brand-primary-600 text-white dark:bg-brand-primary-400 dark:text-brand-gray-950'
+                            ? 'bg-brand-primary-600 dark:bg-brand-primary-400 dark:text-brand-gray-950 text-white'
                             : 'bg-brand-gray-200 dark:bg-brand-gray-800 text-brand-gray-950 dark:text-brand-gray-50'
                     "
                     :aria-current="
@@ -1073,7 +1083,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                     class="min-h-14 rounded-xl px-4 text-base font-bold"
                     :class="
                         activeView === 'reservations'
-                            ? 'bg-brand-primary-600 text-white dark:bg-brand-primary-400 dark:text-brand-gray-950'
+                            ? 'bg-brand-primary-600 dark:bg-brand-primary-400 dark:text-brand-gray-950 text-white'
                             : 'bg-brand-gray-200 dark:bg-brand-gray-800 text-brand-gray-950 dark:text-brand-gray-50'
                     "
                     :aria-current="
@@ -1089,7 +1099,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
             </div>
             <button
                 type="button"
-                class="min-h-14 rounded-xl border border-brand-gray-500 dark:border-brand-gray-600 bg-brand-gray-200 dark:bg-brand-gray-800 px-5 text-lg font-bold text-brand-gray-950 dark:text-brand-gray-50"
+                class="border-brand-gray-500 dark:border-brand-gray-600 bg-brand-gray-200 dark:bg-brand-gray-800 text-brand-gray-950 dark:text-brand-gray-50 min-h-14 rounded-xl border px-5 text-lg font-bold"
                 @click="eventLogOpen = true"
             >
                 {{ terminalUi.event_log }} · {{ day.broadcastLog.length }}
@@ -1097,7 +1107,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
             <button
                 v-if="!selectedReservation && !walkInOpen"
                 type="button"
-                class="min-h-14 rounded-xl bg-brand-primary-600 px-5 text-lg font-bold text-white hover:bg-brand-primary-700 dark:bg-brand-primary-400 dark:text-brand-gray-950 dark:hover:bg-brand-primary-300"
+                class="bg-brand-primary-600 hover:bg-brand-primary-700 dark:bg-brand-primary-400 dark:text-brand-gray-950 dark:hover:bg-brand-primary-300 min-h-14 rounded-xl px-5 text-lg font-bold text-white"
                 @click="startWalkIn"
             >
                 New walk-in
@@ -1110,7 +1120,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
         >
             <form class="flex flex-col gap-4" @submit.prevent="submitWalkIn">
                 <section
-                    class="rounded-2xl border border-brand-gray-300 dark:border-brand-gray-800 bg-brand-gray-100 dark:bg-brand-gray-900 p-5"
+                    class="border-brand-gray-300 dark:border-brand-gray-800 bg-brand-gray-100 dark:bg-brand-gray-900 rounded-2xl border p-5"
                 >
                     <h2 class="text-xl font-bold">Customer contact</h2>
                     <div class="mt-4 grid gap-4 sm:grid-cols-2">
@@ -1122,7 +1132,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                                 v-model="walkInRequest.name"
                                 required
                                 autocomplete="name"
-                                class="h-14 rounded-xl border border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-50 dark:bg-brand-gray-950 px-4 text-lg text-brand-gray-950 dark:text-brand-gray-50 focus:border-brand-primary-600 dark:focus:border-brand-primary-400 focus:outline-none"
+                                class="border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-50 dark:bg-brand-gray-950 text-brand-gray-950 dark:text-brand-gray-50 focus:border-brand-primary-600 dark:focus:border-brand-primary-400 h-14 rounded-xl border px-4 text-lg focus:outline-none"
                             />
                         </label>
                         <label
@@ -1134,7 +1144,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                                 required
                                 type="email"
                                 autocomplete="email"
-                                class="h-14 rounded-xl border border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-50 dark:bg-brand-gray-950 px-4 text-lg text-brand-gray-950 dark:text-brand-gray-50 focus:border-brand-primary-600 dark:focus:border-brand-primary-400 focus:outline-none"
+                                class="border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-50 dark:bg-brand-gray-950 text-brand-gray-950 dark:text-brand-gray-50 focus:border-brand-primary-600 dark:focus:border-brand-primary-400 h-14 rounded-xl border px-4 text-lg focus:outline-none"
                             />
                         </label>
                         <label
@@ -1146,17 +1156,19 @@ function eventSummary(entry: BroadcastLogEntry): string {
                                 required
                                 type="tel"
                                 autocomplete="tel"
-                                class="h-14 rounded-xl border border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-50 dark:bg-brand-gray-950 px-4 text-lg text-brand-gray-950 dark:text-brand-gray-50 focus:border-brand-primary-600 dark:focus:border-brand-primary-400 focus:outline-none"
+                                class="border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-50 dark:bg-brand-gray-950 text-brand-gray-950 dark:text-brand-gray-50 focus:border-brand-primary-600 dark:focus:border-brand-primary-400 h-14 rounded-xl border px-4 text-lg focus:outline-none"
                             />
                         </label>
                     </div>
                 </section>
 
                 <section
-                    class="rounded-2xl border border-brand-gray-300 dark:border-brand-gray-800 bg-brand-gray-100 dark:bg-brand-gray-900 p-5"
+                    class="border-brand-gray-300 dark:border-brand-gray-800 bg-brand-gray-100 dark:bg-brand-gray-900 rounded-2xl border p-5"
                 >
                     <h2 class="text-xl font-bold">Rental interval</h2>
-                    <p class="mt-1 text-brand-gray-600 dark:text-brand-gray-400">
+                    <p
+                        class="text-brand-gray-600 dark:text-brand-gray-400 mt-1"
+                    >
                         Times use the shop timezone: {{ day.timezone }}. The
                         default is now for two hours.
                     </p>
@@ -1169,7 +1181,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                                 v-model="walkInRequest.starts_at_local"
                                 required
                                 type="datetime-local"
-                                class="h-14 rounded-xl border border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-50 dark:bg-brand-gray-950 px-4 text-lg text-brand-gray-950 dark:text-brand-gray-50 focus:border-brand-primary-600 dark:focus:border-brand-primary-400 focus:outline-none"
+                                class="border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-50 dark:bg-brand-gray-950 text-brand-gray-950 dark:text-brand-gray-50 focus:border-brand-primary-600 dark:focus:border-brand-primary-400 h-14 rounded-xl border px-4 text-lg focus:outline-none"
                             />
                         </label>
                         <label
@@ -1181,26 +1193,28 @@ function eventSummary(entry: BroadcastLogEntry): string {
                                 required
                                 type="datetime-local"
                                 :min="walkInRequest.starts_at_local"
-                                class="h-14 rounded-xl border border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-50 dark:bg-brand-gray-950 px-4 text-lg text-brand-gray-950 dark:text-brand-gray-50 focus:border-brand-primary-600 dark:focus:border-brand-primary-400 focus:outline-none"
+                                class="border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-50 dark:bg-brand-gray-950 text-brand-gray-950 dark:text-brand-gray-50 focus:border-brand-primary-600 dark:focus:border-brand-primary-400 h-14 rounded-xl border px-4 text-lg focus:outline-none"
                             />
                         </label>
                     </div>
                 </section>
 
                 <section
-                    class="rounded-2xl border border-brand-gray-300 dark:border-brand-gray-800 bg-brand-gray-100 dark:bg-brand-gray-900 p-5"
+                    class="border-brand-gray-300 dark:border-brand-gray-800 bg-brand-gray-100 dark:bg-brand-gray-900 rounded-2xl border p-5"
                 >
                     <div class="flex flex-wrap items-center gap-3">
                         <h2 class="min-w-0 flex-1 text-xl font-bold">Bikes</h2>
                         <button
                             type="button"
-                            class="min-h-12 rounded-xl bg-brand-primary-600 px-4 text-base font-bold text-white hover:bg-brand-primary-700 dark:bg-brand-primary-400 dark:text-brand-gray-950 dark:hover:bg-brand-primary-300"
+                            class="bg-brand-primary-600 hover:bg-brand-primary-700 dark:bg-brand-primary-400 dark:text-brand-gray-950 dark:hover:bg-brand-primary-300 min-h-12 rounded-xl px-4 text-base font-bold text-white"
                             @click="addWalkInRider"
                         >
                             {{ terminalUi.add_rider }}
                         </button>
                     </div>
-                    <p class="mt-1 text-brand-gray-600 dark:text-brand-gray-400">
+                    <p
+                        class="text-brand-gray-600 dark:text-brand-gray-400 mt-1"
+                    >
                         {{ terminalUi.availability_buffer_note }}
                     </p>
                     <p
@@ -1211,7 +1225,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                     </p>
                     <p
                         v-if="day.bikeAssignmentPolicy === 'pickup_only'"
-                        class="mt-2 text-sm text-brand-gray-700 dark:text-brand-gray-300"
+                        class="text-brand-gray-700 dark:text-brand-gray-300 mt-2 text-sm"
                     >
                         Bikes stay unassigned until pickup.
                     </p>
@@ -1229,7 +1243,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                         <section
                             v-for="(rider, index) in walkInRiders"
                             :key="index"
-                            class="flex flex-col gap-3 rounded-xl border border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-50 dark:bg-brand-gray-950 p-4"
+                            class="border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-50 dark:bg-brand-gray-950 flex flex-col gap-3 rounded-xl border p-4"
                         >
                             <div class="flex items-center gap-3">
                                 <h3 class="min-w-0 flex-1 text-lg font-bold">
@@ -1237,7 +1251,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                                 </h3>
                                 <button
                                     type="button"
-                                    class="min-h-12 rounded-xl bg-brand-primary-600 px-4 text-sm font-bold text-white hover:bg-brand-primary-700 dark:bg-brand-primary-400 dark:text-brand-gray-950 dark:hover:bg-brand-primary-300 disabled:cursor-not-allowed disabled:bg-brand-gray-300 dark:disabled:bg-brand-gray-800 disabled:text-brand-gray-600 dark:disabled:text-brand-gray-500"
+                                    class="bg-brand-primary-600 hover:bg-brand-primary-700 dark:bg-brand-primary-400 dark:text-brand-gray-950 dark:hover:bg-brand-primary-300 disabled:bg-brand-gray-300 dark:disabled:bg-brand-gray-800 disabled:text-brand-gray-600 dark:disabled:text-brand-gray-500 min-h-12 rounded-xl px-4 text-sm font-bold text-white disabled:cursor-not-allowed"
                                     :disabled="
                                         !walkInPlannerDateMatches ||
                                         bikeCandidatesLoading
@@ -1251,7 +1265,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                                 <button
                                     v-if="walkInRiders.length > 1"
                                     type="button"
-                                    class="min-h-12 rounded-xl bg-brand-gray-200 dark:bg-brand-gray-800 px-4 text-sm font-semibold text-brand-gray-900 dark:text-brand-gray-100"
+                                    class="bg-brand-gray-200 dark:bg-brand-gray-800 text-brand-gray-900 dark:text-brand-gray-100 min-h-12 rounded-xl px-4 text-sm font-semibold"
                                     @click="removeWalkInRider(index)"
                                 >
                                     {{ terminalUi.remove_rider }}
@@ -1265,7 +1279,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                                     <input
                                         v-model="rider.rider_name"
                                         type="text"
-                                        class="h-14 rounded-xl border border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-100 dark:bg-brand-gray-900 px-4 text-base text-brand-gray-950 dark:text-brand-gray-50 focus:border-brand-primary-600 dark:focus:border-brand-primary-400 focus:outline-none"
+                                        class="border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-100 dark:bg-brand-gray-900 text-brand-gray-950 dark:text-brand-gray-50 focus:border-brand-primary-600 dark:focus:border-brand-primary-400 h-14 rounded-xl border px-4 text-base focus:outline-none"
                                     />
                                 </label>
                                 <label
@@ -1279,7 +1293,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                                         max="250"
                                         inputmode="numeric"
                                         :placeholder="terminalUi.cm"
-                                        class="h-14 rounded-xl border border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-100 dark:bg-brand-gray-900 px-4 text-base text-brand-gray-950 dark:text-brand-gray-50 focus:border-brand-primary-600 dark:focus:border-brand-primary-400 focus:outline-none"
+                                        class="border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-100 dark:bg-brand-gray-900 text-brand-gray-950 dark:text-brand-gray-50 focus:border-brand-primary-600 dark:focus:border-brand-primary-400 h-14 rounded-xl border px-4 text-base focus:outline-none"
                                     />
                                 </label>
                                 <label
@@ -1288,7 +1302,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                                     {{ terminalUi.bike_category }}
                                     <select
                                         v-model="rider.category_id"
-                                        class="h-14 rounded-xl border border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-100 dark:bg-brand-gray-900 px-4 text-base text-brand-gray-950 dark:text-brand-gray-50 focus:border-brand-primary-600 dark:focus:border-brand-primary-400 focus:outline-none"
+                                        class="border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-100 dark:bg-brand-gray-900 text-brand-gray-950 dark:text-brand-gray-50 focus:border-brand-primary-600 dark:focus:border-brand-primary-400 h-14 rounded-xl border px-4 text-base focus:outline-none"
                                     >
                                         <option :value="null">
                                             {{ terminalUi.all_categories }}
@@ -1307,12 +1321,14 @@ function eventSummary(entry: BroadcastLogEntry): string {
                                 v-if="riderHeight(rider) !== null"
                                 class="flex flex-wrap items-center gap-3"
                             >
-                                <p class="min-w-0 flex-1 text-sm text-brand-gray-700 dark:text-brand-gray-300">
+                                <p
+                                    class="text-brand-gray-700 dark:text-brand-gray-300 min-w-0 flex-1 text-sm"
+                                >
                                     {{ terminalUi.recommended_fit }}
                                 </p>
                                 <button
                                     type="button"
-                                    class="min-h-12 rounded-xl bg-brand-gray-200 dark:bg-brand-gray-800 px-4 text-sm font-semibold text-brand-gray-950 dark:text-brand-gray-50"
+                                    class="bg-brand-gray-200 dark:bg-brand-gray-800 text-brand-gray-950 dark:text-brand-gray-50 min-h-12 rounded-xl px-4 text-sm font-semibold"
                                     @click="
                                         rider.show_all_sizes =
                                             !rider.show_all_sizes
@@ -1332,7 +1348,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                                 <select
                                     v-model="rider.bike_id"
                                     :disabled="bikeCandidatesLoading"
-                                    class="h-16 rounded-xl border border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-100 dark:bg-brand-gray-900 px-4 text-base text-brand-gray-950 dark:text-brand-gray-50 focus:border-brand-primary-600 dark:focus:border-brand-primary-400 focus:outline-none"
+                                    class="border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-100 dark:bg-brand-gray-900 text-brand-gray-950 dark:text-brand-gray-50 focus:border-brand-primary-600 dark:focus:border-brand-primary-400 h-16 rounded-xl border px-4 text-base focus:outline-none"
                                 >
                                     <option :value="null">
                                         {{ terminalUi.choose_bike }}
@@ -1369,7 +1385,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                             </p>
                             <p
                                 v-if="rider.bike_id !== null"
-                                class="text-sm text-brand-gray-600 dark:text-brand-gray-400"
+                                class="text-brand-gray-600 dark:text-brand-gray-400 text-sm"
                             >
                                 {{
                                     getEnumLabel(
@@ -1401,7 +1417,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                     <div
                         v-if="walkInPlannerAssignment"
                         ref="walkInPlannerElement"
-                        class="mt-4 overflow-hidden rounded-2xl border border-brand-primary-500/60 bg-brand-gray-50 dark:border-brand-primary-500/60 dark:bg-brand-gray-950"
+                        class="border-brand-primary-500/60 bg-brand-gray-50 dark:border-brand-primary-500/60 dark:bg-brand-gray-950 mt-4 overflow-hidden rounded-2xl border"
                     >
                         <BikeSchedulePlanner
                             :ui="terminalUi"
@@ -1423,13 +1439,13 @@ function eventSummary(entry: BroadcastLogEntry): string {
                     </label>
                     <p
                         v-if="bikeCandidatesLoading"
-                        class="mt-4 rounded-xl border border-dashed border-brand-gray-400 dark:border-brand-gray-700 p-4 text-brand-gray-700 dark:text-brand-gray-300"
+                        class="border-brand-gray-400 dark:border-brand-gray-700 text-brand-gray-700 dark:text-brand-gray-300 mt-4 rounded-xl border border-dashed p-4"
                     >
                         {{ terminalUi.loading_candidates }}
                     </p>
                     <p
                         v-else-if="bikeCandidateResults.candidates.length === 0"
-                        class="mt-4 rounded-xl border border-dashed border-brand-gray-400 dark:border-brand-gray-700 p-4 text-brand-gray-600 dark:text-brand-gray-400"
+                        class="border-brand-gray-400 dark:border-brand-gray-700 text-brand-gray-600 dark:text-brand-gray-400 mt-4 rounded-xl border border-dashed p-4"
                     >
                         {{ terminalUi.no_available_candidates }}
                     </p>
@@ -1443,7 +1459,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                 </section>
 
                 <section
-                    class="rounded-2xl border border-brand-gray-300 dark:border-brand-gray-800 bg-brand-gray-100 dark:bg-brand-gray-900 p-5"
+                    class="border-brand-gray-300 dark:border-brand-gray-800 bg-brand-gray-100 dark:bg-brand-gray-900 rounded-2xl border p-5"
                 >
                     <label
                         class="flex max-w-sm flex-col gap-2 text-sm font-semibold"
@@ -1464,10 +1480,12 @@ function eventSummary(entry: BroadcastLogEntry): string {
                                               currencyExponent(day.currency),
                                       }).format(12)
                             "
-                            class="h-14 rounded-xl border border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-50 dark:bg-brand-gray-950 px-4 text-lg text-brand-gray-950 dark:text-brand-gray-50 focus:border-brand-primary-600 dark:focus:border-brand-primary-400 focus:outline-none"
+                            class="border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-50 dark:bg-brand-gray-950 text-brand-gray-950 dark:text-brand-gray-50 focus:border-brand-primary-600 dark:focus:border-brand-primary-400 h-14 rounded-xl border px-4 text-lg focus:outline-none"
                         />
                     </label>
-                    <p class="mt-2 text-sm text-brand-gray-600 dark:text-brand-gray-400">
+                    <p
+                        class="text-brand-gray-600 dark:text-brand-gray-400 mt-2 text-sm"
+                    >
                         This is a hand-entered Terminal quote.
                     </p>
                 </section>
@@ -1482,7 +1500,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
 
                 <button
                     type="submit"
-                    class="min-h-16 rounded-xl bg-brand-primary-600 px-6 text-xl font-bold text-white hover:bg-brand-primary-700 dark:bg-brand-primary-400 dark:text-brand-gray-950 dark:hover:bg-brand-primary-300 disabled:cursor-not-allowed disabled:bg-brand-gray-300 dark:disabled:bg-brand-gray-700 disabled:text-brand-gray-600 dark:disabled:text-brand-gray-400"
+                    class="bg-brand-primary-600 hover:bg-brand-primary-700 dark:bg-brand-primary-400 dark:text-brand-gray-950 dark:hover:bg-brand-primary-300 disabled:bg-brand-gray-300 dark:disabled:bg-brand-gray-700 disabled:text-brand-gray-600 dark:disabled:text-brand-gray-400 min-h-16 rounded-xl px-6 text-xl font-bold text-white disabled:cursor-not-allowed"
                     :disabled="
                         walkInRequest.processing ||
                         bikeCandidatesLoading ||
@@ -1517,7 +1535,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                     v-model="search"
                     type="search"
                     placeholder="Find a customer, bike, or model"
-                    class="h-16 w-full rounded-2xl border border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-100 dark:bg-brand-gray-900 px-5 text-lg text-brand-gray-950 dark:text-brand-gray-50 placeholder:text-brand-gray-600 dark:placeholder:text-brand-gray-500 focus:border-brand-primary-600 dark:focus:border-brand-primary-400 focus:outline-none"
+                    class="border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-100 dark:bg-brand-gray-900 text-brand-gray-950 dark:text-brand-gray-50 placeholder:text-brand-gray-600 dark:placeholder:text-brand-gray-500 focus:border-brand-primary-600 dark:focus:border-brand-primary-400 h-16 w-full rounded-2xl border px-5 text-lg focus:outline-none"
                 />
             </label>
 
@@ -1529,7 +1547,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                     v-for="reservation in visibleReservations"
                     :key="reservation.id"
                     type="button"
-                    class="flex min-h-24 flex-col gap-3 rounded-2xl border border-brand-gray-300 dark:border-brand-gray-800 bg-brand-gray-100 dark:bg-brand-gray-900 p-4 text-left hover:border-brand-gray-400 dark:hover:border-brand-gray-600 sm:p-5"
+                    class="border-brand-gray-300 dark:border-brand-gray-800 bg-brand-gray-100 dark:bg-brand-gray-900 hover:border-brand-gray-400 dark:hover:border-brand-gray-600 flex min-h-24 flex-col gap-3 rounded-2xl border p-4 text-left sm:p-5"
                     @click="openReservation(reservation)"
                 >
                     <div class="flex w-full flex-wrap items-center gap-3">
@@ -1557,7 +1575,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                         }}</span>
                         <span
                             v-if="reservationNeedsAttention(reservation)"
-                            class="rounded-full bg-amber-400 px-3 py-1 text-sm font-bold text-brand-gray-950"
+                            class="text-brand-gray-950 rounded-full bg-amber-400 px-3 py-1 text-sm font-bold"
                             >Needs attention</span
                         >
                     </div>
@@ -1565,7 +1583,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                         <li
                             v-for="line in reservation.lines"
                             :key="line.id"
-                            class="flex flex-wrap items-center gap-2 rounded-lg bg-brand-gray-200 dark:bg-brand-gray-800 px-3 py-2 text-sm"
+                            class="bg-brand-gray-200 dark:bg-brand-gray-800 flex flex-wrap items-center gap-2 rounded-lg px-3 py-2 text-sm"
                         >
                             <span
                                 >{{ line.product_label }} ·
@@ -1575,7 +1593,10 @@ function eventSummary(entry: BroadcastLogEntry): string {
                                 }}</span
                             >
                             <template v-if="displayBikeForLine(line)">
-                                <span class="text-brand-gray-600 dark:text-brand-gray-400">·</span>
+                                <span
+                                    class="text-brand-gray-600 dark:text-brand-gray-400"
+                                    >·</span
+                                >
                                 <span>{{
                                     getEnumLabel(
                                         'bikeSituation',
@@ -1653,7 +1674,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
 
             <section
                 v-else
-                class="flex flex-1 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-100/60 dark:bg-brand-gray-900/60 px-6 py-12 text-center"
+                class="border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-100/60 dark:bg-brand-gray-900/60 flex flex-1 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed px-6 py-12 text-center"
             >
                 <h2 class="text-2xl font-bold">
                     {{
@@ -1662,18 +1683,24 @@ function eventSummary(entry: BroadcastLogEntry): string {
                             : 'No reservations on the board'
                     }}
                 </h2>
-                <p v-if="search" class="max-w-xl text-brand-gray-600 dark:text-brand-gray-400">
+                <p
+                    v-if="search"
+                    class="text-brand-gray-600 dark:text-brand-gray-400 max-w-xl"
+                >
                     Try a different customer name, bike bid, or model.
                 </p>
                 <template v-else>
                     <p
                         v-if="day.bikeList.length === 0"
-                        class="max-w-xl text-brand-gray-600 dark:text-brand-gray-400"
+                        class="text-brand-gray-600 dark:text-brand-gray-400 max-w-xl"
                     >
                         This shop has no bikes yet. Add a category, model,
                         variant, and bike in Manage before starting a walk-in.
                     </p>
-                    <p v-else class="max-w-xl text-brand-gray-600 dark:text-brand-gray-400">
+                    <p
+                        v-else
+                        class="text-brand-gray-600 dark:text-brand-gray-400 max-w-xl"
+                    >
                         Reservations appear here when they overlap today or have
                         a bike away from Home. Select New walk-in to create an
                         immediate hand-quoted reservation.
@@ -1686,13 +1713,17 @@ function eventSummary(entry: BroadcastLogEntry): string {
             v-else
             class="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 p-4 sm:p-6"
         >
-            <section class="rounded-2xl border border-brand-gray-300 dark:border-brand-gray-800 bg-brand-gray-100 dark:bg-brand-gray-900 p-5">
+            <section
+                class="border-brand-gray-300 dark:border-brand-gray-800 bg-brand-gray-100 dark:bg-brand-gray-900 rounded-2xl border p-5"
+            >
                 <div class="flex flex-wrap items-start gap-3">
                     <div class="min-w-0 flex-1">
                         <h2 class="text-2xl font-bold">
                             {{ selectedReservation.customer.name }}
                         </h2>
-                        <p class="mt-1 text-brand-gray-600 dark:text-brand-gray-400">
+                        <p
+                            class="text-brand-gray-600 dark:text-brand-gray-400 mt-1"
+                        >
                             {{ formatTime(selectedReservation.starts_at) }}–{{
                                 formatTime(selectedReservation.ends_at)
                             }}
@@ -1738,7 +1769,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                 <article
                     v-for="line in selectedReservation.lines"
                     :key="line.id"
-                    class="flex flex-col gap-4 rounded-2xl border border-brand-gray-300 dark:border-brand-gray-800 bg-brand-gray-100 dark:bg-brand-gray-900 p-4 sm:flex-row sm:items-center sm:p-5"
+                    class="border-brand-gray-300 dark:border-brand-gray-800 bg-brand-gray-100 dark:bg-brand-gray-900 flex flex-col gap-4 rounded-2xl border p-4 sm:flex-row sm:items-center sm:p-5"
                 >
                     <div class="min-w-0 flex-1">
                         <h3 class="text-lg font-bold">
@@ -1746,7 +1777,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                         </h3>
                         <div class="mt-2 flex flex-wrap items-center gap-2">
                             <span
-                                class="rounded-lg bg-brand-gray-200 dark:bg-brand-gray-800 px-3 py-2 font-mono text-lg font-bold"
+                                class="bg-brand-gray-200 dark:bg-brand-gray-800 rounded-lg px-3 py-2 font-mono text-lg font-bold"
                             >
                                 {{
                                     displayBikeForLine(line)?.bid ??
@@ -1852,7 +1883,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                         Bike for pickup
                         <select
                             v-model="pickupBikeByLineId[line.id]"
-                            class="h-14 rounded-xl border border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-50 dark:bg-brand-gray-950 px-4 text-base text-brand-gray-950 dark:text-brand-gray-50 focus:border-brand-primary-600 dark:focus:border-brand-primary-400 focus:outline-none"
+                            class="border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-50 dark:bg-brand-gray-950 text-brand-gray-950 dark:text-brand-gray-50 focus:border-brand-primary-600 dark:focus:border-brand-primary-400 h-14 rounded-xl border px-4 text-base focus:outline-none"
                         >
                             <option :value="undefined">Choose a bike</option>
                             <option
@@ -1884,7 +1915,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                         class="min-h-16 w-full shrink-0 rounded-xl px-6 text-lg font-bold sm:w-48"
                         :class="
                             canPickUp(selectedReservation, line)
-                                ? 'bg-brand-primary-600 text-white dark:bg-brand-primary-400 dark:text-brand-gray-950'
+                                ? 'bg-brand-primary-600 dark:bg-brand-primary-400 dark:text-brand-gray-950 text-white'
                                 : 'bg-brand-gray-200 dark:bg-brand-gray-800 text-brand-gray-600 dark:text-brand-gray-500'
                         "
                         :disabled="
@@ -1920,29 +1951,31 @@ function eventSummary(entry: BroadcastLogEntry): string {
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="broadcast-log-title"
-                class="flex h-full w-full max-w-3xl flex-col border-l border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-50 dark:bg-brand-gray-950 shadow-2xl"
+                class="border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-50 dark:bg-brand-gray-950 flex h-full w-full max-w-3xl flex-col border-l shadow-2xl"
             >
                 <header
-                    class="flex items-center gap-3 border-b border-brand-gray-300 dark:border-brand-gray-800 p-4 sm:p-6"
+                    class="border-brand-gray-300 dark:border-brand-gray-800 flex items-center gap-3 border-b p-4 sm:p-6"
                 >
                     <div class="min-w-0 flex-1">
                         <h2 id="broadcast-log-title" class="text-2xl font-bold">
                             {{ terminalUi.event_log_title }}
                         </h2>
-                        <p class="mt-1 text-sm text-brand-gray-600 dark:text-brand-gray-400">
+                        <p
+                            class="text-brand-gray-600 dark:text-brand-gray-400 mt-1 text-sm"
+                        >
                             {{ terminalUi.event_log_description }}
                         </p>
                     </div>
                     <button
                         type="button"
-                        class="min-h-14 rounded-xl border border-brand-gray-500 dark:border-brand-gray-600 px-4 text-base font-semibold"
+                        class="border-brand-gray-500 dark:border-brand-gray-600 min-h-14 rounded-xl border px-4 text-base font-semibold"
                         @click="day.clearBroadcastLog()"
                     >
                         {{ terminalUi.event_log_clear }}
                     </button>
                     <button
                         type="button"
-                        class="min-h-14 rounded-xl bg-brand-gray-200 dark:bg-brand-gray-800 px-4 text-base font-semibold"
+                        class="bg-brand-gray-200 dark:bg-brand-gray-800 min-h-14 rounded-xl px-4 text-base font-semibold"
                         @click="eventLogOpen = false"
                     >
                         {{ terminalUi.event_log_close }}
@@ -1957,17 +1990,17 @@ function eventSummary(entry: BroadcastLogEntry): string {
                     <li
                         v-for="entry in day.broadcastLog"
                         :key="entry.id"
-                        class="rounded-xl border border-brand-gray-300 dark:border-brand-gray-800 bg-brand-gray-100 dark:bg-brand-gray-900 p-4"
+                        class="border-brand-gray-300 dark:border-brand-gray-800 bg-brand-gray-100 dark:bg-brand-gray-900 rounded-xl border p-4"
                     >
                         <div
                             class="flex flex-wrap items-start justify-between gap-2"
                         >
                             <code
-                                class="font-semibold break-all text-brand-primary-700 dark:text-brand-primary-300"
+                                class="text-brand-primary-700 dark:text-brand-primary-300 font-semibold break-all"
                                 >{{ entry.event }}</code
                             >
                             <time
-                                class="text-sm text-brand-gray-600 dark:text-brand-gray-400"
+                                class="text-brand-gray-600 dark:text-brand-gray-400 text-sm"
                                 :datetime="entry.receivedAt"
                             >
                                 {{
@@ -1979,19 +2012,21 @@ function eventSummary(entry: BroadcastLogEntry): string {
                                 }}
                             </time>
                         </div>
-                        <p class="mt-2 text-sm text-brand-gray-700 dark:text-brand-gray-300">
+                        <p
+                            class="text-brand-gray-700 dark:text-brand-gray-300 mt-2 text-sm"
+                        >
                             {{ eventSummary(entry) }}
                         </p>
                         <details
-                            class="mt-3 rounded-lg border border-brand-gray-300 dark:border-brand-gray-800 bg-brand-gray-50 dark:bg-brand-gray-950"
+                            class="border-brand-gray-300 dark:border-brand-gray-800 bg-brand-gray-50 dark:bg-brand-gray-950 mt-3 rounded-lg border"
                         >
                             <summary
-                                class="min-h-12 cursor-pointer px-3 py-3 text-sm font-semibold text-brand-gray-700 dark:text-brand-gray-300"
+                                class="text-brand-gray-700 dark:text-brand-gray-300 min-h-12 cursor-pointer px-3 py-3 text-sm font-semibold"
                             >
                                 {{ terminalUi.event_log_raw_json }}
                             </summary>
                             <pre
-                                class="max-h-72 overflow-auto border-t border-brand-gray-300 dark:border-brand-gray-800 p-3 text-xs break-all whitespace-pre-wrap text-brand-gray-700 dark:text-brand-gray-300"
+                                class="border-brand-gray-300 dark:border-brand-gray-800 text-brand-gray-700 dark:text-brand-gray-300 max-h-72 overflow-auto border-t p-3 text-xs break-all whitespace-pre-wrap"
                                 >{{
                                     JSON.stringify(entry.payload, null, 2)
                                 }}</pre>
@@ -2000,7 +2035,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                 </ol>
                 <p
                     v-else
-                    class="flex flex-1 items-center justify-center p-8 text-center text-lg text-brand-gray-600 dark:text-brand-gray-400"
+                    class="text-brand-gray-600 dark:text-brand-gray-400 flex flex-1 items-center justify-center p-8 text-center text-lg"
                 >
                     {{ terminalUi.event_log_waiting }}
                 </p>

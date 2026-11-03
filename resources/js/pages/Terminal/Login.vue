@@ -37,7 +37,7 @@ defineProps<{
                     name="email"
                     type="email"
                     autocomplete="username"
-                    class="mt-1 h-14 w-full rounded-2xl bg-brand-gray-200 dark:bg-brand-gray-800 px-4"
+                    class="mt-1 h-14 w-full rounded-2xl border border-brand-gray-400 bg-brand-gray-200 px-4 focus:border-brand-primary-600 focus:outline-none dark:border-brand-gray-700 dark:bg-brand-gray-800 dark:focus:border-brand-primary-400"
                 />
             </label>
             <p v-if="errors.email" class="text-sm text-rose-400">{{ errors.email }}</p>
@@ -47,12 +47,12 @@ defineProps<{
                     name="password"
                     type="password"
                     autocomplete="current-password"
-                    class="mt-1 h-14 w-full rounded-2xl bg-brand-gray-200 dark:bg-brand-gray-800 px-4"
+                    class="mt-1 h-14 w-full rounded-2xl border border-brand-gray-400 bg-brand-gray-200 px-4 focus:border-brand-primary-600 focus:outline-none dark:border-brand-gray-700 dark:bg-brand-gray-800 dark:focus:border-brand-primary-400"
                 />
             </label>
             <button
                 type="submit"
-                class="h-16 w-full rounded-2xl bg-emerald-500 text-lg font-semibold text-brand-gray-950"
+                class="h-16 w-full rounded-2xl bg-brand-primary-600 text-lg font-semibold text-white hover:bg-brand-primary-700 dark:bg-brand-primary-400 dark:text-brand-gray-950 dark:hover:bg-brand-primary-300"
                 :disabled="processing"
             >
                 Sign in

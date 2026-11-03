@@ -16,6 +16,7 @@ use Embiken\BikeRentals\Models\Customer;
 use Embiken\BikeRentals\Models\RentalPackage;
 use Embiken\BikeRentals\Models\Reservation;
 use Embiken\BikeRentals\Services\Availability;
+use Filament\Support\Colors\Color;
 use Illuminate\Broadcasting\BroadcastManager;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Ssr\HttpGateway;
@@ -80,6 +81,8 @@ test('terminal sign in uses the shop logo and favicon', function () {
 
     $shop['tenant']->run(function (): void {
         ShopSetting::query()->create([
+            'primary_color' => '#0F766E',
+            'brand_gray_color' => '#475569',
             'logo_path' => 'branding/shop-logo.png',
             'favicon_path' => 'branding/shop-icon.png',
         ]);
@@ -92,7 +95,9 @@ test('terminal sign in uses the shop logo and favicon', function () {
             ->component('Terminal/Login')
             ->where('logoUrl', 'http://desk-branding.localhost/tenancy/assets/branding/shop-logo.png'))
         ->assertSee('href="http://desk-branding.localhost/tenancy/assets/branding/shop-icon.png" type="image/png"', false)
-        ->assertSee('rel="apple-touch-icon" href="http://desk-branding.localhost/tenancy/assets/branding/shop-icon.png"', false);
+        ->assertSee('rel="apple-touch-icon" href="http://desk-branding.localhost/tenancy/assets/branding/shop-icon.png"', false)
+        ->assertSee('--tenant-brand-primary-600: '.Color::hex('#0F766E')[600].';', false)
+        ->assertSee('--tenant-brand-gray-600: '.Color::hex('#475569')[600].';', false);
 });
 
 test('staff can open the terminal prototype with the day-store DTO', function () {

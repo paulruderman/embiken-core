@@ -1046,7 +1046,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                     class="min-h-14 rounded-xl px-4 text-base font-bold"
                     :class="
                         activeView === 'planner'
-                            ? 'bg-emerald-400 text-brand-gray-950'
+                            ? 'bg-brand-primary-600 text-white dark:bg-brand-primary-400 dark:text-brand-gray-950'
                             : 'bg-brand-gray-200 dark:bg-brand-gray-800 text-brand-gray-950 dark:text-brand-gray-50'
                     "
                     :aria-current="
@@ -1061,7 +1061,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                     class="min-h-14 rounded-xl px-4 text-base font-bold"
                     :class="
                         activeView === 'reservations'
-                            ? 'bg-emerald-400 text-brand-gray-950'
+                            ? 'bg-brand-primary-600 text-white dark:bg-brand-primary-400 dark:text-brand-gray-950'
                             : 'bg-brand-gray-200 dark:bg-brand-gray-800 text-brand-gray-950 dark:text-brand-gray-50'
                     "
                     :aria-current="
@@ -1085,7 +1085,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
             <button
                 v-if="!selectedReservation && !walkInOpen"
                 type="button"
-                class="min-h-14 rounded-xl bg-emerald-400 px-5 text-lg font-bold text-brand-gray-950"
+                class="min-h-14 rounded-xl bg-brand-primary-600 px-5 text-lg font-bold text-white hover:bg-brand-primary-700 dark:bg-brand-primary-400 dark:text-brand-gray-950 dark:hover:bg-brand-primary-300"
                 @click="startWalkIn"
             >
                 New walk-in
@@ -1110,7 +1110,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                                 v-model="walkInRequest.name"
                                 required
                                 autocomplete="name"
-                                class="h-14 rounded-xl border border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-50 dark:bg-brand-gray-950 px-4 text-lg text-brand-gray-950 dark:text-brand-gray-50 focus:border-emerald-400 focus:outline-none"
+                                class="h-14 rounded-xl border border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-50 dark:bg-brand-gray-950 px-4 text-lg text-brand-gray-950 dark:text-brand-gray-50 focus:border-brand-primary-600 dark:focus:border-brand-primary-400 focus:outline-none"
                             />
                         </label>
                         <label
@@ -1122,7 +1122,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                                 required
                                 type="email"
                                 autocomplete="email"
-                                class="h-14 rounded-xl border border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-50 dark:bg-brand-gray-950 px-4 text-lg text-brand-gray-950 dark:text-brand-gray-50 focus:border-emerald-400 focus:outline-none"
+                                class="h-14 rounded-xl border border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-50 dark:bg-brand-gray-950 px-4 text-lg text-brand-gray-950 dark:text-brand-gray-50 focus:border-brand-primary-600 dark:focus:border-brand-primary-400 focus:outline-none"
                             />
                         </label>
                         <label
@@ -1134,7 +1134,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                                 required
                                 type="tel"
                                 autocomplete="tel"
-                                class="h-14 rounded-xl border border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-50 dark:bg-brand-gray-950 px-4 text-lg text-brand-gray-950 dark:text-brand-gray-50 focus:border-emerald-400 focus:outline-none"
+                                class="h-14 rounded-xl border border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-50 dark:bg-brand-gray-950 px-4 text-lg text-brand-gray-950 dark:text-brand-gray-50 focus:border-brand-primary-600 dark:focus:border-brand-primary-400 focus:outline-none"
                             />
                         </label>
                     </div>
@@ -1157,7 +1157,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                                 v-model="walkInRequest.starts_at_local"
                                 required
                                 type="datetime-local"
-                                class="h-14 rounded-xl border border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-50 dark:bg-brand-gray-950 px-4 text-lg text-brand-gray-950 dark:text-brand-gray-50 focus:border-emerald-400 focus:outline-none"
+                                class="h-14 rounded-xl border border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-50 dark:bg-brand-gray-950 px-4 text-lg text-brand-gray-950 dark:text-brand-gray-50 focus:border-brand-primary-600 dark:focus:border-brand-primary-400 focus:outline-none"
                             />
                         </label>
                         <label
@@ -1169,7 +1169,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                                 required
                                 type="datetime-local"
                                 :min="walkInRequest.starts_at_local"
-                                class="h-14 rounded-xl border border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-50 dark:bg-brand-gray-950 px-4 text-lg text-brand-gray-950 dark:text-brand-gray-50 focus:border-emerald-400 focus:outline-none"
+                                class="h-14 rounded-xl border border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-50 dark:bg-brand-gray-950 px-4 text-lg text-brand-gray-950 dark:text-brand-gray-50 focus:border-brand-primary-600 dark:focus:border-brand-primary-400 focus:outline-none"
                             />
                         </label>
                     </div>
@@ -1182,7 +1182,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                         <h2 class="min-w-0 flex-1 text-xl font-bold">Bikes</h2>
                         <button
                             type="button"
-                            class="min-h-12 rounded-xl bg-emerald-400 px-4 text-base font-bold text-brand-gray-950"
+                            class="min-h-12 rounded-xl bg-brand-primary-600 px-4 text-base font-bold text-white hover:bg-brand-primary-700 dark:bg-brand-primary-400 dark:text-brand-gray-950 dark:hover:bg-brand-primary-300"
                             @click="addWalkInRider"
                         >
                             {{ terminalUi.add_rider }}
@@ -1225,7 +1225,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                                 </h3>
                                 <button
                                     type="button"
-                                    class="min-h-12 rounded-xl bg-emerald-400 px-4 text-sm font-bold text-brand-gray-950 disabled:cursor-not-allowed disabled:bg-brand-gray-300 dark:disabled:bg-brand-gray-800 disabled:text-brand-gray-600 dark:disabled:text-brand-gray-500"
+                                    class="min-h-12 rounded-xl bg-brand-primary-600 px-4 text-sm font-bold text-white hover:bg-brand-primary-700 dark:bg-brand-primary-400 dark:text-brand-gray-950 dark:hover:bg-brand-primary-300 disabled:cursor-not-allowed disabled:bg-brand-gray-300 dark:disabled:bg-brand-gray-800 disabled:text-brand-gray-600 dark:disabled:text-brand-gray-500"
                                     :disabled="
                                         !walkInPlannerDateMatches ||
                                         bikeCandidatesLoading
@@ -1253,7 +1253,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                                     <input
                                         v-model="rider.rider_name"
                                         type="text"
-                                        class="h-14 rounded-xl border border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-100 dark:bg-brand-gray-900 px-4 text-base text-brand-gray-950 dark:text-brand-gray-50 focus:border-emerald-400 focus:outline-none"
+                                        class="h-14 rounded-xl border border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-100 dark:bg-brand-gray-900 px-4 text-base text-brand-gray-950 dark:text-brand-gray-50 focus:border-brand-primary-600 dark:focus:border-brand-primary-400 focus:outline-none"
                                     />
                                 </label>
                                 <label
@@ -1267,7 +1267,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                                         max="250"
                                         inputmode="numeric"
                                         :placeholder="terminalUi.cm"
-                                        class="h-14 rounded-xl border border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-100 dark:bg-brand-gray-900 px-4 text-base text-brand-gray-950 dark:text-brand-gray-50 focus:border-emerald-400 focus:outline-none"
+                                        class="h-14 rounded-xl border border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-100 dark:bg-brand-gray-900 px-4 text-base text-brand-gray-950 dark:text-brand-gray-50 focus:border-brand-primary-600 dark:focus:border-brand-primary-400 focus:outline-none"
                                     />
                                 </label>
                                 <label
@@ -1276,7 +1276,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                                     {{ terminalUi.bike_category }}
                                     <select
                                         v-model="rider.category_id"
-                                        class="h-14 rounded-xl border border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-100 dark:bg-brand-gray-900 px-4 text-base text-brand-gray-950 dark:text-brand-gray-50 focus:border-emerald-400 focus:outline-none"
+                                        class="h-14 rounded-xl border border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-100 dark:bg-brand-gray-900 px-4 text-base text-brand-gray-950 dark:text-brand-gray-50 focus:border-brand-primary-600 dark:focus:border-brand-primary-400 focus:outline-none"
                                     >
                                         <option :value="null">
                                             {{ terminalUi.all_categories }}
@@ -1320,7 +1320,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                                 <select
                                     v-model="rider.bike_id"
                                     :disabled="bikeCandidatesLoading"
-                                    class="h-16 rounded-xl border border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-100 dark:bg-brand-gray-900 px-4 text-base text-brand-gray-950 dark:text-brand-gray-50 focus:border-emerald-400 focus:outline-none"
+                                    class="h-16 rounded-xl border border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-100 dark:bg-brand-gray-900 px-4 text-base text-brand-gray-950 dark:text-brand-gray-50 focus:border-brand-primary-600 dark:focus:border-brand-primary-400 focus:outline-none"
                                 >
                                     <option :value="null">
                                         {{ terminalUi.choose_bike }}
@@ -1389,7 +1389,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                     <div
                         v-if="walkInPlannerAssignment"
                         ref="walkInPlannerElement"
-                        class="mt-4 overflow-hidden rounded-2xl border border-emerald-500/60 bg-brand-gray-50 dark:bg-brand-gray-950"
+                        class="mt-4 overflow-hidden rounded-2xl border border-brand-primary-500/60 bg-brand-gray-50 dark:border-brand-primary-500/60 dark:bg-brand-gray-950"
                     >
                         <BikeSchedulePlanner
                             :ui="terminalUi"
@@ -1452,7 +1452,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                                               currencyExponent(day.currency),
                                       }).format(12)
                             "
-                            class="h-14 rounded-xl border border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-50 dark:bg-brand-gray-950 px-4 text-lg text-brand-gray-950 dark:text-brand-gray-50 focus:border-emerald-400 focus:outline-none"
+                            class="h-14 rounded-xl border border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-50 dark:bg-brand-gray-950 px-4 text-lg text-brand-gray-950 dark:text-brand-gray-50 focus:border-brand-primary-600 dark:focus:border-brand-primary-400 focus:outline-none"
                         />
                     </label>
                     <p class="mt-2 text-sm text-brand-gray-600 dark:text-brand-gray-400">
@@ -1470,7 +1470,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
 
                 <button
                     type="submit"
-                    class="min-h-16 rounded-xl bg-emerald-400 px-6 text-xl font-bold text-brand-gray-950 disabled:cursor-not-allowed disabled:bg-brand-gray-300 dark:disabled:bg-brand-gray-700 disabled:text-brand-gray-600 dark:disabled:text-brand-gray-400"
+                    class="min-h-16 rounded-xl bg-brand-primary-600 px-6 text-xl font-bold text-white hover:bg-brand-primary-700 dark:bg-brand-primary-400 dark:text-brand-gray-950 dark:hover:bg-brand-primary-300 disabled:cursor-not-allowed disabled:bg-brand-gray-300 dark:disabled:bg-brand-gray-700 disabled:text-brand-gray-600 dark:disabled:text-brand-gray-400"
                     :disabled="
                         walkInRequest.processing ||
                         bikeCandidatesLoading ||
@@ -1505,7 +1505,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                     v-model="search"
                     type="search"
                     placeholder="Find a customer, bike, or model"
-                    class="h-16 w-full rounded-2xl border border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-100 dark:bg-brand-gray-900 px-5 text-lg text-brand-gray-950 dark:text-brand-gray-50 placeholder:text-brand-gray-600 dark:placeholder:text-brand-gray-500 focus:border-emerald-400 focus:outline-none"
+                    class="h-16 w-full rounded-2xl border border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-100 dark:bg-brand-gray-900 px-5 text-lg text-brand-gray-950 dark:text-brand-gray-50 placeholder:text-brand-gray-600 dark:placeholder:text-brand-gray-500 focus:border-brand-primary-600 dark:focus:border-brand-primary-400 focus:outline-none"
                 />
             </label>
 
@@ -1578,7 +1578,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                                             reservation.id,
                                         )
                                     "
-                                    class="text-amber-300"
+                                    class="text-amber-700 dark:text-amber-300"
                                 >
                                     ·
                                     {{
@@ -1597,7 +1597,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                                             .bike_situation_reservation_id ===
                                             null
                                     "
-                                    class="text-amber-300"
+                                    class="text-amber-700 dark:text-amber-300"
                                 >
                                     ·
                                     {{ readinessLabel('missing_reservation') }}
@@ -1632,7 +1632,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                             reservation.owed_minor_units !==
                             reservation.paid_minor_units
                         "
-                        class="text-sm font-semibold text-amber-300"
+                        class="text-sm font-semibold text-amber-800 dark:text-amber-300"
                     >
                         {{ balanceMessage(reservation) }}
                     </p>
@@ -1840,7 +1840,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                         Bike for pickup
                         <select
                             v-model="pickupBikeByLineId[line.id]"
-                            class="h-14 rounded-xl border border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-50 dark:bg-brand-gray-950 px-4 text-base text-brand-gray-950 dark:text-brand-gray-50 focus:border-emerald-400 focus:outline-none"
+                            class="h-14 rounded-xl border border-brand-gray-400 dark:border-brand-gray-700 bg-brand-gray-50 dark:bg-brand-gray-950 px-4 text-base text-brand-gray-950 dark:text-brand-gray-50 focus:border-brand-primary-600 dark:focus:border-brand-primary-400 focus:outline-none"
                         >
                             <option :value="undefined">Choose a bike</option>
                             <option
@@ -1872,7 +1872,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                         class="min-h-16 w-full shrink-0 rounded-xl px-6 text-lg font-bold sm:w-48"
                         :class="
                             canPickUp(selectedReservation, line)
-                                ? 'bg-emerald-400 text-brand-gray-950'
+                                ? 'bg-brand-primary-600 text-white dark:bg-brand-primary-400 dark:text-brand-gray-950'
                                 : 'bg-brand-gray-200 dark:bg-brand-gray-800 text-brand-gray-600 dark:text-brand-gray-500'
                         "
                         :disabled="
@@ -1951,7 +1951,7 @@ function eventSummary(entry: BroadcastLogEntry): string {
                             class="flex flex-wrap items-start justify-between gap-2"
                         >
                             <code
-                                class="font-semibold break-all text-emerald-300"
+                                class="font-semibold break-all text-brand-primary-700 dark:text-brand-primary-300"
                                 >{{ entry.event }}</code
                             >
                             <time

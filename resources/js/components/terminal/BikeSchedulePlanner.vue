@@ -536,7 +536,7 @@ function selectReservation(reservation: DayReservation): void {
                 <Link
                     v-if="!isViewingToday"
                     :href="terminal.url()"
-                    class="flex min-h-14 items-center rounded-xl bg-emerald-400 px-4 text-base font-bold text-brand-gray-950"
+                    class="flex min-h-14 items-center rounded-xl bg-brand-primary-600 px-4 text-base font-bold text-white hover:bg-brand-primary-700 dark:bg-brand-primary-400 dark:text-brand-gray-950 dark:hover:bg-brand-primary-300"
                 >
                     {{ ui.planner_today }}
                 </Link>
@@ -567,7 +567,7 @@ function selectReservation(reservation: DayReservation): void {
 
         <p
             v-if="assignment"
-            class="rounded-xl border border-emerald-500/50 bg-emerald-950/60 p-4 text-base font-semibold text-emerald-100"
+            class="rounded-xl border border-brand-primary-300 bg-brand-primary-50 p-4 text-base font-semibold text-brand-primary-950 dark:border-brand-primary-500/50 dark:bg-brand-primary-950/60 dark:text-brand-primary-100"
         >
             {{
                 ui.planner_assigning_to.replace(':rider', assignment.riderLabel)
@@ -591,7 +591,7 @@ function selectReservation(reservation: DayReservation): void {
                             role="separator"
                             aria-orientation="vertical"
                             tabindex="0"
-                            class="focus-visible:outline-inset absolute top-0 right-0 z-40 h-full w-2 cursor-col-resize touch-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-300"
+                            class="focus-visible:outline-inset absolute top-0 right-0 z-40 h-full w-2 cursor-col-resize touch-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-primary-600 dark:focus-visible:outline-brand-primary-400"
                             :aria-label="
                                 ui.planner_resize_column.replace(
                                     ':column',
@@ -619,7 +619,7 @@ function selectReservation(reservation: DayReservation): void {
                             role="separator"
                             aria-orientation="vertical"
                             tabindex="0"
-                            class="focus-visible:outline-inset absolute top-0 right-0 z-40 h-full w-2 cursor-col-resize touch-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-300"
+                            class="focus-visible:outline-inset absolute top-0 right-0 z-40 h-full w-2 cursor-col-resize touch-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-primary-600 dark:focus-visible:outline-brand-primary-400"
                             :aria-label="
                                 ui.planner_resize_column.replace(
                                     ':column',
@@ -647,7 +647,7 @@ function selectReservation(reservation: DayReservation): void {
                             role="separator"
                             aria-orientation="vertical"
                             tabindex="0"
-                            class="focus-visible:outline-inset absolute top-0 right-0 z-40 h-full w-2 cursor-col-resize touch-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-300"
+                            class="focus-visible:outline-inset absolute top-0 right-0 z-40 h-full w-2 cursor-col-resize touch-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-primary-600 dark:focus-visible:outline-brand-primary-400"
                             :aria-label="
                                 ui.planner_resize_column.replace(
                                     ':column',
@@ -677,12 +677,12 @@ function selectReservation(reservation: DayReservation): void {
                                 highlight, index
                             ) in businessHighlightStyles"
                             :key="`header-highlight-${index}`"
-                            class="pointer-events-none absolute inset-y-0 z-0 bg-white/[0.025]"
+                            class="pointer-events-none absolute inset-y-0 z-0 bg-brand-gray-950/5 dark:bg-white/5"
                             :style="highlight"
                         ></div>
                         <div
                             v-if="currentTimeMarkerStyle"
-                            class="pointer-events-none absolute inset-y-0 z-20 w-0.5 bg-emerald-400"
+                            class="pointer-events-none absolute inset-y-0 z-20 w-0.5 bg-brand-primary-600 dark:bg-brand-primary-400"
                             :style="currentTimeMarkerStyle"
                         ></div>
                         <div
@@ -709,7 +709,7 @@ function selectReservation(reservation: DayReservation): void {
                     class="grid border-b border-brand-gray-300 dark:border-brand-gray-800 last:border-b-0"
                     :class="
                         assignment?.selectedBikeId === bike.id
-                            ? 'bg-emerald-950/40'
+                            ? 'bg-brand-primary-100 dark:bg-brand-primary-950/40'
                             : ''
                     "
                     :style="{ gridTemplateColumns: plannerGridTemplate }"
@@ -722,14 +722,14 @@ function selectReservation(reservation: DayReservation): void {
                         <button
                             v-if="assignment"
                             type="button"
-                            class="min-h-14 w-full truncate rounded-lg px-2 text-left font-mono text-base font-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-300"
+                            class="min-h-14 w-full truncate rounded-lg px-2 text-left font-mono text-base font-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-primary-600 dark:focus-visible:outline-brand-primary-400"
                             :class="
                                 isBikeSelectable(bike.id)
                                     ? bikeHasConflict(bike.id)
                                         ? 'bg-amber-300 text-brand-gray-950 hover:bg-amber-200'
                                         : 'bg-emerald-400 text-brand-gray-950 hover:bg-emerald-300'
                                     : assignment.selectedBikeId === bike.id
-                                      ? 'bg-emerald-700 text-brand-gray-950 dark:text-brand-gray-50'
+                                      ? 'bg-brand-primary-700 text-white dark:bg-brand-primary-400 dark:text-brand-gray-950'
                                       : 'cursor-not-allowed bg-brand-gray-200 dark:bg-brand-gray-800 text-brand-gray-600 dark:text-brand-gray-500'
                             "
                             :disabled="!isBikeSelectable(bike.id)"
@@ -776,8 +776,8 @@ function selectReservation(reservation: DayReservation): void {
                                 class="block w-full truncate text-xs font-semibold whitespace-nowrap"
                                 :class="
                                     bikeHasConflict(bike.id)
-                                        ? 'text-amber-200'
-                                        : 'text-emerald-200'
+                                        ? 'text-amber-800 dark:text-amber-200'
+                                        : 'text-emerald-800 dark:text-emerald-200'
                                 "
                             >
                                 {{ assignment.statusByBikeId[bike.id] }}
@@ -805,12 +805,12 @@ function selectReservation(reservation: DayReservation): void {
                                 highlight, index
                             ) in businessHighlightStyles"
                             :key="`lane-highlight-${index}`"
-                            class="pointer-events-none absolute inset-y-0 z-0 bg-white/[0.025]"
+                            class="pointer-events-none absolute inset-y-0 z-0 bg-brand-gray-950/5 dark:bg-white/5"
                             :style="highlight"
                         ></div>
                         <div
                             v-if="currentTimeMarkerStyle"
-                            class="pointer-events-none absolute inset-y-0 z-20 w-0.5 bg-emerald-400"
+                            class="pointer-events-none absolute inset-y-0 z-20 w-0.5 bg-brand-primary-600 dark:bg-brand-primary-400"
                             :style="currentTimeMarkerStyle"
                         ></div>
                         <template
@@ -843,7 +843,7 @@ function selectReservation(reservation: DayReservation): void {
                                         'reservationStage',
                                         item.reservation.stage,
                                     ),
-                                    'hover:ring-2 hover:ring-white/70 focus:ring-2 focus:ring-white',
+                                    'hover:ring-2 hover:ring-brand-gray-950/70 focus:ring-2 focus:ring-brand-gray-950 dark:hover:ring-white/70 dark:focus:ring-white',
                                 ]"
                                 :style="
                                     plannerSegmentStyle(
@@ -878,7 +878,7 @@ function selectReservation(reservation: DayReservation): void {
                     class="border-t-2 border-dashed border-amber-500/60"
                 >
                     <div
-                        class="sticky left-0 z-10 bg-brand-gray-200 dark:bg-brand-gray-800 px-4 py-1 text-sm font-bold text-amber-100"
+                        class="sticky left-0 z-10 bg-brand-gray-200 dark:bg-brand-gray-800 px-4 py-1 text-sm font-bold text-amber-800 dark:text-amber-100"
                     >
                         {{ ui.planner_unassigned_lines }}
                     </div>
@@ -943,12 +943,12 @@ function selectReservation(reservation: DayReservation): void {
                                     highlight, highlightIndex
                                 ) in businessHighlightStyles"
                                 :key="`unassigned-highlight-${highlightIndex}`"
-                                class="pointer-events-none absolute inset-y-0 z-0 bg-white/[0.025]"
+                                class="pointer-events-none absolute inset-y-0 z-0 bg-brand-gray-950/5 dark:bg-white/5"
                                 :style="highlight"
                             ></div>
                             <div
                                 v-if="currentTimeMarkerStyle"
-                                class="pointer-events-none absolute inset-y-0 z-20 w-0.5 bg-emerald-400"
+                                class="pointer-events-none absolute inset-y-0 z-20 w-0.5 bg-brand-primary-600 dark:bg-brand-primary-400"
                                 :style="currentTimeMarkerStyle"
                             ></div>
                             <div
@@ -977,7 +977,7 @@ function selectReservation(reservation: DayReservation): void {
                                         'reservationStage',
                                         item.reservation.stage,
                                     ),
-                                    'hover:ring-2 hover:ring-white/70 focus:ring-2 focus:ring-white',
+                                    'hover:ring-2 hover:ring-brand-gray-950/70 focus:ring-2 focus:ring-brand-gray-950 dark:hover:ring-white/70 dark:focus:ring-white',
                                 ]"
                                 :style="
                                     plannerSegmentStyle(

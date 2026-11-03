@@ -11,7 +11,9 @@ use App\Http\Controllers\ShopLandingPageController;
 use App\Http\Middleware\EnsureModuleEnabled;
 use Embiken\BikeRentals\Actions\RequestMyRentalLinkAction;
 use Embiken\Maintenance\Actions\CompleteMaintenanceScheduleAction;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 
@@ -22,6 +24,21 @@ Route::middleware([
 ])->group(function () {
     Route::get('/', [ShopLandingPageController::class, 'home'])->name('home');
     Route::get('/book', [ShopLandingPageController::class, 'booking'])->name('book');
+
+    Route::get('/device/pair', function (Request $request) {
+        $surface = $request->query('surface');
+        abort_unless(in_array($surface, ['terminal', 'customer_display', 'wall_display'], true), 404);
+
+        return Inertia::render('Device/Pair', [
+            'surface' => $surface,
+            'copy' => __('app.device_pairing_page'),
+        ]);
+    })->name('devices.pairing.page');
+
+    Route::middleware('device:customer_display')->get('/cfd', fn () => Inertia::render('Cfd/Index'))
+        ->name('cfd');
+    Route::middleware('device:wall_display')->get('/wall-display', fn () => Inertia::render('WallDisplay/Index'))
+        ->name('wall-display');
 
     Route::middleware(EnsureModuleEnabled::class.':embiken/bike-rentals')->group(function (): void {
         Route::get('/myrental', [MyRentalController::class, 'requestLink'])->name('myrental.request');
@@ -48,6 +65,7 @@ Route::middleware([
     Route::middleware([
         'auth:staff',
         EnsureModuleEnabled::class.':embiken/bike-rentals',
+        'device:terminal',
     ])->group(function (): void {
         foreach (glob(base_path('packages/bike-rentals/src/Actions/*.php')) ?: [] as $file) {
             $class = 'Embiken\\BikeRentals\\Actions\\'.basename($file, '.php');

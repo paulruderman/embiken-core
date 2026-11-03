@@ -11,6 +11,7 @@ use Embiken\BikeRentals\Actions\PickupAction;
 use Embiken\BikeRentals\Actions\RequestMyRentalLinkAction;
 use Embiken\BikeRentals\Actions\RevokeCustomerMyRentalAccessAction;
 use Embiken\BikeRentals\Actions\ShowTerminalAction;
+use Embiken\BikeRentals\Actions\TerminalAssistantTurnAction;
 use Embiken\BikeRentals\Actions\TickReservationLifecycleAction;
 use Embiken\BikeRentals\Actions\UpdateReservationIntervalAction;
 use Illuminate\Support\ServiceProvider;
@@ -30,6 +31,7 @@ class BikeRentalsServiceProvider extends ServiceProvider
             Actions::registerCommandsForAction(TickReservationLifecycleAction::class);
             Actions::registerCommandsForAction(UpdateReservationIntervalAction::class);
             Actions::registerCommandsForAction(ShowTerminalAction::class);
+            Actions::registerCommandsForAction(TerminalAssistantTurnAction::class);
         }
     }
 

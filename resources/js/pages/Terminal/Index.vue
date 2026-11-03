@@ -12,6 +12,7 @@ import { Head, usePage } from '@inertiajs/vue3';
 import BrowseTerminalBikeCandidatesAction from '@/actions/Embiken/BikeRentals/Actions/BrowseTerminalBikeCandidatesAction';
 import CreateWalkInReservationAction from '@/actions/Embiken/BikeRentals/Actions/CreateWalkInReservationAction';
 import PickupAction from '@/actions/Embiken/BikeRentals/Actions/PickupAction';
+import TerminalAssistant from '@/components/terminal/TerminalAssistant.vue';
 import BikeSchedulePlanner from '@/components/terminal/BikeSchedulePlanner.vue';
 import TerminalLayout from '@/layouts/TerminalLayout.vue';
 import LocaleSwitcher from '@/components/LocaleSwitcher.vue';
@@ -95,6 +96,16 @@ type TerminalUi = {
     event_summary_reservation_deleted: string;
     event_summary_id: string;
     event_log_raw_json: string;
+    assistant_open: string;
+    assistant_title: string;
+    assistant_close: string;
+    assistant_input: string;
+    assistant_send: string;
+    assistant_thinking: string;
+    assistant_intro: string;
+    assistant_privacy: string;
+    assistant_unavailable: string;
+    assistant_clear: string;
     bike_category: string;
     rider_height_cm: string;
     recommended_fit: string;
@@ -1994,5 +2005,6 @@ function eventSummary(entry: BroadcastLogEntry): string {
                 </p>
             </section>
         </div>
+        <TerminalAssistant :ui="terminalUi" />
     </div>
 </template>

@@ -1,5 +1,9 @@
 <?php
 
+use App\Actions\Devices\CompleteDevicePairingAction;
+use App\Actions\Devices\DeleteDeviceAction;
+use App\Actions\Devices\PairDeviceAction;
+use App\Actions\Devices\RequestDevicePairingCodeAction;
 use App\Actions\Platform\DeprovisionLocalTenantAction;
 use App\Actions\Platform\ImpersonatePlatformManagerAction;
 use App\Actions\Platform\PublicSignupAction;
@@ -9,6 +13,22 @@ use Embiken\BikeFleet\Actions\ImportCatalogFleetAction;
 use Embiken\BikeFleet\Actions\ValidateCatalogFleetImportAction;
 use Embiken\BikeRentals\Actions\ImportPackageRatesAction;
 use Illuminate\Support\Facades\Route;
+
+Route::post('/devices/pairing-codes', RequestDevicePairingCodeAction::class)
+    ->middleware('throttle:5,1')
+    ->name('devices.pairing-codes.store');
+
+Route::post('/devices/pairing', CompleteDevicePairingAction::class)
+    ->middleware('throttle:30,1')
+    ->name('devices.pairing.complete');
+
+Route::post('/devices/{device}/pair', PairDeviceAction::class)
+    ->middleware(['auth:staff', 'throttle:10,1'])
+    ->name('devices.pair');
+
+Route::delete('/devices/{device}', DeleteDeviceAction::class)
+    ->middleware('auth:staff')
+    ->name('devices.destroy');
 
 Route::post('/fleet/import/catalog', ImportCatalogFleetAction::class)
     ->middleware('auth:staff')

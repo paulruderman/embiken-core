@@ -23,6 +23,7 @@ class DayStore
             ->startOfDay();
         $scheduleEndsAt = $scheduleDate->addDay();
         $businessHours = self::businessHoursForDate($location, $scheduleDate);
+        $businessHoursBounds = self::businessHoursBounds($location, $scheduleDate);
         $modules = [];
 
         $registry = app(ModuleRegistry::class);
@@ -49,6 +50,7 @@ class DayStore
             'schedule_starts_at' => $scheduleDate->utc()->toIso8601String(),
             'schedule_ends_at' => $scheduleEndsAt->utc()->toIso8601String(),
             'business_hours' => $businessHours,
+            'business_hours_bounds' => $businessHoursBounds,
             'timezone' => $location->timezone,
             'currency' => strtolower($location->currency),
             'minimum_turnaround_buffer_minutes' => $location->minimum_turnaround_buffer_minutes,
@@ -87,5 +89,41 @@ class DayStore
             ->all();
 
         return array_values($businessHours);
+    }
+
+    /**
+     * @return array{starts_at: string, ends_at: string}|null
+     */
+    private static function businessHoursBounds(Location $location, CarbonImmutable $scheduleDate): ?array
+    {
+        $hours = $location->hours()->get(['opens_at', 'closes_at', 'closes_next_day']);
+
+        if ($hours->isEmpty()) {
+            return null;
+        }
+
+        $startsAt = $hours
+            ->map(static fn (LocationHour $hour): CarbonImmutable => CarbonImmutable::parse(
+                $scheduleDate->toDateString().' '.$hour->opens_at,
+                $location->timezone,
+            ))
+            ->sortBy(static fn (CarbonImmutable $time): int => $time->getTimestamp())
+            ->first();
+        $endsAt = $hours
+            ->map(static function (LocationHour $hour) use ($scheduleDate, $location): CarbonImmutable {
+                $time = CarbonImmutable::parse(
+                    $scheduleDate->toDateString().' '.$hour->closes_at,
+                    $location->timezone,
+                );
+
+                return $hour->closes_next_day ? $time->addDay() : $time;
+            })
+            ->sortByDesc(static fn (CarbonImmutable $time): int => $time->getTimestamp())
+            ->first();
+
+        return [
+            'starts_at' => $startsAt->utc()->toIso8601String(),
+            'ends_at' => $endsAt->utc()->toIso8601String(),
+        ];
     }
 }

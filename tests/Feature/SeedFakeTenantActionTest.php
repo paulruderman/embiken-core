@@ -253,6 +253,10 @@ test('resuming a populated demo refreshes its branding and catalog photos withou
         $tenant->run(function () use (&$reservationCount, &$customerCount): void {
             BikeModel::query()->firstOrFail()->update(['photo' => null]);
             ShopSetting::current()->update(['primary_color' => '#000000']);
+            Location::query()->firstOrFail()->forceFill([
+                'address_line_1' => null,
+                'city' => null,
+            ])->save();
             $reservationCount = Reservation::query()->count();
             $customerCount = Customer::query()->count();
         });
@@ -267,6 +271,8 @@ test('resuming a populated demo refreshes its branding and catalog photos withou
         $tenant->run(function () use ($reservationCount, $customerCount): void {
             expect(Reservation::query()->count())->toBe($reservationCount)
                 ->and(Customer::query()->count())->toBe($customerCount)
+                ->and(Location::query()->firstOrFail()->address_line_1)->toBe('42 Atlantic Avenue')
+                ->and(Location::query()->firstOrFail()->city)->toBe('Boston')
                 ->and(BikeModel::query()->firstOrFail()->photo)->not->toBeNull()
                 ->and(ShopSetting::current()->primary_color)->toBe('#0F766E')
                 ->and(Storage::disk('public')->exists(ShopSetting::current()->logo_path))->toBeTrue();

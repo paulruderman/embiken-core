@@ -275,6 +275,7 @@ class SeedFakeTenantAction extends Action
     private function seedShop(string $timezone, string $profile, string $metadataJson, bool $resume): void
     {
         $location = Location::query()->firstOrFail();
+        $this->seedMissingLocationAddress($location, $metadataJson);
         $this->seedWeatherSites($profile);
 
         if ($resume && (Customer::query()->exists() || Reservation::query()->exists())) {
@@ -332,6 +333,30 @@ class SeedFakeTenantAction extends Action
         $parked = $bikes->last();
         $parked->in_service = false;
         $parked->save();
+    }
+
+    private function seedMissingLocationAddress(Location $location, string $metadataJson): void
+    {
+        $address = $this->locationMetadataImport->parse($metadataJson)['shop'];
+        $fields = [
+            'address_line_1',
+            'address_line_2',
+            'city',
+            'administrative_area',
+            'postal_code',
+            'country_code',
+        ];
+        $missingAddress = [];
+
+        foreach ($fields as $field) {
+            if (blank($location->getAttribute($field)) && filled($address[$field] ?? null)) {
+                $missingAddress[$field] = $address[$field];
+            }
+        }
+
+        if ($missingAddress !== []) {
+            $location->forceFill($missingAddress)->save();
+        }
     }
 
     private function seedWeatherSites(string $profile): void

@@ -248,13 +248,17 @@ function clearConversation(): void {
                 </li>
                 <li
                     v-if="request.processing"
+                    role="status"
+                    aria-live="polite"
                     class="bg-brand-gray-200 dark:bg-brand-gray-800 self-start rounded-2xl px-4 py-3 text-base"
                 >
-                    {{
-                        takingLonger
-                            ? ui.assistant_taking_longer
-                            : ui.assistant_thinking
-                    }}
+                    <span class="text-brand-gray-600 dark:text-brand-gray-400 italic motion-reduce:animate-none animate-pulse">
+                        {{
+                            takingLonger
+                                ? ui.assistant_taking_longer
+                                : ui.assistant_thinking
+                        }}
+                    </span>
                 </li>
                 <li
                     v-if="conversationLimitReached"

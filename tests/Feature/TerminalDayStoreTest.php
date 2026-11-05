@@ -142,6 +142,24 @@ test('the day store has no business hours on a closed date', function () {
     expect($snapshot['business_hours'])->toBe([]);
 });
 
+test('the day store returns weekly hour bounds when the selected date has no open hours', function () {
+    $location = Location::factory()->create(['timezone' => 'America/New_York']);
+    $selectedDay = CarbonImmutable::parse('2026-11-05 00:00:00', $location->timezone);
+    LocationHour::factory()->for($location)->create([
+        'weekday' => 5,
+        'opens_at' => '09:00:00',
+        'closes_at' => '17:00:00',
+    ]);
+
+    $snapshot = DayStore::forLocation($location, $selectedDay);
+
+    expect($snapshot['business_hours'])->toBe([])
+        ->and($snapshot['business_hours_bounds'])->toBe([
+            'starts_at' => '2026-11-05T14:00:00+00:00',
+            'ends_at' => '2026-11-05T22:00:00+00:00',
+        ]);
+});
+
 test('catalog photos fall back from bike through variant model and category', function () {
     $bike = Bike::factory()->create();
     $variant = $bike->variant;

@@ -209,11 +209,21 @@ const plannerWindow = computed(() => {
                       Date.parse(interval.ends_at),
                   ),
               )
-            : calendarEnd;
+            : (day.businessHoursBounds
+                  ? Date.parse(day.businessHoursBounds.ends_at)
+                  : calendarEnd);
+    const businessWindowStart =
+        day.businessHours.length > 0
+            ? businessStart
+            : (day.businessHoursBounds
+                  ? Date.parse(day.businessHoursBounds.starts_at)
+                  : calendarStart);
     const hour = 60 * 60 * 1000;
     const endsAt =
-        day.businessHours.length > 0 ? businessClose + hour : calendarEnd;
-    let startsAt = Math.floor(businessStart / hour) * hour;
+        day.businessHours.length > 0 || day.businessHoursBounds !== null
+            ? businessClose + hour
+            : calendarEnd;
+    let startsAt = Math.floor(businessWindowStart / hour) * hour;
 
     if (props.assignment !== undefined && isViewingToday.value) {
         const currentHour = Math.floor(nowTimestamp.value / hour) * hour;
@@ -221,7 +231,7 @@ const plannerWindow = computed(() => {
 
         if (startsAt >= endsAt) {
             startsAt = Math.max(
-                Math.floor(businessStart / hour) * hour,
+                Math.floor(businessWindowStart / hour) * hour,
                 endsAt - hour,
             );
         }
@@ -274,6 +284,51 @@ const businessHighlightStyles = computed(() => {
             },
         ];
     });
+});
+
+const closedHourStyles = computed(() => {
+    const duration = plannerWindow.value.endsAt - plannerWindow.value.startsAt;
+    const openIntervals = businessHighlightStyles.value
+        .map((highlight) => {
+            const left = Number.parseFloat(highlight.left) / 100;
+            const width = Number.parseFloat(highlight.width) / 100;
+
+            return {
+                start: left * duration,
+                end: (left + width) * duration,
+            };
+        })
+        .sort((left, right) => left.start - right.start)
+        .reduce<{ start: number; end: number }[]>((merged, interval) => {
+            const previous = merged.at(-1);
+
+            if (previous && interval.start <= previous.end) {
+                previous.end = Math.max(previous.end, interval.end);
+            } else {
+                merged.push(interval);
+            }
+
+            return merged;
+        }, []);
+    const closedIntervals: { start: number; end: number }[] = [];
+    let cursor = 0;
+
+    for (const interval of openIntervals) {
+        if (interval.start > cursor) {
+            closedIntervals.push({ start: cursor, end: interval.start });
+        }
+
+        cursor = Math.max(cursor, interval.end);
+    }
+
+    if (cursor < duration) {
+        closedIntervals.push({ start: cursor, end: duration });
+    }
+
+    return closedIntervals.map((interval) => ({
+        left: `${(interval.start / duration) * 100}%`,
+        width: `${((interval.end - interval.start) / duration) * 100}%`,
+    }));
 });
 
 const currentTimeMarkerStyle = computed(() => {
@@ -673,12 +728,10 @@ function selectReservation(reservation: DayReservation): void {
                         }"
                     >
                         <div
-                            v-for="(
-                                highlight, index
-                            ) in businessHighlightStyles"
-                            :key="`header-highlight-${index}`"
-                            class="pointer-events-none absolute inset-y-0 z-0 bg-brand-gray-950/5 dark:bg-white/5"
-                            :style="highlight"
+                            v-for="(closedHours, index) in closedHourStyles"
+                            :key="`header-closed-hours-${index}`"
+                            class="pointer-events-none absolute inset-y-0 z-0 bg-brand-gray-950/10 dark:bg-black/20"
+                            :style="closedHours"
                         ></div>
                         <div
                             v-if="currentTimeMarkerStyle"
@@ -801,12 +854,10 @@ function selectReservation(reservation: DayReservation): void {
                             ></div>
                         </div>
                         <div
-                            v-for="(
-                                highlight, index
-                            ) in businessHighlightStyles"
-                            :key="`lane-highlight-${index}`"
-                            class="pointer-events-none absolute inset-y-0 z-0 bg-brand-gray-950/5 dark:bg-white/5"
-                            :style="highlight"
+                            v-for="(closedHours, index) in closedHourStyles"
+                            :key="`lane-closed-hours-${index}`"
+                            class="pointer-events-none absolute inset-y-0 z-0 bg-brand-gray-950/10 dark:bg-black/20"
+                            :style="closedHours"
                         ></div>
                         <div
                             v-if="currentTimeMarkerStyle"
@@ -939,12 +990,10 @@ function selectReservation(reservation: DayReservation): void {
                                 ></div>
                             </div>
                             <div
-                                v-for="(
-                                    highlight, highlightIndex
-                                ) in businessHighlightStyles"
-                                :key="`unassigned-highlight-${highlightIndex}`"
-                                class="pointer-events-none absolute inset-y-0 z-0 bg-brand-gray-950/5 dark:bg-white/5"
-                                :style="highlight"
+                                v-for="(closedHours, closedHoursIndex) in closedHourStyles"
+                                :key="`unassigned-closed-hours-${closedHoursIndex}`"
+                                class="pointer-events-none absolute inset-y-0 z-0 bg-brand-gray-950/10 dark:bg-black/20"
+                                :style="closedHours"
                             ></div>
                             <div
                                 v-if="currentTimeMarkerStyle"

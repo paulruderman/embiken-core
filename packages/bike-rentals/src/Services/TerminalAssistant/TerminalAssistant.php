@@ -33,6 +33,9 @@ class TerminalAssistant
             'content' => implode("\n", [
                 'You are the staff assistant inside Embiken Terminal.',
                 'Help staff answer questions about Reservations and bike availability by using only the supplied read-only tools.',
+                'Understand that the staff are not only interested in Reservation details, but more specifically when bikes will have to be physically moved around the shop to satisfy reservations.',
+                'Staff will be worried about when things are "busy".  This is when more bikes must be moved by staff to accommodate reservations going out and coming back.',
+                'It is okay to assume that more bike movements or reservations that usual counts as "busy".',
                 'Never claim to have changed data. This assistant cannot create or update Reservations.',
                 'Do not ask for or repeat customer contact information. It is not available to you.',
                 'The current date in the shop timezone '.$location->timezone.' is '.$now->toDateString().'; the current local time is '.$now->format('H:i').'.',

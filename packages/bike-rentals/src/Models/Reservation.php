@@ -3,6 +3,7 @@
 namespace Embiken\BikeRentals\Models;
 
 use App\Models\Location;
+use App\Models\LocationWaiver;
 use Carbon\CarbonImmutable;
 use Embiken\BikeRentals\Database\Factories\ReservationFactory;
 use Embiken\BikeRentals\Enums\BikeReservationStatus;
@@ -34,6 +35,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $currency
  * @property CarbonImmutable|null $expires_at
  * @property CarbonImmutable|null $waiver_accepted_at
+ * @property int|null $waiver_version_id
+ * @property string|null $waiver_locale
  * @property string|null $notes
  * @property string|null $damage_notes
  * @property string|null $myrental_token
@@ -53,6 +56,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'currency',
     'expires_at',
     'waiver_accepted_at',
+    'waiver_version_id',
+    'waiver_locale',
     'notes',
     'damage_notes',
     'myrental_token',
@@ -107,6 +112,7 @@ class Reservation extends Model
             'currency' => 'string',
             'expires_at' => 'datetime',
             'waiver_accepted_at' => 'datetime',
+            'waiver_version_id' => 'integer',
         ];
     }
 
@@ -132,6 +138,12 @@ class Reservation extends Model
     public function rentalPackage(): BelongsTo
     {
         return $this->belongsTo(RentalPackage::class);
+    }
+
+    /** @return BelongsTo<LocationWaiver, $this> */
+    public function waiverVersion(): BelongsTo
+    {
+        return $this->belongsTo(LocationWaiver::class, 'waiver_version_id');
     }
 
     /**

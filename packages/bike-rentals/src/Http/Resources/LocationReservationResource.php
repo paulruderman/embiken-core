@@ -37,6 +37,8 @@ class LocationReservationResource extends JsonResource
                 'name' => $this->customer->name,
             ],
             'waiver_accepted_at' => $this->waiver_accepted_at?->toIso8601String(),
+            'waiver_version_id' => $this->waiver_version_id,
+            'waiver_locale' => $this->waiver_locale,
             'myrental_token' => $this->myrental_token,
             'lines' => LocationLineResource::collection($this->bikeReservations)->resolve(),
         ];

@@ -44,6 +44,23 @@ class ReservationInfolist
                 TextEntry::make('damage_notes')
                     ->label(__('app.rentals_ui.fields.damage_notes'))
                     ->placeholder('—'),
+                TextEntry::make('waiver_accepted_at')
+                    ->label(__('app.rentals_ui.fields.waiver_accepted_at'))
+                    ->dateTime()
+                    ->placeholder('—'),
+                TextEntry::make('waiver_version_id')
+                    ->label(__('app.rentals_ui.fields.accepted_waiver_version'))
+                    ->state(fn (Reservation $record): ?string => $record->waiverVersion === null
+                        ? null
+                        : 'v'.$record->waiverVersion->version.' · '.$record->waiver_locale.' · '.$record->waiverVersion->content_sha256)
+                    ->placeholder('—'),
+                TextEntry::make('waiverVersion.content')
+                    ->label(__('app.rentals_ui.fields.accepted_waiver_copy'))
+                    ->state(fn (Reservation $record): ?string => $record->waiver_version_id === null
+                        ? null
+                        : $record->waiverVersion?->getTranslationWithoutFallback('content', (string) $record->waiver_locale))
+                    ->columnSpanFull()
+                    ->placeholder('—'),
             ]);
     }
 }

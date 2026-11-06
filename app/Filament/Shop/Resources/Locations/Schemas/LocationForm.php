@@ -9,9 +9,10 @@ use App\Support\Locales;
 use Embiken\BikeRentals\Models\RentalPackage;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Schemas\Components\Text;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Text;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Schema as SchemaFacade;
@@ -114,6 +115,16 @@ class LocationForm
                         array_flip($get('enabled_content_locales') ?? ['en']),
                     ))
                     ->required(),
+                Section::make(__('app.location_ui.waiver'))
+                    ->description(__('app.location_ui.waiver_help'))
+                    ->schema(array_map(
+                        static fn (string $locale): Textarea => Textarea::make('waiver_text_'.$locale)
+                            ->label(__('app.location_ui.waiver_language', ['language' => Locales::contentLabels()[$locale] ?? $locale]))
+                            ->rows(8)
+                            ->maxLength(20000)
+                            ->columnSpanFull(),
+                        Location::query()->firstOrFail()->enabled_content_locales,
+                    )),
                 Select::make('bike_assignment_policy')
                     ->options(BikeAssignmentPolicy::class)
                     ->required(),

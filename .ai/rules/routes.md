@@ -26,3 +26,9 @@ Pairing routes initialize tenancy on the tenant host. Never pair Devices across 
 
 ## Impersonation uses tenant host; Suspend padlocks shop routes
 Impersonation is a Staff session on the tenant host (/manage, /terminal), not apex /t/. Suspended Tenants refuse Staff sign-in on Book, Terminal, and /manage. Custom Domain rows remain platform-editable. Do not register /t/ as a shop-operable User path.
+
+## Page routes versus use-case Actions
+Static and editorial page GETs use the normal page route/controller structure. Register an Action as a route when it represents a real use case with domain behavior, authorization or validation, a state change, or meaningful orchestration; GET or Inertia rendering alone is not a reason to create an Action.
+
+## Register Action classes as routes and commands
+Register an Action route only for a meaningful application use case. Static or editorial page GETs use the normal page route/controller structure; do not wrap a page render in an Action. Wayfinder should be generated from the registered route/controller or Action that owns the behavior.

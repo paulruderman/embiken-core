@@ -49,3 +49,9 @@ Livewire update/upload routes only use the web group, not shop Filament panel mi
 
 ## Terminal prototype skips Inertia SSR
 Keep /prototype/terminal in HandleInertiaRequests $withoutSsr. That page hydrates Pinia and subscribes to Echo; SSR of useEcho opens Pusher during setup and the client remounts in a /broadcasting/auth loop. Book and other guest pages may still SSR.
+
+## Page rendering and Actions
+HTTP controllers may render static or editorial Inertia pages. Use Actions for application use cases, not solely as URL adapters or page renderers; do not add thin controllers around Actions that already own a meaningful use case.
+
+## Actions are the HTTP controllers
+Use Actions as HTTP controllers for meaningful application use cases with behavior, authorization, validation, state changes, or orchestration. Use ordinary page routes/controllers for static or editorial page rendering; do not create Actions solely for a URL, GET, or Inertia render. Do not add thin controllers around Actions that already own a use case.

@@ -71,6 +71,12 @@ class ShopLandingPageController extends Controller
     {
         $locale = app()->getLocale();
         $defaultLocale = Locales::tenantDefaultContentLocale();
+        $location = Location::query()->first();
+        $waiver = $location?->currentWaiver();
+        $waiverLocale = $location === null
+            ? $defaultLocale
+            : (in_array($locale, $location->enabled_content_locales, true) ? $locale : $location->default_content_locale);
+        $waiverCopy = $waiver?->getTranslationWithoutFallback('content', $waiverLocale);
         $bookingNotices = ShopLandingPage::current()->booking_notices ?? [];
         $bookingNotices = array_map(static function (array $notice) use ($locale, $defaultLocale): array {
             $message = $notice['message'];
@@ -86,6 +92,7 @@ class ShopLandingPageController extends Controller
         return inertia('Book/Index', [
             'contentLocale' => $locale,
             'bookingNotices' => $bookingNotices,
+            'waiverCopy' => is_string($waiverCopy) && trim($waiverCopy) !== '' ? $waiverCopy : null,
         ]);
     }
 }

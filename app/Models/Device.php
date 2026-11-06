@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Enums\DeviceSurface;
 use Carbon\CarbonImmutable;
 use Database\Factories\DeviceFactory;
+use Embiken\BikeRentals\Models\Reservation;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,6 +21,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property int $location_id
  * @property int|null $display_id
  * @property int|null $paired_terminal_device_id
+ * @property int|null $focused_reservation_id
  * @property string $name
  * @property DeviceSurface $surface
  * @property string|null $pairing_code_hash
@@ -33,6 +35,7 @@ use Laravel\Sanctum\HasApiTokens;
     'location_id',
     'display_id',
     'paired_terminal_device_id',
+    'focused_reservation_id',
     'name',
     'surface',
     'pairing_code_hash',
@@ -75,6 +78,12 @@ class Device extends Model
     public function pairedTerminalDevice(): BelongsTo
     {
         return $this->belongsTo(self::class, 'paired_terminal_device_id');
+    }
+
+    /** @return BelongsTo<Reservation, $this> */
+    public function focusedReservation(): BelongsTo
+    {
+        return $this->belongsTo(Reservation::class, 'focused_reservation_id');
     }
 
     /** @return HasMany<Device, $this> */

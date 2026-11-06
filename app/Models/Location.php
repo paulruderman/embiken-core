@@ -179,6 +179,17 @@ class Location extends Model
         return $this->hasMany(Reservation::class);
     }
 
+    /** @return HasMany<LocationWaiver, $this> */
+    public function waivers(): HasMany
+    {
+        return $this->hasMany(LocationWaiver::class)->orderByDesc('version');
+    }
+
+    public function currentWaiver(): ?LocationWaiver
+    {
+        return $this->waivers()->first();
+    }
+
     /** @return HasMany<Device, $this> */
     public function devices(): HasMany
     {

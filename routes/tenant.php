@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\Devices\SetCustomerDisplayFocusAction;
 use App\Actions\Platform\ConsumeImpersonationAction;
 use App\Actions\Shop\SaveShopLandingPageAction;
 use App\Actions\Shop\UpdateShopBrandingAction;
@@ -10,8 +11,10 @@ use App\Http\Controllers\MyRentalController;
 use App\Http\Controllers\ShopLandingPageController;
 use App\Http\Middleware\EnsureModuleEnabled;
 use App\Models\Device;
+use App\Support\CustomerDisplayTicketData;
 use App\Support\WallDisplayPageData;
 use Embiken\BikeRentals\Actions\RequestMyRentalLinkAction;
+use Embiken\BikeRentals\Actions\UpdateCustomerDisplayTicketAction;
 use Embiken\Maintenance\Actions\CompleteMaintenanceScheduleAction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -37,8 +40,22 @@ Route::middleware([
         ]);
     })->name('devices.pairing.page');
 
-    Route::middleware('device:customer_display')->get('/cfd', fn () => Inertia::render('Cfd/Index'))
-        ->name('cfd');
+    Route::middleware('device:customer_display')->group(function (): void {
+        Route::get('/cfd', function (Request $request, CustomerDisplayTicketData $ticketData) {
+            $device = $request->attributes->get('device');
+            abort_unless($device instanceof Device, 401);
+
+            return Inertia::render('Cfd/Index', [
+                'tenant_id' => (string) tenant('id'),
+                'device_id' => $device->id,
+                'ticket' => $ticketData->forCustomerDisplay($device),
+                'copy' => __('app.customer_display_ui'),
+            ]);
+        })->name('cfd');
+
+        Route::post('/cfd/ticket', UpdateCustomerDisplayTicketAction::class)
+            ->name('cfd.ticket.update');
+    });
     Route::middleware('device:wall_display')->get('/wall-display', function (Request $request, WallDisplayPageData $pageData) {
         $device = $request->attributes->get('device');
         abort_unless($device instanceof Device, 401);
@@ -74,6 +91,11 @@ Route::middleware([
         EnsureModuleEnabled::class.':embiken/bike-rentals',
         'device:terminal',
     ])->group(function (): void {
+        Route::post('/terminal/customer-display/focus', SetCustomerDisplayFocusAction::class)
+            ->name('terminal.customer-display.focus');
+        Route::post('/terminal/customer-display/ticket', UpdateCustomerDisplayTicketAction::class)
+            ->name('terminal.customer-display.ticket.update');
+
         foreach (glob(base_path('packages/bike-rentals/src/Actions/*.php')) ?: [] as $file) {
             $class = 'Embiken\\BikeRentals\\Actions\\'.basename($file, '.php');
 

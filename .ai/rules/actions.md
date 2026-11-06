@@ -112,3 +112,6 @@ Book and MyRental extend Actions check Location hours; quoteOccupancy does not. 
 
 ## Provisional expires_at bump including failed pay
 Checkout allocate creates the Provisional lock. Bump Reservation expires_at on allocate, contact/waiver writes, and pay attempts (success or fail). Tick CancelAction when expires_at passed and stage is still Provisional with no Out. Back after lock amends the same reservation via allocate/release; do not CancelAction plus create from Book.
+
+## Keep Actions use-case focused
+Actions represent application use cases. Do not create one solely for a page URL, static or editorial content, or Inertia rendering; implement those through the normal page route/controller structure.

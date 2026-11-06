@@ -136,6 +136,37 @@ test('a manager can configure the physical Location address', function () {
         ->and($location->fresh()->country_code)->toBe('US');
 });
 
+test('a manager editing waiver copy creates immutable translated versions', function () {
+    $location = Location::factory()->create([
+        'name' => 'River Bikes',
+        'enabled_content_locales' => ['en', 'fr'],
+        'default_content_locale' => 'en',
+    ]);
+    $staff = Staff::factory()->create(['location_id' => $location->id]);
+
+    $this->actingAs($staff, 'staff');
+
+    $editor = Livewire::test(EditLocation::class, ['record' => $location->id])
+        ->fillForm([
+            'waiver_text_en' => 'Wear a helmet.',
+            'waiver_text_fr' => 'Portez un casque.',
+        ])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    $firstVersion = $location->waivers()->firstOrFail();
+    expect($firstVersion->version)->toBe(1)
+        ->and($firstVersion->getTranslationWithoutFallback('content', 'en'))->toBe('Wear a helmet.')
+        ->and($firstVersion->getTranslationWithoutFallback('content', 'fr'))->toBe('Portez un casque.');
+
+    $editor->fillForm(['waiver_text_en' => 'Updated waiver.', 'waiver_text_fr' => 'Décharge mise à jour.'])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect($location->waivers()->count())->toBe(2)
+        ->and($firstVersion->fresh()->getTranslationWithoutFallback('content', 'en'))->toBe('Wear a helmet.');
+});
+
 test('a manager can configure the first day of the shop week', function () {
     $location = Location::factory()->create(['name' => 'River Bikes']);
     $staff = Staff::factory()->create(['location_id' => $location->id]);

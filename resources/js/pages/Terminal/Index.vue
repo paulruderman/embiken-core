@@ -12,6 +12,9 @@ import { Head, usePage } from '@inertiajs/vue3';
 import BrowseTerminalBikeCandidatesAction from '@/actions/Embiken/BikeRentals/Actions/BrowseTerminalBikeCandidatesAction';
 import CreateWalkInReservationAction from '@/actions/Embiken/BikeRentals/Actions/CreateWalkInReservationAction';
 import PickupAction from '@/actions/Embiken/BikeRentals/Actions/PickupAction';
+import SetCustomerDisplayFocusAction from '@/actions/App/Actions/Devices/SetCustomerDisplayFocusAction';
+import UpdateCustomerDisplayTicketAction from '@/actions/Embiken/BikeRentals/Actions/UpdateCustomerDisplayTicketAction';
+import CustomerDisplayChannel from '@/pages/Terminal/CustomerDisplayChannel.vue';
 import TerminalAssistant from '@/components/terminal/TerminalAssistant.vue';
 import BikeSchedulePlanner from '@/components/terminal/BikeSchedulePlanner.vue';
 import TerminalLayout from '@/layouts/TerminalLayout.vue';
@@ -170,6 +173,12 @@ type TerminalUi = {
     planner_rider_height_minimum: string;
     planner_rider_height_maximum: string;
     planner_rider_height_unconfigured: string;
+    customer_display_contact: string;
+    customer_display_name: string;
+    customer_display_email: string;
+    customer_display_phone: string;
+    customer_display_save: string;
+    customer_display_saved: string;
 };
 
 const page = usePage();
@@ -194,7 +203,26 @@ const day = useDayStore();
 const search = ref('');
 const activeView = ref<'planner' | 'reservations'>('planner');
 const eventLogOpen = ref(false);
-const selectedReservationId = ref<number | null>(null);
+const selectedReservationId = ref((page.props.focused_reservation_id as number | null | undefined) ?? null);
+const customerDisplayDeviceIds = (page.props.customer_display_device_ids as number[] | undefined) ?? [];
+const focusedReservationId = ref((page.props.focused_reservation_id as number | null | undefined) ?? null);
+const customerDisplayTickets = ref((page.props.customer_display_tickets as Record<number, Record<string, any> | null> | undefined) ?? {});
+const customerDisplayFocusRequest = useHttp<{ reservation_id: number | null }, Record<string, unknown>>({ reservation_id: null });
+const customerDisplayContactRequest = useHttp<Record<string, unknown>, Record<string, unknown>>({});
+const customerDisplayContact = reactive({ name: '', email: '', phone: '' });
+const customerDisplayContactNotice = ref('');
+const focusedCustomerDisplayTicket = computed(() =>
+    Object.values(customerDisplayTickets.value).find(
+        (ticket) => ticket !== null && Number(ticket.id) === selectedReservationId.value,
+    ) ?? null,
+);
+watch(focusedCustomerDisplayTicket, (ticket) => {
+    if (ticket?.customer) {
+        customerDisplayContact.name = ticket.customer.name ?? '';
+        customerDisplayContact.email = ticket.customer.email ?? '';
+        customerDisplayContact.phone = ticket.customer.phone ?? '';
+    }
+}, { immediate: true });
 const walkInOpen = ref(false);
 const walkInPlannerRiderIndex = ref<number | null>(null);
 const walkInPlannerElement = ref<HTMLElement | null>(null);
@@ -537,11 +565,57 @@ function canPickUp(reservation: DayReservation, line: DayLine): boolean {
 
 function openReservation(reservation: DayReservation): void {
     selectedReservationId.value = reservation.id;
+    setCustomerDisplayFocus(reservation.id);
     pickupError.value = '';
+}
+
+function setCustomerDisplayFocus(reservationId: number | null): void {
+    customerDisplayFocusRequest
+        .transform(() => ({ reservation_id: reservationId }))
+        .post(SetCustomerDisplayFocusAction.url(), {
+            onSuccess: (response) => {
+                const data = (response.data ?? response) as { focused_reservation_id: number | null; ticket: Record<string, unknown> | null };
+                focusedReservationId.value = data.focused_reservation_id;
+                customerDisplayDeviceIds.forEach((deviceId) => {
+                    customerDisplayTickets.value[deviceId] = data.ticket;
+                });
+            },
+        });
+}
+
+function customerDisplayTicketUpdated(deviceId: number, ticket: Record<string, any> | null): void {
+    customerDisplayTickets.value[deviceId] = ticket;
+    const customer = ticket?.customer;
+    if (ticket && customer && typeof customer.name === 'string') {
+        const reservation = day.reservationById(Number(ticket.id));
+        if (reservation) {
+            day.patchReservation({ ...reservation, customer: { id: customer.id, name: customer.name } });
+        }
+    }
+}
+
+function saveCustomerDisplayContact(): void {
+    const ticket = focusedCustomerDisplayTicket.value;
+    if (!ticket) return;
+
+    customerDisplayContactRequest
+        .transform(() => ({
+            name: customerDisplayContact.name,
+            email: customerDisplayContact.email,
+            phone: customerDisplayContact.phone,
+            waiver_accepted: Boolean(ticket.waiver?.accepted_at),
+            waiver_version_id: ticket.waiver?.version_id ?? null,
+            waiver_locale: ticket.waiver?.locale ?? null,
+        }))
+        .post(UpdateCustomerDisplayTicketAction['/terminal/customer-display/ticket'].url(), {
+            onSuccess: () => { customerDisplayContactNotice.value = terminalUi.customer_display_saved; },
+            onError: () => { customerDisplayContactNotice.value = terminalUi.customer_display_error; },
+        });
 }
 
 function backToQueue(): void {
     selectedReservationId.value = null;
+    setCustomerDisplayFocus(null);
     walkInOpen.value = false;
     pickupError.value = '';
     walkInError.value = '';
@@ -956,6 +1030,7 @@ function submitWalkIn(): void {
 
                 if (patch.reservation) {
                     selectedReservationId.value = patch.reservation.id;
+                    setCustomerDisplayFocus(patch.reservation.id);
                 }
 
                 walkInOpen.value = false;
@@ -1031,6 +1106,13 @@ function eventSummary(entry: BroadcastLogEntry): string {
     <div
         class="bg-brand-gray-50 dark:bg-brand-gray-950 text-brand-gray-900 dark:text-brand-gray-100 flex min-h-screen flex-col"
     >
+        <CustomerDisplayChannel
+            v-for="deviceId in customerDisplayDeviceIds"
+            :key="deviceId"
+            :tenant-id="String(page.props.tenant_id)"
+            :device-id="deviceId"
+            @ticket="customerDisplayTicketUpdated"
+        />
         <Head title="Terminal" />
 
         <header
@@ -1755,6 +1837,20 @@ function eventSummary(entry: BroadcastLogEntry): string {
                 >
                     {{ balanceMessage(selectedReservation) }}
                 </p>
+            </section>
+
+            <section
+                v-if="focusedCustomerDisplayTicket"
+                class="border-brand-gray-300 dark:border-brand-gray-800 bg-brand-gray-100 dark:bg-brand-gray-900 rounded-2xl border p-5"
+            >
+                <h2 class="text-lg font-bold">{{ terminalUi.customer_display_contact }}</h2>
+                <div class="mt-3 grid gap-3 sm:grid-cols-3">
+                    <label class="grid gap-1 text-sm">{{ terminalUi.customer_display_name }}<input v-model="customerDisplayContact.name" class="h-12 rounded-lg border px-3 text-base" /></label>
+                    <label class="grid gap-1 text-sm">{{ terminalUi.customer_display_email }}<input v-model="customerDisplayContact.email" type="email" class="h-12 rounded-lg border px-3 text-base" /></label>
+                    <label class="grid gap-1 text-sm">{{ terminalUi.customer_display_phone }}<input v-model="customerDisplayContact.phone" type="tel" class="h-12 rounded-lg border px-3 text-base" /></label>
+                </div>
+                <button type="button" class="mt-3 min-h-12 rounded-lg bg-brand-primary-600 px-4 font-semibold text-white" @click="saveCustomerDisplayContact">{{ terminalUi.customer_display_save }}</button>
+                <span v-if="customerDisplayContactNotice" class="ml-3 text-sm" role="status">{{ customerDisplayContactNotice }}</span>
             </section>
 
             <div

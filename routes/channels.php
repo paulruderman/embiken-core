@@ -38,7 +38,14 @@ Broadcast::channel('tenant.{tenantId}.cfd.{deviceId}', function ($actor, string 
         return false;
     }
 
-    return $requestDevice->is($customerDisplay)
-        || ($requestDevice->surface === DeviceSurface::Terminal
-            && $customerDisplay->paired_terminal_device_id === $requestDevice->id);
+    if ($requestDevice->is($customerDisplay)) {
+        return $customerDisplay->paired_at !== null
+            && $customerDisplay->pairedTerminalDevice?->paired_at !== null;
+    }
+
+    return $requestDevice->surface === DeviceSurface::Terminal
+        && $requestDevice->paired_at !== null
+        && $customerDisplay->paired_at !== null
+        && $customerDisplay->location_id === $requestDevice->location_id
+        && $customerDisplay->paired_terminal_device_id === $requestDevice->id;
 }, ['guards' => ['staff']]);

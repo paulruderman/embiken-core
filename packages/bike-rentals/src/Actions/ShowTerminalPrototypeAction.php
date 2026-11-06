@@ -4,6 +4,7 @@ namespace Embiken\BikeRentals\Actions;
 
 use App\Actions\Action;
 use App\Actions\Concerns\AuthorizesStaff;
+use App\Http\Middleware\EnsurePrototypeEnvironment;
 use App\Models\Location;
 use App\Support\DayStore;
 use Illuminate\Console\Command;
@@ -55,7 +56,9 @@ class ShowTerminalPrototypeAction extends Action
 
     public static function routes(Router $router): void
     {
-        $router->get('/prototype/terminal', static::class)->name('prototype.terminal');
+        $router->get('/prototype/terminal', static::class)
+            ->middleware(EnsurePrototypeEnvironment::class)
+            ->name('prototype.terminal');
     }
 
     public function asCommand(Command $command): int

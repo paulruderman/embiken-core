@@ -6,9 +6,14 @@ namespace Embiken\BikeRentals\Actions;
 
 use App\Actions\Action;
 use App\Actions\Concerns\AuthorizesStaff;
+use App\Enums\DeviceSurface;
+use App\Models\Device;
 use App\Models\Location;
+use App\Support\CustomerDisplayTicketData;
 use App\Support\DayStore;
 use Carbon\CarbonImmutable;
+use Embiken\BikeRentals\Http\Resources\LocationReservationResource;
+use Embiken\BikeRentals\Models\Reservation;
 use Illuminate\Console\Command;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
@@ -19,24 +24,59 @@ class ShowTerminalAction extends Action
 {
     use AuthorizesStaff;
 
+    public function __construct(private CustomerDisplayTicketData $customerDisplayTickets) {}
+
     public string $commandSignature = 'terminal:show {--tenant=} {--date=}';
 
     /**
      * @return array<string, mixed>
      */
-    public function handle(?string $scheduleDate = null): array
+    public function handle(?string $scheduleDate = null, ?Device $device = null): array
     {
         $location = Location::query()->firstOrFail();
         $date = $scheduleDate === null
             ? CarbonImmutable::now($location->timezone)
             : CarbonImmutable::createFromFormat('!Y-m-d', $scheduleDate, $location->timezone);
         $snapshot = DayStore::forLocation($location, $date);
+        $reservations = $snapshot['modules']['rentals']['reservations'] ?? [];
+        $focusedReservationId = $device?->surface === DeviceSurface::Terminal
+            ? $device->focused_reservation_id
+            : null;
+
+        $focusedReservationIsIncluded = false;
+        foreach ($reservations as $reservationData) {
+            if (($reservationData['id'] ?? null) === $focusedReservationId) {
+                $focusedReservationIsIncluded = true;
+                break;
+            }
+        }
+
+        if ($focusedReservationId !== null && ! $focusedReservationIsIncluded) {
+            $focusedReservation = Reservation::query()
+                ->whereKey($focusedReservationId)
+                ->where('location_id', $location->id)
+                ->with(['customer', 'bikeReservations.product.bikeModel', 'bikeReservations.bike'])
+                ->first();
+
+            if ($focusedReservation !== null) {
+                $reservations[] = LocationReservationResource::make($focusedReservation)->resolve();
+            } else {
+                $focusedReservationId = null;
+            }
+        }
+
+        $customerDisplayTickets = $device?->surface === DeviceSurface::Terminal
+            ? $this->customerDisplayTickets->forTerminal($device)
+            : [];
 
         return [
             ...$snapshot,
             'bike_assignment_policy' => $location->bike_assignment_policy->value,
             'bikes' => $snapshot['modules']['fleet']['bikes'] ?? [],
-            'reservations' => $snapshot['modules']['rentals']['reservations'] ?? [],
+            'reservations' => $reservations,
+            'focused_reservation_id' => $focusedReservationId,
+            'customer_display_device_ids' => array_keys($customerDisplayTickets),
+            'customer_display_tickets' => $customerDisplayTickets,
         ];
     }
 
@@ -49,7 +89,9 @@ class ShowTerminalAction extends Action
             'date' => ['sometimes', 'date_format:Y-m-d'],
         ]);
 
-        return $this->handle($data['date'] ?? null);
+        $device = $request->attributes->get('device');
+
+        return $this->handle($data['date'] ?? null, $device instanceof Device ? $device : null);
     }
 
     /**

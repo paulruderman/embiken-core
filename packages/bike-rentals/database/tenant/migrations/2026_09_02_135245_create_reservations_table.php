@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::create('reservations', function (Blueprint $table) {
             $table->id();
+            $table->string('public_id', 14)->unique();
             $table->foreignId('location_id')->constrained()->cascadeOnDelete();
             $table->foreignId('customer_id')->constrained()->restrictOnDelete();
             $table->foreignId('rental_package_id')->nullable()->constrained()->nullOnDelete();
@@ -19,6 +20,7 @@ return new class extends Migration
             $table->string('stage');
             $table->unsignedInteger('owed')->default(0);
             $table->unsignedInteger('paid')->default(0);
+            $table->string('currency', 3)->default('usd');
             $table->dateTime('expires_at')->nullable();
             $table->dateTime('waiver_accepted_at')->nullable();
             $table->text('notes')->nullable();

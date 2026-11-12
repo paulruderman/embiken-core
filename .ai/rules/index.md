@@ -29,6 +29,9 @@ Before planning or editing, find the row whose globs match the file's path and r
 | routes/** | .ai/rules/routes.md |
 | app/Services/** | .ai/rules/services.md |
 | packages/bike-rentals/src/Services/Availability.php | .ai/rules/src-services.md |
+| app/Filament/Shop/Resources/** | .ai/rules/shop-resources.md |
+| packages/**/src/Filament/** | .ai/rules/src-filament.md |
+| packages/bike-rentals/src/** | .ai/rules/src.md |
 | app/Support/TenantMigrationPaths.php | .ai/rules/support.md |
 | database/migrations/tenant/** | .ai/rules/tenant.md |
 | resources/js/pages/Terminal/** | .ai/rules/terminal.md |

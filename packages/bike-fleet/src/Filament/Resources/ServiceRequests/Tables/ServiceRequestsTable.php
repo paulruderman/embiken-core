@@ -4,6 +4,8 @@ namespace Embiken\BikeFleet\Filament\Resources\ServiceRequests\Tables;
 
 use App\Enums\StaffRole;
 use App\Filament\Shop\Support\ShopSetupReadiness;
+use App\Filament\Tables\Columns\LocalizedDateTimeColumn;
+use App\Filament\Tables\Columns\NegativeBooleanIconColumn;
 use App\Models\Staff;
 use Embiken\BikeFleet\Actions\AssignServiceRequestToMeAction;
 use Embiken\BikeFleet\Actions\ResolveServiceRequestsAction;
@@ -12,10 +14,8 @@ use Embiken\BikeFleet\Models\ServiceRequest;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Notifications\Notification;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
@@ -36,30 +36,30 @@ class ServiceRequestsTable
                 TextColumn::make('description')
                     ->label(__('app.fleet.fields.description'))
                     ->limit(40)
+                    ->tooltip(fn (?string $state): ?string => $state !== null && mb_strlen($state) > 40 ? $state : null)
                     ->searchable(),
                 TextColumn::make('latestEntry.notes')
                     ->label(__('app.fleet.fields.latest_work'))
                     ->limit(40)
+                    ->tooltip(fn (?string $state): ?string => $state !== null && mb_strlen($state) > 40 ? $state : null)
                     ->placeholder(__('app.fleet.table.no_work_logged')),
-                TextColumn::make('latestEntry.created_at')
+                LocalizedDateTimeColumn::make('latestEntry.created_at')
                     ->label(__('app.fleet.fields.last_worked'))
-                    ->dateTime()
                     ->placeholder('—')
                     ->toggleable(),
                 TextColumn::make('stage')
                     ->label(__('app.fleet.fields.stage'))
-                    ->badge(),
-                IconColumn::make('blocks_usage')
-                    ->label(__('app.fleet.fields.blocks_usage'))
-                    ->boolean(),
+                    ->badge()
+                    ->color(fn (ServiceRequest $record): string => $record->stage->getColor()),
+                NegativeBooleanIconColumn::make('blocks_usage')
+                    ->label(__('app.fleet.fields.blocks_usage')),
                 TextColumn::make('assignedTo.name')
                     ->label(__('app.fleet.fields.assigned_to'))
                     ->sortable()
                     ->searchable()
                     ->placeholder(__('app.fleet.table.unassigned')),
-                TextColumn::make('resolved_at')
+                LocalizedDateTimeColumn::make('resolved_at')
                     ->label(__('app.fleet.fields.resolved_at'))
-                    ->dateTime()
                     ->sortable()
                     ->placeholder(__('app.fleet.table.not_resolved')),
                 TextColumn::make('resolvedBy.name')
@@ -117,7 +117,6 @@ class ServiceRequestsTable
                             ->send();
                     }),
                 EditAction::make(),
-                DeleteAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

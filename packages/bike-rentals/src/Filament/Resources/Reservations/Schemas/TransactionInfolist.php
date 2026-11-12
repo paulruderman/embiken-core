@@ -18,10 +18,12 @@ class TransactionInfolist
                     ->schema([
                         TextEntry::make('kind')
                             ->label(__('app.rentals_ui.fields.transaction_type'))
-                            ->badge(),
+                            ->badge()
+                            ->color(fn (Transaction $record): string => $record->kind->getColor()),
                         TextEntry::make('status')
                             ->label(__('app.rentals_ui.fields.payment_status'))
-                            ->badge(),
+                            ->badge()
+                            ->color(fn (Transaction $record): string => $record->status->getColor()),
                         TextEntry::make('amount_minor_units')
                             ->label(__('app.rentals_ui.fields.amount'))
                             ->formatStateUsing(fn (?int $state, Transaction $record): ?string => $state === null
@@ -43,7 +45,7 @@ class TransactionInfolist
                     ->columns(2),
                 Section::make(__('app.rentals_ui.sections.reservation_and_customer'))
                     ->schema([
-                        TextEntry::make('reservation.id')
+                        TextEntry::make('reservation.public_id')
                             ->label(__('app.rentals_ui.fields.reservation')),
                         TextEntry::make('reservation.customer.name')
                             ->label(__('app.rentals_ui.fields.customer'))

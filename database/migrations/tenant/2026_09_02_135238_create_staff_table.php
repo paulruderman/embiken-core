@@ -15,6 +15,7 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->string('password')->nullable();
             $table->string('role');
+            $table->string('locale', 10)->default('en_US');
             $table->boolean('is_platform_manager')->default(false);
             $table->rememberToken();
             $table->timestamps();

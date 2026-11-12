@@ -1,18 +1,25 @@
 <?php
 
 use App\Enums\BikeAssignmentPolicy;
+use App\Enums\DeviceSurface;
+use App\Models\Device;
 use App\Models\Location;
+use App\Models\LocationWaiver;
+use App\Models\ShopSetting;
 use App\Models\Staff;
 use App\Models\Tenant;
 use Embiken\BikeFleet\Enums\BikeSituation;
 use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeRentals\Actions\AllocateLineAction;
 use Embiken\BikeRentals\Enums\BikeReservationStatus;
+use Embiken\BikeRentals\Enums\ReservationChannel;
 use Embiken\BikeRentals\Enums\ReservationStage;
 use Embiken\BikeRentals\Models\BikeReservation;
 use Embiken\BikeRentals\Models\Customer;
 use Embiken\BikeRentals\Models\RentalPackage;
 use Embiken\BikeRentals\Models\Reservation;
+use Embiken\BikeRentals\Services\Availability;
+use Filament\Support\Colors\Color;
 use Illuminate\Broadcasting\BroadcastManager;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Ssr\HttpGateway;
@@ -37,7 +44,7 @@ function deleteDeskTenantSqlite(?Tenant $tenant): void
 }
 
 /**
- * @return array{tenant: Tenant, staff: Staff, location: Location}
+ * @return array{tenant: Tenant, staff: Staff, location: Location, device_token: string}
  */
 function provisionDeskShop(string $domain): array
 {
@@ -48,13 +55,19 @@ function provisionDeskShop(string $domain): array
 
     $staff = null;
     $location = null;
+    $deviceToken = null;
 
-    $tenant->run(function () use (&$staff, &$location): void {
+    $tenant->run(function () use (&$staff, &$location, &$deviceToken): void {
         $location = Location::factory()->create();
         $staff = Staff::factory()->recycle($location)->create();
+        $terminal = Device::factory()->for($location)->create([
+            'surface' => DeviceSurface::Terminal,
+            'paired_at' => now(),
+        ]);
+        $deviceToken = $terminal->createToken('terminal-test')->plainTextToken;
     });
 
-    return ['tenant' => $tenant, 'staff' => $staff, 'location' => $location];
+    return ['tenant' => $tenant, 'staff' => $staff, 'location' => $location, 'device_token' => $deviceToken];
 }
 
 afterEach(function () {
@@ -71,6 +84,31 @@ test('guests are redirected away from the terminal prototype', function () {
         ->assertRedirect('/terminal/login');
 });
 
+test('terminal sign in uses the shop logo and favicon', function () {
+    $shop = provisionDeskShop('desk-branding.localhost');
+    $this->deskTenant = $shop['tenant'];
+
+    $shop['tenant']->run(function (): void {
+        ShopSetting::query()->create([
+            'primary_color' => '#0F766E',
+            'brand_gray_color' => '#475569',
+            'logo_path' => 'branding/shop-logo.png',
+            'favicon_path' => 'branding/shop-icon.png',
+        ]);
+    });
+
+    $this->withoutVite()
+        ->get('http://desk-branding.localhost/terminal/login')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Terminal/Login')
+            ->where('logoUrl', 'http://desk-branding.localhost/tenancy/assets/branding/shop-logo.png'))
+        ->assertSee('href="http://desk-branding.localhost/tenancy/assets/branding/shop-icon.png" type="image/png"', false)
+        ->assertSee('rel="apple-touch-icon" href="http://desk-branding.localhost/tenancy/assets/branding/shop-icon.png"', false)
+        ->assertSee('--tenant-brand-primary-600: '.Color::hex('#0F766E')[600].';', false)
+        ->assertSee('--tenant-brand-gray-600: '.Color::hex('#475569')[600].';', false);
+});
+
 test('staff can open the terminal prototype with the day-store DTO', function () {
     $shop = provisionDeskShop('desk-staff.localhost');
     $this->deskTenant = $shop['tenant'];
@@ -80,7 +118,7 @@ test('staff can open the terminal prototype with the day-store DTO', function ()
     });
 
     $this->withoutVite()
-        ->actingAs($shop['staff'], 'staff')
+        ->withToken($shop['device_token'])->actingAs($shop['staff'], 'staff')
         ->get('http://desk-staff.localhost/prototype/terminal')
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
@@ -110,16 +148,160 @@ test('staff can open terminal with the location bike assignment policy', functio
     });
 
     $this->withoutVite()
-        ->actingAs($shop['staff'], 'staff')
+        ->withToken($shop['device_token'])->actingAs($shop['staff'], 'staff')
         ->get('http://desk-terminal.localhost/terminal')
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('Terminal/Index')
             ->where('bike_assignment_policy', BikeAssignmentPolicy::Terminal->value)
+            ->where('terminal_ui.event_log_title', __('app.terminal_ui.event_log_title'))
             ->has('bikes', 1, fn (Assert $bike) => $bike
                 ->where('bid', 'T-02')
                 ->has('variant_id')
                 ->etc()));
+});
+
+test('staff can open the terminal planner for a selected shop date', function () {
+    $shop = provisionDeskShop('desk-planner-date.localhost');
+    $this->deskTenant = $shop['tenant'];
+    $selectedReservationId = null;
+
+    $shop['tenant']->run(function () use ($shop, &$selectedReservationId): void {
+        $shop['location']->update(['timezone' => 'America/New_York']);
+        $selectedReservation = Reservation::factory()->confirmed()->terminal()->recycle($shop['location'])->create([
+            'starts_at' => '2026-11-05 15:00:00',
+            'ends_at' => '2026-11-05 17:00:00',
+        ]);
+        Reservation::factory()->confirmed()->terminal()->recycle($shop['location'])->create([
+            'starts_at' => '2026-11-06 15:00:00',
+            'ends_at' => '2026-11-06 17:00:00',
+        ]);
+        $selectedReservationId = $selectedReservation->id;
+    });
+
+    $this->withoutVite()
+        ->withToken($shop['device_token'])->actingAs($shop['staff'], 'staff')
+        ->get('http://desk-planner-date.localhost/terminal?date=2026-11-05')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('schedule_date', '2026-11-05')
+            ->has('reservations', 1)
+            ->where('reservations.0.id', $selectedReservationId));
+});
+
+test('terminal bike candidates use the requested interval and include catalog fit data', function () {
+    $shop = provisionDeskShop('desk-bike-candidates.localhost');
+    $this->deskTenant = $shop['tenant'];
+    $availableBikeId = null;
+    $reservedBikeId = null;
+    $categoryId = null;
+
+    $shop['tenant']->run(function () use ($shop, &$availableBikeId, &$reservedBikeId, &$categoryId): void {
+        $reservedBike = Bike::factory()->recycle($shop['location'])->create();
+        $availableBike = Bike::factory()
+            ->recycle($shop['location'])
+            ->recycle($reservedBike->variant)
+            ->create();
+        $reservedBike->variant->update([
+            'min_ideal_rider_height' => 165,
+            'max_ideal_rider_height' => 185,
+        ]);
+        $categoryId = $reservedBike->variant->bikeModel->bike_category_id;
+
+        $existingReservation = Reservation::factory()->confirmed()->terminal()->recycle($shop['location'])->create([
+            'starts_at' => '2026-10-28 14:00:00',
+            'ends_at' => '2026-10-28 15:00:00',
+        ]);
+        app(Availability::class)->allocate(
+            $existingReservation,
+            $reservedBike->variant,
+            ReservationChannel::Terminal,
+            $reservedBike,
+        );
+
+        $availableBikeId = $availableBike->id;
+        $reservedBikeId = $reservedBike->id;
+    });
+
+    $this->withToken($shop['device_token'])->actingAs($shop['staff'], 'staff');
+
+    $this->getJson('http://desk-bike-candidates.localhost/terminal/bike-candidates?starts_at_local=2026-10-28T10%3A05&ends_at_local=2026-10-28T11%3A00')
+        ->assertOk()
+        ->assertJsonCount(1, 'candidates')
+        ->assertJsonPath('candidates.0.id', $availableBikeId)
+        ->assertJsonPath('candidates.0.category_id', $categoryId)
+        ->assertJsonPath('candidates.0.min_ideal_rider_height', 165)
+        ->assertJsonPath('candidates.0.max_ideal_rider_height', 185)
+        ->assertJsonPath('candidates.0.conflict_reason', null);
+
+    $this->getJson('http://desk-bike-candidates.localhost/terminal/bike-candidates?starts_at_local=2026-10-28T10%3A05&ends_at_local=2026-10-28T11%3A00&include_unavailable=1')
+        ->assertOk()
+        ->assertJsonCount(2, 'candidates')
+        ->assertJsonFragment([
+            'id' => $reservedBikeId,
+            'conflict_reason' => 'reservation_conflict',
+        ]);
+});
+
+test('walk-in availability overrides require confirmation and retain rider height without shortening another reservation', function () {
+    $shop = provisionDeskShop('desk-override-walk-in.localhost');
+    $this->deskTenant = $shop['tenant'];
+    $bikeId = null;
+    $existingReservationId = null;
+
+    $shop['tenant']->run(function () use ($shop, &$bikeId, &$existingReservationId): void {
+        $bike = Bike::factory()->recycle($shop['location'])->create();
+        $existingReservation = Reservation::factory()->confirmed()->terminal()->recycle($shop['location'])->create([
+            'starts_at' => '2026-10-28 14:00:00',
+            'ends_at' => '2026-10-28 16:00:00',
+            'owed' => 9000,
+        ]);
+        app(Availability::class)->allocate(
+            $existingReservation,
+            $bike->variant,
+            ReservationChannel::Terminal,
+            $bike,
+        );
+
+        $bikeId = $bike->id;
+        $existingReservationId = $existingReservation->id;
+    });
+
+    $this->withToken($shop['device_token'])->actingAs($shop['staff'], 'staff');
+
+    $walkIn = [
+        'name' => 'Jordan Rider',
+        'email' => 'jordan@example.test',
+        'phone' => '+1 555 0102',
+        'bike_ids' => [$bikeId],
+        'rider_heights_cm' => [172],
+        'owed_minor_units' => 2500,
+        'starts_at_local' => '2026-10-28T11:00',
+        'ends_at_local' => '2026-10-28T13:00',
+        'allow_availability_override' => true,
+    ];
+
+    $this->postJson('http://desk-override-walk-in.localhost/reservations/walk-in', $walkIn)
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('confirm_availability_override');
+
+    $response = $this->postJson('http://desk-override-walk-in.localhost/reservations/walk-in', [
+        ...$walkIn,
+        'confirm_availability_override' => true,
+    ])->assertOk()
+        ->assertJsonCount(1, 'reservation.lines')
+        ->assertJsonPath('reservation.lines.0.rider_height_cm', 172);
+
+    $shop['tenant']->run(function () use ($response, $existingReservationId): void {
+        $existingReservation = Reservation::query()->findOrFail($existingReservationId);
+        $newReservation = Reservation::query()->findOrFail($response->json('reservation.id'));
+
+        expect($existingReservation->starts_at->toDateTimeString())->toBe('2026-10-28 14:00:00')
+            ->and($existingReservation->ends_at->toDateTimeString())->toBe('2026-10-28 16:00:00')
+            ->and($existingReservation->owed)->toBe(9000)
+            ->and($newReservation->starts_at->toDateTimeString())->toBe('2026-10-28 15:00:00')
+            ->and($newReservation->ends_at->toDateTimeString())->toBe('2026-10-28 17:00:00');
+    });
 });
 
 test('the terminal prototype is excluded from inertia ssr', function () {
@@ -127,7 +309,7 @@ test('the terminal prototype is excluded from inertia ssr', function () {
     $this->deskTenant = $shop['tenant'];
 
     $this->withoutVite()
-        ->actingAs($shop['staff'], 'staff')
+        ->withToken($shop['device_token'])->actingAs($shop['staff'], 'staff')
         ->get('http://desk-no-ssr.localhost/prototype/terminal')
         ->assertOk();
 
@@ -161,7 +343,7 @@ test('staff may subscribe to the location channel and customers may not', functi
 
     $channel = 'private-tenant.'.$shop['tenant']->id.'.location.'.$shop['location']->id;
 
-    $this->actingAs($shop['staff'], 'staff')
+    $this->withToken($shop['device_token'])->actingAs($shop['staff'], 'staff')
         ->postJson('http://desk-echo.localhost/broadcasting/auth', [
             'socket_id' => '1234.5678',
             'channel_name' => $channel,
@@ -192,9 +374,10 @@ test('pickup return walk-in cash and waiver write through staff HTTP', function 
 
     $lineId = null;
     $reservationId = null;
+    $reservationPublicId = null;
     $walkInBikeIds = [];
 
-    $shop['tenant']->run(function () use ($shop, &$lineId, &$reservationId, &$walkInBikeIds): void {
+    $shop['tenant']->run(function () use ($shop, &$lineId, &$reservationId, &$reservationPublicId, &$walkInBikeIds): void {
         $shop['location']->update(['currency' => 'jpy']);
         $bike = Bike::factory()->recycle($shop['location'])->create();
         $otherBike = Bike::factory()->recycle($shop['location'])->create();
@@ -206,9 +389,10 @@ test('pickup return walk-in cash and waiver write through staff HTTP', function 
         $line = app(AllocateLineAction::class)($reservation, $bike->variant, $bike);
         $lineId = $line->id;
         $reservationId = $reservation->id;
+        $reservationPublicId = $reservation->public_id;
     });
 
-    $this->actingAs($shop['staff'], 'staff');
+    $this->withToken($shop['device_token'])->actingAs($shop['staff'], 'staff');
 
     $this->postJson("http://desk-writes.localhost/lines/{$lineId}/pickup")
         ->assertOk()
@@ -223,13 +407,15 @@ test('pickup return walk-in cash and waiver write through staff HTTP', function 
         ->assertOk()
         ->assertJsonPath('bikes.0.bike_situation_state', BikeSituation::Home->value);
 
-    $this->postJson("http://desk-writes.localhost/reservations/{$reservationId}/cash", [
+    $this->postJson("http://desk-writes.localhost/reservations/{$reservationPublicId}/cash", [
         'amount_minor_units' => 5000,
     ])->assertOk()
         ->assertJsonPath('reservation.paid_minor_units', 5000)
         ->assertJsonPath('reservation.currency', 'jpy');
 
-    $this->postJson("http://desk-writes.localhost/reservations/{$reservationId}/waiver")
+    $shop['tenant']->run(fn () => LocationWaiver::factory()->for($shop['location'])->create());
+
+    $this->postJson("http://desk-writes.localhost/reservations/{$reservationPublicId}/waiver")
         ->assertOk();
 
     $shop['tenant']->run(function () use ($reservationId): void {
@@ -238,7 +424,7 @@ test('pickup return walk-in cash and waiver write through staff HTTP', function 
 
     $this->postJson('http://desk-writes.localhost/reservations/walk-in')
         ->assertUnprocessable()
-        ->assertJsonValidationErrors(['name', 'email', 'phone', 'bike_ids', 'owed_minor_units'])
+        ->assertJsonValidationErrors(['name', 'email', 'phone', 'bike_ids', 'owed_minor_units', 'starts_at_local', 'ends_at_local'])
         ->assertJsonPath('errors.name.0', 'The name field is required.')
         ->assertJsonPath('errors.email.0', 'The email field is required.')
         ->assertJsonPath('errors.phone.0', 'The phone field is required.')
@@ -251,10 +437,27 @@ test('pickup return walk-in cash and waiver write through staff HTTP', function 
         'phone' => '+1 555 0100',
         'bike_ids' => $walkInBikeIds,
         'owed_minor_units' => 7500,
+        'starts_at_local' => '2026-06-01T10:30',
+        'ends_at_local' => '2026-06-01T10:29',
+    ])->assertUnprocessable()
+        ->assertJsonValidationErrors('ends_at_local');
+
+    $this->postJson('http://desk-writes.localhost/reservations/walk-in', [
+        'name' => 'Avery Rider',
+        'email' => 'avery@example.test',
+        'phone' => '+1 555 0100',
+        'bike_ids' => $walkInBikeIds,
+        'allow_availability_override' => false,
+        'confirm_availability_override' => false,
+        'owed_minor_units' => 7500,
+        'starts_at_local' => '2026-06-01T10:30',
+        'ends_at_local' => '2026-06-01T12:45',
     ])
         ->assertOk()
         ->assertJsonPath('reservation.customer.name', 'Avery Rider')
         ->assertJsonPath('reservation.owed_minor_units', 7500)
+        ->assertJsonPath('reservation.starts_at', '2026-06-01T14:30:00+00:00')
+        ->assertJsonPath('reservation.ends_at', '2026-06-01T16:45:00+00:00')
         ->assertJsonPath('reservation.currency', 'jpy')
         ->assertJsonCount(2, 'reservation.lines');
 
@@ -275,7 +478,7 @@ test('walk-in reservations and cash payments retain the configured currency', fu
         $bikeIds = [Bike::factory()->recycle($shop['location'])->create()->id];
     });
 
-    $this->actingAs($shop['staff'], 'staff');
+    $this->withToken($shop['device_token'])->actingAs($shop['staff'], 'staff');
 
     $response = $this->postJson('http://desk-jpy.localhost/reservations/walk-in', [
         'name' => 'Casey Rider',
@@ -283,13 +486,17 @@ test('walk-in reservations and cash payments retain the configured currency', fu
         'phone' => '+81 90 1234 5678',
         'bike_ids' => $bikeIds,
         'owed_minor_units' => 1250,
+        'starts_at_local' => '2026-06-01T10:30',
+        'ends_at_local' => '2026-06-01T12:30',
     ])->assertOk()
         ->assertJsonPath('reservation.currency', 'jpy')
         ->assertJsonPath('reservation.owed_minor_units', 1250);
 
     $reservationId = $response->json('reservation.id');
+    $reservationPublicId = $shop['tenant']->run(fn (): string => Reservation::query()->findOrFail($reservationId)->public_id,
+    );
 
-    $this->postJson("http://desk-jpy.localhost/reservations/{$reservationId}/cash", [
+    $this->postJson("http://desk-jpy.localhost/reservations/{$reservationPublicId}/cash", [
         'amount_minor_units' => 1250,
     ])->assertOk()
         ->assertJsonPath('reservation.paid_minor_units', 1250);
@@ -305,18 +512,20 @@ test('cancel refuses out bikes without confirmation', function () {
     $this->deskTenant = $shop['tenant'];
 
     $reservationId = null;
+    $reservationPublicId = null;
 
-    $shop['tenant']->run(function () use ($shop, &$reservationId): void {
+    $shop['tenant']->run(function () use ($shop, &$reservationId, &$reservationPublicId): void {
         $bike = Bike::factory()->recycle($shop['location'])->create();
         $reservation = Reservation::factory()->confirmed()->terminal()->recycle($shop['location'])->create();
         $line = app(AllocateLineAction::class)($reservation, $bike->variant, $bike);
         $line->status = BikeReservationStatus::Out;
         $line->save();
         $reservationId = $reservation->id;
+        $reservationPublicId = $reservation->public_id;
     });
 
-    $this->actingAs($shop['staff'], 'staff')
-        ->postJson("http://desk-cancel.localhost/reservations/{$reservationId}/cancel")
+    $this->withToken($shop['device_token'])->actingAs($shop['staff'], 'staff')
+        ->postJson("http://desk-cancel.localhost/reservations/{$reservationPublicId}/cancel")
         ->assertUnprocessable()
         ->assertJsonValidationErrors('confirm_out_bikes_in_shop');
 });
@@ -339,7 +548,7 @@ test('pickup can select and persist a bike for an unassigned walk-in line', func
         $bikeId = $bike->id;
     });
 
-    $this->actingAs($shop['staff'], 'staff')
+    $this->withToken($shop['device_token'])->actingAs($shop['staff'], 'staff')
         ->postJson("http://desk-pickup-unassigned.localhost/lines/{$lineId}/pickup", [
             'bike_id' => $bikeId,
         ])
@@ -365,13 +574,15 @@ test('pickup-only walk-ins keep bikes unassigned until pickup', function () {
         $bikeIds = $bikes->modelKeys();
     });
 
-    $this->actingAs($shop['staff'], 'staff')
+    $this->withToken($shop['device_token'])->actingAs($shop['staff'], 'staff')
         ->postJson('http://desk-pickup-only.localhost/reservations/walk-in', [
             'name' => 'Riley Rider',
             'email' => 'riley@example.test',
             'phone' => '+1 555 0101',
             'bike_ids' => $bikeIds,
             'owed_minor_units' => 0,
+            'starts_at_local' => '2026-06-01T10:30',
+            'ends_at_local' => '2026-06-01T12:30',
         ])
         ->assertOk()
         ->assertJsonPath('reservation.stage', ReservationStage::Confirmed->value)
@@ -405,7 +616,7 @@ test('swap refuses a variant that is not on the package', function () {
         $otherBikeId = $other->id;
     });
 
-    $this->actingAs($shop['staff'], 'staff')
+    $this->withToken($shop['device_token'])->actingAs($shop['staff'], 'staff')
         ->postJson("http://desk-swap.localhost/lines/{$lineId}/swap", [
             'bike_id' => $otherBikeId,
         ])
@@ -418,26 +629,29 @@ test('staff can add a bike and unassign without swapping', function () {
     $this->deskTenant = $shop['tenant'];
 
     $reservationId = null;
+    $reservationPublicId = null;
     $firstLineId = null;
     $secondBikeId = null;
 
-    $shop['tenant']->run(function () use ($shop, &$reservationId, &$firstLineId, &$secondBikeId): void {
+    $shop['tenant']->run(function () use ($shop, &$reservationId, &$reservationPublicId, &$firstLineId, &$secondBikeId): void {
         $first = Bike::factory()->recycle($shop['location'])->create();
         $second = Bike::factory()->recycle($shop['location'])->recycle($first->variant)->create();
         $reservation = Reservation::factory()->confirmed()->terminal()->recycle($shop['location'])->create();
         $line = app(AllocateLineAction::class)($reservation, $first->variant, $first);
         $reservationId = $reservation->id;
+        $reservationPublicId = $reservation->public_id;
         $firstLineId = $line->id;
         $secondBikeId = $second->id;
     });
 
-    $this->actingAs($shop['staff'], 'staff');
+    $this->withToken($shop['device_token'])->actingAs($shop['staff'], 'staff');
 
-    $this->postJson("http://desk-grow.localhost/reservations/{$reservationId}/lines", [
+    $this->postJson("http://desk-grow.localhost/reservations/{$reservationPublicId}/lines", [
         'bike_id' => $secondBikeId,
     ])
         ->assertOk()
-        ->assertJsonPath('reservation.id', $reservationId);
+        ->assertJsonPath('reservation.id', $reservationId)
+        ->assertJsonPath('reservation.public_id', $reservationPublicId);
 
     $this->postJson("http://desk-grow.localhost/lines/{$firstLineId}/unassign")
         ->assertOk()
@@ -475,7 +689,7 @@ test('staff cannot drop the last reservation line through HTTP', function () {
         $lineId = app(AllocateLineAction::class)($reservation, $bike->variant, $bike)->id;
     });
 
-    $this->actingAs($shop['staff'], 'staff')
+    $this->withToken($shop['device_token'])->actingAs($shop['staff'], 'staff')
         ->deleteJson("http://desk-drop-last.localhost/lines/{$lineId}")
         ->assertUnprocessable()
         ->assertJsonValidationErrors('line');

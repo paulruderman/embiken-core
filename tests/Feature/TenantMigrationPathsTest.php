@@ -39,6 +39,9 @@ test('creating a tenant migrates installed module tables including weather', fun
         expect(Schema::hasTable('weather_sites'))->toBeTrue()
             ->and(Schema::hasTable('weather_periods'))->toBeTrue()
             ->and(Schema::hasTable('weather_settings'))->toBeTrue()
+            ->and(Schema::hasTable('devices'))->toBeTrue()
+            ->and(Schema::hasTable('displays'))->toBeTrue()
+            ->and(Schema::hasTable('personal_access_tokens'))->toBeTrue()
             ->and(Schema::hasTable('bikes'))->toBeTrue();
     });
 });

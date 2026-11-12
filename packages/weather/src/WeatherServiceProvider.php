@@ -25,10 +25,13 @@ class WeatherServiceProvider extends ServiceProvider
                 ListWeatherSitesAction::class,
                 RefreshWeatherAction::class,
                 ResolveSiteGridAction::class,
-                ShowWeatherPrototypeAction::class,
                 UpsertWeatherSiteAction::class,
             ] as $action) {
                 Actions::registerCommandsForAction($action);
+            }
+
+            if ($this->app->environment(['local', 'testing'])) {
+                Actions::registerCommandsForAction(ShowWeatherPrototypeAction::class);
             }
         }
     }

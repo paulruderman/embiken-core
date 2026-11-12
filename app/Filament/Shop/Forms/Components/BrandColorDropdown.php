@@ -17,7 +17,7 @@ class BrandColorDropdown extends TextInput
 
         $this->rule(new ClosureValidationRule(static function (string $attribute, mixed $value, Closure $fail): void {
             if (! BrandColor::isValid($value)) {
-                $fail('Enter a Tailwind color family name or a six-digit HEX value.');
+                $fail(__('app.branding_ui.invalid_color'));
             }
         }));
     }

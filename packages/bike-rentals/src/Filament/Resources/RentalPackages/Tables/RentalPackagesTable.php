@@ -3,6 +3,7 @@
 namespace Embiken\BikeRentals\Filament\Resources\RentalPackages\Tables;
 
 use App\Filament\Shop\Support\ShopSetupReadiness;
+use Embiken\BikeRentals\Models\RentalPackage;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
@@ -25,10 +26,12 @@ class RentalPackagesTable
                     ->toggleable(),
                 TextColumn::make('meter')
                     ->label(__('app.rentals_ui.fields.meter'))
-                    ->badge(),
+                    ->badge()
+                    ->color(fn (RentalPackage $record): string => $record->meter->getColor()),
                 TextColumn::make('confirm_threshold')
                     ->label(__('app.rentals_ui.fields.confirm_threshold'))
-                    ->badge(),
+                    ->badge()
+                    ->color(fn (RentalPackage $record): string => $record->confirm_threshold->getColor()),
                 IconColumn::make('book_visible')
                     ->label(__('app.rentals_ui.fields.book_visible'))
                     ->boolean(),

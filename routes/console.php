@@ -8,12 +8,7 @@ use Lorisleiva\Actions\Facades\Actions;
 
 Actions::registerCommands('app/Actions');
 
-foreach ([
-    base_path('packages/bike-rentals/src/Actions'),
-    base_path('packages/weather/src/Actions'),
-] as $path) {
-    Actions::registerCommands($path);
-}
+Actions::registerCommands(base_path('packages/bike-rentals/src/Actions'));
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());

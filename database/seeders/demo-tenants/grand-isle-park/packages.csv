@@ -1,0 +1,4 @@
+key,name,tagline,blurb,description,meter,confirm_threshold,deposit_minor_units,deposit_percent,min_duration_minutes,max_duration_minutes,book_visible,sort_order
+island-half-day,Half Day,Perfect for a quick island adventure,,Half-day rental with helmet and lock included.,per_hour,full,,,60,240,true,1
+island-full-day,Full Day,Discover the island at your pace,,Full-day rental with helmet and lock included.,per_calendar_day,full,,,240,600,true,2
+island-extra-day,Additional Day,Keep exploring,,Discounted additional day for a multi-day island trip.,per_calendar_day,deposit,,25,240,600,true,3

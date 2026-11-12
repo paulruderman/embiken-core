@@ -2,10 +2,10 @@
 
 namespace Embiken\BikeFleet\Filament\Resources\ServiceRequests\RelationManagers;
 
+use App\Filament\Tables\Columns\LocalizedDateTimeColumn;
 use Embiken\BikeFleet\Models\Part;
 use Embiken\BikeFleet\Models\ServiceEntryPart;
 use Filament\Actions\CreateAction;
-use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Repeater;
@@ -39,8 +39,18 @@ class EntriesRelationManager extends RelationManager
                     ->label(__('app.fleet.fields.labor_minutes'))
                     ->numeric()
                     ->minValue(0),
-                DateTimePicker::make('work_started_at')->label(__('app.fleet.fields.work_started_at')),
-                DateTimePicker::make('work_completed_at')->label(__('app.fleet.fields.work_completed_at')),
+                DateTimePicker::make('work_started_at')
+                    ->label(__('app.fleet.fields.work_started_at'))
+                    ->native(false)
+                    ->seconds(false)
+                    ->timezone(LocalizedDateTimeColumn::shopTimezone())
+                    ->displayFormat(__('app.datetime_ui.input_format')),
+                DateTimePicker::make('work_completed_at')
+                    ->label(__('app.fleet.fields.work_completed_at'))
+                    ->native(false)
+                    ->seconds(false)
+                    ->timezone(LocalizedDateTimeColumn::shopTimezone())
+                    ->displayFormat(__('app.datetime_ui.input_format')),
                 Repeater::make('partUsages')
                     ->label('Parts used')
                     ->relationship()
@@ -90,6 +100,7 @@ class EntriesRelationManager extends RelationManager
                             ->maxLength(32),
                     ])
                     ->columns(3)
+                    ->deletable(false)
                     ->addActionLabel('Add part'),
             ]);
     }
@@ -102,7 +113,8 @@ class EntriesRelationManager extends RelationManager
                 TextColumn::make('staff.name')->label(__('app.fleet.fields.staff')),
                 TextColumn::make('notes')
                     ->label(__('app.fleet.fields.notes'))
-                    ->limit(40),
+                    ->limit(40)
+                    ->tooltip(fn (?string $state): ?string => $state !== null && mb_strlen($state) > 40 ? $state : null),
                 TextColumn::make('labor_minutes')->label(__('app.fleet.fields.labor_minutes')),
                 TextColumn::make('partUsages.part_name')
                     ->label('Parts used')
@@ -118,7 +130,6 @@ class EntriesRelationManager extends RelationManager
             ])
             ->recordActions([
                 EditAction::make(),
-                DeleteAction::make(),
             ]);
     }
 }

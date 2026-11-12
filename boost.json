@@ -8,6 +8,11 @@
     "guidelines": true,
     "mcp": true,
     "nightwatch": false,
+    "packages": [
+        "filament/filament",
+        "lorisleiva/laravel-actions",
+        "spatie/laravel-translatable"
+    ],
     "sail": false,
     "skills": [
         "infer-conventions",
@@ -19,6 +24,9 @@
         "echo-vue-development",
         "echo-development",
         "tailwindcss-development",
+        "filament-development",
+        "laravel-actions",
+        "translatable-development",
         "deploying-laravel-cloud",
         "feature-slices"
     ]

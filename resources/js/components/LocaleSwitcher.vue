@@ -3,11 +3,13 @@ import { router, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
 const page = usePage();
-const languageLabel = computed(
-    () =>
-        ({ en: 'Language', es: 'Idioma', fr: 'Langue' })[page.props.locale] ??
-        'Language',
-);
+const languageLabel = computed(() => {
+    const language = page.props.locale.split('-')[0];
+
+    return (
+        { en: 'Language', es: 'Idioma', fr: 'Langue' }[language] ?? 'Language'
+    );
+});
 const activeLocale = computed(
     () =>
         page.props.supportedLocales.find(
@@ -25,6 +27,7 @@ function changeLocale(locale: string): void {
         {},
         {
             preserveScroll: true,
+            preserveState: true,
             replace: true,
         },
     );
@@ -37,7 +40,7 @@ function changeLocale(locale: string): void {
         <select
             :value="activeLocale"
             :aria-label="languageLabel"
-            class="rounded-md border border-current/20 bg-transparent px-2 py-1"
+            class="min-h-11 rounded-md border border-current/20 bg-transparent px-3 py-2"
             @change="changeLocale(($event.target as HTMLSelectElement).value)"
         >
             <option

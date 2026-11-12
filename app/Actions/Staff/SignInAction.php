@@ -3,6 +3,7 @@
 namespace App\Actions\Staff;
 
 use App\Actions\Action;
+use App\Models\ShopSetting;
 use App\Models\Staff;
 use Illuminate\Console\Command;
 use Illuminate\Http\RedirectResponse;
@@ -45,7 +46,11 @@ class SignInAction extends Action
     public function asController(Request $request): Staff|Response
     {
         if ($request->isMethod('get')) {
-            return Inertia::render('Terminal/Login');
+            $logoPath = ShopSetting::query()->value('logo_path');
+
+            return Inertia::render('Terminal/Login', [
+                'logoUrl' => is_string($logoPath) ? tenant_asset($logoPath) : null,
+            ]);
         }
 
         $data = $request->validate([

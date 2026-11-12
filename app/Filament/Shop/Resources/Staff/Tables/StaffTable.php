@@ -20,7 +20,8 @@ class StaffTable
                 TextColumn::make('email')
                     ->searchable(),
                 TextColumn::make('role')
-                    ->badge(),
+                    ->badge()
+                    ->color(fn (Staff $record): string => $record->role->getColor()),
                 IconColumn::make('is_platform_manager')
                     ->label('Platform')
                     ->boolean(),

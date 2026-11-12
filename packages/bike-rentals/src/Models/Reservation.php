@@ -3,6 +3,7 @@
 namespace Embiken\BikeRentals\Models;
 
 use App\Models\Location;
+use App\Models\LocationWaiver;
 use Carbon\CarbonImmutable;
 use Embiken\BikeRentals\Database\Factories\ReservationFactory;
 use Embiken\BikeRentals\Enums\BikeReservationStatus;
@@ -11,6 +12,7 @@ use Embiken\BikeRentals\Enums\ReservationStage;
 use Embiken\BikeRentals\Enums\TransactionKind;
 use Embiken\BikeRentals\Enums\TransactionStatus;
 use Embiken\BikeRentals\Observers\ReservationObserver;
+use Embiken\BikeRentals\Support\PublicId;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,6 +22,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property int $id
+ * @property string $public_id
  * @property int $location_id
  * @property int $customer_id
  * @property int|null $rental_package_id
@@ -32,6 +35,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $currency
  * @property CarbonImmutable|null $expires_at
  * @property CarbonImmutable|null $waiver_accepted_at
+ * @property int|null $waiver_version_id
+ * @property string|null $waiver_locale
  * @property string|null $notes
  * @property string|null $damage_notes
  * @property string|null $myrental_token
@@ -51,6 +56,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'currency',
     'expires_at',
     'waiver_accepted_at',
+    'waiver_version_id',
+    'waiver_locale',
     'notes',
     'damage_notes',
     'myrental_token',
@@ -69,6 +76,8 @@ class Reservation extends Model
     protected static function booted(): void
     {
         static::creating(function (Reservation $reservation): void {
+            $reservation->public_id ??= PublicId::reservation();
+
             if ($reservation->rental_package_id !== null) {
                 $reservation->currency = (string) RentalPackage::query()
                     ->whereKey($reservation->rental_package_id)
@@ -81,6 +90,11 @@ class Reservation extends Model
 
             $reservation->currency = strtolower(trim($reservation->currency));
         });
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'public_id';
     }
 
     /**
@@ -98,6 +112,7 @@ class Reservation extends Model
             'currency' => 'string',
             'expires_at' => 'datetime',
             'waiver_accepted_at' => 'datetime',
+            'waiver_version_id' => 'integer',
         ];
     }
 
@@ -123,6 +138,12 @@ class Reservation extends Model
     public function rentalPackage(): BelongsTo
     {
         return $this->belongsTo(RentalPackage::class);
+    }
+
+    /** @return BelongsTo<LocationWaiver, $this> */
+    public function waiverVersion(): BelongsTo
+    {
+        return $this->belongsTo(LocationWaiver::class, 'waiver_version_id');
     }
 
     /**

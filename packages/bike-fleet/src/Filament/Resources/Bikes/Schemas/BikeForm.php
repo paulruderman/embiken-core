@@ -4,8 +4,8 @@ namespace Embiken\BikeFleet\Filament\Resources\Bikes\Schemas;
 
 use App\Models\Location;
 use Embiken\BikeFleet\Enums\BikeSituation;
+use Embiken\BikeFleet\Filament\Forms\Components\BikeModelVariantSelect;
 use Embiken\BikeFleet\Models\Bike;
-use Embiken\BikeFleet\Models\BikeModelVariant;
 use Embiken\BikeFleet\Models\BikeSpecification;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
@@ -29,23 +29,10 @@ class BikeForm
                     ->columnSpanFull(),
                 Hidden::make('location_id')
                     ->default(fn (): ?int => Location::query()->value('id')),
-                Select::make('bike_model_variant_id')
+                BikeModelVariantSelect::make('bike_model_variant_id')
                     ->label(__('app.fleet.fields.variant'))
-                    ->options(fn (): array => BikeModelVariant::query()
-                        ->with('bikeModel')
-                        ->get()
-                        ->mapWithKeys(fn (BikeModelVariant $variant): array => [
-                            $variant->id => collect([
-                                $variant->bikeModel->manufacturer,
-                                $variant->bikeModel->name,
-                                $variant->size,
-                                $variant->color_name,
-                            ])->filter()->implode(' '),
-                        ])
-                        ->all())
                     ->helperText(__('app.setup_steps.bikes.description'))
-                    ->required()
-                    ->searchable(),
+                    ->required(),
                 TextInput::make('bid')
                     ->label(__('app.fleet.fields.bid'))
                     ->required()

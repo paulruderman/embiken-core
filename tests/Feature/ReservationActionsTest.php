@@ -1,5 +1,6 @@
 <?php
 
+use Carbon\CarbonImmutable;
 use Embiken\BikeFleet\Enums\BikeSituation;
 use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeRentals\Actions\AllocateLineAction;
@@ -11,6 +12,7 @@ use Embiken\BikeRentals\Actions\ReturnAction;
 use Embiken\BikeRentals\Actions\SetReservationOwedAction;
 use Embiken\BikeRentals\Actions\SetReservationStageAction;
 use Embiken\BikeRentals\Actions\UnassignBikeAction;
+use Embiken\BikeRentals\Actions\UpdateReservationIntervalAction;
 use Embiken\BikeRentals\Enums\BikeReservationStatus;
 use Embiken\BikeRentals\Enums\ReservationChannel;
 use Embiken\BikeRentals\Enums\ReservationStage;
@@ -52,6 +54,142 @@ test('filament terminal allocate refuses an overlapping interval on the same bik
 
     expect(fn () => app(AllocateLineAction::class)($second, $bike->variant, $bike))
         ->toThrow(OccupancyUnavailable::class);
+});
+
+test('terminal allocation honors the turnaround buffer after a reservation', function () {
+    $bike = Bike::factory()->create();
+    $first = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create([
+        'starts_at' => '2026-10-26 10:00:00',
+        'ends_at' => '2026-10-26 11:00:00',
+    ]);
+    app(Availability::class)->allocate($first, $bike->variant, ReservationChannel::Terminal, $bike);
+
+    $second = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create([
+        'starts_at' => '2026-10-26 11:05:00',
+        'ends_at' => '2026-10-26 12:00:00',
+    ]);
+
+    expect(fn () => app(Availability::class)->allocate($second, $bike->variant, ReservationChannel::Terminal, $bike))
+        ->toThrow(OccupancyUnavailable::class);
+});
+
+test('terminal allocation can explicitly override a reservation time conflict', function () {
+    $bike = Bike::factory()->create();
+    $first = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create([
+        'starts_at' => '2026-10-26 10:00:00',
+        'ends_at' => '2026-10-26 11:00:00',
+    ]);
+    app(Availability::class)->allocate($first, $bike->variant, ReservationChannel::Terminal, $bike);
+    $second = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create([
+        'starts_at' => '2026-10-26 10:30:00',
+        'ends_at' => '2026-10-26 12:00:00',
+    ]);
+
+    $line = app(Availability::class)->allocate(
+        $second,
+        $bike->variant,
+        ReservationChannel::Terminal,
+        $bike,
+        allowOverride: true,
+    );
+
+    expect($line->bike_id)->toBe($bike->id)
+        ->and(BikeReservation::query()->where('bike_id', $bike->id)->count())->toBe(2);
+});
+
+test('terminal allocation can explicitly override a bike level hard block', function () {
+    $bike = Bike::factory()->outOfService()->create();
+    $reservation = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create();
+
+    expect(fn () => app(Availability::class)->allocate($reservation, $bike->variant, ReservationChannel::Terminal, $bike))
+        ->toThrow(OccupancyUnavailable::class);
+
+    $line = app(Availability::class)->allocate(
+        $reservation,
+        $bike->variant,
+        ReservationChannel::Terminal,
+        $bike,
+        allowOverride: true,
+    );
+
+    expect($line->bike_id)->toBe($bike->id)
+        ->and($bike->fresh()->in_service)->toBeFalse();
+});
+
+test('bike candidates use reservation buffers and can expose conflicts for overrides', function () {
+    $reservedBike = Bike::factory()->create();
+    $availableBike = Bike::factory()->recycle($reservedBike->location)->recycle($reservedBike->variant)->create();
+    $reservation = Reservation::factory()->confirmed()->terminal()->recycle($reservedBike->location)->create([
+        'starts_at' => '2026-10-26 10:00:00',
+        'ends_at' => '2026-10-26 11:00:00',
+    ]);
+    app(Availability::class)->allocate($reservation, $reservedBike->variant, ReservationChannel::Terminal, $reservedBike);
+
+    $availability = app(Availability::class);
+    $available = $availability->bikeCandidatesForInterval(
+        CarbonImmutable::parse('2026-10-26 11:05:00'),
+        CarbonImmutable::parse('2026-10-26 12:00:00'),
+    );
+    $withConflicts = $availability->bikeCandidatesForInterval(
+        CarbonImmutable::parse('2026-10-26 11:05:00'),
+        CarbonImmutable::parse('2026-10-26 12:00:00'),
+        includeUnavailable: true,
+    );
+
+    expect($available->pluck('bike.id')->all())->toBe([$availableBike->id])
+        ->and($withConflicts->firstWhere('bike.id', $reservedBike->id)['conflict_reason'])->toBe('reservation_conflict');
+});
+
+test('reservation interval edits require an explicit override and never shorten another reservation', function () {
+    $bike = Bike::factory()->create();
+    $existingReservation = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create([
+        'starts_at' => '2026-10-26 10:00:00',
+        'ends_at' => '2026-10-26 11:00:00',
+        'owed' => 4200,
+    ]);
+    app(Availability::class)->allocate($existingReservation, $bike->variant, ReservationChannel::Terminal, $bike);
+    $reservation = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create([
+        'starts_at' => '2026-10-26 12:00:00',
+        'ends_at' => '2026-10-26 13:00:00',
+        'owed' => 7300,
+    ]);
+    app(AllocateLineAction::class)($reservation, $bike->variant);
+    $startsAt = CarbonImmutable::parse('2026-10-26 11:05:00');
+    $endsAt = CarbonImmutable::parse('2026-10-26 12:00:00');
+
+    expect(fn () => app(UpdateReservationIntervalAction::class)($reservation, $startsAt, $endsAt))
+        ->toThrow(OccupancyUnavailable::class);
+
+    app(UpdateReservationIntervalAction::class)($reservation, $startsAt, $endsAt, allowAvailabilityOverride: true);
+
+    expect($reservation->fresh()->starts_at->toDateTimeString())->toBe('2026-10-26 11:05:00')
+        ->and($reservation->fresh()->ends_at->toDateTimeString())->toBe('2026-10-26 12:00:00')
+        ->and($reservation->fresh()->owed)->toBe(7300)
+        ->and($existingReservation->fresh()->starts_at->toDateTimeString())->toBe('2026-10-26 10:00:00')
+        ->and($existingReservation->fresh()->ends_at->toDateTimeString())->toBe('2026-10-26 11:00:00')
+        ->and($existingReservation->fresh()->owed)->toBe(4200);
+});
+
+test('a reservation with an out line cannot be shortened', function () {
+    $bike = Bike::factory()->create();
+    $reservation = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create([
+        'starts_at' => '2026-10-26 10:00:00',
+        'ends_at' => '2026-10-26 14:00:00',
+        'owed' => 5400,
+    ]);
+    $line = app(AllocateLineAction::class)($reservation, $bike->variant, $bike);
+    $line->update(['status' => BikeReservationStatus::Out]);
+
+    expect(fn () => app(UpdateReservationIntervalAction::class)(
+        $reservation,
+        CarbonImmutable::parse('2026-10-26 11:00:00'),
+        CarbonImmutable::parse('2026-10-26 13:00:00'),
+        allowAvailabilityOverride: true,
+    ))->toThrow(InvalidArgumentException::class);
+
+    expect($reservation->fresh()->starts_at->toDateTimeString())->toBe('2026-10-26 10:00:00')
+        ->and($reservation->fresh()->ends_at->toDateTimeString())->toBe('2026-10-26 14:00:00')
+        ->and($reservation->fresh()->owed)->toBe(5400);
 });
 
 test('cancel releases assigned lines and refuses to auto-return out bikes', function () {
@@ -200,6 +338,55 @@ test('pickup and return serialize reservation state transitions', function () {
 
     expect($returned->fresh()->status)->toBe(BikeReservationStatus::In)
         ->and($bike->fresh()->bike_situation_state)->toBe(BikeSituation::Home);
+});
+
+test('pickup remains blocked while the assigned bike is physically unavailable', function () {
+    $bike = Bike::factory()->create();
+    $otherReservation = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create();
+    $reservation = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create();
+    $line = new BikeReservation;
+    $line->reservation()->associate($reservation);
+    $line->product()->associate($bike->variant);
+    $line->bike()->associate($bike);
+    $line->status = BikeReservationStatus::Assigned;
+    $line->save();
+    $bike->bike_situation_state = BikeSituation::RentedOut;
+    $bike->bike_situation_reservation_id = $otherReservation->id;
+    $bike->save();
+
+    expect(fn () => app(PickupAction::class)->handle($line))
+        ->toThrow(OccupancyUnavailable::class);
+});
+
+test('readiness treats prep and staging as ready only for the linked reservation', function () {
+    $bike = Bike::factory()->create();
+    $reservation = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create([
+        'starts_at' => '2026-10-26 10:00:00',
+        'ends_at' => '2026-10-26 12:00:00',
+    ]);
+    $otherReservation = Reservation::factory()->confirmed()->terminal()->recycle($bike->location)->create([
+        'starts_at' => '2026-10-26 13:00:00',
+        'ends_at' => '2026-10-26 15:00:00',
+    ]);
+    $line = app(AllocateLineAction::class)($reservation, $bike->variant, $bike);
+    $availability = app(Availability::class);
+
+    $bike->update([
+        'bike_situation_state' => BikeSituation::Staged,
+        'bike_situation_reservation_id' => $reservation->id,
+    ]);
+
+    expect($availability->readinessIssuesForLine($line->fresh()))->toBe([]);
+
+    $bike->update(['bike_situation_reservation_id' => $otherReservation->id]);
+
+    expect($availability->readinessIssuesForLine($line->fresh()))
+        ->toContain('other_reservation', 'wrong_situation');
+
+    $bike->update(['bike_situation_reservation_id' => null]);
+
+    expect($availability->readinessIssuesForLine($line->fresh()))
+        ->toContain('missing_reservation', 'wrong_situation');
 });
 
 test('swapAsset moves the line to another in-service bike', function () {

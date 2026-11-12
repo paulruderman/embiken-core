@@ -13,6 +13,11 @@ return new class extends Migration
         Schema::create('tenants', function (Blueprint $table) {
             $table->string('id')->primary();
             $table->string('name');
+            $table->string('billing_plan_id')->nullable();
+            $table->foreign('billing_plan_id')->references('slug')->on('billing_plans')->nullOnDelete();
+            $table->json('modules')->nullable();
+            $table->string('manager_name')->nullable();
+            $table->string('manager_email')->nullable();
             $table->timestamp('suspended_at')->nullable();
             $table->string('stripe_connect_account_id')->nullable()->unique();
             $table->boolean('charges_enabled')->default(false);

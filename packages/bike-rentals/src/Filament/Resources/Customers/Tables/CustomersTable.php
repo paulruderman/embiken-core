@@ -13,6 +13,9 @@ class CustomersTable
     {
         return $table
             ->columns([
+                TextColumn::make('public_id')
+                    ->label(__('app.rentals_ui.fields.reference'))
+                    ->searchable(),
                 TextColumn::make('name')
                     ->label(__('app.rentals_ui.fields.name'))
                     ->searchable()

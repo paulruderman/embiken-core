@@ -10,8 +10,10 @@ return new class extends Migration
     {
         Schema::create('bike_categories', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->text('description')->nullable();
+            $table->json('name');
+            $table->json('description')->nullable();
+            $table->string('interface_color')->nullable();
+            $table->string('photo')->nullable();
             $table->timestamps();
         });
     }

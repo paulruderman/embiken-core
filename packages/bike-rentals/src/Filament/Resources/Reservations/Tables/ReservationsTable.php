@@ -2,6 +2,7 @@
 
 namespace Embiken\BikeRentals\Filament\Resources\Reservations\Tables;
 
+use App\Filament\Tables\Columns\LocalizedDateTimeColumn;
 use App\Models\Location;
 use App\Support\Money;
 use Carbon\CarbonImmutable;
@@ -21,22 +22,22 @@ class ReservationsTable
     {
         return $table
             ->columns([
-                TextColumn::make('id')
+                TextColumn::make('public_id')
                     ->label(__('app.rentals_ui.fields.reservation'))
-                    ->sortable(),
+                    ->searchable(),
                 TextColumn::make('customer.name')
                     ->label(__('app.rentals_ui.fields.customer'))
                     ->searchable(),
                 TextColumn::make('stage')
                     ->label(__('app.rentals_ui.fields.stage'))
-                    ->badge(),
-                TextColumn::make('starts_at')
+                    ->badge()
+                    ->color(fn (Reservation $record): string => $record->stage->getColor()),
+                LocalizedDateTimeColumn::make('starts_at')
                     ->label(__('app.rentals_ui.fields.starts_at'))
-                    ->dateTime()
                     ->sortable(),
-                TextColumn::make('ends_at')
+                LocalizedDateTimeColumn::make('ends_at')
                     ->label(__('app.rentals_ui.fields.ends_at'))
-                    ->dateTime(),
+                    ->sortable(),
                 TextColumn::make('owed')
                     ->label(__('app.rentals_ui.fields.owed'))
                     ->formatStateUsing(fn (?int $state, Reservation $record): ?string => $state === null

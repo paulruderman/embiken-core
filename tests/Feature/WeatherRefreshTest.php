@@ -72,6 +72,18 @@ test('refresh upserts hourly periods and broadcasts a location weather patch', f
     Event::assertDispatched(LocationWeatherPatched::class);
 });
 
+test('weather site changes broadcast a refreshed snapshot', function () {
+    Location::factory()->create();
+    $site = WeatherSite::factory()->create(['code' => 'SH', 'label' => 'Old label']);
+
+    Event::fake([LocationWeatherPatched::class]);
+    $site->update(['label' => 'New label']);
+
+    Event::assertDispatched(LocationWeatherPatched::class, function (LocationWeatherPatched $event): bool {
+        return $event->weather['sites'][0]['label'] === 'New label';
+    });
+});
+
 test('refresh skips disabled sites', function () {
     Location::factory()->create();
     WeatherSite::factory()->disabled()->create(['code' => 'XX']);
@@ -93,10 +105,16 @@ test('refresh can limit to one site code', function () {
         'api.weather.gov/gridpoints/*' => Http::response(nwsHourlyPayload()),
     ]);
 
+    Event::fake([LocationWeatherPatched::class]);
+
     app(RefreshWeatherAction::class)('A');
 
     expect(WeatherPeriod::query()->count())->toBe(1)
         ->and(WeatherPeriod::query()->first()->site->code)->toBe('A');
+
+    Event::assertDispatched(LocationWeatherPatched::class, function (LocationWeatherPatched $event): bool {
+        return array_column($event->weather['sites'], 'code') === ['A', 'B'];
+    });
 });
 
 test('stale periods are deleted when nws fails and retention is zero', function () {

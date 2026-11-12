@@ -1,0 +1,69 @@
+{
+  "shop": {
+    "name": "Northline Cycle Studio",
+    "customer_contact_email": "hello@northline-cycle-studio.example",
+    "address_line_1": "825 West Fulton Market",
+    "address_line_2": null,
+    "city": "Chicago",
+    "administrative_area": "IL",
+    "postal_code": "60607",
+    "country_code": "US",
+    "timezone": "America/Chicago",
+    "currency": "usd",
+    "minimum_turnaround_buffer_minutes": 15,
+    "bike_assignment_policy": "terminal",
+    "return_situation": "home",
+    "hours": {
+      "sunday": [
+        {
+          "opens_at": "09:00",
+          "closes_at": "18:00",
+          "closes_next_day": false
+        }
+      ],
+      "monday": [
+        {
+          "opens_at": "09:00",
+          "closes_at": "18:00",
+          "closes_next_day": false
+        }
+      ],
+      "tuesday": [
+        {
+          "opens_at": "09:00",
+          "closes_at": "18:00",
+          "closes_next_day": false
+        }
+      ],
+      "wednesday": [
+        {
+          "opens_at": "09:00",
+          "closes_at": "18:00",
+          "closes_next_day": false
+        }
+      ],
+      "thursday": [
+        {
+          "opens_at": "09:00",
+          "closes_at": "18:00",
+          "closes_next_day": false
+        }
+      ],
+      "friday": [
+        {
+          "opens_at": "09:00",
+          "closes_at": "18:00",
+          "closes_next_day": false
+        }
+      ],
+      "saturday": [
+        {
+          "opens_at": "09:00",
+          "closes_at": "18:00",
+          "closes_next_day": false
+        }
+      ]
+    },
+    "closed_dates": []
+  }
+}

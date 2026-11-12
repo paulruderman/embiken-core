@@ -18,6 +18,8 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->rememberToken();
+            $table->timestamp('disabled_at')->nullable();
+            $table->string('locale', 10)->default('en_US');
             $table->timestamps();
         });
 

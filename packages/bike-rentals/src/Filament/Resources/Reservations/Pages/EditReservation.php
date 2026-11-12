@@ -2,13 +2,16 @@
 
 namespace Embiken\BikeRentals\Filament\Resources\Reservations\Pages;
 
+use App\Filament\Tables\Columns\LocalizedDateTimeColumn;
 use Embiken\BikeRentals\Actions\CancelAction;
 use Embiken\BikeRentals\Actions\ExtendAction;
 use Embiken\BikeRentals\Actions\RefundAction;
 use Embiken\BikeRentals\Actions\SetReservationOwedAction;
 use Embiken\BikeRentals\Actions\SetReservationStageAction;
+use Embiken\BikeRentals\Actions\UpdateReservationIntervalAction;
 use Embiken\BikeRentals\Enums\BikeReservationStatus;
 use Embiken\BikeRentals\Enums\ReservationStage;
+use Embiken\BikeRentals\Exceptions\OccupancyUnavailable;
 use Embiken\BikeRentals\Exceptions\OutBikesNeedConfirmation;
 use Embiken\BikeRentals\Filament\Resources\Reservations\ReservationResource;
 use Embiken\BikeRentals\Filament\Support\MoneyInput;
@@ -21,7 +24,9 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
+use Filament\Schemas\Components\Utilities\Get;
 use Illuminate\Support\Carbon;
+use InvalidArgumentException;
 
 class EditReservation extends EditRecord
 {
@@ -76,11 +81,63 @@ class EditReservation extends EditRecord
                         ->default(fn (): int => $reservation->owed),
                 ])
                 ->action(fn (array $data) => app(SetReservationOwedAction::class)($reservation, (int) $data['owed'])),
+            Action::make('changeInterval')
+                ->label(__('app.rentals_ui.actions.change_interval'))
+                ->schema([
+                    DateTimePicker::make('starts_at')
+                        ->label(__('app.rentals_ui.fields.starts_at'))
+                        ->native(false)
+                        ->seconds(false)
+                        ->timezone(LocalizedDateTimeColumn::shopTimezone())
+                        ->displayFormat(__('app.datetime_ui.input_format'))
+                        ->required()
+                        ->default(fn (): mixed => $reservation->starts_at),
+                    DateTimePicker::make('ends_at')
+                        ->label(__('app.rentals_ui.fields.ends_at'))
+                        ->native(false)
+                        ->seconds(false)
+                        ->timezone(LocalizedDateTimeColumn::shopTimezone())
+                        ->displayFormat(__('app.datetime_ui.input_format'))
+                        ->required()
+                        ->default(fn (): mixed => $reservation->ends_at),
+                    Toggle::make('allow_availability_override')
+                        ->label(__('app.rentals_ui.fields.allow_availability_override')),
+                    Toggle::make('confirm_availability_override')
+                        ->label(__('app.rentals_ui.fields.confirm_availability_override'))
+                        ->helperText(__('app.rentals_ui.help.extreme_availability_override'))
+                        ->visible(fn (Get $get): bool => (bool) $get('allow_availability_override')),
+                ])
+                ->action(function (array $data) use ($reservation): void {
+                    if (($data['allow_availability_override'] ?? false) && ! ($data['confirm_availability_override'] ?? false)) {
+                        Notification::make()->danger()->title(__('app.rentals_ui.errors.extreme_override_confirmation'))->send();
+
+                        return;
+                    }
+
+                    try {
+                        app(UpdateReservationIntervalAction::class)(
+                            $reservation,
+                            Carbon::parse($data['starts_at']),
+                            Carbon::parse($data['ends_at']),
+                            (bool) ($data['allow_availability_override'] ?? false),
+                        );
+                    } catch (OccupancyUnavailable|InvalidArgumentException $exception) {
+                        Notification::make()
+                            ->danger()
+                            ->title(__('app.rentals_ui.errors.interval_unavailable'))
+                            ->body($exception->getMessage())
+                            ->send();
+                    }
+                }),
             Action::make('extend')
                 ->label(__('app.rentals_ui.actions.extend'))
                 ->schema([
                     DateTimePicker::make('ends_at')
                         ->label(__('app.rentals_ui.fields.ends_at'))
+                        ->native(false)
+                        ->seconds(false)
+                        ->timezone(LocalizedDateTimeColumn::shopTimezone())
+                        ->displayFormat(__('app.datetime_ui.input_format'))
                         ->required()
                         ->default(fn (): mixed => $reservation->ends_at),
                     MoneyInput::make('owed', fn (): string => $reservation->currency)

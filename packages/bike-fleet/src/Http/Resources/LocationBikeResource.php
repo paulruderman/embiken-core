@@ -16,7 +16,8 @@ class LocationBikeResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $this->resource->loadMissing('variant.bikeModel');
+        $this->resource->loadMissing(['location', 'variant.bikeModel.bikeCategory']);
+        $photoPath = $this->displayPhotoPath();
 
         return [
             'id' => $this->id,
@@ -28,8 +29,9 @@ class LocationBikeResource extends JsonResource
             'bike_situation_reservation_id' => $this->bike_situation_reservation_id,
             'variant_id' => $this->bike_model_variant_id,
             'model' => $this->variant?->bikeModel->name ?? '',
+            'model_padding_minutes' => (int) ($this->variant?->bikeModel->padding_minutes ?? 0),
             'variant' => $this->variant->size,
-            'photo_url' => $this->photo ?? $this->variant->photo ?? $this->variant->bikeModel->photo,
+            'photo_url' => $photoPath === null ? null : tenant_asset($photoPath),
         ];
     }
 }

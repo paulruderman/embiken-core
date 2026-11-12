@@ -10,6 +10,7 @@ use Embiken\Weather\DayStore\WeatherDayStoreContributor;
 use Embiken\Weather\Enums\RadarSource;
 use Embiken\Weather\Filament\Resources\WeatherSites\WeatherSiteResource;
 use Embiken\Weather\Models\WeatherSite;
+use Embiken\Weather\WallDisplay\WeatherFeedData;
 
 class WeatherModule extends AbstractTenantModule
 {
@@ -100,13 +101,13 @@ class WeatherModule extends AbstractTenantModule
         ];
     }
 
-    public function viewfeeds(): array
+    public function feeds(): array
     {
         return [[
             'slug' => 'weather',
-            'name' => 'Weather',
+            'name' => (string) __('app.wall_display_ui.weather'),
             'component' => 'Weather/Board',
-            'inertia_page' => 'Weather/prototype/Index',
+            'provider' => WeatherFeedData::class,
         ]];
     }
 }

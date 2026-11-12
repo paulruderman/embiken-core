@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use App\Models\Location;
+
 final class Locales
 {
     public const string Default = 'en_US';
@@ -23,6 +25,33 @@ final class Locales
     public static function contentLocales(): array
     {
         return ['en', 'es', 'fr'];
+    }
+
+    /** @return list<string> */
+    public static function tenantContentLocales(): array
+    {
+        if (function_exists('tenant') && tenant() !== null) {
+            $location = Location::query()->first();
+
+            if ($location !== null) {
+                return $location->enabled_content_locales;
+            }
+        }
+
+        return self::contentLocales();
+    }
+
+    public static function tenantDefaultContentLocale(): string
+    {
+        if (function_exists('tenant') && tenant() !== null) {
+            $location = Location::query()->first();
+
+            if ($location !== null) {
+                return $location->default_content_locale;
+            }
+        }
+
+        return 'en';
     }
 
     /** @return array<string, string> */

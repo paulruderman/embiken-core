@@ -1,27 +1,31 @@
 <script setup lang="ts">
 import MarketingLayout from '@/components/MarketingLayout.vue';
 import { localRouteUrl } from '@/lib/local-route-url';
-import { contact, pricing, signup } from '@/routes/marketing';
+import marketing from '@/routes/marketing';
 import { Head, Link } from '@inertiajs/vue3';
+
+const props = defineProps<{ earlyAccessUi: Record<string, string> }>();
 </script>
 
 <template>
     <MarketingLayout>
-        <Head title="Bike rental shop software, in early access | Embiken">
+        <Head
+            title="Bike rental shop software for the whole rental day | Embiken"
+        >
             <meta
                 name="description"
-                content="Get started with Embiken: create a shop workspace, choose your plan, and prepare for a simpler way to run bike rentals."
+                content="Your bikes have places to be. Embiken is being built for independent rental shops, connecting customer reservations with the fleet and the people who keep the day moving."
                 head-key="description"
             />
             <meta property="og:type" content="website" head-key="og:type" />
             <meta
                 property="og:title"
-                content="Bike rental shop software, in early access | Embiken"
+                content="Bike rental shop software for the whole rental day | Embiken"
                 head-key="og:title"
             />
             <meta
                 property="og:description"
-                content="Create a shop workspace and explore clear early-access pricing for independent bike rental businesses."
+                content="Meet Embiken: software in early access for independent bike rental shops, built around reservations, fleet visibility, and the real rhythm of a rental day."
                 head-key="og:description"
             />
             <link
@@ -66,41 +70,43 @@ import { Head, Link } from '@inertiajs/vue3';
                         <h1
                             class="mt-7 text-5xl leading-[1.04] font-semibold tracking-[-0.055em] sm:text-6xl lg:text-7xl"
                         >
-                            More time for the ride.
+                            Your bikes have places to be.
                             <span class="mt-2 block text-emerald-200"
-                                >Less time at the desk.</span
+                                >Keep the day moving.</span
                             >
                         </h1>
                         <p
                             class="mt-6 max-w-xl text-lg leading-8 text-emerald-50/75 sm:text-xl"
                         >
-                            A fresh start for independent bike rental shops. Set
-                            up your shop workspace, explore simple plans, and
-                            help shape what comes next.
+                            Rental software for independent bike shops, built to
+                            bring reservations, fleet, and counter work
+                            together. For sunny-day rushes, last-minute size
+                            swaps, and the bike that just came back.
                         </p>
 
                         <div class="mt-9 flex flex-col gap-3 sm:flex-row">
                             <Link
                                 :href="
                                     localRouteUrl(
-                                        signup({ billingPlan: 'starter' }),
+                                        marketing.waitlist.localhost(),
                                     )
                                 "
                                 class="inline-flex min-h-12 items-center justify-center rounded-full bg-lime-300 px-6 text-sm font-semibold text-emerald-950 shadow-lg shadow-black/10 transition hover:-translate-y-0.5 hover:bg-lime-200"
                             >
-                                Create a free workspace
+                                {{ props.earlyAccessUi.cta }}
                                 <span class="ml-2" aria-hidden="true">→</span>
                             </Link>
                             <Link
-                                :href="localRouteUrl(pricing())"
+                                :href="
+                                    localRouteUrl(marketing.pricing.localhost())
+                                "
                                 class="inline-flex min-h-12 items-center justify-center rounded-full border border-white/25 px-6 text-sm font-semibold text-white transition hover:bg-white/10"
                             >
                                 Explore pricing
                             </Link>
                         </div>
                         <p class="mt-4 text-sm text-emerald-100/60">
-                            Starter has no subscription fee. Workspace signup is
-                            available during early access.
+                            {{ props.earlyAccessUi.badge }}
                         </p>
                     </div>
 
@@ -152,16 +158,17 @@ import { Head, Link } from '@inertiajs/vue3';
                                     </div>
                                     <div>
                                         <p class="text-sm font-semibold">
-                                            Your shop, your workspace
+                                            The rental day, in one picture
                                         </p>
                                         <p class="mt-0.5 text-xs text-white/55">
-                                            A clear place to get started
+                                            Built around how independent shops
+                                            work
                                         </p>
                                     </div>
                                 </div>
                                 <span
                                     class="rounded-full bg-lime-300/15 px-3 py-1 text-[11px] font-medium text-lime-200"
-                                    >Early access</span
+                                    >In the works</span
                                 >
                             </div>
 
@@ -170,26 +177,26 @@ import { Head, Link } from '@inertiajs/vue3';
                                     class="rounded-2xl border border-white/10 bg-[#0b211c]/50 p-4"
                                 >
                                     <p class="text-xs text-white/55">
-                                        Choose a plan
+                                        Customer reservations
                                     </p>
                                     <p class="mt-2 text-lg font-semibold">
-                                        Start with Starter
+                                        From “let’s ride”
                                     </p>
                                     <p class="mt-1 text-xs text-white/50">
-                                        No subscription fee
+                                        A simple path to book
                                     </p>
                                 </div>
                                 <div
                                     class="rounded-2xl border border-white/10 bg-[#0b211c]/50 p-4"
                                 >
                                     <p class="text-xs text-white/55">
-                                        Set up your shop
+                                        Shop-floor handoffs
                                     </p>
                                     <p class="mt-2 text-lg font-semibold">
-                                        One workspace
+                                        Ready for the next one
                                     </p>
                                     <p class="mt-1 text-xs text-white/50">
-                                        Your own shop address
+                                        Reservations meet real bikes
                                     </p>
                                 </div>
                             </div>
@@ -204,13 +211,13 @@ import { Head, Link } from '@inertiajs/vue3';
                                         <p
                                             class="text-xs font-semibold tracking-[0.14em] uppercase"
                                         >
-                                            Made for bike rental shops
+                                            For the crew behind the rides
                                         </p>
                                         <p
                                             class="mt-2 max-w-xs text-xl leading-snug font-semibold tracking-tight sm:text-2xl"
                                         >
-                                            A thoughtful foundation for your
-                                            next season.
+                                            Fewer “where did that bike go?”
+                                            moments.
                                         </p>
                                     </div>
                                     <svg
@@ -246,7 +253,7 @@ import { Head, Link } from '@inertiajs/vue3';
                             <p
                                 class="mt-4 text-center text-[11px] text-white/45"
                             >
-                                Rental, fleet, and workshop tools are still in
+                                Reservations, fleet, and workshop tools are in
                                 development.
                             </p>
                         </div>
@@ -262,12 +269,13 @@ import { Head, Link } from '@inertiajs/vue3';
                         <p
                             class="text-xs font-semibold tracking-[0.18em] text-emerald-800 uppercase"
                         >
-                            A good place to begin
+                            Made for the rental-day relay
                         </p>
                         <h2
                             class="mt-4 max-w-md text-3xl leading-tight font-semibold tracking-[-0.04em] sm:text-4xl"
                         >
-                            Built with independent rental shops in mind.
+                            Every handoff matters. Keep the whole team in the
+                            loop.
                         </h2>
                     </div>
                     <div class="grid gap-4 sm:grid-cols-2">
@@ -279,11 +287,12 @@ import { Head, Link } from '@inertiajs/vue3';
                                 >01</span
                             >
                             <h3 class="mt-5 text-lg font-semibold">
-                                Create your workspace
+                                Reservations meet the real world
                             </h3>
                             <p class="mt-2 text-sm leading-6 text-zinc-600">
-                                Choose a plan and set up your shop’s first
-                                location, timezone, and currency.
+                                A reservation is the start of the story. Embiken
+                                is being built to help your team carry it
+                                through pickup, return, and the next bike out.
                             </p>
                         </article>
                         <article
@@ -294,12 +303,12 @@ import { Head, Link } from '@inertiajs/vue3';
                                 >02</span
                             >
                             <h3 class="mt-5 text-lg font-semibold">
-                                See the pricing clearly
+                                Keep the fleet in the conversation
                             </h3>
                             <p class="mt-2 text-sm leading-6 text-zinc-600">
-                                Compare subscription plans and the single
-                                combined rate for payments processed through
-                                Embiken.
+                                See the bikes, workshop needs, and counter
+                                handoffs as parts of one shop operation—not
+                                mysteries to solve between shifts.
                             </p>
                         </article>
                     </div>
@@ -314,32 +323,29 @@ import { Head, Link } from '@inertiajs/vue3';
                         <p
                             class="text-xs font-semibold tracking-[0.18em] text-emerald-800 uppercase"
                         >
-                            Early access
+                            A note from the workshop
                         </p>
                         <h2
                             class="mt-3 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl"
                         >
-                            Start with the essentials.
+                            We’re building for your kind of busy.
                         </h2>
                         <p
                             class="mt-3 text-sm leading-6 text-zinc-600 sm:text-base"
                         >
-                            Create a workspace, take a look at the plans, and
-                            tell us what your shop needs as Embiken grows.
+                            {{ props.earlyAccessUi.home_note }}
                         </p>
                     </div>
                     <div class="flex flex-col gap-3 sm:flex-row">
                         <Link
                             :href="
-                                localRouteUrl(
-                                    signup({ billingPlan: 'starter' }),
-                                )
+                                localRouteUrl(marketing.waitlist.localhost())
                             "
                             class="inline-flex min-h-12 items-center justify-center rounded-full bg-emerald-900 px-6 text-sm font-semibold text-white transition hover:bg-emerald-800"
-                            >Create a workspace</Link
+                            >{{ props.earlyAccessUi.cta }}</Link
                         >
                         <Link
-                            :href="localRouteUrl(contact())"
+                            :href="localRouteUrl(marketing.contact.localhost())"
                             class="inline-flex min-h-12 items-center justify-center rounded-full border border-emerald-900/20 px-6 text-sm font-semibold text-emerald-950 transition hover:bg-white/60"
                             >Talk to us</Link
                         >

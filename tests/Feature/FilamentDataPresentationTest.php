@@ -1,5 +1,6 @@
 <?php
 
+use App\Filament\Tables\Columns\NegativeBooleanIconColumn;
 use App\Models\Location;
 use App\Models\Staff;
 use Embiken\BikeFleet\Filament\Resources\ServiceRequests\Pages\ListServiceRequests;
@@ -9,9 +10,12 @@ use Embiken\BikeRentals\Enums\ReservationStage;
 use Embiken\BikeRentals\Filament\Resources\Reservations\Pages\ListReservations;
 use Embiken\BikeRentals\Filament\Resources\Reservations\Pages\ViewReservation;
 use Embiken\BikeRentals\Filament\Resources\Reservations\RelationManagers\TransactionsRelationManager;
+use Embiken\BikeRentals\Filament\Resources\Reservations\Widgets\TodayReservationLinesWidget;
+use Embiken\BikeRentals\Models\BikeReservation;
 use Embiken\BikeRentals\Models\Reservation;
 use Embiken\BikeRentals\Models\Transaction;
 use Filament\Facades\Filament;
+use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Carbon;
 use Livewire\Livewire;
 use Tests\Concerns\MigratesTenantSchema;
@@ -63,9 +67,32 @@ it('filters reservations by their current stage', function () {
     $confirmed = Reservation::factory()->confirmed()->create();
 
     Livewire::test(ListReservations::class)
-        ->filterTable('stage', ['value' => ReservationStage::Confirmed->value])
+        ->set('activeTab', ReservationStage::Confirmed->value)
         ->assertCanSeeTableRecords([$confirmed])
         ->assertCanNotSeeTableRecords([$provisional]);
+});
+
+it('renders reservation stage badges with their enum colors', function () {
+    Reservation::factory()->confirmed()->create();
+    Reservation::factory()->confirmed()->create();
+
+    Livewire::test(ListReservations::class)
+        ->assertSeeHtml('fi-badge fi-size-sm fi-color fi-color-blue')
+        ->assertSeeHtml('fi-striped')
+        ->assertSee('Confirmed');
+});
+
+it('shows today’s assigned reservation lines in the shop timezone', function () {
+    Carbon::setTestNow(Carbon::parse('2026-10-23 15:00:00', 'UTC'));
+    $location = Location::factory()->create(['timezone' => 'America/New_York']);
+    $reservation = Reservation::factory()->confirmed()->recycle($location)->create([
+        'starts_at' => Carbon::parse('2026-10-23 14:00:00', 'UTC'),
+        'ends_at' => Carbon::parse('2026-10-23 16:00:00', 'UTC'),
+    ]);
+    $line = BikeReservation::factory()->recycle($reservation)->create();
+
+    Livewire::test(TodayReservationLinesWidget::class)
+        ->assertCanSeeTableRecords([$line]);
 });
 
 it('shows the latest service work entry and its date in the service request list', function () {
@@ -84,6 +111,21 @@ it('shows the latest service work entry and its date in the service request list
         ->assertSee('Last worked')
         ->assertSee('Replaced brake cable')
         ->assertDontSee('Adjusted rear brake');
+});
+
+it('shows blocking service requests as negative boolean icons', function () {
+    ServiceRequest::factory()->create(['blocks_usage' => true]);
+    ServiceRequest::factory()->nonBlocking()->create();
+
+    $column = NegativeBooleanIconColumn::make('blocks_usage');
+
+    expect($column->getTrueIcon(true))->toBe(Heroicon::OutlinedXCircle)
+        ->and($column->getFalseIcon(false))->toBe(Heroicon::OutlinedMinusCircle)
+        ->and($column->getTrueColor(true))->toBe('danger')
+        ->and($column->getFalseColor(false))->toBe('gray');
+
+    Livewire::test(ListServiceRequests::class)
+        ->assertSeeHtml('fi-color-danger');
 });
 
 it('shows Connect transaction details in a read-only transaction view', function () {

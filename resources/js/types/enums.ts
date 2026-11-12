@@ -26,6 +26,7 @@ export interface SharedEnums {
     reservationStage: EnumLookupTable;
     bikeSituation: EnumLookupTable;
     bikeReservationStatus: EnumLookupTable;
+    bikeReadinessIssue: EnumLookupTable;
     packageMeter: EnumLookupTable;
     confirmThreshold: EnumLookupTable;
     bikeAssignmentPolicy: EnumLookupTable;

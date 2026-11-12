@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import MarketingLayout from '@/components/MarketingLayout.vue';
-import { show as articleRoute } from '@/routes/marketing/blog';
+import marketing from '@/routes/marketing';
 import { localRouteUrl } from '@/lib/local-route-url';
 
 interface CmsPage {
@@ -96,7 +96,11 @@ defineProps<{ page: CmsPage; articles: Article[] }>();
                         {{ article.excerpt }}
                     </p>
                     <Link
-                        :href="localRouteUrl(articleRoute.url(article.slug))"
+                        :href="
+                            localRouteUrl(
+                                marketing.blog.show.localhost(article.slug),
+                            )
+                        "
                         class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-emerald-900 hover:gap-3"
                     >
                         Read article <span aria-hidden="true">→</span>

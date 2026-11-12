@@ -1,0 +1,4 @@
+key,category_key,name,manufacturer,description,padding_minutes,photo_file
+treadwell,comfort,Cannondale Treadwell,Cannondale,Upright hybrid for the waterfront and paved Island Line.,15,images/urban-commuter.png
+coda,sport,Jamis Coda,Jamis,Versatile fitness hybrid for longer rides.,15,images/road-endurance.png
+tagalong,family,Trailside Tagalong,Local Motion,Child tagalong setup for family rides.,20,images/recumbent-tandem.png

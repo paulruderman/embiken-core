@@ -5,6 +5,7 @@ use App\Actions\Shop\UpdateShopBrandingAction;
 use App\Enums\StaffRole;
 use App\Filament\Shop\Pages\Branding;
 use App\Filament\Shop\Resources\Locations\LocationResource;
+use App\Filament\Shop\Resources\Locations\Pages\EditLocation;
 use App\Filament\Shop\Resources\Locations\Pages\ListLocations;
 use App\Filament\Shop\Resources\Staff\StaffResource;
 use App\Models\Location;
@@ -12,6 +13,7 @@ use App\Models\LocationHour;
 use App\Models\ShopSetting;
 use App\Models\Staff;
 use App\Notifications\SetPasswordNotification;
+use Embiken\BikeFleet\Enums\BikeSituation;
 use Embiken\BikeFleet\Filament\Resources\BikeCategories\BikeCategoryResource;
 use Embiken\BikeFleet\Filament\Resources\BikeModels\Pages\ListBikeModels;
 use Embiken\BikeFleet\Filament\Resources\ServiceRequests\Pages\ListServiceRequests;
@@ -20,12 +22,16 @@ use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeFleet\Models\BikeCategory;
 use Embiken\BikeFleet\Models\BikeModel;
 use Embiken\BikeFleet\Models\BikeModelVariant;
+use Embiken\BikeRentals\Actions\AllocateLineAction;
+use Embiken\BikeRentals\Filament\Resources\Customers\CustomerResource;
 use Embiken\BikeRentals\Filament\Resources\Customers\Pages\EditCustomer;
+use Embiken\BikeRentals\Filament\Resources\Customers\Pages\ListCustomers;
 use Embiken\BikeRentals\Filament\Resources\Customers\RelationManagers\ReservationsRelationManager;
 use Embiken\BikeRentals\Filament\Resources\RentalPackages\Pages\EditRentalPackage;
 use Embiken\BikeRentals\Filament\Resources\RentalPackages\RelationManagers\VariantsRelationManager;
 use Embiken\BikeRentals\Filament\Resources\Reservations\Pages\EditReservation;
 use Embiken\BikeRentals\Filament\Resources\Reservations\Pages\ListReservations;
+use Embiken\BikeRentals\Filament\Resources\Reservations\RelationManagers\BikeReservationsRelationManager;
 use Embiken\BikeRentals\Filament\Resources\Reservations\ReservationResource;
 use Embiken\BikeRentals\Models\Customer;
 use Embiken\BikeRentals\Models\RentalPackage;
@@ -59,7 +65,9 @@ test('provisioning a shop creates a location, invitible manager, and platform ma
     );
 
     expect($location->name)->toBe('River Bikes')
+        ->and($location->week_start_day)->toBe('sunday')
         ->and($location->minimum_turnaround_buffer_minutes)->toBe(10)
+        ->and($location->reservation_readiness_window_minutes)->toBe(45)
         ->and($location->hours)->toHaveCount(0)
         ->and(Staff::query()->where('is_platform_manager', true)->whereNull('password')->exists())->toBeTrue();
 
@@ -79,6 +87,100 @@ test('a manager can open the location list', function () {
 
     Livewire::test(ListLocations::class)
         ->assertOk();
+});
+
+test('a manager can configure the customer reply email for the shop', function () {
+    $location = Location::factory()->create(['name' => 'River Bikes']);
+    $staff = Staff::factory()->create(['location_id' => $location->id]);
+
+    $this->actingAs($staff, 'staff');
+
+    Livewire::test(EditLocation::class, ['record' => $location->id])
+        ->assertOk()
+        ->assertSee(__('app.location_ui.customer_email'))
+        ->fillForm(['customer_contact_email' => 'not-an-email'])
+        ->call('save')
+        ->assertHasFormErrors(['customer_contact_email' => 'email'])
+        ->fillForm(['customer_contact_email' => 'rentals@riverbikes.example'])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect($location->fresh()->customer_contact_email)->toBe('rentals@riverbikes.example');
+});
+
+test('a manager can configure the physical Location address', function () {
+    $location = Location::factory()->create(['name' => 'River Bikes']);
+    $staff = Staff::factory()->create(['location_id' => $location->id]);
+
+    $this->actingAs($staff, 'staff');
+
+    Livewire::test(EditLocation::class, ['record' => $location->id])
+        ->assertOk()
+        ->assertSee(__('app.location_ui.address'))
+        ->fillForm([
+            'address_line_1' => '42 Atlantic Avenue',
+            'address_line_2' => 'Suite 8',
+            'city' => 'Boston',
+            'administrative_area' => 'MA',
+            'postal_code' => '02110',
+            'country_code' => 'us',
+        ])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect($location->fresh()->address_line_1)->toBe('42 Atlantic Avenue')
+        ->and($location->fresh()->address_line_2)->toBe('Suite 8')
+        ->and($location->fresh()->city)->toBe('Boston')
+        ->and($location->fresh()->administrative_area)->toBe('MA')
+        ->and($location->fresh()->postal_code)->toBe('02110')
+        ->and($location->fresh()->country_code)->toBe('US');
+});
+
+test('a manager editing waiver copy creates immutable translated versions', function () {
+    $location = Location::factory()->create([
+        'name' => 'River Bikes',
+        'enabled_content_locales' => ['en', 'fr'],
+        'default_content_locale' => 'en',
+    ]);
+    $staff = Staff::factory()->create(['location_id' => $location->id]);
+
+    $this->actingAs($staff, 'staff');
+
+    $editor = Livewire::test(EditLocation::class, ['record' => $location->id])
+        ->fillForm([
+            'waiver_text_en' => 'Wear a helmet.',
+            'waiver_text_fr' => 'Portez un casque.',
+        ])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    $firstVersion = $location->waivers()->firstOrFail();
+    expect($firstVersion->version)->toBe(1)
+        ->and($firstVersion->getTranslationWithoutFallback('content', 'en'))->toBe('Wear a helmet.')
+        ->and($firstVersion->getTranslationWithoutFallback('content', 'fr'))->toBe('Portez un casque.');
+
+    $editor->fillForm(['waiver_text_en' => 'Updated waiver.', 'waiver_text_fr' => 'Décharge mise à jour.'])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect($location->waivers()->count())->toBe(2)
+        ->and($firstVersion->fresh()->getTranslationWithoutFallback('content', 'en'))->toBe('Wear a helmet.');
+});
+
+test('a manager can configure the first day of the shop week', function () {
+    $location = Location::factory()->create(['name' => 'River Bikes']);
+    $staff = Staff::factory()->create(['location_id' => $location->id]);
+
+    $this->actingAs($staff, 'staff');
+
+    Livewire::test(EditLocation::class, ['record' => $location->id])
+        ->assertOk()
+        ->assertSee(__('app.location_ui.week_start_day'))
+        ->fillForm(['week_start_day' => 'monday'])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect($location->fresh()->week_start_day)->toBe('monday');
 });
 
 test('the location list displays currency codes in uppercase', function () {
@@ -126,10 +228,12 @@ test('the branding form previews generated primary color shades when the color c
         ->assertSee(Color::convertToHex(Color::hex('#667788')[500]));
 });
 
-test('the shop panel falls back to the application brand and default palette without tenant settings', function () {
+test('the shop panel uses the location name and default palette without custom branding', function () {
+    Location::factory()->create(['name' => 'River Bikes']);
+
     $panel = Filament::getPanel('shop');
 
-    expect($panel->getBrandName())->toBe((string) config('app.name'))
+    expect($panel->getBrandName())->toBe('River Bikes')
         ->and($panel->getBrandLogo())->toBeNull()
         ->and($panel->getFavicon())->toBe(global_asset('favicon.svg'))
         ->and($panel->getColors()['primary'])->toBe(Color::hex(ShopSetting::DEFAULT_PRIMARY_COLOR))
@@ -139,6 +243,7 @@ test('the shop panel falls back to the application brand and default palette wit
 test('a manager can upload a tenant logo for shop branding', function () {
     Storage::fake('public');
     $staff = Staff::factory()->create();
+    $staff->location->update(['name' => 'River Bikes']);
 
     $this->actingAs($staff, 'staff');
 
@@ -438,13 +543,36 @@ test('a manager can open the reservation editor', function () {
 
     $this->actingAs($staff, 'staff');
 
-    Livewire::test(EditReservation::class, ['record' => $reservation->getKey()])
+    Livewire::test(EditReservation::class, ['record' => $reservation->public_id])
         ->assertOk()
         ->assertActionExists('setStage')
         ->assertActionExists('setOwed')
+        ->assertActionExists('changeInterval')
         ->assertActionExists('extend')
         ->assertActionExists('refund')
         ->assertActionExists('cancel');
+});
+
+test('a manager edits a reservation interval through the availability action', function () {
+    $staff = Staff::factory()->create();
+    $reservation = Reservation::factory()->confirmed()->recycle($staff->location)->create([
+        'starts_at' => '2026-10-26 10:00:00',
+        'ends_at' => '2026-10-26 12:00:00',
+        'owed' => 5400,
+    ]);
+
+    $this->actingAs($staff, 'staff');
+
+    Livewire::test(EditReservation::class, ['record' => $reservation->public_id])
+        ->callAction('changeInterval', data: [
+            'starts_at' => '2026-10-26 09:30:00',
+            'ends_at' => '2026-10-26 12:30:00',
+        ])
+        ->assertHasNoFormErrors();
+
+    expect($reservation->fresh()->starts_at->toDateTimeString())->toBe('2026-10-26 09:30:00')
+        ->and($reservation->fresh()->ends_at->toDateTimeString())->toBe('2026-10-26 12:30:00')
+        ->and($reservation->fresh()->owed)->toBe(5400);
 });
 
 test('a manager enters owed in the location currency rather than minor units', function () {
@@ -458,7 +586,7 @@ test('a manager enters owed in the location currency rather than minor units', f
 
     $this->actingAs($staff, 'staff');
 
-    Livewire::test(EditReservation::class, ['record' => $reservation->getKey()])
+    Livewire::test(EditReservation::class, ['record' => $reservation->public_id])
         ->callAction('setOwed', data: ['owed' => '1250'])
         ->assertHasNoFormErrors();
 
@@ -474,11 +602,56 @@ test('a manager can enter a reservation amount with the active locale decimal se
     app()->setLocale('de_DE');
     $this->actingAs($staff, 'staff');
 
-    Livewire::test(EditReservation::class, ['record' => $reservation->getKey()])
+    Livewire::test(EditReservation::class, ['record' => $reservation->public_id])
         ->callAction('setOwed', data: ['owed' => '12,50'])
         ->assertHasNoFormErrors();
 
     expect($reservation->fresh()->owed)->toBe(1250);
+});
+
+test('reservation bike lines show the occupying reservation only when it differs', function () {
+    $staff = Staff::factory()->create();
+    $customer = Customer::factory()->create(['name' => 'Current Rider']);
+    $bike = Bike::factory()->for($staff->location)->create();
+    $reservation = Reservation::factory()
+        ->for($staff->location)
+        ->for($customer)
+        ->confirmed()
+        ->terminal()
+        ->create();
+    $line = app(AllocateLineAction::class)($reservation, $bike->variant, $bike);
+    $bike->update([
+        'bike_situation_state' => BikeSituation::Staged,
+        'bike_situation_reservation_id' => $reservation->id,
+    ]);
+    $this->actingAs($staff, 'staff');
+
+    Livewire::test(BikeReservationsRelationManager::class, [
+        'ownerRecord' => $reservation,
+        'pageClass' => EditReservation::class,
+    ])
+        ->assertCanSeeTableRecords([$line])
+        ->assertTableColumnStateSet('occupying_customer', null, $line)
+        ->assertTableColumnStateSet('readiness', __('app.location_ui.readiness_ready'), $line);
+
+    $otherCustomer = Customer::factory()->create(['name' => 'Other Rider']);
+    $otherReservation = Reservation::factory()
+        ->for($staff->location)
+        ->for($otherCustomer)
+        ->confirmed()
+        ->terminal()
+        ->create();
+    $bike->update(['bike_situation_reservation_id' => $otherReservation->id]);
+
+    Livewire::test(BikeReservationsRelationManager::class, [
+        'ownerRecord' => $reservation,
+        'pageClass' => EditReservation::class,
+    ])
+        ->assertTableColumnStateSet(
+            'occupying_customer',
+            $otherReservation->public_id.' · Other Rider',
+            $line,
+        );
 });
 
 test('a customer page shows only that customer reservations with links to their details', function () {
@@ -495,7 +668,13 @@ test('a customer page shows only that customer reservations with links to their 
 
     $this->actingAs($staff, 'staff');
 
-    Livewire::test(EditCustomer::class, ['record' => $customer->getKey()])
+    Livewire::test(ListCustomers::class)
+        ->assertSee($customer->public_id);
+
+    expect(CustomerResource::getUrl('edit', ['record' => $customer]))
+        ->toEndWith('/'.$customer->public_id.'/edit');
+
+    Livewire::test(EditCustomer::class, ['record' => $customer->public_id])
         ->assertSeeLivewire(ReservationsRelationManager::class);
 
     Livewire::test(ReservationsRelationManager::class, [
@@ -503,10 +682,18 @@ test('a customer page shows only that customer reservations with links to their 
         'pageClass' => EditCustomer::class,
     ])
         ->assertCanSeeTableRecords([$reservation])
+        ->assertSee($reservation->public_id)
         ->assertCanNotSeeTableRecords([$otherReservation])
         ->assertTableActionHasUrl(
             'viewReservation',
             ReservationResource::getUrl('view', ['record' => $reservation]),
             $reservation,
         );
+
+    expect(ReservationResource::getUrl('view', ['record' => $reservation]))
+        ->toEndWith('/'.$reservation->public_id)
+        ->and(ReservationResource::resolveRecordRouteBinding($reservation->public_id))
+        ->toBeInstanceOf(Reservation::class)
+        ->and(CustomerResource::resolveRecordRouteBinding($customer->public_id))
+        ->toBeInstanceOf(Customer::class);
 });

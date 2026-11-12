@@ -14,7 +14,7 @@ class ModuleFrontendManifest
         $aliases = [];
         $entrypoints = [];
         $pinia = [];
-        $viewfeeds = [];
+        $feeds = [];
         $inertia = [];
 
         foreach (app(ModuleRegistry::class)->installedModules() as $module) {
@@ -34,8 +34,12 @@ class ModuleFrontendManifest
                 $inertia[$module->inertiaPagePrefix()] = $module->frontendRoot();
             }
 
-            foreach ($module->viewfeeds() as $feed) {
-                $viewfeeds[] = $feed;
+            foreach ($module->feeds() as $feed) {
+                $feeds[] = [
+                    'slug' => $feed['slug'],
+                    'name' => $feed['name'],
+                    'component' => $feed['component'],
+                ];
             }
         }
 
@@ -43,7 +47,7 @@ class ModuleFrontendManifest
             'aliases' => $aliases,
             'viteEntrypoints' => $entrypoints,
             'piniaModules' => $pinia,
-            'viewfeeds' => $viewfeeds,
+            'feeds' => $feeds,
             'inertiaPrefixes' => $inertia,
         ];
     }

@@ -4,6 +4,7 @@ namespace Embiken\Maintenance\Filament\Resources\MaintenanceSchedules\Schemas;
 
 use Embiken\BikeFleet\Models\Bike;
 use Embiken\Maintenance\Models\MaintenanceChecklist;
+use Embiken\Maintenance\Models\MaintenanceSchedule;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
@@ -20,31 +21,37 @@ class MaintenanceScheduleForm
         return $schema
             ->components([
                 Select::make('bike_id')
-                    ->label('Bike')
+                    ->label(__('app.maintenance_ui.bike'))
                     ->options(fn (): array => Bike::query()->orderBy('bid')->pluck('bid', 'id')->all())
                     ->searchable()
                     ->preload()
+                    ->disabled(fn (?MaintenanceSchedule $record): bool => $record?->status === 'completed')
                     ->required(),
                 TextInput::make('title')
+                    ->disabled(fn (?MaintenanceSchedule $record): bool => $record?->status === 'completed')
                     ->required()
                     ->maxLength(255),
                 DatePicker::make('due_at')
-                    ->label('Due date')
+                    ->label(__('app.maintenance_ui.due_date'))
+                    ->disabled(fn (?MaintenanceSchedule $record): bool => $record?->status === 'completed')
                     ->required(),
                 Select::make('status')
-                    ->options([
-                        'scheduled' => 'Scheduled',
-                        'completed' => 'Completed',
-                        'cancelled' => 'Cancelled',
-                    ])
+                    ->options(fn (?MaintenanceSchedule $record): array => [
+                        'scheduled' => __('app.maintenance_ui.statuses.scheduled'),
+                        'cancelled' => __('app.maintenance_ui.statuses.cancelled'),
+                    ] + ($record?->status === 'completed' ? [
+                        'completed' => __('app.maintenance_ui.statuses.completed'),
+                    ] : []))
                     ->default('scheduled')
+                    ->disabled(fn (?MaintenanceSchedule $record): bool => $record?->status === 'completed')
                     ->required(),
                 Select::make('maintenance_checklist_id')
-                    ->label('Checklist template')
+                    ->label(__('app.maintenance_ui.checklist_template'))
                     ->options(fn (): array => MaintenanceChecklist::query()->orderBy('name')->pluck('name', 'id')->all())
                     ->searchable()
                     ->preload()
                     ->live()
+                    ->disabled(fn (?MaintenanceSchedule $record): bool => $record?->status === 'completed')
                     ->afterStateUpdated(function (int|string|null $state, Set $set): void {
                         $checklist = MaintenanceChecklist::query()->find($state);
                         $items = $checklist instanceof MaintenanceChecklist ? $checklist->items : [];
@@ -54,17 +61,18 @@ class MaintenanceScheduleForm
                             'completed' => false,
                         ], $items));
                     })
-                    ->helperText('Items are copied to this schedule so later template edits do not change it.'),
+                    ->helperText(__('app.maintenance_ui.template_copy_help')),
                 Repeater::make('checklist_items')
-                    ->label('Scheduled checklist')
+                    ->label(__('app.maintenance_ui.scheduled_checklist'))
+                    ->disabled(fn (?MaintenanceSchedule $record): bool => $record?->status === 'completed')
                     ->schema([
                         TextInput::make('label')->required()->maxLength(255),
                         Toggle::make('completed')->default(false),
                     ])
                     ->columns(2)
-                    ->addActionLabel('Add checklist item')
+                    ->addActionLabel(__('app.maintenance_ui.add_checklist_item'))
                     ->columnSpanFull(),
-                Textarea::make('notes')->rows(3)->columnSpanFull(),
+                Textarea::make('notes')->rows(3)->disabled(fn (?MaintenanceSchedule $record): bool => $record?->status === 'completed')->columnSpanFull(),
             ]);
     }
 }

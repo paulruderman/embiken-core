@@ -7,6 +7,7 @@ use App\Support\ModuleRegistry;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
@@ -28,8 +29,40 @@ class TenantForm
                     ->maxLength(255)
                     ->visibleOn('create'),
                 TextInput::make('timezone')
+                    ->label(__('app.location_ui.timezone'))
                     ->required()
                     ->default('America/New_York')
+                    ->visibleOn('create'),
+                Section::make(__('app.signup_ui.location_address_optional'))
+                    ->description(__('app.signup_ui.location_address_help'))
+                    ->columns(2)
+                    ->schema([
+                        TextInput::make('address_line_1')
+                            ->label(__('app.location_ui.address_line_1'))
+                            ->maxLength(255)
+                            ->nullable(),
+                        TextInput::make('address_line_2')
+                            ->label(__('app.location_ui.address_line_2'))
+                            ->maxLength(255)
+                            ->nullable(),
+                        TextInput::make('city')
+                            ->label(__('app.location_ui.city'))
+                            ->maxLength(255)
+                            ->nullable(),
+                        TextInput::make('administrative_area')
+                            ->label(__('app.location_ui.administrative_area'))
+                            ->maxLength(255)
+                            ->nullable(),
+                        TextInput::make('postal_code')
+                            ->label(__('app.location_ui.postal_code'))
+                            ->maxLength(32)
+                            ->nullable(),
+                        TextInput::make('country_code')
+                            ->label(__('app.location_ui.country_code'))
+                            ->length(2)
+                            ->regex('/^[A-Za-z]{2}$/')
+                            ->nullable(),
+                    ])
                     ->visibleOn('create'),
                 TextInput::make('currency')
                     ->required()

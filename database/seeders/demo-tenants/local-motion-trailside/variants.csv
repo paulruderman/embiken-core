@@ -1,0 +1,7 @@
+key,model_key,size,color_name,color_value,min_ideal_rider_height,max_ideal_rider_height,min_extended_rider_height,max_extended_rider_height
+treadwell-s,treadwell,S,Rainbow Trout,#2563EB,150,170,,
+treadwell-m,treadwell,M,Rainbow Trout,#2563EB,165,185,,
+treadwell-l,treadwell,L,Rainbow Trout,#2563EB,180,200,,
+coda-s,coda,S,Blue,#0F766E,150,170,,
+coda-m,coda,M,Blue,#0F766E,165,185,,
+tagalong-one,tagalong,One Size,Red,#DC2626,140,190,,

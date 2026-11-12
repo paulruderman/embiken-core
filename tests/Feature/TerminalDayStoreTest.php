@@ -3,7 +3,10 @@
 use App\Events\LocationBikePatched;
 use App\Events\LocationReservationPatched;
 use App\Models\Location;
+use App\Models\LocationClosedDate;
+use App\Models\LocationHour;
 use App\Support\DayStore;
+use Carbon\CarbonImmutable;
 use Embiken\BikeFleet\Enums\BikeSituation;
 use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeFleet\Observers\BikeObserver;
@@ -88,6 +91,98 @@ test('the day store snapshot includes every bike and today plus occupying reserv
             'rider_name',
             'rider_height_cm',
         ]);
+});
+
+test('the day store can hydrate reservations for a selected shop date', function () {
+    $location = Location::factory()->create(['timezone' => 'America/New_York']);
+    $selectedDay = CarbonImmutable::parse('2026-11-05 00:00:00', $location->timezone);
+    $selectedReservation = Reservation::factory()->confirmed()->recycle($location)->create([
+        'starts_at' => $selectedDay->setTime(10, 0)->utc(),
+        'ends_at' => $selectedDay->setTime(12, 0)->utc(),
+    ]);
+    $otherReservation = Reservation::factory()->confirmed()->recycle($location)->create([
+        'starts_at' => $selectedDay->addDay()->setTime(10, 0)->utc(),
+        'ends_at' => $selectedDay->addDay()->setTime(12, 0)->utc(),
+    ]);
+
+    $snapshot = DayStore::forLocation($location, $selectedDay);
+    $reservationIds = collect($snapshot['modules']['rentals']['reservations'])->pluck('id');
+
+    expect($snapshot['schedule_date'])->toBe('2026-11-05')
+        ->and($reservationIds)->toContain($selectedReservation->id)
+        ->and($reservationIds)->not->toContain($otherReservation->id);
+});
+
+test('the day store includes selected date business hours as UTC intervals', function () {
+    $location = Location::factory()->create(['timezone' => 'America/New_York']);
+    $selectedDay = CarbonImmutable::parse('2026-11-05 00:00:00', $location->timezone);
+    LocationHour::factory()->for($location)->create([
+        'weekday' => 4,
+        'opens_at' => '09:00:00',
+        'closes_at' => '17:00:00',
+    ]);
+
+    $snapshot = DayStore::forLocation($location, $selectedDay);
+
+    expect($snapshot['business_hours'])->toBe([
+        [
+            'starts_at' => '2026-11-05T14:00:00+00:00',
+            'ends_at' => '2026-11-05T22:00:00+00:00',
+        ],
+    ]);
+});
+
+test('the day store has no business hours on a closed date', function () {
+    $location = Location::factory()->create(['timezone' => 'America/New_York']);
+    $selectedDay = CarbonImmutable::parse('2026-11-05 00:00:00', $location->timezone);
+    LocationHour::factory()->for($location)->create(['weekday' => 4]);
+    LocationClosedDate::factory()->for($location)->create(['date' => '2026-11-05']);
+
+    $snapshot = DayStore::forLocation($location, $selectedDay);
+
+    expect($snapshot['business_hours'])->toBe([]);
+});
+
+test('the day store returns weekly hour bounds when the selected date has no open hours', function () {
+    $location = Location::factory()->create(['timezone' => 'America/New_York']);
+    $selectedDay = CarbonImmutable::parse('2026-11-05 00:00:00', $location->timezone);
+    LocationHour::factory()->for($location)->create([
+        'weekday' => 5,
+        'opens_at' => '09:00:00',
+        'closes_at' => '17:00:00',
+    ]);
+
+    $snapshot = DayStore::forLocation($location, $selectedDay);
+
+    expect($snapshot['business_hours'])->toBe([])
+        ->and($snapshot['business_hours_bounds'])->toBe([
+            'starts_at' => '2026-11-05T14:00:00+00:00',
+            'ends_at' => '2026-11-05T22:00:00+00:00',
+        ]);
+});
+
+test('catalog photos fall back from bike through variant model and category', function () {
+    $bike = Bike::factory()->create();
+    $variant = $bike->variant;
+    $model = $variant->bikeModel;
+    $category = $model->bikeCategory;
+
+    $category->update(['photo' => 'bike-categories/category.webp']);
+    expect($model->displayPhotoPath())->toBe('bike-categories/category.webp')
+        ->and($variant->displayPhotoPath())->toBe('bike-categories/category.webp')
+        ->and($bike->displayPhotoPath())->toBe('bike-categories/category.webp');
+
+    $model->update(['photo' => 'bike-models/model.webp']);
+    expect($model->displayPhotoPath())->toBe('bike-models/model.webp')
+        ->and($variant->displayPhotoPath())->toBe('bike-models/model.webp')
+        ->and($bike->displayPhotoPath())->toBe('bike-models/model.webp');
+
+    $variant->update(['photo' => 'bike-variants/variant.webp']);
+    expect($variant->displayPhotoPath())->toBe('bike-variants/variant.webp')
+        ->and($bike->displayPhotoPath())->toBe('bike-variants/variant.webp');
+
+    $bike->update(['photo' => 'bikes/bike.webp']);
+    expect($bike->displayPhotoPath())->toBe('bikes/bike.webp');
 });
 
 test('saving a bike broadcasts the location bike DTO', function () {

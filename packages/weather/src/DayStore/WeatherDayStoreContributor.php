@@ -6,6 +6,7 @@ namespace Embiken\Weather\DayStore;
 
 use App\Contracts\DayStoreContributor;
 use App\Models\Location;
+use Carbon\CarbonInterface;
 use Embiken\Weather\Services\WeatherReader;
 
 class WeatherDayStoreContributor implements DayStoreContributor
@@ -17,8 +18,11 @@ class WeatherDayStoreContributor implements DayStoreContributor
         return 'weather';
     }
 
-    public function snapshot(Location $location): array
+    public function snapshot(Location $location, ?CarbonInterface $scheduleDate = null): array
     {
-        return $this->reader->snapshot();
+        return [
+            ...$this->reader->snapshot(),
+            'coverage_notice' => (string) __('app.weather_ui.coverage_notice'),
+        ];
     }
 }

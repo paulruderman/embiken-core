@@ -1,0 +1,4 @@
+key,name,tagline,blurb,description,meter,confirm_threshold,deposit_minor_units,deposit_percent,min_duration_minutes,max_duration_minutes,book_visible,sort_order
+showroom-hour,Showroom Hour,Take a test ride,,Hourly tryout rides across the showroom demo fleet.,per_hour,full,,,30,240,true,1
+showroom-day,Showroom Day,Explore a model for the day,,A longer demo ride for select models.,per_calendar_day,deposit,,50,60,480,true,2
+showroom-staff,Guided Fit Ride,Book a staff-assisted fitting,,Complimentary fitting rides arranged with shop staff.,none,none,,,30,180,false,3

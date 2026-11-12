@@ -6,7 +6,9 @@ namespace Embiken\Weather\Models;
 
 use Carbon\CarbonImmutable;
 use Embiken\Weather\Database\Factories\WeatherSiteFactory;
+use Embiken\Weather\Observers\WeatherSiteObserver;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -37,6 +39,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'enabled',
     'sort_order',
 ])]
+#[ObservedBy(WeatherSiteObserver::class)]
 class WeatherSite extends Model
 {
     /** @use HasFactory<WeatherSiteFactory> */

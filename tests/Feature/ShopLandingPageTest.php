@@ -2,9 +2,11 @@
 
 use App\Enums\StaffRole;
 use App\Filament\Shop\Pages\ShopLandingPageEditor;
+use App\Models\Location;
 use App\Models\ShopLandingPage;
 use App\Models\Staff;
 use App\Models\Tenant;
+use App\Support\TranslationCompleteness;
 use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -81,6 +83,10 @@ test('the tenant root renders translated copy and falls back to English for miss
     $this->landingTenant = $shop['tenant'];
 
     $shop['tenant']->run(function (): void {
+        Location::query()->firstOrFail()->update([
+            'enabled_content_locales' => ['en', 'es', 'fr'],
+            'default_content_locale' => 'en',
+        ]);
         ShopLandingPage::factory()->create([
             'layout_data' => [
                 'shared' => ['image_path' => null, 'image_position' => 'right'],
@@ -95,9 +101,53 @@ test('the tenant root renders translated copy and falls back to English for miss
         ->get('http://landing-translated.localhost/?locale=es_419')
         ->assertInertia(fn (Assert $page) => $page
             ->component('Shop/Home')
-            ->where('locale', 'es')
+            ->where('locale', 'es-419')
+            ->where('contentLocale', 'es')
             ->where('layoutData.headline', 'Recorre la costa')
             ->where('layoutData.description', 'Bikes for a day by the water.'));
+});
+
+test('tenant locale choices expose only enabled languages and fall back to the default', function () {
+    $shop = makeShopLandingTenant('landing-languages.localhost');
+    $this->landingTenant = $shop['tenant'];
+
+    $shop['tenant']->run(function (): void {
+        Location::query()->firstOrFail()->update([
+            'enabled_content_locales' => ['es'],
+            'default_content_locale' => 'es',
+        ]);
+    });
+
+    $this->withoutVite()
+        ->withHeaders(['Accept-Language' => 'fr-CA,fr;q=0.9'])
+        ->get('http://landing-languages.localhost/?locale=fr_CA')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('locale', 'es-419')
+            ->where('supportedLocales.0.value', 'es_419')
+            ->has('supportedLocales', 1));
+});
+
+test('translation setup ignores languages that the tenant has not enabled', function () {
+    $shop = makeShopLandingTenant('landing-translation-setup.localhost');
+    $this->landingTenant = $shop['tenant'];
+
+    $hasMissingTranslations = $shop['tenant']->run(function (): bool {
+        Location::query()->firstOrFail()->update([
+            'enabled_content_locales' => ['es'],
+            'default_content_locale' => 'es',
+        ]);
+        ShopLandingPage::factory()->create([
+            'layout_data' => [
+                'shared' => ['image_path' => null, 'image_position' => 'right'],
+                'es' => ['eyebrow' => '', 'headline' => 'Pasea por la costa', 'description' => 'Bicicletas para el día.', 'button_label' => 'Reservar'],
+            ],
+        ]);
+
+        return app(TranslationCompleteness::class)->hasMissingTranslations();
+    });
+
+    expect($hasMissingTranslations)->toBeFalse();
 });
 
 test('the tenant home renders rich editor custom blocks as safe html', function () {
@@ -130,6 +180,67 @@ test('the tenant home renders rich editor custom blocks as safe html', function 
             ->where('contentHtml', fn (mixed $html): bool => is_string($html)
                 && str_contains($html, 'Ride update')
                 && ! str_contains($html, '<script>')));
+});
+
+test('the Location address merge tag publishes the address only when the Manager inserts it', function () {
+    $shop = makeShopLandingTenant('landing-address-tag.localhost');
+    $this->landingTenant = $shop['tenant'];
+
+    $shop['tenant']->run(function (): void {
+        Location::query()->firstOrFail()->update([
+            'address_line_1' => '42 Atlantic Avenue',
+            'city' => 'Boston',
+            'administrative_area' => 'MA',
+            'postal_code' => '02110',
+            'country_code' => 'US',
+        ]);
+        ShopLandingPage::factory()->create(['custom_content' => null]);
+    });
+
+    $this->withoutVite()
+        ->get('http://landing-address-tag.localhost')
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('contentHtml', '')
+            ->where('isConfigured', true));
+
+    $shop['tenant']->run(function (): void {
+        ShopLandingPage::query()->firstOrFail()->update([
+            'custom_content' => [
+                'type' => 'doc',
+                'content' => [[
+                    'type' => 'paragraph',
+                    'content' => [[
+                        'type' => 'text',
+                        'text' => 'Visit us at ',
+                    ], [
+                        'type' => 'mergeTag',
+                        'attrs' => ['id' => 'location_address'],
+                    ], [
+                        'type' => 'text',
+                        'text' => '.',
+                    ]],
+                ]],
+            ],
+        ]);
+    });
+
+    $this->withoutVite()
+        ->get('http://landing-address-tag.localhost')
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('contentHtml', fn (mixed $html): bool => is_string($html)
+                && str_contains($html, 'Visit us at ')
+                && str_contains($html, '42 Atlantic Avenue, Boston, MA 02110, US')));
+
+    $shop['tenant']->run(function (): void {
+        Location::query()->firstOrFail()->update(['address_line_1' => '<script>alert(1)</script>']);
+    });
+
+    $this->withoutVite()
+        ->get('http://landing-address-tag.localhost')
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('contentHtml', fn (mixed $html): bool => is_string($html)
+                && ! str_contains($html, '<script>')
+                && str_contains($html, '&lt;script&gt;')));
 });
 
 test('the booking page renders tenant booking notices', function () {

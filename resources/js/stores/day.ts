@@ -10,6 +10,7 @@ export type DayBike = {
     id: number;
     bid: string;
     variant_id: number;
+    model_padding_minutes: number;
     in_service: boolean;
     self_bookable: boolean;
     bike_situation_state: BikeSituation;
@@ -23,14 +24,17 @@ export type DayLine = {
     id: number;
     product_id: number;
     product_label: string;
+    model_padding_minutes: number;
     bike_id: number | null;
     status: BikeReservationStatus;
     rider_name: string | null;
     rider_height_cm: number | null;
+    readiness_issues: string[];
 };
 
 export type DayReservation = {
     id: number;
+    public_id: string;
     stage: ReservationStage;
     starts_at: string;
     ends_at: string;
@@ -46,7 +50,14 @@ export type DayReservation = {
 export type DaySnapshot = {
     tenant_id: string;
     location_id: number;
+    schedule_date: string;
+    schedule_starts_at: string;
+    schedule_ends_at: string;
+    business_hours: { starts_at: string; ends_at: string }[];
+    business_hours_bounds: { starts_at: string; ends_at: string } | null;
+    minimum_turnaround_buffer_minutes: number;
     bike_assignment_policy: string;
+    reservation_readiness_window_minutes: number;
     timezone: string;
     currency: string;
     return_situation: ReturnSituation;
@@ -59,6 +70,13 @@ export type DayPatch = {
     bikes?: DayBike[];
 };
 
+export type BroadcastLogEntry = {
+    id: number;
+    receivedAt: string;
+    event: string;
+    payload: unknown;
+};
+
 function indexById<T extends { id: number }>(rows: T[]): Record<number, T> {
     return Object.fromEntries(rows.map((row) => [row.id, row]));
 }
@@ -69,10 +87,22 @@ export const useDayStore = defineStore('day', {
         tenantId: '',
         locationId: 0,
         timezone: 'UTC',
+        scheduleDate: '',
+        scheduleStartsAt: '',
+        scheduleEndsAt: '',
+        businessHours: [] as { starts_at: string; ends_at: string }[],
+        businessHoursBounds: null as {
+            starts_at: string;
+            ends_at: string;
+        } | null,
+        minimumTurnaroundBufferMinutes: 10,
+        bikeAssignmentPolicy: 'terminal',
         currency: 'usd',
         returnSituation: 'home',
+        reservationReadinessWindowMinutes: 45,
         bikes: {} as Record<number, DayBike>,
         reservations: {} as Record<number, DayReservation>,
+        broadcastLog: [] as BroadcastLogEntry[],
     }),
     getters: {
         bikeList: (state) => Object.values(state.bikes),
@@ -94,9 +124,19 @@ export const useDayStore = defineStore('day', {
         hydrate(snapshot: DaySnapshot): void {
             this.tenantId = snapshot.tenant_id;
             this.locationId = snapshot.location_id;
+            this.scheduleDate = snapshot.schedule_date;
+            this.scheduleStartsAt = snapshot.schedule_starts_at;
+            this.scheduleEndsAt = snapshot.schedule_ends_at;
+            this.businessHours = snapshot.business_hours;
+            this.businessHoursBounds = snapshot.business_hours_bounds;
             this.timezone = snapshot.timezone;
             this.currency = snapshot.currency;
+            this.minimumTurnaroundBufferMinutes =
+                snapshot.minimum_turnaround_buffer_minutes;
+            this.bikeAssignmentPolicy = snapshot.bike_assignment_policy;
             this.returnSituation = snapshot.return_situation;
+            this.reservationReadinessWindowMinutes =
+                snapshot.reservation_readiness_window_minutes;
             this.bikes = indexById(snapshot.bikes);
             this.reservations = indexById(snapshot.reservations);
             this.hydrated = true;
@@ -121,6 +161,21 @@ export const useDayStore = defineStore('day', {
             for (const bike of patch.bikes ?? []) {
                 this.patchBike(bike);
             }
+        },
+        logBroadcast(event: string, payload: unknown): void {
+            this.broadcastLog.unshift({
+                id: Date.now() + Math.random(),
+                receivedAt: new Date().toISOString(),
+                event,
+                payload,
+            });
+
+            if (this.broadcastLog.length > 500) {
+                this.broadcastLog.length = 500;
+            }
+        },
+        clearBroadcastLog(): void {
+            this.broadcastLog = [];
         },
     },
 });

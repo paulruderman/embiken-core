@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { home } from '@/routes/marketing';
+import marketing from '@/routes/marketing';
 import { localRouteUrl } from '@/lib/local-route-url';
 
 defineProps<{ plan: string; domain: string; email: string }>();
@@ -42,7 +42,7 @@ defineProps<{ plan: string; domain: string; email: string }>();
                 connected yet.
             </div>
             <Link
-                :href="localRouteUrl(home())"
+                :href="localRouteUrl(marketing.home.localhost())"
                 class="mt-8 inline-flex rounded-full bg-emerald-800 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
                 >Return to Embiken</Link
             >

@@ -1,0 +1,172 @@
+package_key,category_name,model_name,variant_size,variant_color_name,variant_color_value,rate_minor_units
+showroom-hour,Road Bikes,Endurance Road,XS,Midnight,#1F2937,4500
+showroom-day,Road Bikes,Endurance Road,XS,Midnight,#1F2937,8500
+showroom-staff,Road Bikes,Endurance Road,XS,Midnight,#1F2937,0
+showroom-hour,Road Bikes,Endurance Road,M,Glacier,#60A5FA,4500
+showroom-day,Road Bikes,Endurance Road,M,Glacier,#60A5FA,8500
+showroom-staff,Road Bikes,Endurance Road,M,Glacier,#60A5FA,0
+showroom-hour,Road Bikes,Endurance Road,L,Moss,#15803D,4500
+showroom-day,Road Bikes,Endurance Road,L,Moss,#15803D,8500
+showroom-staff,Road Bikes,Endurance Road,L,Moss,#15803D,0
+showroom-hour,Road Bikes,Race Road,S,Copper,#C2410C,4500
+showroom-day,Road Bikes,Race Road,S,Copper,#C2410C,8500
+showroom-staff,Road Bikes,Race Road,S,Copper,#C2410C,0
+showroom-hour,Road Bikes,Race Road,M,Berry,#BE185D,4500
+showroom-day,Road Bikes,Race Road,M,Berry,#BE185D,8500
+showroom-staff,Road Bikes,Race Road,M,Berry,#BE185D,0
+showroom-hour,Road Bikes,Race Road,L,Midnight,#1F2937,4500
+showroom-day,Road Bikes,Race Road,L,Midnight,#1F2937,8500
+showroom-staff,Road Bikes,Race Road,L,Midnight,#1F2937,0
+showroom-hour,Road Bikes,Race Road,XL,Glacier,#60A5FA,4500
+showroom-day,Road Bikes,Race Road,XL,Glacier,#60A5FA,8500
+showroom-staff,Road Bikes,Race Road,XL,Glacier,#60A5FA,0
+showroom-hour,Road Bikes,Aero Road,S,Moss,#15803D,4500
+showroom-day,Road Bikes,Aero Road,S,Moss,#15803D,8500
+showroom-staff,Road Bikes,Aero Road,S,Moss,#15803D,0
+showroom-hour,Road Bikes,Aero Road,M,Copper,#C2410C,4500
+showroom-day,Road Bikes,Aero Road,M,Copper,#C2410C,8500
+showroom-staff,Road Bikes,Aero Road,M,Copper,#C2410C,0
+showroom-hour,Road Bikes,Aero Road,L,Berry,#BE185D,4500
+showroom-day,Road Bikes,Aero Road,L,Berry,#BE185D,8500
+showroom-staff,Road Bikes,Aero Road,L,Berry,#BE185D,0
+showroom-hour,Gravel Bikes,All-Road Gravel,S,Midnight,#1F2937,4500
+showroom-day,Gravel Bikes,All-Road Gravel,S,Midnight,#1F2937,8500
+showroom-staff,Gravel Bikes,All-Road Gravel,S,Midnight,#1F2937,0
+showroom-hour,Gravel Bikes,All-Road Gravel,M,Glacier,#60A5FA,4500
+showroom-day,Gravel Bikes,All-Road Gravel,M,Glacier,#60A5FA,8500
+showroom-staff,Gravel Bikes,All-Road Gravel,M,Glacier,#60A5FA,0
+showroom-hour,Gravel Bikes,All-Road Gravel,L,Moss,#15803D,4500
+showroom-day,Gravel Bikes,All-Road Gravel,L,Moss,#15803D,8500
+showroom-staff,Gravel Bikes,All-Road Gravel,L,Moss,#15803D,0
+showroom-hour,Gravel Bikes,Gravel Race,XS,Copper,#C2410C,4500
+showroom-day,Gravel Bikes,Gravel Race,XS,Copper,#C2410C,8500
+showroom-staff,Gravel Bikes,Gravel Race,XS,Copper,#C2410C,0
+showroom-hour,Gravel Bikes,Gravel Race,M,Berry,#BE185D,4500
+showroom-day,Gravel Bikes,Gravel Race,M,Berry,#BE185D,8500
+showroom-staff,Gravel Bikes,Gravel Race,M,Berry,#BE185D,0
+showroom-hour,Gravel Bikes,Gravel Race,L,Midnight,#1F2937,4500
+showroom-day,Gravel Bikes,Gravel Race,L,Midnight,#1F2937,8500
+showroom-staff,Gravel Bikes,Gravel Race,L,Midnight,#1F2937,0
+showroom-hour,Gravel Bikes,Adventure Gravel,S,Glacier,#60A5FA,4500
+showroom-day,Gravel Bikes,Adventure Gravel,S,Glacier,#60A5FA,8500
+showroom-staff,Gravel Bikes,Adventure Gravel,S,Glacier,#60A5FA,0
+showroom-hour,Gravel Bikes,Adventure Gravel,M,Moss,#15803D,4500
+showroom-day,Gravel Bikes,Adventure Gravel,M,Moss,#15803D,8500
+showroom-staff,Gravel Bikes,Adventure Gravel,M,Moss,#15803D,0
+showroom-hour,Gravel Bikes,Adventure Gravel,XL,Copper,#C2410C,4500
+showroom-day,Gravel Bikes,Adventure Gravel,XL,Copper,#C2410C,8500
+showroom-staff,Gravel Bikes,Adventure Gravel,XL,Copper,#C2410C,0
+showroom-hour,Mountain Bikes,XC Hardtail,S,Berry,#BE185D,4500
+showroom-day,Mountain Bikes,XC Hardtail,S,Berry,#BE185D,8500
+showroom-staff,Mountain Bikes,XC Hardtail,S,Berry,#BE185D,0
+showroom-hour,Mountain Bikes,XC Hardtail,M,Midnight,#1F2937,4500
+showroom-day,Mountain Bikes,XC Hardtail,M,Midnight,#1F2937,8500
+showroom-staff,Mountain Bikes,XC Hardtail,M,Midnight,#1F2937,0
+showroom-hour,Mountain Bikes,XC Hardtail,L,Glacier,#60A5FA,4500
+showroom-day,Mountain Bikes,XC Hardtail,L,Glacier,#60A5FA,8500
+showroom-staff,Mountain Bikes,XC Hardtail,L,Glacier,#60A5FA,0
+showroom-hour,Mountain Bikes,Trail 29,S,Moss,#15803D,4500
+showroom-day,Mountain Bikes,Trail 29,S,Moss,#15803D,8500
+showroom-staff,Mountain Bikes,Trail 29,S,Moss,#15803D,0
+showroom-hour,Mountain Bikes,Trail 29,M,Copper,#C2410C,4500
+showroom-day,Mountain Bikes,Trail 29,M,Copper,#C2410C,8500
+showroom-staff,Mountain Bikes,Trail 29,M,Copper,#C2410C,0
+showroom-hour,Mountain Bikes,Trail 29,L,Berry,#BE185D,4500
+showroom-day,Mountain Bikes,Trail 29,L,Berry,#BE185D,8500
+showroom-staff,Mountain Bikes,Trail 29,L,Berry,#BE185D,0
+showroom-hour,Mountain Bikes,Trail 29,XL,Midnight,#1F2937,4500
+showroom-day,Mountain Bikes,Trail 29,XL,Midnight,#1F2937,8500
+showroom-staff,Mountain Bikes,Trail 29,XL,Midnight,#1F2937,0
+showroom-hour,Mountain Bikes,Trail Mullet,S,Glacier,#60A5FA,4500
+showroom-day,Mountain Bikes,Trail Mullet,S,Glacier,#60A5FA,8500
+showroom-staff,Mountain Bikes,Trail Mullet,S,Glacier,#60A5FA,0
+showroom-hour,Mountain Bikes,Trail Mullet,M,Moss,#15803D,4500
+showroom-day,Mountain Bikes,Trail Mullet,M,Moss,#15803D,8500
+showroom-staff,Mountain Bikes,Trail Mullet,M,Moss,#15803D,0
+showroom-hour,Mountain Bikes,Trail Mullet,L,Copper,#C2410C,4500
+showroom-day,Mountain Bikes,Trail Mullet,L,Copper,#C2410C,8500
+showroom-staff,Mountain Bikes,Trail Mullet,L,Copper,#C2410C,0
+showroom-hour,Mountain Bikes,Enduro Carbon,M,Berry,#BE185D,4500
+showroom-day,Mountain Bikes,Enduro Carbon,M,Berry,#BE185D,8500
+showroom-staff,Mountain Bikes,Enduro Carbon,M,Berry,#BE185D,0
+showroom-hour,Mountain Bikes,Enduro Carbon,L,Midnight,#1F2937,4500
+showroom-day,Mountain Bikes,Enduro Carbon,L,Midnight,#1F2937,8500
+showroom-staff,Mountain Bikes,Enduro Carbon,L,Midnight,#1F2937,0
+showroom-hour,Mountain Bikes,Enduro Carbon,XL,Glacier,#60A5FA,4500
+showroom-day,Mountain Bikes,Enduro Carbon,XL,Glacier,#60A5FA,8500
+showroom-staff,Mountain Bikes,Enduro Carbon,XL,Glacier,#60A5FA,0
+showroom-hour,Electric Bikes,Light E-MTB,S,Moss,#15803D,4500
+showroom-day,Electric Bikes,Light E-MTB,S,Moss,#15803D,8500
+showroom-staff,Electric Bikes,Light E-MTB,S,Moss,#15803D,0
+showroom-hour,Electric Bikes,Light E-MTB,M,Copper,#C2410C,4500
+showroom-day,Electric Bikes,Light E-MTB,M,Copper,#C2410C,8500
+showroom-staff,Electric Bikes,Light E-MTB,M,Copper,#C2410C,0
+showroom-hour,Electric Bikes,Light E-MTB,L,Berry,#BE185D,4500
+showroom-day,Electric Bikes,Light E-MTB,L,Berry,#BE185D,8500
+showroom-staff,Electric Bikes,Light E-MTB,L,Berry,#BE185D,0
+showroom-hour,Electric Bikes,Full-Power E-MTB,M,Midnight,#1F2937,4500
+showroom-day,Electric Bikes,Full-Power E-MTB,M,Midnight,#1F2937,8500
+showroom-staff,Electric Bikes,Full-Power E-MTB,M,Midnight,#1F2937,0
+showroom-hour,Electric Bikes,Full-Power E-MTB,L,Glacier,#60A5FA,4500
+showroom-day,Electric Bikes,Full-Power E-MTB,L,Glacier,#60A5FA,8500
+showroom-staff,Electric Bikes,Full-Power E-MTB,L,Glacier,#60A5FA,0
+showroom-hour,Electric Bikes,Full-Power E-MTB,XL,Moss,#15803D,4500
+showroom-day,Electric Bikes,Full-Power E-MTB,XL,Moss,#15803D,8500
+showroom-staff,Electric Bikes,Full-Power E-MTB,XL,Moss,#15803D,0
+showroom-hour,Electric Bikes,Electric Commuter,S,Copper,#C2410C,4500
+showroom-day,Electric Bikes,Electric Commuter,S,Copper,#C2410C,8500
+showroom-staff,Electric Bikes,Electric Commuter,S,Copper,#C2410C,0
+showroom-hour,Electric Bikes,Electric Commuter,M,Berry,#BE185D,4500
+showroom-day,Electric Bikes,Electric Commuter,M,Berry,#BE185D,8500
+showroom-staff,Electric Bikes,Electric Commuter,M,Berry,#BE185D,0
+showroom-hour,Electric Bikes,Electric Commuter,L,Midnight,#1F2937,4500
+showroom-day,Electric Bikes,Electric Commuter,L,Midnight,#1F2937,8500
+showroom-staff,Electric Bikes,Electric Commuter,L,Midnight,#1F2937,0
+showroom-hour,Commuter Bikes,City Step-Through,XS,Glacier,#60A5FA,4500
+showroom-day,Commuter Bikes,City Step-Through,XS,Glacier,#60A5FA,8500
+showroom-staff,Commuter Bikes,City Step-Through,XS,Glacier,#60A5FA,0
+showroom-hour,Commuter Bikes,City Step-Through,M,Moss,#15803D,4500
+showroom-day,Commuter Bikes,City Step-Through,M,Moss,#15803D,8500
+showroom-staff,Commuter Bikes,City Step-Through,M,Moss,#15803D,0
+showroom-hour,Commuter Bikes,City Step-Through,L,Copper,#C2410C,4500
+showroom-day,Commuter Bikes,City Step-Through,L,Copper,#C2410C,8500
+showroom-staff,Commuter Bikes,City Step-Through,L,Copper,#C2410C,0
+showroom-hour,Commuter Bikes,Touring Bike,S,Berry,#BE185D,4500
+showroom-day,Commuter Bikes,Touring Bike,S,Berry,#BE185D,8500
+showroom-staff,Commuter Bikes,Touring Bike,S,Berry,#BE185D,0
+showroom-hour,Commuter Bikes,Touring Bike,M,Midnight,#1F2937,4500
+showroom-day,Commuter Bikes,Touring Bike,M,Midnight,#1F2937,8500
+showroom-staff,Commuter Bikes,Touring Bike,M,Midnight,#1F2937,0
+showroom-hour,Commuter Bikes,Touring Bike,L,Glacier,#60A5FA,4500
+showroom-day,Commuter Bikes,Touring Bike,L,Glacier,#60A5FA,8500
+showroom-staff,Commuter Bikes,Touring Bike,L,Glacier,#60A5FA,0
+showroom-hour,Commuter Bikes,Touring Bike,XL,Moss,#15803D,4500
+showroom-day,Commuter Bikes,Touring Bike,XL,Moss,#15803D,8500
+showroom-staff,Commuter Bikes,Touring Bike,XL,Moss,#15803D,0
+showroom-hour,Commuter Bikes,Folding Commuter,One Size,Copper,#C2410C,4500
+showroom-day,Commuter Bikes,Folding Commuter,One Size,Copper,#C2410C,8500
+showroom-staff,Commuter Bikes,Folding Commuter,One Size,Copper,#C2410C,0
+showroom-hour,Cargo Bikes,Compact Cargo,S,Berry,#BE185D,4500
+showroom-day,Cargo Bikes,Compact Cargo,S,Berry,#BE185D,8500
+showroom-staff,Cargo Bikes,Compact Cargo,S,Berry,#BE185D,0
+showroom-hour,Cargo Bikes,Compact Cargo,M,Midnight,#1F2937,4500
+showroom-day,Cargo Bikes,Compact Cargo,M,Midnight,#1F2937,8500
+showroom-staff,Cargo Bikes,Compact Cargo,M,Midnight,#1F2937,0
+showroom-hour,Cargo Bikes,Longtail Cargo,M,Glacier,#60A5FA,4500
+showroom-day,Cargo Bikes,Longtail Cargo,M,Glacier,#60A5FA,8500
+showroom-staff,Cargo Bikes,Longtail Cargo,M,Glacier,#60A5FA,0
+showroom-hour,Cargo Bikes,Longtail Cargo,L,Moss,#15803D,4500
+showroom-day,Cargo Bikes,Longtail Cargo,L,Moss,#15803D,8500
+showroom-staff,Cargo Bikes,Longtail Cargo,L,Moss,#15803D,0
+showroom-hour,Youth Bikes,Youth Trail 24,XS,Copper,#C2410C,4500
+showroom-day,Youth Bikes,Youth Trail 24,XS,Copper,#C2410C,8500
+showroom-staff,Youth Bikes,Youth Trail 24,XS,Copper,#C2410C,0
+showroom-hour,Youth Bikes,Youth Trail 24,S,Berry,#BE185D,4500
+showroom-day,Youth Bikes,Youth Trail 24,S,Berry,#BE185D,8500
+showroom-staff,Youth Bikes,Youth Trail 24,S,Berry,#BE185D,0
+showroom-hour,Adaptive Bikes,Adaptive Trike,One Size,Midnight,#1F2937,4500
+showroom-day,Adaptive Bikes,Adaptive Trike,One Size,Midnight,#1F2937,8500
+showroom-staff,Adaptive Bikes,Adaptive Trike,One Size,Midnight,#1F2937,0
+showroom-hour,Adaptive Bikes,Tandem Tourer,One Size,Glacier,#60A5FA,4500
+showroom-day,Adaptive Bikes,Tandem Tourer,One Size,Glacier,#60A5FA,8500
+showroom-staff,Adaptive Bikes,Tandem Tourer,One Size,Glacier,#60A5FA,0

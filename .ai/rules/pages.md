@@ -6,10 +6,10 @@ paths:
 # Pages
 
 ## Inertia surfaces by page tree
-Pages live under resources/js/pages/{Book,MyRental,Terminal,Cfd,Screen}/. Do not add a Pad page tree. Do not put shop configuration screens in Inertia; those belong in Filament at /manage. Surface first paint is Inertia; writes go through Action JSON.
+Pages live under resources/js/pages/{Book,MyRental,Terminal,Cfd,WallDisplay}/. Do not add a Pad page tree. Do not put shop configuration pages in Inertia; those belong in Filament at /manage. Surface first paint is Inertia; writes go through Action JSON.
 
 ## Guest Book, MyRental session and signed URL
-Book does not require a Customer session to browse or take a provisional. After allocate (checkout lock), start a Customer session on that browser and keep them signed in. `/book` resumes that reservation while it is in ends_at + 3 days: Provisional → checkout, Confirmed → receipt with the signed MyRental URL still shown (token minted once, not one-shot display). Do not email the URL in shop-operable v1. Terminal may reveal it (copy). URL and MyRental access last until 3 days after ends_at; GET /myrental 404s until a later map. Do not build a Customer password gate. Name, email, and phone are required on Book and Terminal. Book reuses a Customer on email match. Do not add a customer cancel control. Show a specific-bike picker on Book only when Location policy is book_may_pin (label with bid). Catalog photos use bike, else variant, else model.
+Book does not require a Customer session to browse or take a provisional. After allocate (checkout lock), start a Customer session on that browser and keep them signed in. `/book` resumes that reservation while it is in ends_at + 3 days: Provisional → checkout, Confirmed → receipt with the signed MyRental URL still shown. The URL contains a persistent random reservation token and expires three days after ends_at. Reservation notices include it; the public `/myrental` request form emails the same URL to the reservation email for eligible reservations, with the same response whether or not there is a match. Managers may revoke every URL for a Customer from that Customer's Filament record. Terminal may reveal it (copy). A Customer password is not required in v1; do not build password controls. Name, email, and phone are required on Book and Terminal. Book reuses a Customer on email match. Do not add a customer cancel control. Show a specific-bike picker on Book only when Location policy is book_may_pin (label with bid). Catalog photos use bike, else variant, else model.
 
 ## No ops /t/ URLs in the SPA
 Surface links use unprefixed tenant-host paths via Wayfinder. Do not send users to /t/{tenant}/….
@@ -26,11 +26,11 @@ MyRental may request to extend the reservation window. Book does not. Terminal h
 ## Extend and return UI vs damage notes
 MyRental extend always requotes and waits on the package confirm bar. Terminal extend UI includes keep-owed vs requote. Late return UI prompts the same choice; requote uses the interval through return time. Early return does not lower owed. Return UI may mark the bike not in service or open blocking service. When Location uses back, Terminal has a put-away control to home. Counter and Manager may refund and park bikes on Terminal. No damage fee. Terminal may re-send the MyRental signed URL.
 
-## CFD ticket vs Screen day board
-Cfd pages (later Device slice) show only the paired Terminal's open ticket from Pinia (fed by the CFD channel). Shop-operable Terminal uses the location-channel day store only; it does not subscribe to a CFD channel and has no Device pairing chrome. When CFD exists: Terminal sets focus (walk-in / pay / pickup / return); clearing focus or idle empties the CFD. The customer may edit name, email, and phone on the CFD; Terminal and CFD patch those fields live both ways. Waiver in v1 is a timestamped checkbox on the reservation; stored signature is later. CFD has no staff controls. Screen uses the location-channel day store. Book and MyRental do not subscribe to shop-floor channels unless a later decision says so.
+## Customer Display ticket vs Wall Display day board
+Customer Display pages show only the paired Terminal's open ticket from Pinia (fed by its private channel). Terminal sets focus (walk-in / pay / pickup / return); clearing focus or idle empties the Customer Display. The customer may edit name, email, and phone on the Customer Display; Terminal patches those fields live both ways. Waiver in v1 is a timestamped checkbox on the reservation; stored signature is later. Customer Display has no staff controls. Wall Display uses the location-channel day store. Book and MyRental do not subscribe to shop-floor channels.
 
-## Screen does not render PII or money
-Screen pages must not render customer display name, owed, or paid even though Pinia may contain them. Terminal may. CFD shows the paired ticket only.
+## Wall Display does not render PII or money
+Wall Display pages must not render customer display name, owed, or paid even if the Pinia payload contains them. Terminal may. Customer Display shows only its paired ticket.
 
 ## Terminal page tree, no Pad
 Pages live under Terminal/, not Station/ or Pad/. Counter PCs and floor tablets use the same Terminal app. Design it as a restaurant P.O.S.: large buttons, dense actions, one-finger taps (other hand holding a tablet, or a fixed counter screen). Do not use usual marketing-web or Filament chrome (small links, hover-only, long forms). Training is allowed; latency and extra taps are not.
@@ -42,10 +42,10 @@ The customer may edit name, email, and phone on the CFD. Terminal and CFD patch 
 Book shows the empty not-configured state when there is no Book-visible package or Location hours are empty. Counter and Manager may refund and park bikes on Terminal. Early return UI does not lower owed.
 
 ## Photo fallback and bid labels
-Book and Terminal show catalog photos with fallback bike then variant then model. Terminal and Screen label a bike by bid. Do not scan barcode, RFID, or QR in v1.
+Book and Terminal show catalog photos with fallback bike then variant then model then category. Variant and model images fall back through their catalog parents. Terminal and Wall Display label a bike by bid. Do not scan barcode, RFID, or QR in v1.
 
-## Shop-operable Terminal is staff session
-Terminal pages require a Staff password session only. Do not add Device pairing chrome or require a Sanctum device token. CFD pairing and Terminal listening on a CFD channel wait for a later Device slice. Occupancy and the location-channel day store do not depend on Device.
+## Terminal requires Staff session and paired Device
+Terminal pages require a Staff password session and paired Terminal Device. Customer Display and Wall Display require their paired Device and do not use Staff passwords. CFD pairing and Terminal listening on the paired Customer Display channel are part of the same device system. Occupancy and the location-channel day store remain independent of Device lifecycle.
 
 ## Book Suspend is not not-configured
 When the Tenant is Suspended, Book is off (copy: “Online booking is unavailable.” Distinct from empty hours / no Book-visible package and from Express-off). Terminal pages require a Staff session: password Staff, or User impersonation as Platform Manager. While Suspended, only impersonation may open Terminal or /manage.
@@ -54,7 +54,7 @@ When the Tenant is Suspended, Book is off (copy: “Online booking is unavailabl
 Book is four screens: Interval, Offer (package picker only if more than one Book-visible; remaining 0 cannot be chosen; bid picker only if book_may_pin), Checkout (contact, waiver, allocate then pay), Confirmed (receipt + signed URL still shown). Distinct copy: not-configured “This shop isn’t taking online bookings yet.” Suspended “Online booking is unavailable.” Express-off: only $0/none packages, else “Online checkout isn’t available yet.” Allocate fail → offer + flash. Pay fail → stay checkout, bump expires_at. Expiry → offer, same interval. Book another starts a new interval without CancelAction. Padlock mid-cart shows that empty state; tick expires the Provisional.
 
 ## Reservation UI is N lines, never one bike
-Book, MyRental, Terminal, CFD, and Screen treat a Reservation as a party: one Customer, one interval, N unit lines (no qty). Offer/checkout/ticket/floor/receipt must list every line. Pickup, return, assign, and swap are per line; subset of lines is normal. Do not put a single bike_id or remaining count on the reservation as if it were one bike. Extra people are extra lines, not extra Customers or a Rider model.
+Book, MyRental, Terminal, Customer Display, and Wall Display treat a Reservation as a party: one Customer, one interval, N unit lines (no qty). Offer/checkout/ticket/floor/receipt must list every line. Pickup, return, assign, and swap are per line; subset of lines is normal. Do not put a single bike_id or remaining count on the reservation as if it were one bike. Extra people are extra lines, not extra Customers or a Rider model.
 
 ## Reservation views list every line with situation
-A Reservation view lists every bike_reservation line: product, bid or unassigned, Bike situation, occupying Reservation. Scroll when the party does not fit. Do not collapse to a bid string or qty. If a bike is shown on a ticket, flag when its occupying Reservation is not that ticket.
+A Reservation view lists every bike_reservation line: product, bid or unassigned, Bike situation, and relevant Reservation context. Show the occupying Reservation only when it differs from the Reservation represented by that view; without a Reservation context, show it for every non-home situation. Do not flag a bike merely because its situation belongs to another Reservation. During preparation, show line-level readiness only when the bike is ready for the target Reservation under its situation owner, Availability, and physical-readiness checks. Do not collapse lines to a bid string or qty.

@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Http\Middleware\ApplyFilamentTranslationLocale;
+use App\Support\EnumColorPalettes;
 use App\Support\Locales;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -35,6 +36,7 @@ class PlatformPanelProvider extends PanelProvider
             ->login()
             ->passwordReset()
             ->colors([
+                ...EnumColorPalettes::all(),
                 'primary' => Color::Sky,
             ])
             ->viteTheme('resources/css/filament/platform/theme.css')

@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('bike_situation_state')->default('home');
             $table->unsignedBigInteger('bike_situation_reservation_id')->nullable();
             $table->string('photo')->nullable();
+            $table->string('serial_number')->nullable();
             $table->text('damage_notes')->nullable();
             $table->timestamps();
 

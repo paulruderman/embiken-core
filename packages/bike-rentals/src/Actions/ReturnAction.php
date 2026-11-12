@@ -7,13 +7,17 @@ use App\Actions\Concerns\AuthorizesStaff;
 use App\Enums\ReturnSituation;
 use Embiken\BikeFleet\Enums\BikeSituation;
 use Embiken\BikeRentals\Enums\BikeReservationStatus;
+use Embiken\BikeRentals\Enums\ReservationStage;
 use Embiken\BikeRentals\Http\Resources\DayPatchResource;
+use Embiken\BikeRentals\Mail\MyRentalReservationNotice;
 use Embiken\BikeRentals\Models\BikeReservation;
 use Embiken\BikeRentals\Services\Availability;
+use Embiken\BikeRentals\Services\MyRentalLink;
 use Illuminate\Console\Command;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 
@@ -27,7 +31,7 @@ class ReturnAction extends Action
     {
         $line->loadMissing('reservation');
 
-        return DB::transaction(function () use ($line): BikeReservation {
+        [$line, $shouldNotify] = DB::transaction(function () use ($line): array {
             $availability = app(Availability::class);
             $lines = $availability->lockReservationLines($line->reservation);
             $reservation = $availability->lockReservation($line->reservation);
@@ -60,8 +64,30 @@ class ReturnAction extends Action
 
             $reservation->recomputeStageCache();
 
-            return $line->refresh()->load(['bike', 'reservation.customer', 'reservation.bikeReservations.product.bikeModel']);
+            $shouldNotify = $reservation->stage !== ReservationStage::Cancelled
+                && $reservation->bikeReservations()
+                    ->where('status', '!=', BikeReservationStatus::In)
+                    ->doesntExist();
+
+            return [
+                $line->refresh()->load(['bike', 'reservation.customer', 'reservation.bikeReservations.product.bikeModel']),
+                $shouldNotify,
+            ];
         });
+
+        if ($shouldNotify) {
+            $reservation = $line->reservation->load('location');
+            $url = app(MyRentalLink::class)->for($reservation);
+
+            if ($url !== null) {
+                Mail::to($reservation->customer->email)->queue(
+                    (new MyRentalReservationNotice($reservation, $url, 'Thanks for returning your reservation'))
+                        ->afterCommit(),
+                );
+            }
+        }
+
+        return $line;
     }
 
     public function asController(Request $request, BikeReservation $line): DayPatchResource

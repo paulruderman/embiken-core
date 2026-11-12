@@ -100,15 +100,15 @@ export function useTerminalDesk() {
                 return;
             }
 
-            post(RecordCashPaymentAction.url(reservation.id), {
+            post(RecordCashPaymentAction.url(reservation.public_id), {
                 amount_minor_units: outstanding,
             });
         },
         acceptWaiver(reservation: Reservation): void {
-            post(AcceptWaiverAction.url(reservation.id));
+            post(AcceptWaiverAction.url(reservation.public_id));
         },
         cancelReservation(reservation: Reservation): void {
-            post(CancelAction.url(reservation.id));
+            post(CancelAction.url(reservation.public_id));
         },
         assignBike(line: Line, bikeId: number): void {
             post(AssignBikeAction.url({ line: line.id }), { bike_id: bikeId });
@@ -132,7 +132,7 @@ export function useTerminalDesk() {
                 body.product_id = productId;
             }
 
-            post(AllocateLineAction.url(reservation.id), body);
+            post(AllocateLineAction.url(reservation.public_id), body);
         },
         releaseLine(line: Line): void {
             request('delete', ReleaseLineAction.url({ line: line.id }));
@@ -148,7 +148,7 @@ export function useTerminalDesk() {
                 body.owed_minor_units = reservation.owed + 2000;
             }
 
-            post(ExtendAction.url(reservation.id), body);
+            post(ExtendAction.url(reservation.public_id), body);
         },
         startWalkIn(onCreated?: (id: number) => void): void {
             const name = window.prompt('Customer name')?.trim();

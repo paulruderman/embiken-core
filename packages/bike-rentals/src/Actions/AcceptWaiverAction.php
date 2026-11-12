@@ -18,10 +18,21 @@ class AcceptWaiverAction extends Action
 
     public function handle(Reservation $reservation): Reservation
     {
-        $reservation->waiver_accepted_at ??= now();
+        if ($reservation->waiver_accepted_at === null) {
+            $location = $reservation->location;
+            $waiver = $location->currentWaiver();
+            $locale = $location->default_content_locale;
+            $content = $waiver?->getTranslationWithoutFallback('content', $locale);
+
+            if (is_string($content) && trim($content) !== '') {
+                $reservation->waiver_version_id = $waiver->id;
+                $reservation->waiver_locale = $locale;
+                $reservation->waiver_accepted_at = now('UTC');
+            }
+        }
         $reservation->save();
 
-        return $reservation->refresh()->load(['customer', 'bikeReservations.product.bikeModel']);
+        return $reservation->refresh()->load(['customer', 'bikeReservations.product.bikeModel', 'waiverVersion']);
     }
 
     public function asController(Request $request, Reservation $reservation): DayPatchResource

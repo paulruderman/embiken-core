@@ -6,6 +6,7 @@ namespace Embiken\Weather\Actions;
 
 use App\Actions\Action;
 use App\Actions\Concerns\AuthorizesStaff;
+use App\Http\Middleware\EnsurePrototypeEnvironment;
 use Embiken\Weather\Services\WeatherReader;
 use Illuminate\Console\Command;
 use Illuminate\Http\Request;
@@ -44,13 +45,16 @@ class ShowWeatherPrototypeAction extends Action
     {
         return Inertia::render('Weather/prototype/Index', [
             ...$snapshot,
+            'coverageNotice' => (string) __('app.weather_ui.coverage_notice'),
             'variant' => $request->query('variant', 'strip'),
         ]);
     }
 
     public static function routes(Router $router): void
     {
-        $router->get('/prototype/weather', static::class)->name('prototype.weather');
+        $router->get('/prototype/weather', static::class)
+            ->middleware(EnsurePrototypeEnvironment::class)
+            ->name('prototype.weather');
     }
 
     public function asCommand(Command $command): int

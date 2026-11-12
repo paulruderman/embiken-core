@@ -29,6 +29,7 @@ export type Line = {
 
 export type Reservation = {
     id: number;
+    public_id: string;
     customer: string;
     stage: Stage;
     starts: string;
@@ -85,6 +86,7 @@ function mapReservation(
 ): Reservation {
     return {
         id: reservation.id,
+        public_id: reservation.public_id,
         customer: reservation.customer.name,
         stage: stageLabel(reservation.stage),
         starts: clock(reservation.starts_at, timezone),

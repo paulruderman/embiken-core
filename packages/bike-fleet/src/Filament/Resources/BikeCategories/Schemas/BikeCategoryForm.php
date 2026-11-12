@@ -3,6 +3,7 @@
 namespace Embiken\BikeFleet\Filament\Resources\BikeCategories\Schemas;
 
 use App\Filament\Shop\Forms\Components\BrandColorDropdown;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Text;
@@ -23,6 +24,10 @@ class BikeCategoryForm
                     ->maxLength(255),
                 Textarea::make('description')
                     ->label(__('app.fleet.fields.description')),
+                FileUpload::make('photo')
+                    ->label(__('app.fleet.fields.photo'))
+                    ->image()
+                    ->directory('bike-categories'),
                 BrandColorDropdown::make('interface_color')
                     ->label(__('app.fleet.fields.interface_color'))
                     ->placeholder(__('app.fleet.placeholders.color'))

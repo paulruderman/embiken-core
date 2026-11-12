@@ -2,6 +2,7 @@
 
 namespace Embiken\BikeRentals\Filament\Resources\Reservations\RelationManagers;
 
+use App\Filament\Tables\Columns\LocalizedDateTimeColumn;
 use App\Support\Money;
 use Embiken\BikeRentals\Filament\Resources\Reservations\Schemas\TransactionInfolist;
 use Embiken\BikeRentals\Models\Transaction;
@@ -22,19 +23,21 @@ class TransactionsRelationManager extends RelationManager
             ->columns([
                 TextColumn::make('kind')
                     ->label(__('app.rentals_ui.fields.transaction_type'))
-                    ->badge(),
+                    ->badge()
+                    ->color(fn (Transaction $record): string => $record->kind->getColor()),
                 TextColumn::make('status')
                     ->label(__('app.rentals_ui.fields.payment_status'))
-                    ->badge(),
+                    ->badge()
+                    ->color(fn (Transaction $record): string => $record->status->getColor()),
                 TextColumn::make('amount_minor_units')
                     ->label(__('app.rentals_ui.fields.amount'))
                     ->formatStateUsing(fn (?int $state, Transaction $record): string => Money::format($state ?? 0, $record->currency)),
                 TextColumn::make('note')
                     ->label(__('app.rentals_ui.fields.note'))
                     ->placeholder('—'),
-                TextColumn::make('captured_at')
+                LocalizedDateTimeColumn::make('captured_at')
                     ->label(__('app.rentals_ui.fields.captured_at'))
-                    ->dateTime(),
+                    ->sortable(),
             ])
             ->headerActions([])
             ->recordActions([

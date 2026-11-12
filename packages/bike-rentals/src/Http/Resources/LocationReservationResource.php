@@ -16,10 +16,17 @@ class LocationReservationResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $this->resource->loadMissing(['customer', 'bikeReservations.product.bikeModel']);
+        $this->resource->loadMissing([
+            'customer',
+            'location',
+            'bikeReservations.product.bikeModel',
+            'bikeReservations.bike.location',
+            'bikeReservations.bike.variant.bikeModel',
+        ]);
 
         return [
             'id' => $this->id,
+            'public_id' => $this->public_id,
             'stage' => $this->stage->value,
             'starts_at' => $this->starts_at->toIso8601String(),
             'ends_at' => $this->ends_at->toIso8601String(),
@@ -31,6 +38,8 @@ class LocationReservationResource extends JsonResource
                 'name' => $this->customer->name,
             ],
             'waiver_accepted_at' => $this->waiver_accepted_at?->toIso8601String(),
+            'waiver_version_id' => $this->waiver_version_id,
+            'waiver_locale' => $this->waiver_locale,
             'myrental_token' => $this->myrental_token,
             'lines' => LocationLineResource::collection($this->bikeReservations)->resolve(),
         ];

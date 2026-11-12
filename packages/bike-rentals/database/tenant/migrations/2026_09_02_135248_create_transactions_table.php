@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignId('reservation_id')->constrained()->cascadeOnDelete();
             $table->string('kind');
             $table->string('status')->default('pending');
-            $table->unsignedInteger('amount_cents');
+            $table->unsignedInteger('amount_minor_units');
             $table->string('currency')->default('usd');
             $table->text('note')->nullable();
             $table->string('payment_intent_id')->nullable()->unique();

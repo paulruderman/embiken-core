@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { home } from '@/routes/marketing';
-import { pricing } from '@/routes/marketing';
-import signupRoutes from '@/routes/marketing/signup';
+import marketing from '@/routes/marketing';
 import { localRouteUrl } from '@/lib/local-route-url';
 
 interface Plan {
@@ -21,6 +19,7 @@ const props = defineProps<{
     plan: Plan;
     domainSuffix: string;
     contactEmail: string;
+    ui: Record<string, string>;
 }>();
 const form = useForm({
     plan: props.plan.slug,
@@ -28,6 +27,12 @@ const form = useForm({
     shop_slug: '',
     timezone: 'America/New_York',
     currency: 'usd',
+    address_line_1: '',
+    address_line_2: '',
+    city: '',
+    administrative_area: '',
+    postal_code: '',
+    country_code: '',
     manager_name: '',
     manager_email: '',
 });
@@ -47,7 +52,7 @@ function updateShopSlug(): void {
 }
 
 function submit(): void {
-    form.post(localRouteUrl(signupRoutes.store().url));
+    form.post(localRouteUrl(marketing.signup.store.localhost().url));
 }
 </script>
 
@@ -58,7 +63,7 @@ function submit(): void {
             class="mx-auto flex max-w-6xl items-center justify-between px-6 py-6 lg:px-10"
         >
             <Link
-                :href="localRouteUrl(home())"
+                :href="localRouteUrl(marketing.home.localhost())"
                 class="text-xl font-semibold tracking-tight"
                 >embiken</Link
             >
@@ -116,7 +121,7 @@ function submit(): void {
                     >. No subscription payment is collected on this page.
                 </p>
                 <Link
-                    :href="localRouteUrl(pricing())"
+                    :href="localRouteUrl(marketing.pricing.localhost())"
                     class="mt-6 inline-block text-sm font-medium text-zinc-600 underline decoration-zinc-300 underline-offset-4 hover:text-zinc-950"
                     >Back to plan comparison</Link
                 >
@@ -155,7 +160,7 @@ function submit(): void {
                         >
                     </label>
                     <label class="grid gap-2 text-sm font-medium"
-                        >Shop address
+                        >{{ ui.shop_web_address }}
                         <div
                             class="flex items-center rounded-xl border border-zinc-300 bg-white focus-within:ring-4 focus-within:ring-emerald-700/20"
                         >
@@ -182,6 +187,126 @@ function submit(): void {
                             >Your shop will be at {{ shopSlugLabel }}</span
                         >
                     </label>
+                    <label class="grid gap-2 text-sm font-medium">
+                        {{ ui.timezone }}
+                        <input
+                            v-model="form.timezone"
+                            required
+                            maxlength="64"
+                            autocomplete="off"
+                            class="rounded-xl border border-zinc-300 bg-white px-4 py-3 outline-none focus:ring-4 focus:ring-emerald-700/20"
+                        />
+                        <span class="text-xs font-normal text-zinc-500">{{
+                            ui.timezone_help
+                        }}</span>
+                        <span
+                            v-if="form.errors.timezone"
+                            class="text-sm font-normal text-red-700"
+                            >{{ form.errors.timezone }}</span
+                        >
+                    </label>
+                    <fieldset
+                        class="grid gap-4 rounded-2xl border border-zinc-200 p-4 sm:grid-cols-2"
+                    >
+                        <legend class="px-2 text-sm font-semibold">
+                            {{ ui.location_address_optional }}
+                        </legend>
+                        <p
+                            class="text-xs leading-5 font-normal text-zinc-500 sm:col-span-2"
+                        >
+                            {{ ui.location_address_help }}
+                        </p>
+                        <label
+                            class="grid gap-2 text-sm font-medium sm:col-span-2"
+                        >
+                            {{ ui.address_line_1 }}
+                            <input
+                                v-model="form.address_line_1"
+                                maxlength="255"
+                                autocomplete="address-line1"
+                                class="rounded-xl border border-zinc-300 bg-white px-4 py-3 outline-none focus:ring-4 focus:ring-emerald-700/20"
+                            />
+                            <span
+                                v-if="form.errors.address_line_1"
+                                class="text-sm font-normal text-red-700"
+                                >{{ form.errors.address_line_1 }}</span
+                            >
+                        </label>
+                        <label
+                            class="grid gap-2 text-sm font-medium sm:col-span-2"
+                        >
+                            {{ ui.address_line_2 }}
+                            <input
+                                v-model="form.address_line_2"
+                                maxlength="255"
+                                autocomplete="address-line2"
+                                class="rounded-xl border border-zinc-300 bg-white px-4 py-3 outline-none focus:ring-4 focus:ring-emerald-700/20"
+                            />
+                            <span
+                                v-if="form.errors.address_line_2"
+                                class="text-sm font-normal text-red-700"
+                                >{{ form.errors.address_line_2 }}</span
+                            >
+                        </label>
+                        <label class="grid gap-2 text-sm font-medium">
+                            {{ ui.city }}
+                            <input
+                                v-model="form.city"
+                                maxlength="255"
+                                autocomplete="address-level2"
+                                class="rounded-xl border border-zinc-300 bg-white px-4 py-3 outline-none focus:ring-4 focus:ring-emerald-700/20"
+                            />
+                            <span
+                                v-if="form.errors.city"
+                                class="text-sm font-normal text-red-700"
+                                >{{ form.errors.city }}</span
+                            >
+                        </label>
+                        <label class="grid gap-2 text-sm font-medium">
+                            {{ ui.administrative_area }}
+                            <input
+                                v-model="form.administrative_area"
+                                maxlength="255"
+                                autocomplete="address-level1"
+                                class="rounded-xl border border-zinc-300 bg-white px-4 py-3 outline-none focus:ring-4 focus:ring-emerald-700/20"
+                            />
+                            <span
+                                v-if="form.errors.administrative_area"
+                                class="text-sm font-normal text-red-700"
+                                >{{ form.errors.administrative_area }}</span
+                            >
+                        </label>
+                        <label class="grid gap-2 text-sm font-medium">
+                            {{ ui.postal_code }}
+                            <input
+                                v-model="form.postal_code"
+                                maxlength="32"
+                                autocomplete="postal-code"
+                                class="rounded-xl border border-zinc-300 bg-white px-4 py-3 outline-none focus:ring-4 focus:ring-emerald-700/20"
+                            />
+                            <span
+                                v-if="form.errors.postal_code"
+                                class="text-sm font-normal text-red-700"
+                                >{{ form.errors.postal_code }}</span
+                            >
+                        </label>
+                        <label class="grid gap-2 text-sm font-medium">
+                            {{ ui.country_code }}
+                            <input
+                                v-model="form.country_code"
+                                maxlength="2"
+                                pattern="[A-Za-z]{2}"
+                                placeholder="US"
+                                autocomplete="off"
+                                class="rounded-xl border border-zinc-300 bg-white px-4 py-3 uppercase outline-none focus:ring-4 focus:ring-emerald-700/20"
+                            />
+                            <span
+                                v-if="form.errors.country_code"
+                                class="text-sm font-normal text-red-700"
+                                >{{ form.errors.country_code }}</span
+                            >
+                        </label>
+                    </fieldset>
                     <label class="grid gap-2 text-sm font-medium"
                         >Manager name
                         <input
@@ -264,7 +389,7 @@ function submit(): void {
                     </p>
                 </div>
                 <Link
-                    :href="localRouteUrl(pricing())"
+                    :href="localRouteUrl(marketing.pricing.localhost())"
                     class="mt-6 inline-block text-sm font-medium text-zinc-600 underline decoration-zinc-300 underline-offset-4 hover:text-zinc-950"
                     >Change plan</Link
                 >

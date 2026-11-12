@@ -66,7 +66,9 @@ class MarketingPageForm
                     ->default(0)
                     ->required(),
                 DateTimePicker::make('published_at')
+                    ->native(false)
                     ->seconds(false)
+                    ->displayFormat(__('app.datetime_ui.input_format'))
                     ->helperText('Leave blank to keep this as a draft. Future dates publish automatically when reached.'),
             ]);
     }

@@ -45,6 +45,7 @@ use Embiken\Weather\Filament\Resources\WeatherSites\WeatherSiteResource;
 use Filament\Facades\Filament;
 use Filament\Notifications\NotificationMailbox;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\Concerns\MigratesTenantSchema;
 
@@ -54,6 +55,33 @@ beforeEach(function () {
     $this->migrateTenantSchema();
     Filament::setCurrentPanel('shop');
     $this->actingAs(Staff::factory()->create(), 'staff');
+});
+
+it('shows photos throughout the catalog and bike tables using catalog fallback', function () {
+    Storage::fake('public');
+    $categoryPhoto = 'fleet/category.png';
+    $modelPhoto = 'fleet/model.png';
+    Storage::disk('public')->put($categoryPhoto, 'category image');
+    Storage::disk('public')->put($modelPhoto, 'model image');
+
+    $category = BikeCategory::factory()->create(['photo' => $categoryPhoto]);
+    $model = BikeModel::factory()->for($category, 'bikeCategory')->create(['photo' => $modelPhoto]);
+    $variant = BikeModelVariant::factory()->for($model, 'bikeModel')->create(['color_value' => '#123456']);
+    $bike = Bike::factory()
+        ->for(Staff::query()->firstOrFail()->location)
+        ->for($variant, 'variant')
+        ->create(['bid' => 'PHOTO-001']);
+
+    Livewire::test(ListBikeCategories::class)
+        ->assertTableColumnStateSet('photo', tenant_asset($categoryPhoto), $category);
+    Livewire::test(ListBikeModels::class)
+        ->assertTableColumnStateSet('photo', tenant_asset($modelPhoto), $model);
+    expect($variant->displayPhotoPath())->toBe($modelPhoto);
+    Livewire::test(ListBikeModelVariants::class)
+        ->assertTableColumnStateSet('photo', tenant_asset($modelPhoto), $variant)
+        ->assertTableColumnStateSet('color_value', '#123456', $variant);
+    Livewire::test(ListBikes::class)
+        ->assertTableColumnStateSet('photo', tenant_asset($modelPhoto), $bike);
 });
 
 it('directs a blocked create page to the earliest missing catalog step', function () {

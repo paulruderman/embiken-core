@@ -3,6 +3,7 @@
 namespace Embiken\BikeRentals\Observers;
 
 use App\Events\LocationReservationPatched;
+use App\Support\CustomerDisplayTicketBroadcaster;
 use Embiken\BikeRentals\Http\Resources\LocationReservationResource;
 use Embiken\BikeRentals\Models\Reservation;
 use Illuminate\Contracts\Events\ShouldHandleEventsAfterCommit;
@@ -22,6 +23,7 @@ class ReservationObserver implements ShouldHandleEventsAfterCommit
     public function deleted(Reservation $reservation): void
     {
         event(new LocationReservationPatched('deleted', ['id' => $reservation->id], $reservation->location_id));
+        app(CustomerDisplayTicketBroadcaster::class)->clearReservation($reservation);
     }
 
     private function broadcast(Reservation $reservation, string $action): void
@@ -31,5 +33,11 @@ class ReservationObserver implements ShouldHandleEventsAfterCommit
             LocationReservationResource::make($reservation)->resolve(),
             $reservation->location_id,
         ));
+
+        if ($action === 'deleted') {
+            app(CustomerDisplayTicketBroadcaster::class)->clearReservation($reservation);
+        } else {
+            app(CustomerDisplayTicketBroadcaster::class)->broadcastForReservation($reservation);
+        }
     }
 }

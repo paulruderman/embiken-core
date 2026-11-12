@@ -4,6 +4,7 @@ namespace App\Filament\Shop\Resources\Locations\RelationManagers;
 
 use App\Enums\Weekday;
 use App\Filament\Shop\Support\ShopSetupReadiness;
+use App\Models\LocationHour;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -45,17 +46,18 @@ class HoursRelationManager extends RelationManager
             ->recordTitleAttribute('weekday')
             ->columns([
                 TextColumn::make('weekday')
-                    ->badge(),
+                    ->badge()
+                    ->color(fn (LocationHour $record): string => $record->weekday->getColor()),
                 TextColumn::make('opens_at'),
                 TextColumn::make('closes_at'),
                 IconColumn::make('closes_next_day')
                     ->boolean(),
             ])
-            ->emptyStateHeading('Opening hours are not set up')
-            ->emptyStateDescription('Add the intervals when customers can start and finish rentals. Book cannot accept reservations until opening hours are configured.')
+            ->emptyStateHeading(__('app.location_ui.hours_empty_heading'))
+            ->emptyStateDescription(__('app.location_ui.hours_empty_description'))
             ->emptyStateActions([
                 CreateAction::make('createHourFromEmptyState')
-                    ->label('Add opening hours')
+                    ->label(__('app.location_ui.add_hours'))
                     ->successNotification(fn (Notification $notification): Notification => $this->addContinueSetupAction($notification)),
             ])
             ->headerActions([

@@ -12,6 +12,7 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
@@ -25,6 +26,16 @@ class BikesTable
     {
         $table = $table
             ->columns([
+                ImageColumn::make('photo')
+                    ->label(__('app.fleet.fields.photo'))
+                    ->getStateUsing(static function (Bike $record): ?string {
+                        $path = $record->displayPhotoPath();
+
+                        return $path === null ? null : tenant_asset($path);
+                    })
+                    ->imageSize(56)
+                    ->extraImgAttributes(['style' => 'object-fit: contain;'])
+                    ->alt(static fn (Bike $record): string => $record->variant->bikeModel->name.' '.$record->variant->size),
                 TextColumn::make('bid')
                     ->label(__('app.fleet.fields.bid'))
                     ->searchable()
@@ -49,13 +60,15 @@ class BikesTable
                     ->boolean(),
                 TextColumn::make('bike_situation_state')
                     ->label(__('app.fleet.fields.situation'))
-                    ->badge(),
+                    ->badge()
+                    ->color(fn (Bike $record): string => $record->bike_situation_state->getColor()),
                 TextColumn::make('specifications_summary')
                     ->label(__('app.fleet.fields.specifications'))
                     ->getStateUsing(fn (Bike $record): ?string => $record->specifications
                         ->map(fn (BikeSpecification $specification): string => "{$specification->name}: {$specification->value}")
                         ->implode(' · ') ?: null)
                     ->limit(80)
+                    ->tooltip(fn (?string $state): ?string => $state !== null && mb_strlen($state) > 80 ? $state : null)
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->placeholder('—'),
                 ...($showOccupyingReservation ? [
@@ -134,7 +147,7 @@ class BikesTable
             ])
             ->toolbarActions([]);
 
-        $relationships = ['specifications'];
+        $relationships = ['specifications', 'variant.bikeModel.bikeCategory'];
 
         if ($showOccupyingReservation) {
             $relationships[] = 'situationReservation.customer';

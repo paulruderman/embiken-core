@@ -48,7 +48,7 @@ abstract class AbstractTenantModule implements TenantModule
         return [];
     }
 
-    public function viewfeeds(): array
+    public function feeds(): array
     {
         return [];
     }

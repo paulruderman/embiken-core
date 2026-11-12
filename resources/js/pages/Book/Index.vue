@@ -3,11 +3,12 @@ import { Head } from '@inertiajs/vue3';
 import LocaleSwitcher from '@/components/LocaleSwitcher.vue';
 
 const props = defineProps<{
-    locale: 'en' | 'es' | 'fr';
+    contentLocale: 'en' | 'es' | 'fr';
     bookingNotices: Array<{
         message: string;
         tone: 'info' | 'success' | 'warning';
     }>;
+    waiverCopy: string | null;
 }>();
 
 const copy = {
@@ -15,20 +16,23 @@ const copy = {
         title: 'Book',
         description: 'Online reservations for this shop.',
         language: 'Language',
+        waiver: 'Shop waiver',
     },
     es: {
         title: 'Reservar',
         description: 'Reservas en línea para esta tienda.',
         language: 'Idioma',
+        waiver: 'Exención de la tienda',
     },
     fr: {
         title: 'Réserver',
         description: 'Réservations en ligne pour cette boutique.',
         language: 'Langue',
+        waiver: 'Décharge de la boutique',
     },
 };
 
-const text = copy[props.locale];
+const text = copy[props.contentLocale];
 </script>
 
 <template>
@@ -46,6 +50,17 @@ const text = copy[props.locale];
             <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
                 {{ text.description }}
             </p>
+            <section
+                v-if="waiverCopy"
+                class="mt-6 rounded-xl border border-zinc-200 bg-white p-4 text-left dark:border-zinc-800 dark:bg-zinc-900"
+            >
+                <h2 class="font-semibold">{{ text.waiver }}</h2>
+                <p
+                    class="mt-2 max-h-64 overflow-y-auto text-sm leading-6 whitespace-pre-wrap text-zinc-700 dark:text-zinc-300"
+                >
+                    {{ waiverCopy }}
+                </p>
+            </section>
             <div v-if="bookingNotices.length" class="mt-6 grid gap-3 text-left">
                 <p
                     v-for="(notice, index) in bookingNotices"

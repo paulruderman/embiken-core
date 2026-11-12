@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\ApplyRequestLocale;
+use App\Http\Middleware\AuthenticateDevice;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\InitializeTenancyByDomainIfTenantHost;
 use App\Http\Middleware\ResetFilamentColorManager;
@@ -19,6 +20,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->alias(['device' => AuthenticateDevice::class]);
+
         $middleware->web(append: [
             InitializeTenancyByDomainIfTenantHost::class,
             ApplyRequestLocale::class,

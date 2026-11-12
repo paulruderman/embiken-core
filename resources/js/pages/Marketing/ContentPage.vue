@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import MarketingLayout from '@/components/MarketingLayout.vue';
-import { blog } from '@/routes/marketing';
+import marketing from '@/routes/marketing';
 import { localRouteUrl } from '@/lib/local-route-url';
 
 interface MarketingPage {
@@ -58,7 +58,7 @@ defineProps<{ page: MarketingPage }>();
                 class="mb-8 flex items-center gap-3 text-sm text-zinc-500"
             >
                 <Link
-                    :href="localRouteUrl(blog())"
+                    :href="localRouteUrl(marketing.blog.localhost())"
                     class="font-medium text-emerald-900 hover:underline"
                     >Journal</Link
                 >

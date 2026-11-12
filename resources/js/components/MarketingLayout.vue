@@ -1,15 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import {
-    blog,
-    contact,
-    faq,
-    features,
-    home,
-    pricing,
-    privacy,
-    terms,
-} from '@/routes/marketing';
+import marketing from '@/routes/marketing';
 import { localRouteUrl } from '@/lib/local-route-url';
 </script>
 
@@ -20,7 +11,7 @@ import { localRouteUrl } from '@/lib/local-route-url';
                 class="mx-auto flex max-w-7xl items-center justify-between gap-6 px-6 py-5 lg:px-10"
             >
                 <Link
-                    :href="localRouteUrl(home())"
+                    :href="localRouteUrl(marketing.home.localhost())"
                     class="text-xl font-semibold tracking-tight"
                     >embiken</Link
                 >
@@ -29,27 +20,27 @@ import { localRouteUrl } from '@/lib/local-route-url';
                     class="flex flex-wrap items-center justify-end gap-x-5 gap-y-2 text-sm font-medium"
                 >
                     <Link
-                        :href="localRouteUrl(features())"
+                        :href="localRouteUrl(marketing.features.localhost())"
                         class="text-zinc-600 transition hover:text-emerald-900"
                         >Product</Link
                     >
                     <Link
-                        :href="localRouteUrl(pricing())"
+                        :href="localRouteUrl(marketing.pricing.localhost())"
                         class="text-zinc-600 transition hover:text-emerald-900"
                         >Pricing</Link
                     >
                     <Link
-                        :href="localRouteUrl(faq())"
+                        :href="localRouteUrl(marketing.faq.localhost())"
                         class="text-zinc-600 transition hover:text-emerald-900"
                         >FAQ</Link
                     >
                     <Link
-                        :href="localRouteUrl(blog())"
+                        :href="localRouteUrl(marketing.blog.localhost())"
                         class="text-zinc-600 transition hover:text-emerald-900"
                         >Journal</Link
                     >
                     <Link
-                        :href="localRouteUrl(contact())"
+                        :href="localRouteUrl(marketing.contact.localhost())"
                         class="rounded-full bg-emerald-900 px-4 py-2.5 text-white transition hover:bg-emerald-800"
                         >Talk to us</Link
                     >
@@ -65,7 +56,7 @@ import { localRouteUrl } from '@/lib/local-route-url';
             >
                 <div>
                     <Link
-                        :href="localRouteUrl(home())"
+                        :href="localRouteUrl(marketing.home.localhost())"
                         class="text-lg font-semibold tracking-tight"
                         >embiken</Link
                     >
@@ -82,22 +73,22 @@ import { localRouteUrl } from '@/lib/local-route-url';
                         >Explore</span
                     >
                     <Link
-                        :href="localRouteUrl(features())"
+                        :href="localRouteUrl(marketing.features.localhost())"
                         class="hover:text-emerald-900"
                         >Product overview</Link
                     >
                     <Link
-                        :href="localRouteUrl(pricing())"
+                        :href="localRouteUrl(marketing.pricing.localhost())"
                         class="hover:text-emerald-900"
                         >Pricing</Link
                     >
                     <Link
-                        :href="localRouteUrl(blog())"
+                        :href="localRouteUrl(marketing.blog.localhost())"
                         class="hover:text-emerald-900"
                         >Journal</Link
                     >
                     <Link
-                        :href="localRouteUrl(faq())"
+                        :href="localRouteUrl(marketing.faq.localhost())"
                         class="hover:text-emerald-900"
                         >FAQ</Link
                     >
@@ -110,17 +101,17 @@ import { localRouteUrl } from '@/lib/local-route-url';
                         >Company</span
                     >
                     <Link
-                        :href="localRouteUrl(contact())"
+                        :href="localRouteUrl(marketing.contact.localhost())"
                         class="hover:text-emerald-900"
                         >Contact</Link
                     >
                     <Link
-                        :href="localRouteUrl(terms())"
+                        :href="localRouteUrl(marketing.terms.localhost())"
                         class="hover:text-emerald-900"
                         >Terms</Link
                     >
                     <Link
-                        :href="localRouteUrl(privacy())"
+                        :href="localRouteUrl(marketing.privacy.localhost())"
                         class="hover:text-emerald-900"
                         >Privacy</Link
                     >

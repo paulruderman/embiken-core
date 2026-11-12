@@ -54,23 +54,23 @@ class UpdateShopBrandingAction extends Action
         $current = ShopSetting::current();
         $options = [
             'brand_name' => $command->option('brand-name') ?? \Laravel\Prompts\text(
-                'Brand name (blank uses the shop name)',
+                __('app.branding_ui.command_brand_name'),
                 default: $current->brand_name ?? '',
             ),
             'primary_color' => $command->option('primary-color') ?? \Laravel\Prompts\text(
-                'Primary Tailwind color class or HEX value (blank uses the default)',
+                __('app.branding_ui.command_primary_color'),
                 default: $current->primary_color ?? '',
             ),
             'brand_gray_color' => $command->option('brand-gray-color') ?? \Laravel\Prompts\text(
-                'Brand gray Tailwind color class or HEX value (blank uses the default)',
+                __('app.branding_ui.command_brand_gray'),
                 default: $current->brand_gray_color ?? '',
             ),
             'logo_path' => $command->option('logo-path') ?? \Laravel\Prompts\text(
-                'Logo path (blank removes the custom logo)',
+                __('app.branding_ui.command_logo_path'),
                 default: $current->logo_path ?? '',
             ),
             'favicon_path' => $command->option('favicon-path') ?? \Laravel\Prompts\text(
-                'Favicon path (blank removes the custom favicon)',
+                __('app.branding_ui.command_favicon_path'),
                 default: $current->favicon_path ?? '',
             ),
         ];
@@ -84,7 +84,7 @@ class UpdateShopBrandingAction extends Action
         validator($branding, $this->rules())->validate();
         $this->handle($branding);
 
-        $command->info('Shop branding updated.');
+        $command->info(__('app.branding_ui.command_updated'));
 
         return self::SUCCESS;
     }
@@ -96,7 +96,7 @@ class UpdateShopBrandingAction extends Action
     {
         $colorRule = static function (string $attribute, mixed $value, Closure $fail): void {
             if (! BrandColor::isValid($value)) {
-                $fail('Enter a Tailwind color family name or a six-digit HEX value.');
+                $fail(__('app.branding_ui.invalid_color'));
             }
         };
 

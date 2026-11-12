@@ -18,7 +18,7 @@ const props = defineProps<{
     shopName: string;
     logoUrl: string | null;
     primaryColor: string;
-    locale: 'en' | 'es' | 'fr';
+    contentLocale: 'en' | 'es' | 'fr';
     layout: 'hero' | 'split' | 'story';
     layoutData: LayoutData;
     theme: 'light' | 'warm' | 'dark';
@@ -44,7 +44,7 @@ const copy = {
     },
 };
 
-const text = copy[props.locale];
+const text = copy[props.contentLocale];
 </script>
 
 <template>
@@ -66,7 +66,7 @@ const text = copy[props.locale];
                     v-if="logoUrl"
                     :src="logoUrl"
                     :alt="shopName"
-                    class="max-h-10 max-w-40 object-contain"
+                    class="h-12 w-auto max-w-44 object-contain sm:h-14 sm:max-w-56"
                 />
                 <span v-else>{{ shopName }}</span>
             </div>

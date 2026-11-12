@@ -5,10 +5,15 @@ namespace App\Filament\Shop\Resources\Locations\Schemas;
 use App\Enums\BikeAssignmentPolicy;
 use App\Enums\ReturnSituation;
 use App\Models\Location;
+use App\Support\Locales;
 use Embiken\BikeRentals\Models\RentalPackage;
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Text;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Schema as SchemaFacade;
 
@@ -25,7 +30,54 @@ class LocationForm
                     ->required()
                     ->maxLength(255),
                 TextInput::make('timezone')
+                    ->label(__('app.location_ui.timezone'))
                     ->required(),
+                Section::make(__('app.location_ui.address'))
+                    ->description(__('app.location_ui.address_help'))
+                    ->columns(2)
+                    ->schema([
+                        TextInput::make('address_line_1')
+                            ->label(__('app.location_ui.address_line_1'))
+                            ->maxLength(255)
+                            ->nullable(),
+                        TextInput::make('address_line_2')
+                            ->label(__('app.location_ui.address_line_2'))
+                            ->maxLength(255)
+                            ->nullable(),
+                        TextInput::make('city')
+                            ->label(__('app.location_ui.city'))
+                            ->maxLength(255)
+                            ->nullable(),
+                        TextInput::make('administrative_area')
+                            ->label(__('app.location_ui.administrative_area'))
+                            ->maxLength(255)
+                            ->nullable(),
+                        TextInput::make('postal_code')
+                            ->label(__('app.location_ui.postal_code'))
+                            ->maxLength(32)
+                            ->nullable(),
+                        TextInput::make('country_code')
+                            ->label(__('app.location_ui.country_code'))
+                            ->length(2)
+                            ->regex('/^[A-Za-z]{2}$/')
+                            ->nullable(),
+                    ]),
+                Select::make('week_start_day')
+                    ->label(__('app.location_ui.week_start_day'))
+                    ->helperText(__('app.location_ui.week_start_day_help'))
+                    ->options([
+                        'saturday' => __('app.location_ui.week_start_days.saturday'),
+                        'sunday' => __('app.location_ui.week_start_days.sunday'),
+                        'monday' => __('app.location_ui.week_start_days.monday'),
+                    ])
+                    ->required()
+                    ->default('sunday'),
+                TextInput::make('customer_contact_email')
+                    ->label(__('app.location_ui.customer_email'))
+                    ->helperText(__('app.location_ui.customer_email_help'))
+                    ->email()
+                    ->maxLength(254)
+                    ->nullable(),
                 TextInput::make('currency')
                     ->required()
                     ->default('USD')
@@ -41,6 +93,38 @@ class LocationForm
                     ->required()
                     ->default(10)
                     ->minValue(0),
+                TextInput::make('reservation_readiness_window_minutes')
+                    ->label(__('app.location_ui.readiness_window'))
+                    ->helperText(__('app.location_ui.readiness_window_help'))
+                    ->numeric()
+                    ->required()
+                    ->default(45)
+                    ->minValue(0)
+                    ->maxValue(1440),
+                CheckboxList::make('enabled_content_locales')
+                    ->label(__('app.location_ui.site_languages'))
+                    ->helperText(__('app.location_ui.site_languages_help'))
+                    ->options(Locales::contentLabels())
+                    ->required()
+                    ->minItems(1)
+                    ->live(),
+                Select::make('default_content_locale')
+                    ->label(__('app.location_ui.default_site_language'))
+                    ->options(fn (Get $get): array => array_intersect_key(
+                        Locales::contentLabels(),
+                        array_flip($get('enabled_content_locales') ?? ['en']),
+                    ))
+                    ->required(),
+                Section::make(__('app.location_ui.waiver'))
+                    ->description(__('app.location_ui.waiver_help'))
+                    ->schema(array_map(
+                        static fn (string $locale): Textarea => Textarea::make('waiver_text_'.$locale)
+                            ->label(__('app.location_ui.waiver_language', ['language' => Locales::contentLabels()[$locale] ?? $locale]))
+                            ->rows(8)
+                            ->maxLength(20000)
+                            ->columnSpanFull(),
+                        Location::query()->firstOrFail()->enabled_content_locales,
+                    )),
                 Select::make('bike_assignment_policy')
                     ->options(BikeAssignmentPolicy::class)
                     ->required(),

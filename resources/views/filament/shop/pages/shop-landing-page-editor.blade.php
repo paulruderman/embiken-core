@@ -3,7 +3,7 @@
         {{ $this->form }}
 
         <x-filament::button type="submit">
-            Save home page
+            {{ __('app.shop_content_ui.save_home_page') }}
         </x-filament::button>
     </form>
 </x-filament-panels::page>

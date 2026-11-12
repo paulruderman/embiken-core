@@ -4,8 +4,10 @@ namespace App\Providers\Filament;
 
 use App\Filament\Shop\Widgets\ShopSetupChecklistWidget;
 use App\Http\Middleware\ApplyFilamentTranslationLocale;
+use App\Models\Location;
 use App\Models\ShopSetting;
 use App\Support\BrandColor;
+use App\Support\EnumColorPalettes;
 use App\Support\Locales;
 use App\Support\ModuleRegistry;
 use Filament\Http\Middleware\Authenticate;
@@ -23,6 +25,7 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\HtmlString;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use LaraZeus\SpatieTranslatable\SpatieTranslatablePlugin;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
@@ -35,12 +38,20 @@ class ShopPanelProvider extends PanelProvider
         $panel
             ->id('shop')
             ->path('manage')
-            ->brandName(fn (): string => $this->shopSetting()?->brand_name ?: (tenant()->name ?? (string) config('app.name')))
-            ->brandLogo(function (): ?string {
+            ->brandName(fn (): string => $this->shopBrandName())
+            ->brandLogo(function (): ?HtmlString {
                 $logoPath = $this->shopSetting()?->logo_path;
 
-                return $logoPath === null ? null : tenant_asset($logoPath);
+                if ($logoPath === null) {
+                    return null;
+                }
+
+                $logoUrl = e(tenant_asset($logoPath));
+                $shopName = e($this->shopBrandName());
+
+                return new HtmlString("<span style=\"display:inline-flex;align-items:center;gap:.75rem;height:100%\"><img src=\"{$logoUrl}\" alt=\"\" style=\"max-height:100%;width:auto\"><span style=\"font-weight:600;white-space:nowrap\">{$shopName}</span></span>");
             })
+            ->brandLogoHeight('3rem')
             ->favicon(function (): string {
                 $faviconPath = $this->shopSetting()?->favicon_path;
 
@@ -52,7 +63,7 @@ class ShopPanelProvider extends PanelProvider
             ->passwordReset()
             ->viteTheme('resources/css/filament/shop/theme.css')
             ->plugin(SpatieTranslatablePlugin::make()
-                ->defaultLocales(Locales::contentLocales())
+                ->defaultLocales(Locales::tenantContentLocales())
                 ->getLocaleLabelUsing(fn (string $locale): ?string => Locales::contentLabels()[$locale] ?? null)
                 ->useFallbackLocale())
             ->colors(fn (): array => $this->panelColors())
@@ -71,6 +82,7 @@ class ShopPanelProvider extends PanelProvider
             ->navigationGroups([
                 'Fleet' => NavigationGroup::make()->label(fn (): string => __('app.navigation.fleet')),
                 'Rentals' => NavigationGroup::make()->label(fn (): string => __('app.navigation.rentals')),
+                'Data Imports' => NavigationGroup::make()->label(fn (): string => __('app.navigation.data_imports')),
                 'Online Book' => NavigationGroup::make()->label(fn (): string => __('app.navigation.online_book')),
                 'Weather' => NavigationGroup::make()->label(fn (): string => __('app.navigation.weather')),
                 'Shop settings' => NavigationGroup::make()->label(fn (): string => __('app.navigation.shop_settings')),
@@ -106,6 +118,12 @@ class ShopPanelProvider extends PanelProvider
         return tenant() === null ? null : ShopSetting::current();
     }
 
+    private function shopBrandName(): string
+    {
+        return $this->shopSetting()?->brand_name
+            ?: (Location::query()->value('name') ?: (tenant()->name ?? (string) config('app.name')));
+    }
+
     /**
      * @return array<string, array<int, string>>
      */
@@ -122,6 +140,7 @@ class ShopPanelProvider extends PanelProvider
         $settings = $this->shopSetting();
 
         return [
+            ...EnumColorPalettes::all(),
             'primary' => $this->paletteForColor($settings?->primary_color, ShopSetting::DEFAULT_PRIMARY_COLOR),
             'gray' => $this->paletteForColor($settings?->brand_gray_color, ShopSetting::DEFAULT_GRAY_COLOR),
         ];

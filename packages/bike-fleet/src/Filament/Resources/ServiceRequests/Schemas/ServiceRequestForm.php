@@ -2,6 +2,7 @@
 
 namespace Embiken\BikeFleet\Filament\Resources\ServiceRequests\Schemas;
 
+use App\Filament\Tables\Columns\LocalizedDateTimeColumn;
 use App\Models\Staff;
 use Embiken\BikeFleet\Enums\ServiceStage;
 use Embiken\BikeFleet\Models\Bike;
@@ -38,8 +39,18 @@ class ServiceRequestForm
                 Toggle::make('blocks_usage')
                     ->label(__('app.fleet.fields.blocks_usage'))
                     ->default(true),
-                DateTimePicker::make('starts_at')->label(__('app.fleet.fields.starts_at')),
-                DateTimePicker::make('ends_at')->label(__('app.fleet.fields.ends_at')),
+                DateTimePicker::make('starts_at')
+                    ->label(__('app.fleet.fields.starts_at'))
+                    ->native(false)
+                    ->seconds(false)
+                    ->timezone(LocalizedDateTimeColumn::shopTimezone())
+                    ->displayFormat(__('app.datetime_ui.input_format')),
+                DateTimePicker::make('ends_at')
+                    ->label(__('app.fleet.fields.ends_at'))
+                    ->native(false)
+                    ->seconds(false)
+                    ->timezone(LocalizedDateTimeColumn::shopTimezone())
+                    ->displayFormat(__('app.datetime_ui.input_format')),
                 Select::make('created_by')
                     ->label(__('app.fleet.fields.created_by'))
                     ->options(fn (): array => Staff::query()->orderBy('name')->pluck('name', 'id')->all())

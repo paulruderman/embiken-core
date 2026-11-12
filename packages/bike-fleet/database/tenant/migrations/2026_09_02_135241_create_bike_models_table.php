@@ -11,8 +11,9 @@ return new class extends Migration
         Schema::create('bike_models', function (Blueprint $table) {
             $table->id();
             $table->foreignId('bike_category_id')->constrained()->cascadeOnDelete();
-            $table->string('name');
-            $table->text('description')->nullable();
+            $table->json('name');
+            $table->json('description')->nullable();
+            $table->string('manufacturer')->nullable();
             $table->unsignedInteger('padding_minutes')->nullable();
             $table->string('photo')->nullable();
             $table->timestamps();

@@ -9,6 +9,7 @@ use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeRentals\Enums\BikeReservationStatus;
 use Embiken\BikeRentals\Enums\ReservationChannel;
 use Embiken\BikeRentals\Enums\ReservationStage;
+use Embiken\BikeRentals\Exceptions\OccupancyUnavailable;
 use Embiken\BikeRentals\Http\Resources\DayPatchResource;
 use Embiken\BikeRentals\Models\BikeReservation;
 use Embiken\BikeRentals\Services\Availability;
@@ -90,6 +91,8 @@ class PickupAction extends Action
                 }
             }
 
+            $bike = $availability->assertPickupReady($bike, $reservation);
+
             $line->status = BikeReservationStatus::Out;
             $line->checked_out_at = now();
             $line->save();
@@ -124,7 +127,7 @@ class PickupAction extends Action
                 $line,
                 isset($data['bike_id']) ? $this->findOneOrFail(Bike::query(), $data['bike_id']) : null,
             );
-        } catch (InvalidArgumentException $exception) {
+        } catch (InvalidArgumentException|OccupancyUnavailable $exception) {
             throw ValidationException::withMessages([
                 (isset($data['bike_id']) ? 'bike_id' : 'line') => $exception->getMessage(),
             ]);

@@ -1,15 +1,60 @@
 <?php
 
+use App\Actions\Devices\CompleteDevicePairingAction;
+use App\Actions\Devices\DeleteDeviceAction;
+use App\Actions\Devices\PairDeviceAction;
+use App\Actions\Devices\RequestDevicePairingCodeAction;
+use App\Actions\Platform\DeprovisionLocalTenantAction;
 use App\Actions\Platform\ImpersonatePlatformManagerAction;
+use App\Actions\Platform\JoinEarlyAccessWaitlistAction;
 use App\Actions\Platform\PublicSignupAction;
+use App\Actions\Platform\SendEarlyAccessInvitationAction;
+use App\Actions\Shop\ImportLocationMetadataAction;
 use App\Http\Controllers\MarketingPageController;
+use Embiken\BikeFleet\Actions\ImportCatalogFleetAction;
+use Embiken\BikeFleet\Actions\ValidateCatalogFleetImportAction;
+use Embiken\BikeRentals\Actions\ImportPackageRatesAction;
 use Illuminate\Support\Facades\Route;
+
+Route::post('/devices/pairing-codes', RequestDevicePairingCodeAction::class)
+    ->middleware('throttle:5,1')
+    ->name('devices.pairing-codes.store');
+
+Route::post('/devices/pairing', CompleteDevicePairingAction::class)
+    ->middleware('throttle:30,1')
+    ->name('devices.pairing.complete');
+
+Route::post('/devices/pair', PairDeviceAction::class)
+    ->middleware(['auth:staff', 'throttle:10,1'])
+    ->name('devices.pair');
+
+Route::delete('/devices/{device}', DeleteDeviceAction::class)
+    ->middleware('auth:staff')
+    ->name('devices.destroy');
+
+Route::post('/fleet/import/catalog', ImportCatalogFleetAction::class)
+    ->middleware('auth:staff')
+    ->name('fleet.import.catalog');
+
+Route::post('/rentals/import/package-rates', ImportPackageRatesAction::class)
+    ->middleware('auth:staff')
+    ->name('rentals.import.package-rates');
+
+Route::post('/shop/import/location-metadata', ImportLocationMetadataAction::class)
+    ->middleware('auth:staff')
+    ->name('shop.import.location-metadata');
 
 $centralDomains = config('tenancy.central_domains');
 
 Route::domain($centralDomains[0] ?? 'localhost')->group(function (): void {
+    Route::post('/platform/catalog-import/validate', ValidateCatalogFleetImportAction::class)
+        ->middleware('auth:web')
+        ->name('platform.catalog-import.validate');
     Route::get('/', [MarketingPageController::class, 'home'])->name('marketing.home');
     Route::get('/pricing', [MarketingPageController::class, 'pricing'])->name('marketing.pricing');
+    Route::get('/waitlist', [MarketingPageController::class, 'waitlist'])->name('marketing.waitlist');
+    Route::post('/waitlist', JoinEarlyAccessWaitlistAction::class)->middleware('throttle:5,1')->name('marketing.waitlist.store');
+    Route::get('/invite/{token}', [MarketingPageController::class, 'invite'])->name('marketing.invite');
     Route::get('/features', [MarketingPageController::class, 'show'])->defaults('slug', 'features')->name('marketing.features');
     Route::get('/faq', [MarketingPageController::class, 'show'])->defaults('slug', 'faq')->name('marketing.faq');
     Route::get('/contact', [MarketingPageController::class, 'show'])->defaults('slug', 'contact')->name('marketing.contact');
@@ -21,6 +66,9 @@ Route::domain($centralDomains[0] ?? 'localhost')->group(function (): void {
     Route::get('/{slug}', [MarketingPageController::class, 'show'])->where('slug', '^(?!platform$|signup$|checkout$|blog$)[^/]+$')->name('marketing.page');
     Route::get('/signup/{billingPlan}', [MarketingPageController::class, 'signup'])->name('marketing.signup');
     Route::post('/signup', PublicSignupAction::class)->middleware('throttle:5,1')->name('marketing.signup.store');
+    Route::post('/platform/early-access/{signup}/invite', SendEarlyAccessInvitationAction::class)
+        ->middleware('auth:web')
+        ->name('platform.early-access.invite');
     Route::get('/checkout/placeholder', [MarketingPageController::class, 'checkoutPlaceholder'])->name('marketing.checkout.placeholder');
 });
 
@@ -28,6 +76,9 @@ foreach (array_slice($centralDomains, 1) as $domain) {
     Route::domain($domain)->group(function () use ($domain): void {
         Route::get('/', [MarketingPageController::class, 'home'])->name('marketing.home.'.str_replace('.', '_', $domain));
         Route::get('/pricing', [MarketingPageController::class, 'pricing'])->name('marketing.pricing.'.str_replace('.', '_', $domain));
+        Route::get('/waitlist', [MarketingPageController::class, 'waitlist'])->name('marketing.waitlist.'.str_replace('.', '_', $domain));
+        Route::post('/waitlist', JoinEarlyAccessWaitlistAction::class)->middleware('throttle:5,1')->name('marketing.waitlist.store.'.str_replace('.', '_', $domain));
+        Route::get('/invite/{token}', [MarketingPageController::class, 'invite'])->name('marketing.invite.'.str_replace('.', '_', $domain));
         Route::get('/features', [MarketingPageController::class, 'show'])->defaults('slug', 'features')->name('marketing.features.'.str_replace('.', '_', $domain));
         Route::get('/faq', [MarketingPageController::class, 'show'])->defaults('slug', 'faq')->name('marketing.faq.'.str_replace('.', '_', $domain));
         Route::get('/contact', [MarketingPageController::class, 'show'])->defaults('slug', 'contact')->name('marketing.contact.'.str_replace('.', '_', $domain));
@@ -39,11 +90,19 @@ foreach (array_slice($centralDomains, 1) as $domain) {
         Route::get('/{slug}', [MarketingPageController::class, 'show'])->where('slug', '^(?!platform$|signup$|checkout$|blog$)[^/]+$')->name('marketing.page.'.str_replace('.', '_', $domain));
         Route::get('/signup/{billingPlan}', [MarketingPageController::class, 'signup'])->name('marketing.signup.'.str_replace('.', '_', $domain));
         Route::post('/signup', PublicSignupAction::class)->middleware('throttle:5,1')->name('marketing.signup.store.'.str_replace('.', '_', $domain));
+        Route::post('/platform/early-access/{signup}/invite', SendEarlyAccessInvitationAction::class)
+            ->middleware('auth:web')
+            ->name('platform.early-access.invite.'.str_replace('.', '_', $domain));
         Route::get('/checkout/placeholder', [MarketingPageController::class, 'checkoutPlaceholder'])->name('marketing.checkout.placeholder.'.str_replace('.', '_', $domain));
     });
 }
 
 foreach ($centralDomains as $domain) {
+    Route::domain($domain)
+        ->middleware('auth:web')
+        ->post('/platform/tenants/{tenant}/deprovision', DeprovisionLocalTenantAction::class)
+        ->name('platform.tenants.deprovision.'.str_replace('.', '_', $domain));
+
     Route::domain($domain)
         ->middleware('auth:web')
         ->get('/platform/tenants/{tenant}/impersonate', ImpersonatePlatformManagerAction::class)

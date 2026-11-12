@@ -23,7 +23,7 @@ class ShopCalloutBlock extends RichContentCustomBlock
     public static function configureEditorAction(Action $action): Action
     {
         return $action
-            ->modalDescription('Configure the shop callout block')
+            ->modalDescription(__('app.shop_content_ui.configure_callout_block'))
             ->schema([
                 TextInput::make('heading')
                     ->required()

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Platform\Resources\MarketingPages\Tables;
 
+use App\Filament\Tables\Columns\LocalizedDateTimeColumn;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -24,14 +25,12 @@ class MarketingPagesTable
                     ->label('Type')
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => $state === 'article' ? 'Journal article' : 'Page'),
-                TextColumn::make('published_at')
+                LocalizedDateTimeColumn::make('published_at')
                     ->label('Publication')
-                    ->dateTime()
                     ->sortable()
                     ->placeholder('Draft'),
-                TextColumn::make('updated_at')
+                LocalizedDateTimeColumn::make('updated_at')
                     ->label('Updated')
-                    ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])

@@ -4,11 +4,14 @@ namespace Embiken\BikeFleet\Filament\Resources\BikeModelVariants\Tables;
 
 use App\Filament\Shop\Support\ShopSetupReadiness;
 use App\Support\BrandColor;
+use Embiken\BikeFleet\Models\BikeModelVariant;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\ColorColumn;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class BikeModelVariantsTable
 {
@@ -16,6 +19,16 @@ class BikeModelVariantsTable
     {
         $table = $table
             ->columns([
+                ImageColumn::make('photo')
+                    ->label(__('app.fleet.fields.photo'))
+                    ->getStateUsing(static function (BikeModelVariant $record): ?string {
+                        $path = $record->displayPhotoPath();
+
+                        return $path === null ? null : tenant_asset($path);
+                    })
+                    ->imageSize(56)
+                    ->extraImgAttributes(['style' => 'object-fit: contain;'])
+                    ->alt(__('app.fleet.fields.photo')),
                 TextColumn::make('bikeModel.name')
                     ->label(__('app.fleet.fields.model'))
                     ->searchable(),
@@ -28,10 +41,11 @@ class BikeModelVariantsTable
                     ->toggleable(),
                 ColorColumn::make('color_value')
                     ->label(__('app.fleet.fields.color'))
-                    ->getStateUsing(static fn (?string $state): ?string => $state === null
+                    ->getStateUsing(static fn (BikeModelVariant $record): ?string => $record->color_value === null
                         ? null
-                        : BrandColor::swatch($state, '#000000')),
+                        : BrandColor::swatch($record->color_value, '#000000')),
             ])
+            ->modifyQueryUsing(static fn (Builder $query): Builder => $query->with('bikeModel.bikeCategory'))
             ->recordActions([
                 EditAction::make(),
                 DeleteAction::make(),

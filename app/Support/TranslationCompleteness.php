@@ -43,10 +43,12 @@ class TranslationCompleteness
         }
 
         $gaps = [];
+        $locales = Locales::tenantContentLocales();
+        $defaultLocale = Locales::tenantDefaultContentLocale();
         $landingPage = ShopLandingPage::current();
 
         if ($landingPage !== null) {
-            $this->addLandingPageGaps($gaps, $landingPage);
+            $this->addLandingPageGaps($gaps, $landingPage, $locales, $defaultLocale);
         }
 
         $modules = app(ModuleRegistry::class);
@@ -58,6 +60,8 @@ class TranslationCompleteness
                 ['name', 'description'],
                 'Bike category',
                 static fn (Model $record): string => BikeCategoryResource::getUrl('edit', ['record' => $record]),
+                $locales,
+                $defaultLocale,
             );
             $this->addModelGaps(
                 $gaps,
@@ -65,6 +69,8 @@ class TranslationCompleteness
                 ['name', 'description'],
                 'Bike model',
                 static fn (Model $record): string => BikeModelResource::getUrl('edit', ['record' => $record]),
+                $locales,
+                $defaultLocale,
             );
             $this->addModelGaps(
                 $gaps,
@@ -72,6 +78,8 @@ class TranslationCompleteness
                 ['color_name'],
                 'Bike variant',
                 static fn (Model $record): string => BikeModelVariantResource::getUrl('edit', ['record' => $record]),
+                $locales,
+                $defaultLocale,
             );
         }
 
@@ -82,17 +90,22 @@ class TranslationCompleteness
                 ['name', 'description', 'tagline', 'blurb'],
                 'Rental package',
                 static fn (Model $record): string => RentalPackageResource::getUrl('edit', ['record' => $record]),
+                $locales,
+                $defaultLocale,
             );
         }
 
         return $this->gaps = $gaps;
     }
 
-    /** @param list<array{locale: string, type: string, attribute: string, url: string}> $gaps */
-    private function addLandingPageGaps(array &$gaps, ShopLandingPage $page): void
+    /**
+     * @param  list<array{locale: string, type: string, attribute: string, url: string}>  $gaps
+     * @param  list<string>  $locales
+     */
+    private function addLandingPageGaps(array &$gaps, ShopLandingPage $page, array $locales, string $defaultLocale): void
     {
         $layoutData = $page->layout_data;
-        $english = $layoutData['en'] ?? [];
+        $defaultContent = $layoutData[$defaultLocale] ?? [];
         $layoutFields = ['eyebrow', 'headline', 'description', 'button_label'];
 
         if ($page->layout === 'story') {
@@ -100,15 +113,15 @@ class TranslationCompleteness
         }
 
         foreach ($layoutFields as $field) {
-            $this->addArrayTranslationGaps($gaps, $english[$field] ?? null, static fn (string $locale): mixed => $layoutData[$locale][$field] ?? null, 'Shop home page', $field, ShopLandingPageEditor::getUrl());
+            $this->addArrayTranslationGaps($gaps, $defaultContent[$field] ?? null, static fn (string $locale): mixed => $layoutData[$locale][$field] ?? null, 'Shop home page', $field, ShopLandingPageEditor::getUrl(), $locales, $defaultLocale);
         }
 
-        $englishContent = $page->custom_content['en'] ?? null;
+        $defaultContentValue = $page->custom_content[$defaultLocale] ?? null;
 
-        if ($this->hasRichContent($englishContent)) {
-            foreach (Locales::contentLocales() as $locale) {
-                if ($locale === 'en' || ! $this->hasRichContent($page->custom_content[$locale] ?? null)) {
-                    if ($locale !== 'en') {
+        if ($this->hasRichContent($defaultContentValue)) {
+            foreach ($locales as $locale) {
+                if ($locale === $defaultLocale || ! $this->hasRichContent($page->custom_content[$locale] ?? null)) {
+                    if ($locale !== $defaultLocale) {
                         $this->addGap($gaps, $locale, 'Shop home page', 'custom content', ShopLandingPageEditor::getUrl());
                     }
                 }
@@ -117,16 +130,16 @@ class TranslationCompleteness
 
         foreach ($page->booking_notices ?? [] as $notice) {
             $message = $notice['message'];
-            $englishMessage = is_array($message) ? ($message['en'] ?? null) : $message;
+            $defaultMessage = is_array($message) ? ($message[$defaultLocale] ?? null) : $message;
 
-            foreach (Locales::contentLocales() as $locale) {
-                if ($locale === 'en') {
+            foreach ($locales as $locale) {
+                if ($locale === $defaultLocale) {
                     continue;
                 }
 
                 $localizedMessage = is_array($message) ? ($message[$locale] ?? null) : null;
 
-                if (filled($englishMessage) && ! filled($localizedMessage)) {
+                if (filled($defaultMessage) && ! filled($localizedMessage)) {
                     $this->addGap($gaps, $locale, 'Booking message', 'message', ShopLandingPageEditor::getUrl());
                 }
             }
@@ -139,8 +152,9 @@ class TranslationCompleteness
      * @param  list<string>  $attributes
      * @param  class-string<Model>|string  $type
      * @param  callable(Model): string  $url
+     * @param  list<string>  $locales
      */
-    private function addModelGaps(array &$gaps, iterable $records, array $attributes, string $type, callable $url): void
+    private function addModelGaps(array &$gaps, iterable $records, array $attributes, string $type, callable $url, array $locales, string $defaultLocale): void
     {
         foreach ($records as $record) {
             if (! method_exists($record, 'getTranslation')) {
@@ -148,14 +162,14 @@ class TranslationCompleteness
             }
 
             foreach ($attributes as $attribute) {
-                $englishValue = $record->getTranslation($attribute, 'en', false);
+                $defaultValue = $record->getTranslation($attribute, $defaultLocale, false);
 
-                if (! filled($englishValue)) {
+                if (! filled($defaultValue)) {
                     continue;
                 }
 
-                foreach (Locales::contentLocales() as $locale) {
-                    if ($locale === 'en') {
+                foreach ($locales as $locale) {
+                    if ($locale === $defaultLocale) {
                         continue;
                     }
 
@@ -167,15 +181,18 @@ class TranslationCompleteness
         }
     }
 
-    /** @param list<array{locale: string, type: string, attribute: string, url: string}> $gaps */
-    private function addArrayTranslationGaps(array &$gaps, mixed $englishValue, callable $localizedValue, string $type, string $attribute, string $url): void
+    /**
+     * @param  list<array{locale: string, type: string, attribute: string, url: string}>  $gaps
+     * @param  list<string>  $locales
+     */
+    private function addArrayTranslationGaps(array &$gaps, mixed $defaultValue, callable $localizedValue, string $type, string $attribute, string $url, array $locales, string $defaultLocale): void
     {
-        if (! filled($englishValue)) {
+        if (! filled($defaultValue)) {
             return;
         }
 
-        foreach (Locales::contentLocales() as $locale) {
-            if ($locale !== 'en' && ! filled($localizedValue($locale))) {
+        foreach ($locales as $locale) {
+            if ($locale !== $defaultLocale && ! filled($localizedValue($locale))) {
                 $this->addGap($gaps, $locale, $type, $attribute, $url);
             }
         }

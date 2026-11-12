@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Listeners\LogBroadcastEvent;
 use App\Models\Staff;
 use App\Models\User;
 use App\Support\Locales;
@@ -10,6 +11,7 @@ use BezhanSalleh\LanguageSwitch\LanguageSwitch;
 use Carbon\CarbonImmutable;
 use Filament\Facades\Filament;
 use Filament\Support\Facades\FilamentView;
+use Filament\Tables\Table;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Date;
@@ -48,11 +50,22 @@ class AppServiceProvider extends ServiceProvider
         }
 
         $this->configureDefaults();
+        Event::listen('*', LogBroadcastEvent::class);
+        Table::configureUsing(static function (Table $table): void {
+            $table->striped();
+        });
+
         Translatable::fallback('en');
 
         LanguageSwitch::configureUsing(function (LanguageSwitch $switch): void {
             $switch
-                ->locales(Locales::all())
+                ->locales(static fn (): array => tenant() === null
+                    ? Locales::all()
+                    : array_map(static fn (string $locale): string => match ($locale) {
+                        'es' => 'es_419',
+                        'fr' => 'fr_CA',
+                        default => 'en_US',
+                    }, Locales::tenantContentLocales()))
                 ->labels(Locales::labels())
                 ->userPreferredLocale(function (): ?string {
                     $guard = Filament::getCurrentPanel()?->getAuthGuard();

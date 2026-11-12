@@ -20,8 +20,10 @@ class LocationFactory extends Factory
         return [
             'name' => fake()->company().' Bikes',
             'timezone' => 'America/New_York',
+            'week_start_day' => 'sunday',
             'currency' => 'usd',
             'minimum_turnaround_buffer_minutes' => 10,
+            'reservation_readiness_window_minutes' => 45,
             'bike_assignment_policy' => BikeAssignmentPolicy::Terminal,
             'return_situation' => ReturnSituation::Home,
         ];

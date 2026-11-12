@@ -21,7 +21,7 @@ class WeatherSitesTable
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('nws_office')
-                    ->label('Office'),
+                    ->label(__('app.weather_ui.office')),
                 TextColumn::make('nws_grid_x')
                     ->label('X'),
                 TextColumn::make('nws_grid_y')

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Contracts;
 
 use App\Models\Location;
+use Carbon\CarbonInterface;
 
 interface DayStoreContributor
 {
@@ -13,5 +14,5 @@ interface DayStoreContributor
     /**
      * @return array<string, mixed>
      */
-    public function snapshot(Location $location): array;
+    public function snapshot(Location $location, ?CarbonInterface $scheduleDate = null): array;
 }

@@ -1,0 +1,8 @@
+bid,variant_key,serial_number,in_service,self_bookable
+GI-A001,treadwell-s,DEMO-GI-0001,true,true
+GI-A002,treadwell-m,DEMO-GI-0002,true,true
+GI-A003,treadwell-m,DEMO-GI-0003,true,true
+GI-A004,treadwell-l,DEMO-GI-0004,true,true
+GI-K001,fazer-16,DEMO-GI-0005,true,true
+GI-K002,fazer-20,DEMO-GI-0006,true,true
+GI-K003,fazer-24,DEMO-GI-0007,true,true

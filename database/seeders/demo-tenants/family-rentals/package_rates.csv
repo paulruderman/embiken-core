@@ -1,0 +1,19 @@
+package_key,category_name,model_name,variant_size,variant_color_name,variant_color_value,rate_minor_units
+family-hour,Kids Bikes,Sprout,12-inch,Coral,#F97360,1800
+family-hour,Kids Bikes,Sprout,16-inch,Coral,#F97360,1800
+family-hour,Kids Bikes,Trailblazer Kids,20-inch,Sky,#38BDF8,1800
+family-hour,Comfort Bikes,Family Comfort,S,Mint,#34D399,1800
+family-hour,Comfort Bikes,Family Comfort,M,Mint,#34D399,1800
+family-hour,Comfort Bikes,Family Tandem,One Size,Red,#DC2626,1800
+family-day,Kids Bikes,Sprout,12-inch,Coral,#F97360,5200
+family-day,Kids Bikes,Sprout,16-inch,Coral,#F97360,5200
+family-day,Kids Bikes,Trailblazer Kids,20-inch,Sky,#38BDF8,5200
+family-day,Comfort Bikes,Family Comfort,S,Mint,#34D399,5200
+family-day,Comfort Bikes,Family Comfort,M,Mint,#34D399,5200
+family-day,Comfort Bikes,Family Tandem,One Size,Red,#DC2626,5200
+fit-check,Kids Bikes,Sprout,12-inch,Coral,#F97360,0
+fit-check,Kids Bikes,Sprout,16-inch,Coral,#F97360,0
+fit-check,Kids Bikes,Trailblazer Kids,20-inch,Sky,#38BDF8,0
+fit-check,Comfort Bikes,Family Comfort,S,Mint,#34D399,0
+fit-check,Comfort Bikes,Family Comfort,M,Mint,#34D399,0
+fit-check,Comfort Bikes,Family Tandem,One Size,Red,#DC2626,0

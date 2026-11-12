@@ -8,17 +8,34 @@ use App\Filament\Shop\Resources\Locations\LocationResource;
 use App\Filament\Shop\Resources\Locations\Pages\ListLocations;
 use App\Filament\Shop\Resources\Staff\StaffResource;
 use App\Models\Location;
+use App\Models\LocationHour;
 use App\Models\ShopSetting;
 use App\Models\Staff;
 use App\Notifications\SetPasswordNotification;
+use Embiken\BikeFleet\Filament\Resources\BikeCategories\BikeCategoryResource;
+use Embiken\BikeFleet\Filament\Resources\BikeModels\Pages\ListBikeModels;
+use Embiken\BikeFleet\Filament\Resources\ServiceRequests\Pages\ListServiceRequests;
+use Embiken\BikeFleet\Filament\Resources\ServiceRequests\ServiceRequestResource;
+use Embiken\BikeFleet\Models\Bike;
+use Embiken\BikeFleet\Models\BikeCategory;
+use Embiken\BikeFleet\Models\BikeModel;
+use Embiken\BikeFleet\Models\BikeModelVariant;
+use Embiken\BikeRentals\Filament\Resources\Customers\Pages\EditCustomer;
+use Embiken\BikeRentals\Filament\Resources\Customers\RelationManagers\ReservationsRelationManager;
+use Embiken\BikeRentals\Filament\Resources\RentalPackages\Pages\EditRentalPackage;
+use Embiken\BikeRentals\Filament\Resources\RentalPackages\RelationManagers\VariantsRelationManager;
 use Embiken\BikeRentals\Filament\Resources\Reservations\Pages\EditReservation;
+use Embiken\BikeRentals\Filament\Resources\Reservations\Pages\ListReservations;
 use Embiken\BikeRentals\Filament\Resources\Reservations\ReservationResource;
+use Embiken\BikeRentals\Models\Customer;
+use Embiken\BikeRentals\Models\RentalPackage;
 use Embiken\BikeRentals\Models\Reservation;
 use Filament\Facades\Filament;
 use Filament\Support\Colors\Color;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\HtmlString;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Tests\Concerns\MigratesTenantSchema;
@@ -62,6 +79,17 @@ test('a manager can open the location list', function () {
 
     Livewire::test(ListLocations::class)
         ->assertOk();
+});
+
+test('the location list displays currency codes in uppercase', function () {
+    $staff = Staff::factory()->create();
+    $staff->location->update(['currency' => 'usd']);
+
+    $this->actingAs($staff, 'staff');
+
+    Livewire::test(ListLocations::class)
+        ->assertSee('USD')
+        ->assertDontSee('usd');
 });
 
 test('a manager can configure shop branding', function () {
@@ -133,7 +161,7 @@ test('shop branding rejects an invalid primary color without changing settings',
 
     expect(fn () => app(UpdateShopBrandingAction::class)([
         'brand_name' => null,
-        'primary_color' => 'not-a-color',
+        'primary_color' => 'chartreuse',
         'brand_gray_color' => ShopSetting::DEFAULT_GRAY_COLOR,
         'logo_path' => null,
         'favicon_path' => null,
@@ -175,6 +203,228 @@ test('shop filament does not create or delete reservations', function () {
         ->and(ReservationResource::canDelete($reservation))->toBeFalse();
 });
 
+test('reservation and service request pages link to their relevant incomplete setup', function () {
+    $staff = Staff::factory()->create();
+
+    $this->actingAs($staff, 'staff');
+
+    expect(ReservationResource::canCreate())->toBeFalse()
+        ->and(ReservationResource::getNavigationBadge())->toBe('⚠️ Pending')
+        ->and(ReservationResource::getNavigationBadgeColor())->toBe('warning')
+        ->and(ReservationResource::getNavigationBadgeTooltip())->toContain('Bike categories');
+
+    $page = new ListReservations;
+    $headerActions = (new ReflectionMethod(ListReservations::class, 'getHeaderActions'))
+        ->invoke($page);
+    $subheading = $page->getSubheading();
+
+    expect($subheading)
+        ->toBeInstanceOf(HtmlString::class)
+        ->and($subheading->toHtml())
+        ->toContain('Online Book setup is incomplete. Next: ')
+        ->toContain('href="'.BikeCategoryResource::getUrl('create').'?setup_target=book_offer"')
+        ->toContain('>Add a bike category</a>')
+        ->and($headerActions)->toHaveCount(1)
+        ->and($headerActions[0]->getUrl())->toContain('setup_target=book_offer');
+
+    $serviceRequestPage = new ListServiceRequests;
+    $serviceRequestHeaderActions = (new ReflectionMethod(ListServiceRequests::class, 'getHeaderActions'))
+        ->invoke($serviceRequestPage);
+    $serviceRequestSubheading = $serviceRequestPage->getSubheading();
+
+    expect(ServiceRequestResource::getNavigationBadge())->toBe('⚠️ Pending')
+        ->and(ServiceRequestResource::getNavigationBadgeColor())->toBe('warning')
+        ->and(ServiceRequestResource::getNavigationBadgeTooltip())->toContain('Bike categories')
+        ->and($serviceRequestSubheading)->toBeInstanceOf(HtmlString::class)
+        ->and($serviceRequestSubheading->toHtml())
+        ->toContain('Before continuing setup for service requests, complete this step: ')
+        ->toContain('href="'.BikeCategoryResource::getUrl('create').'?setup_target=service_requests"')
+        ->toContain('>Add a bike category</a>')
+        ->and($serviceRequestHeaderActions)->toHaveCount(1)
+        ->and($serviceRequestHeaderActions[0]->getName())->toBe('continueSetup')
+        ->and($serviceRequestHeaderActions[0]->getUrl())->toContain('setup_target=service_requests');
+
+    Livewire::test(ListServiceRequests::class)
+        ->assertOk()
+        ->assertSee('Before continuing setup for service requests, complete this step:')
+        ->assertSeeHtml('href="'.BikeCategoryResource::getUrl('create').'?setup_target=service_requests"')
+        ->assertSee('Add a bike category')
+        ->assertSee('Continue setup');
+});
+
+test('setup callouts and actions use the active locale', function () {
+    $staff = Staff::factory()->create();
+
+    $this->actingAs($staff, 'staff');
+    app()->setLocale('es');
+
+    $reservationPage = new ListReservations;
+    $reservationAction = (new ReflectionMethod(ListReservations::class, 'getHeaderActions'))
+        ->invoke($reservationPage)[0];
+    $serviceRequestPage = new ListServiceRequests;
+    $serviceRequestAction = (new ReflectionMethod(ListServiceRequests::class, 'getHeaderActions'))
+        ->invoke($serviceRequestPage)[0];
+
+    expect($reservationPage->getSubheading()->toHtml())
+        ->toContain('La configuración de Reservas en línea está incompleta. Siguiente paso: ')
+        ->toContain('>Añadir una categoría</a>')
+        ->and($reservationAction->getLabel())
+        ->toBe('Continuar configuración')
+        ->and($serviceRequestPage->getSubheading()->toHtml())
+        ->toContain('Antes de continuar con la configuración de solicitudes de servicio, completa este paso: ')
+        ->toContain('>Añadir una categoría</a>')
+        ->and($serviceRequestAction->getLabel())
+        ->toBe('Continuar configuración');
+
+    Livewire::test(ListBikeModels::class)
+        ->assertOk()
+        ->assertSee('Antes de continuar con la configuración de modelos de bicicleta, completa este paso:')
+        ->assertSee('Siguiente paso:')
+        ->assertSee('Añadir una categoría')
+        ->assertSee('Continuar configuración');
+
+    app()->setLocale('fr');
+
+    expect($reservationPage->getSubheading()->toHtml())
+        ->toContain('La configuration de la réservation en ligne est incomplète. Prochaine étape : ')
+        ->toContain('>Ajouter une catégorie</a>')
+        ->and($serviceRequestPage->getSubheading()->toHtml())
+        ->toContain('Avant de poursuivre la configuration des demandes de service, terminez cette étape : ');
+});
+
+test('service requests are available once a bike exists even when online booking setup is incomplete', function () {
+    $staff = Staff::factory()->create();
+    $location = $staff->location;
+    $category = BikeCategory::factory()->create();
+    $model = BikeModel::factory()->for($category, 'bikeCategory')->create();
+    $variant = BikeModelVariant::factory()->for($model, 'bikeModel')->create();
+
+    Bike::factory()
+        ->for($location)
+        ->for($variant, 'variant')
+        ->create();
+
+    $this->actingAs($staff, 'staff');
+
+    $serviceRequestPage = new ListServiceRequests;
+    $serviceRequestHeaderActions = (new ReflectionMethod(ListServiceRequests::class, 'getHeaderActions'))
+        ->invoke($serviceRequestPage);
+    $reservationPage = new ListReservations;
+    $reservationHeaderActions = (new ReflectionMethod(ListReservations::class, 'getHeaderActions'))
+        ->invoke($reservationPage);
+    $reservationSubheading = $reservationPage->getSubheading();
+
+    expect(ServiceRequestResource::getNavigationBadge())->toBeNull()
+        ->and(ServiceRequestResource::getNavigationBadgeTooltip())->toBeNull()
+        ->and($serviceRequestPage->getSubheading())->toBeNull()
+        ->and($serviceRequestHeaderActions)->toHaveCount(1)
+        ->and($serviceRequestHeaderActions[0]->getName())->toBe('create')
+        ->and(ReservationResource::getNavigationBadge())->toBe('⚠️ Pending')
+        ->and(ReservationResource::getNavigationBadgeTooltip())->toContain('Opening hours')
+        ->and($reservationSubheading)->toBeInstanceOf(HtmlString::class)
+        ->and($reservationSubheading->toHtml())
+        ->toContain('Online Book setup is incomplete. Next: ')
+        ->toContain('href="'.LocationResource::getUrl('edit', ['record' => $location->getKey()]).'?setup_target=book_offer"')
+        ->and($reservationHeaderActions)->toHaveCount(1)
+        ->and($reservationHeaderActions[0]->getName())->toBe('continueSetup');
+});
+
+test('reservations follow Book setup requirements instead of the general onboarding order', function () {
+    $staff = Staff::factory()->create();
+    $location = $staff->location;
+    $category = BikeCategory::factory()->create();
+    $model = BikeModel::factory()->for($category, 'bikeCategory')->create();
+    $variant = BikeModelVariant::factory()->for($model, 'bikeModel')->create();
+
+    Bike::factory()
+        ->for($location)
+        ->for($variant, 'variant')
+        ->create();
+
+    $this->actingAs($staff, 'staff');
+
+    $reservationPage = new ListReservations;
+    $reservationSubheading = $reservationPage->getSubheading();
+
+    expect(ReservationResource::getNavigationBadgeTooltip())->toContain('Opening hours')
+        ->and($reservationSubheading)->toBeInstanceOf(HtmlString::class)
+        ->and($reservationSubheading->toHtml())
+        ->toContain('href="'.LocationResource::getUrl('edit', ['record' => $location->getKey()]).'?setup_target=book_offer"');
+});
+
+test('reservations stop showing the Book setup cue when the checklist is complete', function () {
+    $staff = Staff::factory()->create();
+    $location = $staff->location;
+    $category = BikeCategory::factory()->create();
+    $model = BikeModel::factory()->for($category, 'bikeCategory')->create();
+    $variant = BikeModelVariant::factory()->for($model, 'bikeModel')->create();
+
+    Bike::factory()
+        ->for($location)
+        ->for($variant, 'variant')
+        ->create();
+    LocationHour::factory()->for($location)->create();
+
+    $package = RentalPackage::factory()->for($location)->create();
+    $package->variants()->attach($variant, ['rate_minor_units' => 1000]);
+
+    $this->actingAs($staff, 'staff');
+
+    $page = new ListReservations;
+    $headerActions = (new ReflectionMethod(ListReservations::class, 'getHeaderActions'))
+        ->invoke($page);
+    $serviceRequestPage = new ListServiceRequests;
+    $serviceRequestHeaderActions = (new ReflectionMethod(ListServiceRequests::class, 'getHeaderActions'))
+        ->invoke($serviceRequestPage);
+
+    expect(ReservationResource::getNavigationBadge())->toBeNull()
+        ->and(ReservationResource::getNavigationBadgeColor())->toBeNull()
+        ->and(ReservationResource::getNavigationBadgeTooltip())->toBeNull()
+        ->and($page->getSubheading())->toBeNull()
+        ->and($headerActions)->toBeEmpty()
+        ->and(ServiceRequestResource::getNavigationBadge())->toBeNull()
+        ->and(ServiceRequestResource::getNavigationBadgeColor())->toBeNull()
+        ->and(ServiceRequestResource::getNavigationBadgeTooltip())->toBeNull()
+        ->and($serviceRequestPage->getSubheading())->toBeNull()
+        ->and($serviceRequestHeaderActions)->toHaveCount(1)
+        ->and($serviceRequestHeaderActions[0]->getName())->toBe('create');
+
+    Livewire::test(ListServiceRequests::class)
+        ->assertOk()
+        ->assertDontSee('Online Book setup is incomplete');
+});
+
+test('a manager can open the attach variants action for a rental package', function () {
+    $staff = Staff::factory()->create();
+    $package = RentalPackage::factory()->for($staff->location)->create();
+    BikeModelVariant::factory()->create();
+
+    $this->actingAs($staff, 'staff');
+
+    Livewire::test(VariantsRelationManager::class, [
+        'ownerRecord' => $package,
+        'pageClass' => EditRentalPackage::class,
+    ])
+        ->mountTableAction('attach')
+        ->assertActionMounted();
+});
+
+test('an invalid package currency does not crash the variant rate form', function () {
+    $staff = Staff::factory()->create();
+    $package = RentalPackage::factory()->for($staff->location)->create(['currency' => '1@!']);
+    $variant = BikeModelVariant::factory()->create();
+    $package->variants()->attach($variant, ['rate_minor_units' => 1000]);
+
+    $this->actingAs($staff, 'staff');
+
+    Livewire::test(VariantsRelationManager::class, [
+        'ownerRecord' => $package,
+        'pageClass' => EditRentalPackage::class,
+    ])
+        ->mountTableAction('attach')
+        ->assertActionMounted();
+});
+
 test('shop filament cannot edit or delete the platform manager', function () {
     $platform = Staff::factory()->platformManager()->create();
 
@@ -195,4 +445,68 @@ test('a manager can open the reservation editor', function () {
         ->assertActionExists('extend')
         ->assertActionExists('refund')
         ->assertActionExists('cancel');
+});
+
+test('a manager enters owed in the location currency rather than minor units', function () {
+    $staff = Staff::factory()->create();
+    $location = $staff->location;
+    $location->update(['currency' => 'jpy']);
+    $reservation = Reservation::factory()->recycle($location)->create([
+        'currency' => 'jpy',
+        'owed' => 0,
+    ]);
+
+    $this->actingAs($staff, 'staff');
+
+    Livewire::test(EditReservation::class, ['record' => $reservation->getKey()])
+        ->callAction('setOwed', data: ['owed' => '1250'])
+        ->assertHasNoFormErrors();
+
+    expect($reservation->fresh()->owed)->toBe(1250);
+});
+
+test('a manager can enter a reservation amount with the active locale decimal separator', function () {
+    $staff = Staff::factory()->create();
+    $reservation = Reservation::factory()->recycle($staff->location)->create([
+        'currency' => 'eur',
+        'owed' => 0,
+    ]);
+    app()->setLocale('de_DE');
+    $this->actingAs($staff, 'staff');
+
+    Livewire::test(EditReservation::class, ['record' => $reservation->getKey()])
+        ->callAction('setOwed', data: ['owed' => '12,50'])
+        ->assertHasNoFormErrors();
+
+    expect($reservation->fresh()->owed)->toBe(1250);
+});
+
+test('a customer page shows only that customer reservations with links to their details', function () {
+    $staff = Staff::factory()->create();
+    $customer = Customer::factory()->create();
+    $reservation = Reservation::factory()
+        ->for($staff->location)
+        ->for($customer)
+        ->create([
+            'owed' => 6400,
+            'paid' => 3200,
+        ]);
+    $otherReservation = Reservation::factory()->recycle($staff->location)->create();
+
+    $this->actingAs($staff, 'staff');
+
+    Livewire::test(EditCustomer::class, ['record' => $customer->getKey()])
+        ->assertSeeLivewire(ReservationsRelationManager::class);
+
+    Livewire::test(ReservationsRelationManager::class, [
+        'ownerRecord' => $customer,
+        'pageClass' => EditCustomer::class,
+    ])
+        ->assertCanSeeTableRecords([$reservation])
+        ->assertCanNotSeeTableRecords([$otherReservation])
+        ->assertTableActionHasUrl(
+            'viewReservation',
+            ReservationResource::getUrl('view', ['record' => $reservation]),
+            $reservation,
+        );
 });

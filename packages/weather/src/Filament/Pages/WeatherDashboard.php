@@ -3,6 +3,7 @@
 namespace Embiken\Weather\Filament\Pages;
 
 use App\Filament\Concerns\RequiresTenantModule;
+use App\Filament\Shop\Widgets\ShopSetupChecklistWidget;
 use BackedEnum;
 use Embiken\Weather\Actions\RefreshWeatherAction;
 use Embiken\Weather\Enums\RadarSource;
@@ -29,19 +30,42 @@ class WeatherDashboard extends Page
 
     protected static string|\UnitEnum|null $navigationGroup = 'Weather';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = -2;
 
-    protected static ?string $navigationLabel = 'Dashboard';
+    protected static ?string $navigationLabel = null;
 
-    protected static ?string $title = 'Weather';
+    protected static ?string $title = null;
 
     protected string $view = 'weather::filament.pages.weather-dashboard';
+
+    public static function getNavigationLabel(): string
+    {
+        return __('app.navigation.dashboard');
+    }
+
+    public function getTitle(): string
+    {
+        return __('app.page_titles.weather_dashboard');
+    }
 
     public ?string $selectedSiteCode = null;
 
     public function mount(): void
     {
         $this->selectedSiteCode ??= WeatherSite::query()->enabled()->ordered()->value('code');
+    }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [ShopSetupChecklistWidget::class];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function getWidgetData(): array
+    {
+        return ['moduleId' => 'embiken/weather'];
     }
 
     /**
@@ -72,7 +96,7 @@ class WeatherDashboard extends Page
             return [];
         }
 
-        return $site->periods()->orderBy('starts_at')->limit(48)->get()->all();
+        return array_values($site->periods()->orderBy('starts_at')->limit(48)->get()->all());
     }
 
     /**

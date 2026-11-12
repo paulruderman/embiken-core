@@ -2,25 +2,34 @@
 
 namespace Embiken\BikeFleet\Models;
 
+use Carbon\CarbonImmutable;
 use Embiken\BikeFleet\Database\Factories\BikeCategoryFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Carbon;
+use Spatie\Translatable\HasTranslations;
 
 /**
  * @property int $id
  * @property string $name
  * @property string|null $description
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property string|null $interface_color
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
  */
-#[Fillable(['name', 'description'])]
+#[Fillable(['name', 'description', 'interface_color'])]
 class BikeCategory extends Model
 {
+    public const string SETUP_DESCRIPTION = 'Categories organize the kinds of bikes in your catalog.';
+
     /** @use HasFactory<BikeCategoryFactory> */
     use HasFactory;
+
+    use HasTranslations;
+
+    /** @var list<string> */
+    public array $translatable = ['name', 'description'];
 
     protected static function newFactory(): BikeCategoryFactory
     {

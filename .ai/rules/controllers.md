@@ -6,4 +6,4 @@ paths:
 # Controllers
 
 ## No thin controllers when an Action can asController
-Do not add Http\Controllers for a use case that can be an Action asController. Inertia page GETs that only load a surface are Actions too when they can be (htmlResponse). SPA and device writes call the same Action as JSON (jsonResponse), not a second controller.
+Use Actions for application use cases with domain behavior, authorization, validation, mutation, or meaningful orchestration; expose those through asController instead of a parallel thin controller. Do not make an Action just to serve a URL or render static/editorial content. Plain page rendering belongs in the normal page route/controller, and managed public copy belongs in the MarketingPage CMS. Inertia or GET alone does not make a page an Action. SPA and device writes call the same Action as JSON (jsonResponse), not a second controller.

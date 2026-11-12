@@ -25,9 +25,7 @@ class BikeResource extends Resource
 
     protected static function shopSetupBadgeStep(): string
     {
-        return app(ModuleRegistry::class)->isEnabled('embiken/bike-rentals')
-            ? ShopSetupReadiness::BookableFleet
-            : ShopSetupReadiness::Bikes;
+        return ShopSetupReadiness::Bikes;
     }
 
     public static function tenantModuleId(): string
@@ -39,11 +37,26 @@ class BikeResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTruck;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Catalog';
+    protected static string|\UnitEnum|null $navigationGroup = 'Fleet';
 
     protected static ?int $navigationSort = 4;
 
     protected static ?string $recordTitleAttribute = 'bid';
+
+    public static function getModelLabel(): string
+    {
+        return __('app.fleet.resources.bike.singular');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('app.fleet.resources.bike.plural');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return static::getPluralModelLabel();
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -52,7 +65,10 @@ class BikeResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return BikesTable::configure($table);
+        return BikesTable::configure(
+            $table,
+            app(ModuleRegistry::class)->isEnabled('embiken/bike-rentals'),
+        );
     }
 
     public static function getRelations(): array

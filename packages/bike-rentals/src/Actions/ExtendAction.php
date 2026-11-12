@@ -4,6 +4,7 @@ namespace Embiken\BikeRentals\Actions;
 
 use App\Actions\Action;
 use App\Actions\Concerns\AuthorizesStaff;
+use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Embiken\BikeRentals\Enums\ReservationChannel;
 use Embiken\BikeRentals\Enums\ReservationStage;
@@ -39,7 +40,7 @@ class ExtendAction extends Action
                 throw new InvalidArgumentException('Do not extend Provisional.');
             }
 
-            $reservation->ends_at = $endsAt;
+            $reservation->ends_at = CarbonImmutable::instance($endsAt);
 
             if ($owed !== null) {
                 $reservation->owed = $owed;
@@ -55,13 +56,13 @@ class ExtendAction extends Action
     {
         $data = $request->validate([
             'ends_at' => ['required', 'date'],
-            'owed' => ['nullable', 'integer', 'min:0'],
+            'owed_minor_units' => ['nullable', 'integer', 'min:0'],
         ]);
 
         $reservation = $this->handle(
             $reservation,
             Carbon::parse($data['ends_at']),
-            isset($data['owed']) ? (int) $data['owed'] : null,
+            isset($data['owed_minor_units']) ? (int) $data['owed_minor_units'] : null,
         );
 
         return new DayPatchResource([
@@ -79,8 +80,8 @@ class ExtendAction extends Action
         $this->initializeTenancyFromCommand($command);
         $owed = $command->option('owed');
         $this->handle(
-            Reservation::query()->findOrFail($command->argument('reservation') ?: \Laravel\Prompts\text('Reservation id')),
-            Carbon::parse((string) ($command->argument('ends-at') ?: \Laravel\Prompts\text('ends_at'))),
+            $this->findOneOrFail(Reservation::query(), $command->argument('reservation') ?: \Laravel\Prompts\text('Reservation id')),
+            Carbon::parse($this->requiredStringInput($command, $command->argument('ends-at'), 'Ends at')),
             is_string($owed) && $owed !== '' ? (int) $owed : null,
         );
         $command->info('Extended.');

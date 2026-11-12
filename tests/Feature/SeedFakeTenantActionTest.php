@@ -77,6 +77,11 @@ test('seeding a fake tenant creates a shop the platform user and staff can use',
                 ->and(Bike::query()->count())->toBe(42)
                 ->and(RentalPackage::query()->where('book_visible', true)->count())->toBe(3)
                 ->and(Reservation::query()->where('stage', ReservationStage::Confirmed)->count())->toBe(32)
+                ->and(Reservation::query()->whereIn('stage', [
+                    ReservationStage::Out,
+                    ReservationStage::Returned,
+                    ReservationStage::Completed,
+                ])->count())->toBe(1)
                 ->and(Reservation::query()->where('stage', ReservationStage::Provisional)->count())->toBe(2)
                 ->and(BikeReservation::query()->count())->toBeGreaterThan(28)
                 ->and(Bike::query()->where('in_service', false)->count())->toBe(1)

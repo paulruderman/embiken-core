@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace Embiken\Weather\Models;
 
+use Carbon\CarbonImmutable;
 use Embiken\Weather\Enums\RadarSource;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
  * @property int $stale_forecast_retention_minutes
  * @property RadarSource $radar_source
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
  */
 #[Fillable([
     'stale_forecast_retention_minutes',

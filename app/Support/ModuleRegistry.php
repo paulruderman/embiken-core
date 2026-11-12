@@ -27,7 +27,9 @@ class ModuleRegistry
     {
         return [
             'embiken/bike-fleet',
+            'embiken/maintenance',
             'embiken/bike-rentals',
+            'embiken/bike-rental-self-booking',
         ];
     }
 
@@ -179,6 +181,45 @@ class ModuleRegistry
         return array_values(array_unique($normalized));
     }
 
+    /**
+     * @param  list<string>  $selectedIds
+     */
+    public function hasSelectedDependents(string $moduleId, array $selectedIds): bool
+    {
+        foreach ($this->installedTenantModules() as $module) {
+            if (! in_array($module->id(), $selectedIds, true)) {
+                continue;
+            }
+
+            if (in_array($moduleId, $this->dependencyIds($module), true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @return array<string, list<string>>
+     */
+    public function modulePrerequisites(): array
+    {
+        $prerequisites = [];
+
+        foreach ($this->installedTenantModules() as $module) {
+            $dependencies = array_map(
+                fn (string $dependencyId): string => $this->find($dependencyId)?->label() ?? $dependencyId,
+                $this->dependencyIds($module),
+            );
+
+            if ($dependencies !== []) {
+                $prerequisites[$module->id()] = $dependencies;
+            }
+        }
+
+        return $prerequisites;
+    }
+
     public function applyFilamentDiscoveries(Panel $panel): Panel
     {
         foreach ($this->installedTenantModules() as $module) {
@@ -267,5 +308,31 @@ class ModuleRegistry
         $tenant = tenant();
 
         return $tenant instanceof Tenant ? $tenant : null;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function dependencyIds(TenantModule $module): array
+    {
+        $dependencies = [];
+        $visit = function (TenantModule $current) use (&$visit, &$dependencies): void {
+            foreach ($current->dependencies() as $dependencyId) {
+                if (in_array($dependencyId, $dependencies, true)) {
+                    continue;
+                }
+
+                $dependencies[] = $dependencyId;
+                $dependency = $this->find($dependencyId);
+
+                if ($dependency !== null) {
+                    $visit($dependency);
+                }
+            }
+        };
+
+        $visit($module);
+
+        return $dependencies;
     }
 }

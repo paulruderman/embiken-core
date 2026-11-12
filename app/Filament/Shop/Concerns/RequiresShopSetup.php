@@ -4,7 +4,6 @@ namespace App\Filament\Shop\Concerns;
 
 use App\Filament\Shop\Support\ShopSetupReadiness;
 use Filament\Notifications\Notification;
-use Filament\Resources\Pages\CreateRecord;
 
 trait RequiresShopSetup
 {
@@ -73,9 +72,34 @@ trait RequiresShopSetup
         return $readiness->continuationUrl($intent);
     }
 
+    protected function getCreatedNotification(): ?Notification
+    {
+        $notification = parent::getCreatedNotification();
+        $intent = $this->setupContinuationIntent();
+
+        if ($notification === null || $intent === null) {
+            return $notification;
+        }
+
+        $readiness = app(ShopSetupReadiness::class);
+
+        if ($intent === static::shopSetupRequirement()) {
+            if (! $readiness->step(static::shopSetupRequirement())['complete']) {
+                return $notification;
+            }
+
+            return $readiness->addContinueSetupAction($notification, $readiness->step($intent)['module_id']);
+        }
+
+        if ($readiness->firstMissingPrerequisite($intent) !== null) {
+            return $notification;
+        }
+
+        return $readiness->addContinueSetupAction($notification, setupTarget: $intent);
+    }
+
     private function redirectToMissingSetup(): bool
     {
-        /** @var CreateRecord $this */
         $readiness = app(ShopSetupReadiness::class);
         $requestedTarget = request()->query('setup_target');
 
@@ -109,7 +133,7 @@ trait RequiresShopSetup
 
         Notification::make()
             ->title($prerequisite['action_label'])
-            ->body('Complete this step before setting up '.$target['label'].'.')
+            ->body(__('app.setup_checklist.prerequisite_notification', ['step' => $target['label']]))
             ->warning()
             ->send();
 

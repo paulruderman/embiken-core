@@ -3,6 +3,7 @@
 namespace Embiken\BikeFleet\Models;
 
 use App\Models\Location;
+use Carbon\CarbonImmutable;
 use Embiken\BikeFleet\Database\Factories\BikeFactory;
 use Embiken\BikeFleet\Enums\BikeSituation;
 use Embiken\BikeFleet\Observers\BikeObserver;
@@ -12,26 +13,27 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
  * @property int $location_id
  * @property int $bike_model_variant_id
  * @property string $bid
+ * @property string|null $serial_number
  * @property bool $in_service
  * @property bool $self_bookable
  * @property BikeSituation $bike_situation_state
  * @property int|null $bike_situation_reservation_id
  * @property string|null $photo
  * @property string|null $damage_notes
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
  */
 #[Fillable([
     'location_id',
     'bike_model_variant_id',
     'bid',
+    'serial_number',
     'in_service',
     'self_bookable',
     'bike_situation_state',
@@ -42,6 +44,8 @@ use Illuminate\Support\Carbon;
 #[ObservedBy(BikeObserver::class)]
 class Bike extends Model
 {
+    public const string SETUP_DESCRIPTION = 'A bike needs a model variant before it can be added.';
+
     /** @use HasFactory<BikeFactory> */
     use HasFactory;
 
@@ -84,5 +88,13 @@ class Bike extends Model
     public function serviceRequests(): HasMany
     {
         return $this->hasMany(ServiceRequest::class);
+    }
+
+    /**
+     * @return HasMany<BikeSpecification, $this>
+     */
+    public function specifications(): HasMany
+    {
+        return $this->hasMany(BikeSpecification::class);
     }
 }

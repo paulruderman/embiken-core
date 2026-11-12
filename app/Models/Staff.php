@@ -3,32 +3,35 @@
 namespace App\Models;
 
 use App\Enums\StaffRole;
+use App\Support\Locales;
+use Carbon\CarbonImmutable;
 use Database\Factories\StaffFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
+use Illuminate\Contracts\Translation\HasLocalePreference;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
  * @property int $location_id
  * @property string $name
  * @property string $email
+ * @property string $locale
  * @property string|null $password
  * @property StaffRole $role
  * @property bool $is_platform_manager
  * @property string|null $remember_token
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
  */
-#[Fillable(['location_id', 'name', 'email', 'password', 'role', 'is_platform_manager'])]
+#[Fillable(['location_id', 'name', 'email', 'password', 'role', 'is_platform_manager', 'locale'])]
 #[Hidden(['password', 'remember_token'])]
-class Staff extends Authenticatable implements FilamentUser
+class Staff extends Authenticatable implements FilamentUser, HasLocalePreference
 {
     /** @use HasFactory<StaffFactory> */
     use HasFactory, Notifiable;
@@ -52,6 +55,11 @@ class Staff extends Authenticatable implements FilamentUser
         }
 
         return $this->password !== null;
+    }
+
+    public function preferredLocale(): string
+    {
+        return Locales::translationLocale($this->locale);
     }
 
     /**

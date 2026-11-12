@@ -6,6 +6,7 @@ use App\Actions\Platform\InviteUserAction;
 use App\Actions\Platform\StartExpressAccountLinkAction;
 use App\Actions\Platform\SuspendTenantAction;
 use App\Actions\Platform\UnsuspendTenantAction;
+use App\Filament\Platform\Resources\Tenants\Pages\EditTenant;
 use App\Filament\Platform\Resources\Tenants\Pages\ListTenants;
 use App\Filament\Platform\Resources\Users\Pages\ListUsers;
 use App\Filament\Platform\Resources\Users\UserResource;
@@ -38,6 +39,39 @@ test('a platform user can open the tenant list', function () {
 
     Livewire::test(ListTenants::class)
         ->assertOk();
+});
+
+test('a platform user can save a tenant with selected modules that include disabled prerequisites', function () {
+    $user = User::factory()->create();
+    $tenant = Tenant::withoutEvents(fn () => Tenant::factory()->create([
+        'modules' => ['embiken/bike-fleet', 'embiken/maintenance', 'embiken/bike-rentals', 'embiken/bike-rental-self-booking'],
+    ]));
+
+    $this->actingAs($user);
+
+    Livewire::test(EditTenant::class, ['record' => $tenant->getRouteKey()])
+        ->assertSee('Prerequisites are selected automatically. Turn off dependent modules first to disable a required module.')
+        ->assertSee('Online booking setup, Book-visible offers, and bookable bikes.')
+        ->assertSee('Requires:')
+        ->assertSee('Rentals')
+        ->fillForm([
+            'name' => $tenant->name,
+            'modules' => ['embiken/bike-fleet', 'embiken/maintenance', 'embiken/bike-rentals', 'embiken/bike-rental-self-booking'],
+        ])
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($tenant->fresh()->moduleIds())->toBe([
+        'embiken/bike-fleet',
+        'embiken/maintenance',
+        'embiken/bike-rentals',
+        'embiken/bike-rental-self-booking',
+    ]);
+});
+
+test('the impersonation endpoint is not captured by the marketing page route', function () {
+    $this->get('http://localhost/platform/tenants/4465a6a7-31a2-4ea8-b927-1a333539dbad/impersonate')
+        ->assertRedirect('http://localhost/terminal/login');
 });
 
 test('a disabled user cannot access the platform panel', function () {

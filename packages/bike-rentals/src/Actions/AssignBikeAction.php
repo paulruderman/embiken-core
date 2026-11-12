@@ -87,7 +87,7 @@ class AssignBikeAction extends Action
         ]);
 
         try {
-            $line = $this->handle($line, Bike::query()->findOrFail($data['bike_id']));
+            $line = $this->handle($line, $this->findOneOrFail(Bike::query(), $data['bike_id']));
         } catch (OccupancyUnavailable $exception) {
             throw ValidationException::withMessages(['bike_id' => $exception->reason]);
         }
@@ -107,8 +107,8 @@ class AssignBikeAction extends Action
     {
         $this->initializeTenancyFromCommand($command);
         $line = $this->handle(
-            BikeReservation::query()->findOrFail($command->argument('line') ?: \Laravel\Prompts\text('Line id')),
-            Bike::query()->findOrFail($command->argument('bike') ?: \Laravel\Prompts\text('Bike id')),
+            $this->findOneOrFail(BikeReservation::query(), $command->argument('line') ?: \Laravel\Prompts\text('Line id')),
+            $this->findOneOrFail(Bike::query(), $command->argument('bike') ?: \Laravel\Prompts\text('Bike id')),
         );
         $command->info("Assigned bike to line {$line->id}");
 

@@ -6,22 +6,56 @@ use App\Filament\Shop\Support\ShopSetupReadiness;
 
 trait HasShopSetupBadge
 {
+    use MutesSetupRequiredNavigation;
+
     abstract protected static function shopSetupBadgeStep(): string;
 
     public static function getNavigationBadge(): ?string
     {
-        return app(ShopSetupReadiness::class)->step(static::shopSetupBadgeStep())['complete']
-            ? null
-            : 'Setup';
+        $readiness = app(ShopSetupReadiness::class);
+
+        if (! $readiness->hasStep(static::shopSetupBadgeStep())) {
+            return null;
+        }
+
+        $step = $readiness->step(static::shopSetupBadgeStep());
+
+        if ($step['complete']) {
+            return null;
+        }
+
+        return $step['blocked']
+            ? '⚠️ '.__('app.setup_checklist.pending_badge')
+            : __('app.setup_checklist.ready_badge');
     }
 
     public static function getNavigationBadgeTooltip(): ?string
     {
-        return app(ShopSetupReadiness::class)->step(static::shopSetupBadgeStep())['tooltip'];
+        $readiness = app(ShopSetupReadiness::class);
+
+        if (! $readiness->hasStep(static::shopSetupBadgeStep())) {
+            return null;
+        }
+
+        $step = $readiness->step(static::shopSetupBadgeStep());
+
+        return $step['complete'] ? null : $step['tooltip'];
     }
 
     public static function getNavigationBadgeColor(): string|array|null
     {
-        return 'warning';
+        $readiness = app(ShopSetupReadiness::class);
+
+        if (! $readiness->hasStep(static::shopSetupBadgeStep())) {
+            return null;
+        }
+
+        $step = $readiness->step(static::shopSetupBadgeStep());
+
+        if ($step['complete']) {
+            return null;
+        }
+
+        return $step['blocked'] ? 'warning' : 'success';
     }
 }

@@ -10,7 +10,7 @@ afterEach(function () {
     tenancy()->end();
 });
 
-test('creating a tenant enables fleet and rentals', function () {
+test('creating a tenant enables the core shop modules', function () {
     Notification::fake();
 
     $tenant = app(CreateTenantAction::class)(
@@ -23,6 +23,23 @@ test('creating a tenant enables fleet and rentals', function () {
     );
 
     expect($tenant->moduleIds())->toBe(ModuleRegistry::defaultTenantModuleIds());
+});
+
+test('existing rental tenants keep Online Book enabled after the module split', function () {
+    $rentalTenant = Tenant::factory()->create([
+        'modules' => ['embiken/bike-fleet', 'embiken/bike-rentals'],
+    ]);
+    $fleetTenant = Tenant::factory()->create([
+        'modules' => ['embiken/bike-fleet'],
+    ]);
+    $migration = require database_path('migrations/2026_10_24_132233_add_online_book_module_to_existing_rental_tenants.php');
+
+    $migration->up();
+
+    expect($rentalTenant->fresh()->moduleIds())
+        ->toContain('embiken/bike-rental-self-booking')
+        ->and($fleetTenant->fresh()->moduleIds())
+        ->not->toContain('embiken/bike-rental-self-booking');
 });
 
 test('reservation action routes are hidden when rentals is disabled', function () {

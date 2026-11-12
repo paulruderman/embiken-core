@@ -2,6 +2,7 @@
  * Prototype view-model over the Pinia day store. Display helpers only.
  */
 import { reactive, watch } from 'vue';
+import { formatMoney } from '@/lib/money';
 import { useDayStore, type DayBike, type DayReservation } from '@/stores/day';
 
 export type Situation = 'home' | 'prepping' | 'staged' | 'rented_out' | 'back';
@@ -36,6 +37,7 @@ export type Reservation = {
     endsAtIso: string;
     owed: number;
     paid: number;
+    currency: string;
     waiver: boolean;
     myrental: string;
     lines: Line[];
@@ -46,8 +48,8 @@ export type Shop = {
     reservations: Reservation[];
 };
 
-export function money(cents: number): string {
-    return `$${(cents / 100).toFixed(0)}`;
+export function money(minorUnits: number): string {
+    return formatMoney(minorUnits, useDayStore().currency);
 }
 
 function stageLabel(stage: string): string {
@@ -69,7 +71,7 @@ function mapBike(bike: DayBike): Bike {
     return {
         id: bike.id,
         bid: bike.bid,
-        product_id: bike.product_id,
+        product_id: bike.variant_id,
         model: bike.model,
         variant: bike.variant,
         situation: bike.bike_situation_state,
@@ -89,8 +91,9 @@ function mapReservation(
         ends: clock(reservation.ends_at, timezone),
         startsAtIso: reservation.starts_at,
         endsAtIso: reservation.ends_at,
-        owed: reservation.owed,
-        paid: reservation.paid,
+        owed: reservation.owed_minor_units,
+        paid: reservation.paid_minor_units,
+        currency: reservation.currency,
         waiver: reservation.waiver_accepted_at !== null,
         myrental: reservation.myrental_token ?? '',
         lines: reservation.lines.map((line) => ({

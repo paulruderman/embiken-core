@@ -11,6 +11,7 @@ use Embiken\BikeRentals\Enums\BikeReservationStatus;
 use Embiken\BikeRentals\Enums\ReservationStage;
 use Embiken\BikeRentals\Exceptions\OutBikesNeedConfirmation;
 use Embiken\BikeRentals\Filament\Resources\Reservations\ReservationResource;
+use Embiken\BikeRentals\Filament\Support\MoneyInput;
 use Embiken\BikeRentals\Models\Reservation;
 use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
@@ -34,8 +35,10 @@ class EditReservation extends EditRecord
         return [
             ViewAction::make(),
             Action::make('setStage')
+                ->label(__('app.rentals_ui.actions.set_stage'))
                 ->schema([
                     Select::make('stage')
+                        ->label(__('app.rentals_ui.fields.stage'))
                         ->options(collect([
                             ReservationStage::Provisional,
                             ReservationStage::Confirmed,
@@ -45,6 +48,7 @@ class EditReservation extends EditRecord
                         ])->all())
                         ->required(),
                     Toggle::make('confirm_out_bikes_in_shop')
+                        ->label(__('app.rentals_ui.fields.confirm_bikes_in_shop'))
                         ->visible(fn (): bool => $reservation->bikeReservations->contains(
                             fn ($line): bool => $line->status === BikeReservationStatus::Out,
                         )),
@@ -59,54 +63,58 @@ class EditReservation extends EditRecord
                     } catch (OutBikesNeedConfirmation $exception) {
                         Notification::make()
                             ->danger()
-                            ->title($exception->getMessage())
+                            ->title(__('app.rentals_ui.errors.out_bikes_confirmation'))
                             ->send();
                     }
                 }),
             Action::make('setOwed')
+                ->label(__('app.rentals_ui.actions.set_owed'))
                 ->schema([
-                    TextInput::make('owed')
-                        ->numeric()
+                    MoneyInput::make('owed', fn (): string => $reservation->currency)
+                        ->label(__('app.rentals_ui.fields.owed'))
                         ->required()
                         ->default(fn (): int => $reservation->owed),
                 ])
                 ->action(fn (array $data) => app(SetReservationOwedAction::class)($reservation, (int) $data['owed'])),
             Action::make('extend')
+                ->label(__('app.rentals_ui.actions.extend'))
                 ->schema([
                     DateTimePicker::make('ends_at')
+                        ->label(__('app.rentals_ui.fields.ends_at'))
                         ->required()
                         ->default(fn (): mixed => $reservation->ends_at),
-                    TextInput::make('owed')
-                        ->numeric()
-                        ->helperText('Leave blank to keep owed.'),
+                    MoneyInput::make('owed', fn (): string => $reservation->currency)
+                        ->label(__('app.rentals_ui.fields.owed'))
+                        ->helperText(__('app.rentals_ui.help.leave_blank_to_keep_owed')),
                 ])
                 ->action(function (array $data) use ($reservation): void {
                     app(ExtendAction::class)(
                         $reservation,
                         Carbon::parse($data['ends_at']),
-                        isset($data['owed']) && $data['owed'] !== '' && $data['owed'] !== null
+                        isset($data['owed']) && $data['owed'] !== ''
                             ? (int) $data['owed']
                             : null,
                     );
                 }),
             Action::make('refund')
+                ->label(__('app.rentals_ui.actions.refund'))
                 ->schema([
-                    TextInput::make('amount_cents')
-                        ->numeric()
-                        ->required()
-                        ->minValue(1),
-                    TextInput::make('note'),
+                    MoneyInput::make('amount_minor_units', fn (): string => $reservation->currency, minimumMinorUnits: 1)
+                        ->label(__('app.rentals_ui.fields.refund_amount'))
+                        ->required(),
+                    TextInput::make('note')->label(__('app.rentals_ui.fields.note')),
                 ])
                 ->action(fn (array $data) => app(RefundAction::class)(
                     $reservation,
-                    (int) $data['amount_cents'],
+                    (int) $data['amount_minor_units'],
                     $data['note'] ?? null,
                 )),
             Action::make('cancel')
+                ->label(__('app.rentals_ui.actions.cancel'))
                 ->color('danger')
                 ->schema([
                     Toggle::make('confirm_out_bikes_in_shop')
-                        ->label('Out bikes are in the shop'),
+                        ->label(__('app.rentals_ui.fields.confirm_bikes_in_shop')),
                 ])
                 ->action(function (array $data) use ($reservation): void {
                     try {
@@ -114,7 +122,7 @@ class EditReservation extends EditRecord
                     } catch (OutBikesNeedConfirmation $exception) {
                         Notification::make()
                             ->danger()
-                            ->title($exception->getMessage())
+                            ->title(__('app.rentals_ui.errors.out_bikes_confirmation'))
                             ->send();
                     }
                 }),

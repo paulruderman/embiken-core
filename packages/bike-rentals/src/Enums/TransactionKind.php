@@ -22,10 +22,10 @@ enum TransactionKind: string implements HasColor, HasDescription, HasIcon, HasLa
     public function getLabel(): string
     {
         return match ($this) {
-            self::Connect => 'Connect',
-            self::Cash => 'Cash',
-            self::Other => 'Other',
-            self::Refund => 'Refund',
+            self::Connect => __('app.rentals_ui.transaction_kinds.connect'),
+            self::Cash => __('app.rentals_ui.transaction_kinds.cash'),
+            self::Other => __('app.rentals_ui.transaction_kinds.other'),
+            self::Refund => __('app.rentals_ui.transaction_kinds.refund'),
         };
     }
 
@@ -42,10 +42,10 @@ enum TransactionKind: string implements HasColor, HasDescription, HasIcon, HasLa
     public function getDescription(): string
     {
         return match ($this) {
-            self::Connect => 'Stripe Connect capture.',
-            self::Cash => 'Cash payment at Terminal.',
-            self::Other => 'Non-cash ledger payment at Terminal.',
-            self::Refund => 'Refund against a prior payment.',
+            self::Connect => __('app.rentals_ui.transaction_kind_descriptions.connect'),
+            self::Cash => __('app.rentals_ui.transaction_kind_descriptions.cash'),
+            self::Other => __('app.rentals_ui.transaction_kind_descriptions.other'),
+            self::Refund => __('app.rentals_ui.transaction_kind_descriptions.refund'),
         };
     }
 

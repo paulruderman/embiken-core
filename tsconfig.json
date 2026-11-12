@@ -129,6 +129,5 @@
         "packages/*/resources/js/**/*.ts",
         "packages/*/resources/js/**/*.vue"
     ],
-    // Filament owns these routes; Wayfinder 0.1.21 cannot build barrels for numeric domain segments.
-    "exclude": ["resources/js/routes/filament/**"]
+    "exclude": ["resources/js/routes"]
 }

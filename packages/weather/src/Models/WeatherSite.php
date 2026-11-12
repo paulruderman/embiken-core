@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Embiken\Weather\Models;
 
+use Carbon\CarbonImmutable;
 use Embiken\Weather\Database\Factories\WeatherSiteFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -23,8 +23,8 @@ use Illuminate\Support\Carbon;
  * @property int|null $nws_grid_y
  * @property bool $enabled
  * @property int $sort_order
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
  */
 #[Fillable([
     'code',

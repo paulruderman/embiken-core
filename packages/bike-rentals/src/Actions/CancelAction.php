@@ -102,7 +102,7 @@ class CancelAction extends Action
         $this->initializeTenancyFromCommand($command);
         $id = $command->argument('reservation') ?: \Laravel\Prompts\text('Reservation id');
         $this->handle(
-            Reservation::query()->findOrFail($id),
+            $this->findOneOrFail(Reservation::query(), $id),
             (bool) $command->option('confirm-out'),
         );
         $command->info('Cancelled.');

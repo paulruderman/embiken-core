@@ -36,12 +36,21 @@ class BrandColor
      */
     public static function palette(?string $value, string $default): array
     {
-        return static::resolvePalette($value) ?? Color::hex($default);
+        return self::resolvePalette($value) ?? Color::hex($default);
+    }
+
+    public static function swatch(?string $value, string $default): string
+    {
+        if (is_string($value) && preg_match('/\A#[0-9A-Fa-f]{6}\z/', trim($value)) === 1) {
+            return trim($value);
+        }
+
+        return Color::convertToHex(self::palette($value, $default)[500]);
     }
 
     public static function isValid(mixed $value): bool
     {
-        return $value === null || (is_string($value) && static::resolvePalette($value) !== null);
+        return $value === null || (is_string($value) && self::resolvePalette($value) !== null);
     }
 
     /**
@@ -49,7 +58,7 @@ class BrandColor
      */
     public static function familyNames(): array
     {
-        return array_keys(static::TAILWIND_PALETTES);
+        return array_keys(self::TAILWIND_PALETTES);
     }
 
     /**
@@ -67,7 +76,7 @@ class BrandColor
             return Color::hex($value);
         }
 
-        $family = static::TAILWIND_PALETTES[strtolower($value)] ?? null;
+        $family = self::TAILWIND_PALETTES[strtolower($value)] ?? null;
 
         if (is_array($family)) {
             return $family;

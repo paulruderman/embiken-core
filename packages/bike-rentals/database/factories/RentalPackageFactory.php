@@ -26,7 +26,7 @@ class RentalPackageFactory extends Factory
             'description' => fake()->optional()->sentence(),
             'meter' => PackageMeter::PerHour,
             'confirm_threshold' => ConfirmThreshold::Full,
-            'deposit_cents' => null,
+            'deposit_minor_units' => null,
             'deposit_percent' => null,
             'min_duration_minutes' => null,
             'max_duration_minutes' => null,
@@ -48,7 +48,7 @@ class RentalPackageFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'confirm_threshold' => ConfirmThreshold::Deposit,
             'deposit_percent' => $percent,
-            'deposit_cents' => null,
+            'deposit_minor_units' => null,
         ]);
     }
 }

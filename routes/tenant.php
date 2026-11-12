@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 use App\Actions\Platform\ConsumeImpersonationAction;
+use App\Actions\Shop\SaveShopLandingPageAction;
 use App\Actions\Shop\UpdateShopBrandingAction;
 use App\Actions\Staff\SignInAction;
+use App\Http\Controllers\ShopLandingPageController;
 use App\Http\Middleware\EnsureModuleEnabled;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
@@ -15,8 +17,8 @@ Route::middleware([
     InitializeTenancyByDomain::class,
     PreventAccessFromCentralDomains::class,
 ])->group(function () {
-    Route::redirect('/', '/book')->name('home');
-    Route::inertia('/book', 'Book/Index')->name('book');
+    Route::get('/', [ShopLandingPageController::class, 'home'])->name('home');
+    Route::get('/book', [ShopLandingPageController::class, 'booking'])->name('book');
 
     Route::get('/impersonate/{staff}', ConsumeImpersonationAction::class)
         ->middleware('signed')
@@ -27,6 +29,9 @@ Route::middleware([
     Route::post('/shop/branding', UpdateShopBrandingAction::class)
         ->middleware('auth:staff')
         ->name('shop.branding.update');
+    Route::post('/shop/landing-page', SaveShopLandingPageAction::class)
+        ->middleware('auth:staff')
+        ->name('shop.landing-page.save');
 
     Route::middleware([
         'auth:staff',
@@ -34,6 +39,19 @@ Route::middleware([
     ])->group(function (): void {
         foreach (glob(base_path('packages/bike-rentals/src/Actions/*.php')) ?: [] as $file) {
             $class = 'Embiken\\BikeRentals\\Actions\\'.basename($file, '.php');
+
+            if (is_callable([$class, 'routes'])) {
+                $class::routes(app('router'));
+            }
+        }
+    });
+
+    Route::middleware([
+        'auth:staff',
+        EnsureModuleEnabled::class.':embiken/bike-fleet',
+    ])->group(function (): void {
+        foreach (glob(base_path('packages/bike-fleet/src/Actions/*.php')) ?: [] as $file) {
+            $class = 'Embiken\\BikeFleet\\Actions\\'.basename($file, '.php');
 
             if (is_callable([$class, 'routes'])) {
                 $class::routes(app('router'));

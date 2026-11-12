@@ -7,6 +7,7 @@ namespace App\Providers;
 use App\Support\ModuleDiscovery;
 use App\Support\ModuleRegistry;
 use App\Support\TenantMigrationPaths;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Stancl\Tenancy\Events\TenancyInitialized;
 
@@ -30,7 +31,7 @@ class ModuleServiceProvider extends ServiceProvider
             $module->registerApplication();
         }
 
-        $this->app['events']->listen(TenancyInitialized::class, function () use ($registry): void {
+        Event::listen(TenancyInitialized::class, function () use ($registry): void {
             foreach ($registry->resolvedEnabledModules() as $module) {
                 $module->registerForTenant();
             }

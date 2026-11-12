@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\ApplyRequestLocale;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\InitializeTenancyByDomainIfTenantHost;
 use App\Http\Middleware\ResetFilamentColorManager;
@@ -20,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
             InitializeTenancyByDomainIfTenantHost::class,
+            ApplyRequestLocale::class,
             ResetFilamentColorManager::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,

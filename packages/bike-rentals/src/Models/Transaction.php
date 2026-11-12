@@ -2,6 +2,7 @@
 
 namespace Embiken\BikeRentals\Models;
 
+use Carbon\CarbonImmutable;
 use Embiken\BikeRentals\Database\Factories\TransactionFactory;
 use Embiken\BikeRentals\Enums\TransactionKind;
 use Embiken\BikeRentals\Enums\TransactionStatus;
@@ -9,29 +10,28 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
  * @property int $reservation_id
  * @property TransactionKind $kind
  * @property TransactionStatus $status
- * @property int $amount_cents
+ * @property int $amount_minor_units
  * @property string $currency
  * @property string|null $note
  * @property string|null $payment_intent_id
  * @property string|null $charge_id
  * @property int|null $original_transaction_id
- * @property Carbon|null $captured_at
- * @property Carbon|null $failed_at
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property CarbonImmutable|null $captured_at
+ * @property CarbonImmutable|null $failed_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
  */
 #[Fillable([
     'reservation_id',
     'kind',
     'status',
-    'amount_cents',
+    'amount_minor_units',
     'currency',
     'note',
     'payment_intent_id',
@@ -58,7 +58,7 @@ class Transaction extends Model
         return [
             'kind' => TransactionKind::class,
             'status' => TransactionStatus::class,
-            'amount_cents' => 'integer',
+            'amount_minor_units' => 'integer',
             'captured_at' => 'datetime',
             'failed_at' => 'datetime',
         ];

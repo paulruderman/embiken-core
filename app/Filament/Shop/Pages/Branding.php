@@ -21,6 +21,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Colors\Color;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
+use LogicException;
 
 class Branding extends Page
 {
@@ -31,6 +32,11 @@ class Branding extends Page
     protected static ?int $navigationSort = 30;
 
     protected string $view = 'filament.shop.pages.branding';
+
+    public static function getNavigationLabel(): string
+    {
+        return __('app.page_titles.branding');
+    }
 
     /** @var array<string, mixed>|null */
     public ?array $data = [];
@@ -44,7 +50,7 @@ class Branding extends Page
 
     public function mount(): void
     {
-        $this->form->fill(ShopSetting::current()->attributesToArray());
+        $this->brandingForm()->fill(ShopSetting::current()->attributesToArray());
     }
 
     public function form(Schema $schema): Schema
@@ -136,7 +142,7 @@ class Branding extends Page
 
     public function save(): void
     {
-        $branding = $this->form->getState();
+        $branding = $this->brandingForm()->getState();
 
         app(UpdateShopBrandingAction::class)($branding);
 
@@ -148,8 +154,13 @@ class Branding extends Page
         $this->redirect(static::getUrl());
     }
 
+    private function brandingForm(): Schema
+    {
+        return $this->getSchema('form') ?? throw new LogicException('The branding schema is unavailable.');
+    }
+
     public function getTitle(): string|Htmlable
     {
-        return 'Branding';
+        return (string) __('app.page_titles.branding');
     }
 }

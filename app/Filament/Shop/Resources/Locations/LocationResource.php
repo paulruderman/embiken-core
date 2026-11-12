@@ -11,6 +11,7 @@ use App\Filament\Shop\Resources\Locations\Schemas\LocationForm;
 use App\Filament\Shop\Resources\Locations\Tables\LocationsTable;
 use App\Filament\Shop\Support\ShopSetupReadiness;
 use App\Models\Location;
+use App\Support\ModuleRegistry;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -33,7 +34,24 @@ class LocationResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'name';
 
+    public static function getModelLabel(): string
+    {
+        return __('app.resource_labels.location.singular');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('app.resource_labels.location.plural');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return static::getPluralModelLabel();
+    }
+
     protected static ?int $navigationSort = 1;
+
+    protected static string|\UnitEnum|null $navigationGroup = 'Shop settings';
 
     public static function form(Schema $schema): Schema
     {
@@ -47,10 +65,9 @@ class LocationResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            HoursRelationManager::class,
-            ClosedDatesRelationManager::class,
-        ];
+        return app(ModuleRegistry::class)->isEnabled('embiken/bike-rentals')
+            ? [HoursRelationManager::class, ClosedDatesRelationManager::class]
+            : [];
     }
 
     public static function canCreate(): bool

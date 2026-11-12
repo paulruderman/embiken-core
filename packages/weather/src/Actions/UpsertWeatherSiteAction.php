@@ -108,10 +108,10 @@ class UpsertWeatherSiteAction extends Action
     {
         $this->initializeTenancyFromCommand($command);
 
-        $code = $command->argument('code') ?: \Laravel\Prompts\text('Site code');
-        $label = $command->option('label') ?: \Laravel\Prompts\text('Label');
-        $lat = $command->option('lat') ?: \Laravel\Prompts\text('Latitude');
-        $lng = $command->option('lng') ?: \Laravel\Prompts\text('Longitude');
+        $code = $this->requiredStringInput($command, $command->argument('code'), 'Site code');
+        $label = $this->requiredStringInput($command, $command->option('label'), 'Label');
+        $lat = $this->requiredStringInput($command, $command->option('lat'), 'Latitude');
+        $lng = $this->requiredStringInput($command, $command->option('lng'), 'Longitude');
         $enabledOption = $command->option('enabled');
         $enabled = $enabledOption === null || $enabledOption === ''
             ? true
@@ -119,8 +119,8 @@ class UpsertWeatherSiteAction extends Action
         $sort = $command->option('sort');
 
         $site = $this->handle(
-            (string) $code,
-            (string) $label,
+            $code,
+            $label,
             (float) $lat,
             (float) $lng,
             $enabled,

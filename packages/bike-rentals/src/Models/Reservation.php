@@ -3,6 +3,7 @@
 namespace Embiken\BikeRentals\Models;
 
 use App\Models\Location;
+use Carbon\CarbonImmutable;
 use Embiken\BikeRentals\Database\Factories\ReservationFactory;
 use Embiken\BikeRentals\Enums\BikeReservationStatus;
 use Embiken\BikeRentals\Enums\ReservationChannel;
@@ -16,7 +17,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -24,18 +24,19 @@ use Illuminate\Support\Carbon;
  * @property int $customer_id
  * @property int|null $rental_package_id
  * @property ReservationChannel $channel
- * @property Carbon $starts_at
- * @property Carbon $ends_at
+ * @property CarbonImmutable $starts_at
+ * @property CarbonImmutable $ends_at
  * @property ReservationStage $stage
  * @property int $owed
  * @property int $paid
- * @property Carbon|null $expires_at
- * @property Carbon|null $waiver_accepted_at
+ * @property string $currency
+ * @property CarbonImmutable|null $expires_at
+ * @property CarbonImmutable|null $waiver_accepted_at
  * @property string|null $notes
  * @property string|null $damage_notes
  * @property string|null $myrental_token
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
  */
 #[Fillable([
     'location_id',
@@ -47,6 +48,7 @@ use Illuminate\Support\Carbon;
     'stage',
     'owed',
     'paid',
+    'currency',
     'expires_at',
     'waiver_accepted_at',
     'notes',
@@ -64,6 +66,23 @@ class Reservation extends Model
         return ReservationFactory::new();
     }
 
+    protected static function booted(): void
+    {
+        static::creating(function (Reservation $reservation): void {
+            if ($reservation->rental_package_id !== null) {
+                $reservation->currency = (string) RentalPackage::query()
+                    ->whereKey($reservation->rental_package_id)
+                    ->value('currency');
+            } elseif (blank($reservation->currency)) {
+                $reservation->currency = (string) Location::query()
+                    ->whereKey($reservation->location_id)
+                    ->value('currency') ?: 'usd';
+            }
+
+            $reservation->currency = strtolower(trim($reservation->currency));
+        });
+    }
+
     /**
      * @return array<string, string>
      */
@@ -76,6 +95,7 @@ class Reservation extends Model
             'stage' => ReservationStage::class,
             'owed' => 'integer',
             'paid' => 'integer',
+            'currency' => 'string',
             'expires_at' => 'datetime',
             'waiver_accepted_at' => 'datetime',
         ];
@@ -129,8 +149,8 @@ class Reservation extends Model
 
         $this->paid = (int) $captured->sum(function (Transaction $transaction): int {
             return $transaction->kind === TransactionKind::Refund
-                ? -$transaction->amount_cents
-                : $transaction->amount_cents;
+                ? -$transaction->amount_minor_units
+                : $transaction->amount_minor_units;
         });
 
         $this->save();

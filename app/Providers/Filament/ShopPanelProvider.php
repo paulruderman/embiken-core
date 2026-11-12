@@ -2,13 +2,17 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Shop\Widgets\ShopSetupChecklistWidget;
+use App\Http\Middleware\ApplyFilamentTranslationLocale;
 use App\Models\ShopSetting;
 use App\Support\BrandColor;
+use App\Support\Locales;
 use App\Support\ModuleRegistry;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationGroup;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -20,6 +24,7 @@ use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use LaraZeus\SpatieTranslatable\SpatieTranslatablePlugin;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 
@@ -30,7 +35,7 @@ class ShopPanelProvider extends PanelProvider
         $panel
             ->id('shop')
             ->path('manage')
-            ->brandName(fn (): string => $this->shopSetting()?->brand_name ?: (tenant()?->name ?? (string) config('app.name')))
+            ->brandName(fn (): string => $this->shopSetting()?->brand_name ?: (tenant()->name ?? (string) config('app.name')))
             ->brandLogo(function (): ?string {
                 $logoPath = $this->shopSetting()?->logo_path;
 
@@ -46,6 +51,10 @@ class ShopPanelProvider extends PanelProvider
             ->login()
             ->passwordReset()
             ->viteTheme('resources/css/filament/shop/theme.css')
+            ->plugin(SpatieTranslatablePlugin::make()
+                ->defaultLocales(Locales::contentLocales())
+                ->getLocaleLabelUsing(fn (string $locale): ?string => Locales::contentLabels()[$locale] ?? null)
+                ->useFallbackLocale())
             ->colors(fn (): array => $this->panelColors())
             ->renderHook(
                 PanelsRenderHook::STYLES_AFTER,
@@ -59,8 +68,17 @@ class ShopPanelProvider extends PanelProvider
                 Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Shop/Widgets'), for: 'App\Filament\Shop\Widgets')
+            ->navigationGroups([
+                'Fleet' => NavigationGroup::make()->label(fn (): string => __('app.navigation.fleet')),
+                'Rentals' => NavigationGroup::make()->label(fn (): string => __('app.navigation.rentals')),
+                'Online Book' => NavigationGroup::make()->label(fn (): string => __('app.navigation.online_book')),
+                'Weather' => NavigationGroup::make()->label(fn (): string => __('app.navigation.weather')),
+                'Shop settings' => NavigationGroup::make()->label(fn (): string => __('app.navigation.shop_settings')),
+                'Maintenance' => NavigationGroup::make()->label(fn (): string => __('app.navigation.maintenance')),
+            ])
             ->widgets([
                 AccountWidget::class,
+                ShopSetupChecklistWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -72,6 +90,7 @@ class ShopPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+                ApplyFilamentTranslationLocale::class,
                 InitializeTenancyByDomain::class,
                 PreventAccessFromCentralDomains::class,
             ])

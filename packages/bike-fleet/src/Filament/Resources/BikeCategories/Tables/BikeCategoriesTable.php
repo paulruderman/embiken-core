@@ -3,8 +3,11 @@
 namespace Embiken\BikeFleet\Filament\Resources\BikeCategories\Tables;
 
 use App\Filament\Shop\Support\ShopSetupReadiness;
+use App\Support\BrandColor;
+use Embiken\BikeFleet\Models\BikeCategory;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
+use Filament\Tables\Columns\ColorColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -15,10 +18,17 @@ class BikeCategoriesTable
         $table = $table
             ->columns([
                 TextColumn::make('name')
+                    ->label(__('app.fleet.fields.name'))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('description')
+                    ->label(__('app.fleet.fields.description'))
                     ->limit(40),
+                ColorColumn::make('interface_color')
+                    ->label(__('app.fleet.fields.interface_color'))
+                    ->getStateUsing(static fn (BikeCategory $record): ?string => $record->interface_color === null
+                        ? null
+                        : BrandColor::swatch($record->interface_color, '#000000')),
             ])
             ->recordActions([
                 EditAction::make(),
@@ -29,7 +39,7 @@ class BikeCategoriesTable
         return app(ShopSetupReadiness::class)->configureEmptyState(
             $table,
             ShopSetupReadiness::BikeCategories,
-            'No bike categories yet',
+            __('app.fleet.empty_states.bike_categories'),
         );
     }
 }

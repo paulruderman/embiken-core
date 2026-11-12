@@ -34,6 +34,9 @@ class ShowTerminalPrototypeAction extends Action
         ];
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function asController(Request $request): array
     {
         return $this->handle();

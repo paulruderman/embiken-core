@@ -34,6 +34,21 @@ class WeatherSiteResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'label';
 
+    public static function getModelLabel(): string
+    {
+        return __('app.resource_labels.weather_site.singular');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('app.resource_labels.weather_site.plural');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return static::getPluralModelLabel();
+    }
+
     public static function form(Schema $schema): Schema
     {
         return WeatherSiteForm::configure($schema);

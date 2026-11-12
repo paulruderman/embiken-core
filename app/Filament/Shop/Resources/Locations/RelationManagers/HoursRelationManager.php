@@ -3,12 +3,14 @@
 namespace App\Filament\Shop\Resources\Locations\RelationManagers;
 
 use App\Enums\Weekday;
+use App\Filament\Shop\Support\ShopSetupReadiness;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
@@ -53,14 +55,35 @@ class HoursRelationManager extends RelationManager
             ->emptyStateDescription('Add the intervals when customers can start and finish rentals. Book cannot accept reservations until opening hours are configured.')
             ->emptyStateActions([
                 CreateAction::make('createHourFromEmptyState')
-                    ->label('Add opening hours'),
+                    ->label('Add opening hours')
+                    ->successNotification(fn (Notification $notification): Notification => $this->addContinueSetupAction($notification)),
             ])
             ->headerActions([
-                CreateAction::make(),
+                CreateAction::make()
+                    ->successNotification(fn (Notification $notification): Notification => $this->addContinueSetupAction($notification)),
             ])
             ->recordActions([
                 EditAction::make(),
                 DeleteAction::make(),
             ]);
+    }
+
+    private function addContinueSetupAction(Notification $notification): Notification
+    {
+        $readiness = app(ShopSetupReadiness::class);
+
+        $setupTarget = request()->query('setup_target');
+
+        if (! in_array($setupTarget, [ShopSetupReadiness::LocationHours, ShopSetupReadiness::BookOffer], true)
+            || ! $readiness->hasStep(ShopSetupReadiness::LocationHours)
+            || ! $readiness->step(ShopSetupReadiness::LocationHours)['complete']) {
+            return $notification;
+        }
+
+        if ($setupTarget === ShopSetupReadiness::BookOffer) {
+            return $readiness->addContinueSetupAction($notification, setupTarget: $setupTarget);
+        }
+
+        return $readiness->addContinueSetupAction($notification, $readiness->step(ShopSetupReadiness::LocationHours)['module_id']);
     }
 }

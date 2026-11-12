@@ -31,7 +31,7 @@ class ListWeatherSitesAction extends Action
      */
     public function asController(): array
     {
-        return $this->handle()->map(fn (WeatherSite $site): array => [
+        return array_values($this->handle()->map(fn (WeatherSite $site): array => [
             'id' => $site->id,
             'code' => $site->code,
             'label' => $site->label,
@@ -42,7 +42,7 @@ class ListWeatherSitesAction extends Action
             'nws_grid_y' => $site->nws_grid_y,
             'enabled' => $site->enabled,
             'sort_order' => $site->sort_order,
-        ])->all();
+        ])->all());
     }
 
     /**

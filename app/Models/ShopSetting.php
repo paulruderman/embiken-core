@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Database\Factories\ShopSettingFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,6 +18,7 @@ use Illuminate\Database\Eloquent\Model;
 #[Fillable(['brand_name', 'primary_color', 'brand_gray_color', 'logo_path', 'favicon_path'])]
 class ShopSetting extends Model
 {
+    /** @use HasFactory<ShopSettingFactory> */
     use HasFactory;
 
     public const int SINGLETON_ID = 1;

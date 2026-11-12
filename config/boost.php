@@ -2,6 +2,12 @@
 
 declare(strict_types=1);
 
+$browserLogLevels = env('BOOST_BROWSER_LOG_LEVELS', 'error,warning,info,debug');
+
+if (! is_string($browserLogLevels)) {
+    $browserLogLevels = 'error,warning,info,debug';
+}
+
 return [
 
     /*
@@ -106,6 +112,6 @@ return [
     |
     */
 
-    'browser_log_levels' => explode(',', env('BOOST_BROWSER_LOG_LEVELS', 'error,warning,info,debug')),
+    'browser_log_levels' => explode(',', $browserLogLevels),
 
 ];

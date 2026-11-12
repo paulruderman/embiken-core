@@ -2,10 +2,11 @@
 
 namespace Embiken\BikeRentals\Filament\Resources\Customers\Schemas;
 
+use App\Support\Money;
+use Embiken\BikeRentals\Models\Customer;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
-use Illuminate\Database\Eloquent\Model;
 
 class CustomerForm
 {
@@ -14,24 +15,32 @@ class CustomerForm
         return $schema
             ->components([
                 TextInput::make('name')
+                    ->label(__('app.rentals_ui.fields.name'))
                     ->required()
                     ->maxLength(255),
                 TextInput::make('email')
+                    ->label(__('app.rentals_ui.fields.email'))
                     ->email()
                     ->required(),
                 TextInput::make('phone')
+                    ->label(__('app.rentals_ui.fields.phone'))
                     ->required(),
                 Placeholder::make('owed_paid')
-                    ->label('Owed / paid')
-                    ->content(function (?Model $record): string {
+                    ->label(__('app.rentals_ui.fields.owed_paid'))
+                    ->content(function (?Customer $record): string {
                         if ($record === null) {
                             return '—';
                         }
 
-                        $owed = (int) $record->reservations()->sum('owed');
-                        $paid = (int) $record->reservations()->sum('paid');
-
-                        return "{$owed} owed / {$paid} paid (cents)";
+                        return $record->reservations()
+                            ->selectRaw('currency, SUM(owed) AS owed, SUM(paid) AS paid')
+                            ->groupBy('currency')
+                            ->get()
+                            ->map(fn (object $totals): string => __('app.rentals_ui.money_totals', [
+                                'owed' => Money::format((int) $totals->owed, $totals->currency),
+                                'paid' => Money::format((int) $totals->paid, $totals->currency),
+                            ]))
+                            ->implode('; ');
                     }),
             ]);
     }

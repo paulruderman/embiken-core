@@ -24,7 +24,7 @@ class TransactionFactory extends Factory
             'reservation_id' => Reservation::factory(),
             'kind' => TransactionKind::Cash,
             'status' => TransactionStatus::Captured,
-            'amount_cents' => 5000,
+            'amount_minor_units' => 5000,
             'currency' => 'usd',
             'note' => null,
             'payment_intent_id' => null,

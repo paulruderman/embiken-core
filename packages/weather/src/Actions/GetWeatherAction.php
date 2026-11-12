@@ -28,11 +28,17 @@ class GetWeatherAction extends Action
         return $this->reader->snapshot($siteCode);
     }
 
+    /**
+     * @return array{sites: list<array<string, mixed>>, settings: array{radar_source: string, stale_forecast_retention_minutes: int}}
+     */
     public function asController(Request $request): array
     {
         return $this->handle($request->query('site'));
     }
 
+    /**
+     * @param  array{sites: list<array<string, mixed>>, settings: array{radar_source: string, stale_forecast_retention_minutes: int}}  $snapshot
+     */
     public function jsonResponse(array $snapshot): WeatherSnapshotResource
     {
         return new WeatherSnapshotResource($snapshot);

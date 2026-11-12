@@ -6,13 +6,16 @@ use App\Models\Location;
 use Embiken\BikeFleet\Enums\BikeSituation;
 use Embiken\BikeFleet\Models\Bike;
 use Embiken\BikeFleet\Models\BikeModelVariant;
+use Embiken\BikeFleet\Models\BikeSpecification;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Text;
 use Filament\Schemas\Schema;
 
 class BikeForm
@@ -21,34 +24,90 @@ class BikeForm
     {
         return $schema
             ->components([
+                Text::make(__('app.fleet.setup_descriptions.bikes'))
+                    ->size('sm')
+                    ->columnSpanFull(),
                 Hidden::make('location_id')
                     ->default(fn (): ?int => Location::query()->value('id')),
                 Select::make('bike_model_variant_id')
-                    ->label('Variant')
+                    ->label(__('app.fleet.fields.variant'))
                     ->options(fn (): array => BikeModelVariant::query()
                         ->with('bikeModel')
                         ->get()
                         ->mapWithKeys(fn (BikeModelVariant $variant): array => [
-                            $variant->id => $variant->bikeModel->name.' '.$variant->size,
+                            $variant->id => collect([
+                                $variant->bikeModel->manufacturer,
+                                $variant->bikeModel->name,
+                                $variant->size,
+                                $variant->color_name,
+                            ])->filter()->implode(' '),
                         ])
                         ->all())
+                    ->helperText(__('app.setup_steps.bikes.description'))
                     ->required()
                     ->searchable(),
                 TextInput::make('bid')
+                    ->label(__('app.fleet.fields.bid'))
                     ->required()
                     ->unique(ignoreRecord: true)
                     ->maxLength(255),
+                TextInput::make('serial_number')
+                    ->label(__('app.fleet.fields.serial_number'))
+                    ->maxLength(255),
                 Toggle::make('in_service')
+                    ->label(__('app.fleet.fields.in_service'))
                     ->default(true),
                 Toggle::make('self_bookable')
+                    ->label(__('app.fleet.fields.self_bookable'))
                     ->default(true),
                 Placeholder::make('bike_situation_state')
-                    ->label('Situation')
-                    ->content(fn (?Bike $record): string => ($record?->bike_situation_state ?? BikeSituation::Home)->getLabel()),
+                    ->label(__('app.fleet.fields.situation'))
+                    ->content(fn (?Bike $record): string => ($record->bike_situation_state ?? BikeSituation::Home)->getLabel()),
                 FileUpload::make('photo')
+                    ->label(__('app.fleet.fields.photo'))
                     ->image()
                     ->directory('bikes'),
-                Textarea::make('damage_notes'),
+                Repeater::make('specifications')
+                    ->relationship()
+                    ->label(__('app.fleet.fields.specifications'))
+                    ->schema([
+                        Select::make('name')
+                            ->label(__('app.fleet.fields.specification'))
+                            ->options(fn (): array => BikeSpecification::query()
+                                ->select('name')
+                                ->distinct()
+                                ->orderBy('name')
+                                ->pluck('name', 'name')
+                                ->all())
+                            ->searchable()
+                            ->preload()
+                            ->disableOptionsWhenSelectedInSiblingRepeaterItems()
+                            ->createOptionForm([
+                                TextInput::make('name')
+                                    ->required()
+                                    ->maxLength(255),
+                            ])
+                            ->createOptionUsing(fn (array $data): string => self::existingOrNewSpecificationName($data['name']))
+                            ->required(),
+                        TextInput::make('value')
+                            ->label(__('app.fleet.fields.value'))
+                            ->required()
+                            ->maxLength(1000),
+                    ])
+                    ->columns(2)
+                    ->addActionLabel(__('app.fleet.actions.add_specification'))
+                    ->columnSpanFull(),
+                Textarea::make('damage_notes')
+                    ->label(__('app.fleet.fields.damage_notes')),
             ]);
+    }
+
+    private static function existingOrNewSpecificationName(string $name): string
+    {
+        $name = trim($name);
+
+        return BikeSpecification::query()
+            ->whereRaw('LOWER(name) = ?', [mb_strtolower($name)])
+            ->value('name') ?? $name;
     }
 }

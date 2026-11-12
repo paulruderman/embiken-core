@@ -22,7 +22,7 @@ class StripeConnectModule extends AbstractTenantModule
 
     public function description(): string
     {
-        return 'Stripe Connect Express.';
+        return 'Connect your shop to Stripe Express for online customer payments.';
     }
 
     public function dependencies(): array

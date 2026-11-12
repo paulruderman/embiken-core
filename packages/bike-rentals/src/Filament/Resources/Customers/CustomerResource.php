@@ -7,6 +7,7 @@ use BackedEnum;
 use Embiken\BikeRentals\Filament\Resources\Customers\Pages\CreateCustomer;
 use Embiken\BikeRentals\Filament\Resources\Customers\Pages\EditCustomer;
 use Embiken\BikeRentals\Filament\Resources\Customers\Pages\ListCustomers;
+use Embiken\BikeRentals\Filament\Resources\Customers\RelationManagers\ReservationsRelationManager;
 use Embiken\BikeRentals\Filament\Resources\Customers\Schemas\CustomerForm;
 use Embiken\BikeRentals\Filament\Resources\Customers\Tables\CustomersTable;
 use Embiken\BikeRentals\Models\Customer;
@@ -30,6 +31,23 @@ class CustomerResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'name';
 
+    public static function getModelLabel(): string
+    {
+        return __('app.resource_labels.customer.singular');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('app.resource_labels.customer.plural');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return static::getPluralModelLabel();
+    }
+
+    protected static string|\UnitEnum|null $navigationGroup = 'Rentals';
+
     public static function form(Schema $schema): Schema
     {
         return CustomerForm::configure($schema);
@@ -43,7 +61,7 @@ class CustomerResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            ReservationsRelationManager::class,
         ];
     }
 

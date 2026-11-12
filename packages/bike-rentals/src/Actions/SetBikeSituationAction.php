@@ -81,7 +81,7 @@ class SetBikeSituationAction extends Action
         ]);
 
         $reservation = isset($data['reservation_id'])
-            ? Reservation::query()->findOrFail($data['reservation_id'])
+            ? $this->findOneOrFail(Reservation::query(), $data['reservation_id'])
             : null;
 
         $bike = $this->handle($bike, BikeSituation::from($data['situation']), $reservation);
@@ -100,11 +100,11 @@ class SetBikeSituationAction extends Action
     {
         $this->initializeTenancyFromCommand($command);
         $reservation = $command->argument('reservation')
-            ? Reservation::query()->findOrFail($command->argument('reservation'))
+            ? $this->findOneOrFail(Reservation::query(), $command->argument('reservation'))
             : null;
         $bike = $this->handle(
-            Bike::query()->findOrFail($command->argument('bike') ?: \Laravel\Prompts\text('Bike id')),
-            BikeSituation::from((string) ($command->argument('situation') ?: \Laravel\Prompts\text('Situation'))),
+            $this->findOneOrFail(Bike::query(), $command->argument('bike') ?: \Laravel\Prompts\text('Bike id')),
+            BikeSituation::from($this->requiredStringInput($command, $command->argument('situation'), 'Situation')),
             $reservation,
         );
         $command->info("Bike {$bike->bid} is {$bike->bike_situation_state->value}");

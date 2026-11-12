@@ -60,9 +60,9 @@ class InviteStaffAction extends Action
 
         $staff = $this->handle(
             Location::query()->firstOrFail(),
-            (string) ($command->option('name') ?: \Laravel\Prompts\text('Name')),
-            (string) ($command->option('email') ?: \Laravel\Prompts\text('Email')),
-            StaffRole::from((string) $command->option('role')),
+            $this->requiredStringInput($command, $command->option('name'), 'Name'),
+            $this->requiredStringInput($command, $command->option('email'), 'Email'),
+            StaffRole::from($this->requiredStringInput($command, $command->option('role'), 'Role', 'manager')),
         );
 
         $command->info("Invited staff {$staff->id}");

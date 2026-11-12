@@ -6,16 +6,24 @@ use App\Filament\Shop\Concerns\RequiresShopSetup;
 use App\Filament\Shop\Support\ShopSetupReadiness;
 use Embiken\BikeRentals\Filament\Resources\RentalPackages\RentalPackageResource;
 use Filament\Resources\Pages\CreateRecord;
+use LaraZeus\SpatieTranslatable\Actions\LocaleSwitcher;
+use LaraZeus\SpatieTranslatable\Resources\Pages\CreateRecord\Concerns\Translatable;
 
 class CreateRentalPackage extends CreateRecord
 {
     use RequiresShopSetup;
+    use Translatable;
 
     protected static string $resource = RentalPackageResource::class;
 
     protected static function shopSetupRequirement(): string
     {
         return ShopSetupReadiness::RentalPackages;
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [LocaleSwitcher::make()];
     }
 
     /**
@@ -33,10 +41,10 @@ class CreateRentalPackage extends CreateRecord
      */
     public static function normalizeDeposit(array $data): array
     {
-        if (! empty($data['deposit_cents'])) {
+        if (! empty($data['deposit_minor_units'])) {
             $data['deposit_percent'] = null;
         } elseif (! empty($data['deposit_percent'])) {
-            $data['deposit_cents'] = null;
+            $data['deposit_minor_units'] = null;
         }
 
         return $data;

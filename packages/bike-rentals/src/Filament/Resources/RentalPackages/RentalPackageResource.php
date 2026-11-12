@@ -17,15 +17,17 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use LaraZeus\SpatieTranslatable\Resources\Concerns\Translatable;
 
 class RentalPackageResource extends Resource
 {
     use HasShopSetupBadge;
     use RequiresTenantModule;
+    use Translatable;
 
     protected static function shopSetupBadgeStep(): string
     {
-        return ShopSetupReadiness::BookOffer;
+        return ShopSetupReadiness::RentalPackages;
     }
 
     public static function tenantModuleId(): string
@@ -37,11 +39,26 @@ class RentalPackageResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBanknotes;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Catalog';
+    protected static string|\UnitEnum|null $navigationGroup = 'Rentals';
 
     protected static ?int $navigationSort = 5;
 
     protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getModelLabel(): string
+    {
+        return __('app.resource_labels.rental_package.singular');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('app.resource_labels.rental_package.plural');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return static::getPluralModelLabel();
+    }
 
     public static function form(Schema $schema): Schema
     {

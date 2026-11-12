@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use App\Support\ModuleRegistry;
+use Carbon\CarbonImmutable;
 use Database\Factories\TenantFactory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Support\Carbon;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\Concerns\HasDatabase;
 use Stancl\Tenancy\Database\Concerns\HasDomains;
@@ -14,15 +17,17 @@ use Stancl\Tenancy\Database\Models\Tenant as BaseTenant;
 /**
  * @property string $id
  * @property string $name
+ * @property string|null $billing_plan_id
  * @property string|null $manager_name
  * @property string|null $manager_email
- * @property Carbon|null $suspended_at
+ * @property CarbonImmutable|null $suspended_at
  * @property string|null $stripe_connect_account_id
  * @property bool $charges_enabled
  * @property bool $transfers_active
  * @property list<string>|null $modules
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
+ * @property-read Collection<int, Domain> $domains
  */
 class Tenant extends BaseTenant implements TenantWithDatabase
 {
@@ -37,6 +42,7 @@ class Tenant extends BaseTenant implements TenantWithDatabase
         return [
             'id',
             'name',
+            'billing_plan_id',
             'manager_name',
             'manager_email',
             'suspended_at',
@@ -61,6 +67,22 @@ class Tenant extends BaseTenant implements TenantWithDatabase
     }
 
     /**
+     * @return HasMany<Domain, $this>
+     */
+    public function domains(): HasMany
+    {
+        return $this->hasMany(Domain::class, 'tenant_id');
+    }
+
+    /**
+     * @return BelongsTo<BillingPlan, $this>
+     */
+    public function billingPlan(): BelongsTo
+    {
+        return $this->belongsTo(BillingPlan::class, 'billing_plan_id', 'slug');
+    }
+
+    /**
      * @return list<string>
      */
     public function moduleIds(): array
@@ -71,7 +93,7 @@ class Tenant extends BaseTenant implements TenantWithDatabase
             return ModuleRegistry::defaultTenantModuleIds();
         }
 
-        return array_values(array_filter($modules, fn (mixed $id): bool => is_string($id)));
+        return $modules;
     }
 
     public function isSuspended(): bool

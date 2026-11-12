@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Embiken\BikeRentals;
 
 use Embiken\BikeRentals\Actions\AllocateLineAction;
+use Embiken\BikeRentals\Actions\CreateWalkInReservationAction;
+use Embiken\BikeRentals\Actions\PickupAction;
 use Embiken\BikeRentals\Actions\ReleaseLineAction;
 use Embiken\BikeRentals\Actions\ShowTerminalAction;
 use Embiken\BikeRentals\Actions\TickReservationLifecycleAction;
@@ -20,6 +22,8 @@ class BikeRentalsServiceProvider extends ServiceProvider
             Actions::registerCommandsForAction(AllocateLineAction::class);
             Actions::registerCommandsForAction(ReleaseLineAction::class);
             Actions::registerCommandsForAction(UnassignBikeAction::class);
+            Actions::registerCommandsForAction(CreateWalkInReservationAction::class);
+            Actions::registerCommandsForAction(PickupAction::class);
             Actions::registerCommandsForAction(TickReservationLifecycleAction::class);
             Actions::registerCommandsForAction(ShowTerminalAction::class);
         }

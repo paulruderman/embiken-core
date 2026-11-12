@@ -43,10 +43,10 @@ class InviteUserAction extends Action
 
     public function asCommand(Command $command): int
     {
-        $name = $command->argument('name') ?: ($command->option('no-interaction') ? null : \Laravel\Prompts\text('Name'));
-        $email = $command->argument('email') ?: ($command->option('no-interaction') ? null : \Laravel\Prompts\text('Email'));
+        $name = $this->requiredStringInput($command, $command->argument('name'), 'Name');
+        $email = $this->requiredStringInput($command, $command->argument('email'), 'Email');
 
-        $user = $this->handle((string) $name, (string) $email);
+        $user = $this->handle($name, $email);
         $command->info("Invited user {$user->id}");
 
         return self::SUCCESS;

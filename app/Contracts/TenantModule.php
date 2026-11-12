@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Contracts;
 
 use App\Enums\ModuleScope;
+use App\Support\SetupStepDefinition;
 use BackedEnum;
 
 interface TenantModule
@@ -56,6 +57,11 @@ interface TenantModule
      * @return list<string>
      */
     public function dependencies(): array;
+
+    /**
+     * @return list<SetupStepDefinition>
+     */
+    public function setupSteps(): array;
 
     /**
      * @return list<class-string<BackedEnum>>

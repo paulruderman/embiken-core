@@ -22,6 +22,6 @@ class BrmModule extends AbstractTenantModule
 
     public function description(): string
     {
-        return 'BRM importer.';
+        return 'Import existing bike rental data from BRM.';
     }
 }

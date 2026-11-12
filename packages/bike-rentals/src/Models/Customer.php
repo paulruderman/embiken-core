@@ -2,26 +2,29 @@
 
 namespace Embiken\BikeRentals\Models;
 
+use App\Support\Locales;
+use Carbon\CarbonImmutable;
 use Embiken\BikeRentals\Database\Factories\CustomerFactory;
+use Illuminate\Contracts\Translation\HasLocalePreference;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
  * @property string $name
  * @property string $email
  * @property string $phone
+ * @property string $locale
  * @property string|null $remember_token
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
  */
-#[Fillable(['name', 'email', 'phone'])]
+#[Fillable(['name', 'email', 'phone', 'locale'])]
 #[Hidden(['remember_token'])]
-class Customer extends Authenticatable
+class Customer extends Authenticatable implements HasLocalePreference
 {
     /** @use HasFactory<CustomerFactory> */
     use HasFactory;
@@ -37,5 +40,10 @@ class Customer extends Authenticatable
     public function reservations(): HasMany
     {
         return $this->hasMany(Reservation::class);
+    }
+
+    public function preferredLocale(): string
+    {
+        return Locales::translationLocale($this->locale);
     }
 }

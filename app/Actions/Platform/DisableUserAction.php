@@ -28,7 +28,7 @@ class DisableUserAction extends Action
     public function asCommand(Command $command): int
     {
         $id = $command->argument('user') ?: \Laravel\Prompts\text('User id');
-        $this->handle(User::query()->findOrFail($id));
+        $this->handle($this->findOneOrFail(User::query(), $id));
         $command->info('Disabled.');
 
         return self::SUCCESS;

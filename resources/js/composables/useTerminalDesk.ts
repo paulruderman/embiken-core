@@ -14,7 +14,21 @@ import ReturnAction from '@/actions/Embiken/BikeRentals/Actions/ReturnAction';
 import SwapAssetAction from '@/actions/Embiken/BikeRentals/Actions/SwapAssetAction';
 import UnassignBikeAction from '@/actions/Embiken/BikeRentals/Actions/UnassignBikeAction';
 import { useDayStore, type DayPatch } from '@/stores/day';
-import type { Line, Reservation } from '@bike-rentals/Terminal/prototype/mock';
+import type {
+    Line,
+    Reservation,
+} from '../../../packages/bike-rentals/resources/js/Terminal/prototype/mock';
+
+type DeskRequest = {
+    product_id?: number;
+    amount_minor_units?: number;
+    bike_id?: number;
+    email?: string;
+    ends_at?: string;
+    name?: string;
+    owed_minor_units?: number;
+    phone?: string;
+};
 
 function apply(day: ReturnType<typeof useDayStore>, payload: unknown): void {
     const patch =
@@ -26,15 +40,12 @@ function apply(day: ReturnType<typeof useDayStore>, payload: unknown): void {
 export function useTerminalDesk() {
     const day = useDayStore();
     const error = ref('');
-    const http = useHttp<
-        Record<string, string | number | boolean | null>,
-        DayPatch
-    >({});
+    const http = useHttp<DeskRequest, DayPatch>({});
 
     function request(
         method: 'post' | 'delete',
         url: string,
-        body: Record<string, unknown> = {},
+        body: DeskRequest = {},
         onSuccess?: (patch: DayPatch) => void,
     ): void {
         void http
@@ -52,7 +63,7 @@ export function useTerminalDesk() {
 
     function post(
         url: string,
-        body: Record<string, unknown> = {},
+        body: DeskRequest = {},
         onSuccess?: (patch: DayPatch) => void,
     ): void {
         request('post', url, body, onSuccess);
@@ -90,7 +101,7 @@ export function useTerminalDesk() {
             }
 
             post(RecordCashPaymentAction.url(reservation.id), {
-                amount_cents: outstanding,
+                amount_minor_units: outstanding,
             });
         },
         acceptWaiver(reservation: Reservation): void {
@@ -113,7 +124,7 @@ export function useTerminalDesk() {
             productId: number,
             bikeId?: number,
         ): void {
-            const body: Record<string, unknown> = {};
+            const body: DeskRequest = {};
 
             if (bikeId !== undefined) {
                 body.bike_id = bikeId;
@@ -129,22 +140,34 @@ export function useTerminalDesk() {
         extendReservation(reservation: Reservation, requote: boolean): void {
             const ends = new Date(reservation.endsAtIso);
             ends.setHours(ends.getHours() + 1);
-            const body: Record<string, unknown> = {
+            const body: DeskRequest = {
                 ends_at: ends.toISOString(),
             };
 
             if (requote) {
-                body.owed = reservation.owed + 2000;
+                body.owed_minor_units = reservation.owed + 2000;
             }
 
             post(ExtendAction.url(reservation.id), body);
         },
         startWalkIn(onCreated?: (id: number) => void): void {
-            post(CreateWalkInReservationAction.url(), {}, (patch) => {
-                if (patch.reservation) {
-                    onCreated?.(patch.reservation.id);
-                }
-            });
+            const name = window.prompt('Customer name')?.trim();
+            const email = window.prompt('Customer email')?.trim();
+            const phone = window.prompt('Customer phone')?.trim();
+
+            if (!name || !email || !phone) {
+                return;
+            }
+
+            post(
+                CreateWalkInReservationAction.url(),
+                { name, email, phone },
+                (patch) => {
+                    if (patch.reservation) {
+                        onCreated?.(patch.reservation.id);
+                    }
+                },
+            );
         },
     };
 }

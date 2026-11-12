@@ -14,18 +14,15 @@ class CustomersTable
         return $table
             ->columns([
                 TextColumn::make('name')
+                    ->label(__('app.rentals_ui.fields.name'))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('email')
+                    ->label(__('app.rentals_ui.fields.email'))
                     ->searchable(),
                 TextColumn::make('phone')
+                    ->label(__('app.rentals_ui.fields.phone'))
                     ->searchable(),
-                TextColumn::make('reservations_sum_owed')
-                    ->label('Owed')
-                    ->sum('reservations', 'owed'),
-                TextColumn::make('reservations_sum_paid')
-                    ->label('Paid')
-                    ->sum('reservations', 'paid'),
             ])
             ->recordActions([
                 EditAction::make(),

@@ -3,29 +3,35 @@
 namespace Embiken\BikeRentals\Filament\Resources\RentalPackages\RelationManagers;
 
 use App\Filament\Shop\Support\ShopSetupReadiness;
+use App\Support\Money;
 use Embiken\BikeFleet\Models\BikeModelVariant;
+use Embiken\BikeRentals\Filament\Support\MoneyInput;
 use Filament\Actions\Action;
 use Filament\Actions\AttachAction;
 use Filament\Actions\DetachAction;
 use Filament\Actions\EditAction;
-use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use InvalidArgumentException;
+use LaraZeus\SpatieTranslatable\Actions\LocaleSwitcher;
+use LaraZeus\SpatieTranslatable\Resources\RelationManagers\Concerns\Translatable;
 
 class VariantsRelationManager extends RelationManager
 {
+    use Translatable;
+
     protected static string $relationship = 'variants';
 
     public function form(Schema $schema): Schema
     {
         return $schema
             ->components([
-                TextInput::make('rate_cents')
-                    ->numeric()
-                    ->required()
-                    ->minValue(0),
+                MoneyInput::make('rate_minor_units', fn (): string => (string) $this->getOwnerRecord()->getAttribute('currency'))
+                    ->label(__('app.rentals_ui.fields.rate'))
+                    ->required(),
             ]);
     }
 
@@ -35,36 +41,61 @@ class VariantsRelationManager extends RelationManager
             ->recordTitleAttribute('size')
             ->columns([
                 TextColumn::make('bikeModel.name')
-                    ->label('Model'),
-                TextColumn::make('size'),
-                TextColumn::make('rate_cents')
-                    ->label('Rate (cents)'),
+                    ->label(__('app.fleet.fields.model'))
+                    ->state(fn (BikeModelVariant $record): ?string => $record->bikeModel?->getTranslation('name', $this->activeLocale)),
+                TextColumn::make('size')->label(__('app.fleet.fields.size')),
+                TextColumn::make('color_name')
+                    ->label(__('app.fleet.fields.color_name'))
+                    ->state(fn (BikeModelVariant $record): ?string => $record->getTranslation('color_name', $this->activeLocale))
+                    ->placeholder('—'),
+                TextColumn::make('rate_minor_units')
+                    ->label(__('app.rentals_ui.fields.rate'))
+                    ->formatStateUsing(function (?int $state): string {
+                        try {
+                            return Money::format(
+                                $state ?? 0,
+                                (string) $this->getOwnerRecord()->getAttribute('currency'),
+                            );
+                        } catch (InvalidArgumentException) {
+                            return __('app.rentals_ui.errors.invalid_currency');
+                        }
+                    }),
             ])
-            ->emptyStateHeading('No variants in this package yet')
+            ->emptyStateHeading(__('app.rentals_ui.empty_states.package_variants'))
             ->emptyStateDescription(fn (): string => BikeModelVariant::query()->exists()
-                ? 'Attach variants and set each rate to define which bikes this package offers.'
-                : 'Create a bike model variant first. Then return here to add it to this package and set its rate.')
+                ? __('app.rentals_ui.empty_states.add_package_variants')
+                : __('app.rentals_ui.empty_states.create_variant_first'))
             ->emptyStateActions(BikeModelVariant::query()->exists()
                 ? []
                 : [
                     Action::make('createBikeModelVariant')
-                        ->label('Create a bike model variant')
+                        ->label(__('app.setup_steps.bike_model_variants.action'))
                         ->url(app(ShopSetupReadiness::class)->continuationUrl(ShopSetupReadiness::BookOffer)),
                 ])
             ->headerActions([
+                LocaleSwitcher::make(),
                 Action::make('createBikeModelVariant')
-                    ->label('Add bike model variants first')
+                    ->label(__('app.rentals_ui.actions.add_variants_first'))
                     ->url(app(ShopSetupReadiness::class)->continuationUrl(ShopSetupReadiness::BookOffer))
                     ->visible(fn (): bool => ! BikeModelVariant::query()->exists()),
                 AttachAction::make()
                     ->visible(fn (): bool => BikeModelVariant::query()->exists())
                     ->preloadRecordSelect()
+                    ->successNotification(function (Notification $notification): Notification {
+                        $readiness = app(ShopSetupReadiness::class);
+
+                        if (request()->query('setup_target') !== ShopSetupReadiness::BookOffer
+                            || ! $readiness->hasStep(ShopSetupReadiness::BookOffer)
+                            || ! $readiness->step(ShopSetupReadiness::BookOffer)['complete']) {
+                            return $notification;
+                        }
+
+                        return $readiness->addContinueSetupAction($notification, $readiness->step(ShopSetupReadiness::BookOffer)['module_id']);
+                    })
                     ->schema(fn (AttachAction $action): array => [
                         $action->getRecordSelect(),
-                        TextInput::make('rate_cents')
-                            ->numeric()
-                            ->required()
-                            ->minValue(0),
+                        MoneyInput::make('rate_minor_units', fn (): string => (string) $this->getOwnerRecord()->getAttribute('currency'))
+                            ->required(),
                     ]),
             ])
             ->recordActions([

@@ -80,8 +80,8 @@ class SetReservationStageAction extends Action
     {
         $this->initializeTenancyFromCommand($command);
         $this->handle(
-            Reservation::query()->findOrFail($command->argument('reservation') ?: \Laravel\Prompts\text('Reservation id')),
-            ReservationStage::from((string) ($command->argument('stage') ?: \Laravel\Prompts\text('Stage'))),
+            $this->findOneOrFail(Reservation::query(), $command->argument('reservation') ?: \Laravel\Prompts\text('Reservation id')),
+            ReservationStage::from($this->requiredStringInput($command, $command->argument('stage'), 'Stage')),
             (bool) $command->option('confirm-out'),
         );
         $command->info('Stage updated.');

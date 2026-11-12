@@ -15,7 +15,8 @@ class LocationsTable
                 TextColumn::make('name')
                     ->searchable(),
                 TextColumn::make('timezone'),
-                TextColumn::make('currency'),
+                TextColumn::make('currency')
+                    ->formatStateUsing(fn (?string $state): string => strtoupper((string) $state)),
                 TextColumn::make('minimum_turnaround_buffer_minutes')
                     ->label('Buffer (min)'),
                 TextColumn::make('bike_assignment_policy')

@@ -28,7 +28,7 @@ class RentalPackageProduct extends Pivot
     protected function casts(): array
     {
         return [
-            'rate_cents' => 'integer',
+            'rate_minor_units' => 'integer',
         ];
     }
 

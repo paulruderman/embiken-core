@@ -9,7 +9,7 @@ import type {
 export type DayBike = {
     id: number;
     bid: string;
-    product_id: number;
+    variant_id: number;
     in_service: boolean;
     self_bookable: boolean;
     bike_situation_state: BikeSituation;
@@ -34,8 +34,9 @@ export type DayReservation = {
     stage: ReservationStage;
     starts_at: string;
     ends_at: string;
-    owed: number;
-    paid: number;
+    owed_minor_units: number;
+    paid_minor_units: number;
+    currency: string;
     customer: { id: number; name: string };
     waiver_accepted_at: string | null;
     myrental_token: string | null;
@@ -45,6 +46,7 @@ export type DayReservation = {
 export type DaySnapshot = {
     tenant_id: string;
     location_id: number;
+    bike_assignment_policy: string;
     timezone: string;
     currency: string;
     return_situation: ReturnSituation;

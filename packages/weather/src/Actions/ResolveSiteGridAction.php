@@ -50,6 +50,9 @@ class ResolveSiteGridAction extends Action
         return $site->refresh();
     }
 
+    /**
+     * @return array{resolved: int}
+     */
     public function asController(Request $request): array
     {
         $count = $this->handle($request->string('site')->toString() ?: null);

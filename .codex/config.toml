@@ -7,3 +7,8 @@ args = [
 
 [mcp_servers.laravel-boost.tools.record-rule]
 approval_mode = "approve"
+
+[mcp_servers.laravel-boost.tools.search-docs]
+approval_mode = "approve"
+
+

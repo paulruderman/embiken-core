@@ -3,6 +3,8 @@ import MarketingLayout from '@/components/MarketingLayout.vue';
 import { localRouteUrl } from '@/lib/local-route-url';
 import marketing from '@/routes/marketing';
 import { Head, Link } from '@inertiajs/vue3';
+
+const props = defineProps<{ earlyAccessUi: Record<string, string> }>();
 </script>
 
 <template>
@@ -52,10 +54,10 @@ import { Head, Link } from '@inertiajs/vue3';
 
                         <div class="mt-9 flex flex-col gap-3 sm:flex-row">
                             <Link
-                                :href="localRouteUrl(marketing.signup.localhost({ billingPlan: 'starter' }))"
+                                :href="localRouteUrl(marketing.waitlist.localhost())"
                                 class="inline-flex min-h-12 items-center justify-center rounded-full bg-lime-300 px-6 text-sm font-semibold text-emerald-950 shadow-lg shadow-black/10 transition hover:-translate-y-0.5 hover:bg-lime-200"
                             >
-                                Create a free workspace
+                                {{ props.earlyAccessUi.cta }}
                                 <span class="ml-2" aria-hidden="true">→</span>
                             </Link>
                             <Link
@@ -66,7 +68,7 @@ import { Head, Link } from '@inertiajs/vue3';
                             </Link>
                         </div>
                         <p class="mt-4 text-sm text-emerald-100/60">
-                            Early access: set up your shop and explore the plans. Signup does not collect a subscription payment.
+                            {{ props.earlyAccessUi.badge }}
                         </p>
                     </div>
 
@@ -150,10 +152,10 @@ import { Head, Link } from '@inertiajs/vue3';
                     <div class="max-w-2xl">
                         <p class="text-xs font-semibold tracking-[0.18em] text-emerald-800 uppercase">A note from the workshop</p>
                         <h2 class="mt-3 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">We’re building for your kind of busy.</h2>
-                        <p class="mt-3 text-sm leading-6 text-zinc-600 sm:text-base">Embiken is in early access. Create a shop workspace, compare plans, and tell us where your rental day gets delightfully complicated. Signup sets up your shop and invites its Manager; it does not collect a subscription payment yet.</p>
+                        <p class="mt-3 text-sm leading-6 text-zinc-600 sm:text-base">{{ props.earlyAccessUi.home_note }}</p>
                     </div>
                     <div class="flex flex-col gap-3 sm:flex-row">
-                        <Link :href="localRouteUrl(marketing.signup.localhost({ billingPlan: 'starter' }))" class="inline-flex min-h-12 items-center justify-center rounded-full bg-emerald-900 px-6 text-sm font-semibold text-white transition hover:bg-emerald-800">Create a workspace</Link>
+                        <Link :href="localRouteUrl(marketing.waitlist.localhost())" class="inline-flex min-h-12 items-center justify-center rounded-full bg-emerald-900 px-6 text-sm font-semibold text-white transition hover:bg-emerald-800">{{ props.earlyAccessUi.cta }}</Link>
                         <Link :href="localRouteUrl(marketing.contact.localhost())" class="inline-flex min-h-12 items-center justify-center rounded-full border border-emerald-900/20 px-6 text-sm font-semibold text-emerald-950 transition hover:bg-white/60">Talk to us</Link>
                     </div>
                 </div>

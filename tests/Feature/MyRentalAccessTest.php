@@ -131,7 +131,7 @@ test('Managers can find the access revoke control on a Customer record', functio
     $customer = Customer::factory()->create();
     Reservation::factory()->confirmed()->recycle($customer)->create();
 
-    Livewire::test(EditCustomer::class, ['record' => $customer->id])
+    Livewire::test(EditCustomer::class, ['record' => $customer->public_id])
         ->assertOk()
         ->assertActionVisible('revokeMyRentalAccess')
         ->callAction('revokeMyRentalAccess')

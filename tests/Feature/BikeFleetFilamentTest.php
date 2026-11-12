@@ -528,7 +528,7 @@ it('replaces blocked catalog create actions with the next prerequisite', functio
 
     Livewire::test(ListBikeModels::class)
         ->assertOk()
-        ->assertSee('Before adding bike models, complete this step:')
+        ->assertSee('Before continuing setup for bike models, complete this step:')
         ->assertSeeHtml('href="'.BikeCategoryResource::getUrl('create').'?setup_target=bike_models"')
         ->assertSee('Add a bike category')
         ->assertSee('Continue setup');

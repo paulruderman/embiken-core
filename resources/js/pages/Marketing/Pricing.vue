@@ -25,7 +25,12 @@ interface CmsPage {
     canonicalUrl: string;
 }
 
-const props = defineProps<{ plans: Plan[]; page: CmsPage }>();
+const props = defineProps<{
+    plans: Plan[];
+    page: CmsPage;
+    invitationAvailable: boolean;
+    earlyAccessUi: Record<string, string>;
+}>();
 const locale = usePage().props.locale;
 
 const annual = ref(false);
@@ -72,6 +77,10 @@ function planDetails(plan: Plan): string[] {
         return ['No subscription fee', 'Create a shop workspace', rate];
 
     return ['Subscription billing is not active yet', rate];
+}
+
+function signupUrl(plan: Plan): string {
+    return localRouteUrl(marketing.signup.localhost(plan.slug));
 }
 </script>
 
@@ -298,17 +307,17 @@ function planDetails(plan: Plan): string[] {
             <div class="mt-8 flex justify-center">
                 <Link
                     v-if="selectedPlan && !selectedPlan.customPricing"
-                    :href="localRouteUrl(marketing.signup.localhost(selectedPlan.slug))"
+                    :href="props.invitationAvailable ? signupUrl(selectedPlan) : localRouteUrl(marketing.waitlist.localhost())"
                     class="rounded-full bg-emerald-800 px-7 py-3.5 text-center text-sm font-semibold text-white transition hover:bg-emerald-700"
                 >
-                    Continue with {{ selectedPlan.name }}
+                    {{ props.invitationAvailable ? `Continue with ${selectedPlan.name}` : props.earlyAccessUi.request_access }}
                 </Link>
                 <Link
                     v-else-if="selectedPlan"
-                    :href="localRouteUrl(marketing.signup.localhost(selectedPlan.slug))"
+                    :href="props.invitationAvailable ? signupUrl(selectedPlan) : localRouteUrl(marketing.waitlist.localhost())"
                     class="rounded-full bg-emerald-800 px-7 py-3.5 text-center text-sm font-semibold text-white transition hover:bg-emerald-700"
                 >
-                    Explore {{ selectedPlan.name }}
+                    {{ props.invitationAvailable ? `Explore ${selectedPlan.name}` : props.earlyAccessUi.request_access }}
                 </Link>
                 <button
                     v-else

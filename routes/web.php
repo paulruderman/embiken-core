@@ -6,7 +6,9 @@ use App\Actions\Devices\PairDeviceAction;
 use App\Actions\Devices\RequestDevicePairingCodeAction;
 use App\Actions\Platform\DeprovisionLocalTenantAction;
 use App\Actions\Platform\ImpersonatePlatformManagerAction;
+use App\Actions\Platform\JoinEarlyAccessWaitlistAction;
 use App\Actions\Platform\PublicSignupAction;
+use App\Actions\Platform\SendEarlyAccessInvitationAction;
 use App\Actions\Shop\ImportLocationMetadataAction;
 use App\Http\Controllers\MarketingPageController;
 use Embiken\BikeFleet\Actions\ImportCatalogFleetAction;
@@ -50,6 +52,9 @@ Route::domain($centralDomains[0] ?? 'localhost')->group(function (): void {
         ->name('platform.catalog-import.validate');
     Route::get('/', [MarketingPageController::class, 'home'])->name('marketing.home');
     Route::get('/pricing', [MarketingPageController::class, 'pricing'])->name('marketing.pricing');
+    Route::get('/waitlist', [MarketingPageController::class, 'waitlist'])->name('marketing.waitlist');
+    Route::post('/waitlist', JoinEarlyAccessWaitlistAction::class)->middleware('throttle:5,1')->name('marketing.waitlist.store');
+    Route::get('/invite/{token}', [MarketingPageController::class, 'invite'])->name('marketing.invite');
     Route::get('/features', [MarketingPageController::class, 'show'])->defaults('slug', 'features')->name('marketing.features');
     Route::get('/faq', [MarketingPageController::class, 'show'])->defaults('slug', 'faq')->name('marketing.faq');
     Route::get('/contact', [MarketingPageController::class, 'show'])->defaults('slug', 'contact')->name('marketing.contact');
@@ -61,6 +66,9 @@ Route::domain($centralDomains[0] ?? 'localhost')->group(function (): void {
     Route::get('/{slug}', [MarketingPageController::class, 'show'])->where('slug', '^(?!platform$|signup$|checkout$|blog$)[^/]+$')->name('marketing.page');
     Route::get('/signup/{billingPlan}', [MarketingPageController::class, 'signup'])->name('marketing.signup');
     Route::post('/signup', PublicSignupAction::class)->middleware('throttle:5,1')->name('marketing.signup.store');
+    Route::post('/platform/early-access/{signup}/invite', SendEarlyAccessInvitationAction::class)
+        ->middleware('auth:web')
+        ->name('platform.early-access.invite');
     Route::get('/checkout/placeholder', [MarketingPageController::class, 'checkoutPlaceholder'])->name('marketing.checkout.placeholder');
 });
 
@@ -68,6 +76,9 @@ foreach (array_slice($centralDomains, 1) as $domain) {
     Route::domain($domain)->group(function () use ($domain): void {
         Route::get('/', [MarketingPageController::class, 'home'])->name('marketing.home.'.str_replace('.', '_', $domain));
         Route::get('/pricing', [MarketingPageController::class, 'pricing'])->name('marketing.pricing.'.str_replace('.', '_', $domain));
+        Route::get('/waitlist', [MarketingPageController::class, 'waitlist'])->name('marketing.waitlist.'.str_replace('.', '_', $domain));
+        Route::post('/waitlist', JoinEarlyAccessWaitlistAction::class)->middleware('throttle:5,1')->name('marketing.waitlist.store.'.str_replace('.', '_', $domain));
+        Route::get('/invite/{token}', [MarketingPageController::class, 'invite'])->name('marketing.invite.'.str_replace('.', '_', $domain));
         Route::get('/features', [MarketingPageController::class, 'show'])->defaults('slug', 'features')->name('marketing.features.'.str_replace('.', '_', $domain));
         Route::get('/faq', [MarketingPageController::class, 'show'])->defaults('slug', 'faq')->name('marketing.faq.'.str_replace('.', '_', $domain));
         Route::get('/contact', [MarketingPageController::class, 'show'])->defaults('slug', 'contact')->name('marketing.contact.'.str_replace('.', '_', $domain));
@@ -79,6 +90,9 @@ foreach (array_slice($centralDomains, 1) as $domain) {
         Route::get('/{slug}', [MarketingPageController::class, 'show'])->where('slug', '^(?!platform$|signup$|checkout$|blog$)[^/]+$')->name('marketing.page.'.str_replace('.', '_', $domain));
         Route::get('/signup/{billingPlan}', [MarketingPageController::class, 'signup'])->name('marketing.signup.'.str_replace('.', '_', $domain));
         Route::post('/signup', PublicSignupAction::class)->middleware('throttle:5,1')->name('marketing.signup.store.'.str_replace('.', '_', $domain));
+        Route::post('/platform/early-access/{signup}/invite', SendEarlyAccessInvitationAction::class)
+            ->middleware('auth:web')
+            ->name('platform.early-access.invite.'.str_replace('.', '_', $domain));
         Route::get('/checkout/placeholder', [MarketingPageController::class, 'checkoutPlaceholder'])->name('marketing.checkout.placeholder.'.str_replace('.', '_', $domain));
     });
 }

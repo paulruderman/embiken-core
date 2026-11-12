@@ -5,14 +5,17 @@ namespace App\Actions\Platform;
 use App\Actions\Action;
 use App\Models\BillingPlan;
 use App\Models\Domain;
+use App\Models\EarlyAccessInvitation;
 use App\Models\Tenant;
 use App\Support\Locales;
 use Illuminate\Console\Command;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Throwable;
 
 class PublicSignupAction extends Action
 {
@@ -58,36 +61,63 @@ class PublicSignupAction extends Action
     {
         $centralDomain = config('tenancy.central_domains.0', 'localhost');
         $submitted = $request->all();
+        $submitted['invite'] = $request->session()->get('early_access_invitation_token');
         $submitted['domain'] = Str::lower((string) $request->input('shop_slug').'.'.$centralDomain);
         $submitted['timezone'] ??= 'America/New_York';
         $submitted['currency'] ??= 'usd';
 
         $validator = Validator::make($submitted, $this->rules());
         $validator->after(function ($validator) use ($submitted): void {
+            if (! is_string($submitted['invite']) || strlen($submitted['invite']) !== 64) {
+                $validator->errors()->add('invite', __('app.early_access_waitlist.invitation_required'));
+            }
+
             if (Domain::query()->where('domain', $submitted['domain'])->exists()) {
                 $validator->errors()->add('shop_slug', 'That shop address is already taken.');
             }
         });
         $data = $validator->validate();
+        $data['invite'] = $submitted['invite'];
         $plan = BillingPlan::query()->where('slug', $data['plan'])->where('is_public', true)->firstOrFail();
-        $tenant = $this->handle(
-            $plan,
-            $data['name'],
-            $submitted['domain'],
-            $data['timezone'],
-            $data['currency'],
-            $data['manager_name'],
-            $data['manager_email'],
-            Locales::canonical($request->attributes->get('embiken.locale')),
-            $data['address_line_1'] ?? null,
-            $data['address_line_2'] ?? null,
-            $data['city'] ?? null,
-            $data['administrative_area'] ?? null,
-            $data['postal_code'] ?? null,
-            isset($data['country_code']) ? strtoupper($data['country_code']) : null,
-        );
+        $invitationId = DB::transaction(function () use ($data): int {
+            $invitation = EarlyAccessInvitation::query()
+                ->where('token_hash', hash('sha256', $data['invite']))
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        return redirect()->route('marketing.checkout.placeholder')->with([
+            abort_unless($invitation->isUsable(), 404);
+            $invitation->forceFill(['used_at' => now()])->save();
+
+            return (int) $invitation->getKey();
+        });
+
+        try {
+            $tenant = $this->handle(
+                $plan,
+                $data['name'],
+                $submitted['domain'],
+                $data['timezone'],
+                $data['currency'],
+                $data['manager_name'],
+                $data['manager_email'],
+                Locales::canonical($request->attributes->get('embiken.locale')),
+                $data['address_line_1'] ?? null,
+                $data['address_line_2'] ?? null,
+                $data['city'] ?? null,
+                $data['administrative_area'] ?? null,
+                $data['postal_code'] ?? null,
+                isset($data['country_code']) ? strtoupper($data['country_code']) : null,
+            );
+        } catch (Throwable $exception) {
+            EarlyAccessInvitation::query()->whereKey($invitationId)->update(['used_at' => null]);
+            throw $exception;
+        }
+
+        $request->session()->forget('early_access_invitation_token');
+
+        $checkoutRoute = 'marketing.checkout.placeholder.'.str_replace('.', '_', $centralDomain);
+
+        return redirect()->route($checkoutRoute)->with([
             'signup_plan' => $plan->name,
             'signup_domain' => $tenant->domains()->value('domain'),
             'signup_email' => $tenant->manager_email,

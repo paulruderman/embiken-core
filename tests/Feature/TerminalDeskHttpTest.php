@@ -4,6 +4,7 @@ use App\Enums\BikeAssignmentPolicy;
 use App\Enums\DeviceSurface;
 use App\Models\Device;
 use App\Models\Location;
+use App\Models\LocationWaiver;
 use App\Models\ShopSetting;
 use App\Models\Staff;
 use App\Models\Tenant;
@@ -410,6 +411,8 @@ test('pickup return walk-in cash and waiver write through staff HTTP', function 
     ])->assertOk()
         ->assertJsonPath('reservation.paid_minor_units', 5000)
         ->assertJsonPath('reservation.currency', 'jpy');
+
+    $shop['tenant']->run(fn () => LocationWaiver::factory()->for($shop['location'])->create());
 
     $this->postJson("http://desk-writes.localhost/reservations/{$reservationPublicId}/waiver")
         ->assertOk();
